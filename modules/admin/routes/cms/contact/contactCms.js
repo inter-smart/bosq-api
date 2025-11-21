@@ -1,8 +1,8 @@
 const express = require("express");
 const router = express.Router();
-const authMiddleware = require('../../http/middleware/authMiddleware');
-const Controller = require("../../http/controllers/contact/contactCmsController.js");
-const { createUploadMiddleware } = require("../../http/middleware/multerMiddleware.js");
+const Controller = require("../../../http/controllers/cms/contact/contactCmsController.js");
+const { createUploadMiddleware } = require("../../../http/middleware/multerMiddleware");
+const authMiddleware = require("../../../http/middleware/authMiddleware");
 
 // Define upload fields
 const fields = [

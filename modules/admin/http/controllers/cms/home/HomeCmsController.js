@@ -1,15 +1,15 @@
 const { body, validationResult } = require("express-validator");
-const { sequelize, models } = require('../../../../../database/models');
-const { sendValidationError, sendSuccessResponse, sendErrorResponse } = require("../../traits/responseHandler");
-const { validationRequestPost } = require("../../request/faq/faqCmsRequest");
-const { handleFileUploadUpdate } = require("../../middleware/multerMiddleware");
+const { sequelize, models } = require('../../../../../../database/models');
+const { sendValidationError, sendSuccessResponse, sendErrorResponse } = require("../../../traits/responseHandler");
+const { validationRequestPost } = require("../../../request/cms/home/HomeCmsRequest");
+const { handleFileUploadUpdate } = require("../../../../http/middleware/multerMiddleware");
 
 
 
-const DataModel = models.FaqCms;
+const DataModel = models.HomeCms;
 
 
-class FaqCmsController {
+class HomeCmsController {
 
     //DATA VIEW  START
     static async index(req, res) {
@@ -26,6 +26,8 @@ class FaqCmsController {
             return sendErrorResponse(res, "Internal Server Error", 500, "INTERNAL_ERROR");
         }
     }
+    //DATA VIEW  END
+
 
 
     //DATA UPDATE  START
@@ -41,8 +43,11 @@ class FaqCmsController {
         try {
             const existingData = await DataModel.findOne();
             const fileFields = [
-                "banner_media_desktop_path",
-                "banner_media_mobile_path",
+                "about_media_path",
+                "journy_media_path",
+                "calculator_media_path",
+                "customize_media_path",
+                "form_media_path",
             ];
 
             let data;
@@ -65,10 +70,11 @@ class FaqCmsController {
             return sendErrorResponse(res, error);
         }
     }
+    //DATA UPDATE  END
 
 
 
 
 }
 
-module.exports = FaqCmsController;
+module.exports = HomeCmsController;

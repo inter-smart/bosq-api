@@ -1,10 +1,10 @@
 const express = require("express");
 const router = express.Router();
-const authMiddleware = require('../../http/middleware/authMiddleware');
-const Controller = require("../../http/controllers/faq/FaqCmsController.js");
-const { createUploadMiddleware } = require("../../http/middleware/multerMiddleware.js");
+const Controller = require("../../../http/controllers/cms/faq/FaqCmsController.js");
+const { createUploadMiddleware } = require("../../../http/middleware/multerMiddleware");
+const authMiddleware = require("../../../http/middleware/authMiddleware");
 
-// Define fields
+// Define upload fields
 const fields = [
     { name: "banner_media_desktop_path", maxCount: 1 },
     { name: "banner_media_mobile_path", maxCount: 1 },

@@ -3,15 +3,15 @@ const sequelize = require("../config/index");
 const defineAdminUser = require("./adminuser");
 
 // HOME
-const defineHomeCms = require("./home/homeCms");
-const defineHomeBanner = require("./home/homeBanner");
+const defineHomeCms = require("./cms/home/homeCms");
+const defineHomeBanner = require("./cms/home/homeBanner");
 
 
 // CONTACT
-const defineContactCms = require("./contact/contactCms");
+const defineContactCms = require("./cms/contact/contactCms");
 
 // FAQ
-const defineFaqCms = require("./faq/faqCms");
+const defineFaqCms = require("./cms/faq/faqCms");
 const models = {
   AdminUser: defineAdminUser(sequelize),
 

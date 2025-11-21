@@ -1,15 +1,15 @@
 const { body, validationResult } = require("express-validator");
-const { sequelize, models } = require('../../../../../database/models');
-const { sendValidationError, sendSuccessResponse, sendErrorResponse } = require("../../traits/responseHandler");
-const { validationRequestPost } = require("../../request/contact/contactCmsRequest");
-const { handleFileUploadUpdate } = require("../../../http/middleware/multerMiddleware");
+const { sequelize, models } = require('../../../../../../database/models');
+const { sendValidationError, sendSuccessResponse, sendErrorResponse } = require("../../../traits/responseHandler");
+const { validationRequestPost } = require("../../../request/cms/faq/faqCmsRequest");
+const { handleFileUploadUpdate } = require("../../../../http/middleware/multerMiddleware");
 
 
 
-const DataModel = models.ContactCms;
+const DataModel = models.FaqCms;
 
 
-class ContactCmsController {
+class FaqCmsController {
 
     //DATA VIEW  START
     static async index(req, res) {
@@ -26,8 +26,6 @@ class ContactCmsController {
             return sendErrorResponse(res, "Internal Server Error", 500, "INTERNAL_ERROR");
         }
     }
-    //DATA VIEW  END
-
 
 
     //DATA UPDATE  START
@@ -43,7 +41,8 @@ class ContactCmsController {
         try {
             const existingData = await DataModel.findOne();
             const fileFields = [
-                "media_path",
+                "banner_media_desktop_path",
+                "banner_media_mobile_path",
             ];
 
             let data;
@@ -66,11 +65,10 @@ class ContactCmsController {
             return sendErrorResponse(res, error);
         }
     }
-    //DATA UPDATE  END
 
 
 
 
 }
 
-module.exports = ContactCmsController;
+module.exports = FaqCmsController;

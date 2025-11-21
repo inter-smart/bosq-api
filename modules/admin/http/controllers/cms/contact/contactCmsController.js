@@ -1,15 +1,15 @@
 const { body, validationResult } = require("express-validator");
-const { sequelize, models } = require('../../../../../database/models');
-const { sendValidationError, sendSuccessResponse, sendErrorResponse } = require("../../traits/responseHandler");
-const { validationRequestPost } = require("../../request/home/HomeCmsRequest");
-const { handleFileUploadUpdate } = require("../../../http/middleware/multerMiddleware");
+const { sequelize, models } = require('../../../../../../database/models');
+const { sendValidationError, sendSuccessResponse, sendErrorResponse } = require("../../../traits/responseHandler");
+const { validationRequestPost } = require("../../../request/cms/contact/contactCmsRequest");
+const { handleFileUploadUpdate } = require("../../../../http/middleware/multerMiddleware");
 
 
 
-const DataModel = models.HomeCms;
+const DataModel = models.ContactCms;
 
 
-class HomeCmsController {
+class ContactCmsController {
 
     //DATA VIEW  START
     static async index(req, res) {
@@ -43,11 +43,7 @@ class HomeCmsController {
         try {
             const existingData = await DataModel.findOne();
             const fileFields = [
-                "about_media_path",
-                "journy_media_path",
-                "calculator_media_path",
-                "customize_media_path",
-                "form_media_path",
+                "media_path",
             ];
 
             let data;
@@ -77,4 +73,4 @@ class HomeCmsController {
 
 }
 
-module.exports = HomeCmsController;
+module.exports = ContactCmsController;

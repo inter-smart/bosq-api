@@ -1,9 +1,9 @@
 const { validationResult } = require('express-validator');
-const { sequelize, models } = require('../../../../../database/models');
-const { sendValidationError, sendSuccessResponse, sendErrorResponse, sendNotFoundError } = require("../../traits/responseHandler");
-const { validationRequestPost, validateId } = require("../../request/home/HomeBannerRequest");
-const { handleFileUploadStore, handleFileUploadUpdate } = require('../../middleware/multerMiddleware');
-const { paginate } = require('../../../http/traits/datatablePaginationHelper');
+const { sequelize, models } = require('../../../../../../database/models');
+const { sendValidationError, sendSuccessResponse, sendErrorResponse, sendNotFoundError } = require("../../../traits/responseHandler");
+const { validationRequestPost, validateId } = require("../../../request/cms/home/HomeBannerRequest");
+const { handleFileUploadStore, handleFileUploadUpdate } = require('../../../middleware/multerMiddleware');
+const { paginate } = require('../../../../http/traits/datatablePaginationHelper');
 
 
 const DataModel = models.HomeBanner;

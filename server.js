@@ -20,7 +20,7 @@ const app = express();
 const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:8080",
-   "http://localhost:8081",
+  "http://localhost:8081",
 ];
 
 app.use(
@@ -57,6 +57,8 @@ redisClient
 app.use("/api/backend", backendApi);
 app.use("/api/frontend", frontendApi);
 
+
+
 // Error handler last
 app.use(errorMiddleware);
 
@@ -67,7 +69,6 @@ const startServer = async () => {
     await sequelize.authenticate();
     await sequelize.sync({ alter: true });
     Logger.info("✅ Database connected and synced");
-    
 
     await createAdminUser();
     await policyData();
@@ -96,7 +97,9 @@ const startServer = async () => {
 
       let endpoints = expressListEndpoints(app);
       if (!endpoints.length) {
-        Logger.warn("⚠️ No endpoints found at app level. Checking sub-routers...");
+        Logger.warn(
+          "⚠️ No endpoints found at app level. Checking sub-routers..."
+        );
 
         const backendEndpoints = expressListEndpoints(backendApi);
         const frontendEndpoints = expressListEndpoints(frontendApi);
@@ -104,14 +107,18 @@ const startServer = async () => {
         if (backendEndpoints.length) {
           Logger.info("📋 Backend Endpoints:");
           backendEndpoints.forEach((e) => {
-            Logger.info(`${e.methods.join(", ").padEnd(10)} /api/backend${e.path}`);
+            Logger.info(
+              `${e.methods.join(", ").padEnd(10)} /api/backend${e.path}`
+            );
           });
         }
 
         if (frontendEndpoints.length) {
           Logger.info("📋 Frontend Endpoints:");
           frontendEndpoints.forEach((e) => {
-            Logger.info(`${e.methods.join(", ").padEnd(10)} /api/frontend${e.path}`);
+            Logger.info(
+              `${e.methods.join(", ").padEnd(10)} /api/frontend${e.path}`
+            );
           });
         }
       } else {

@@ -3,15 +3,22 @@ const sequelize = require("../config/index");
 const defineAdminUser = require("./adminuser");
 
 // HOME
-const defineHomeCms = require("./home/HomeCms");
-const defineHomeBanner = require("./home/HomeBanner");
+const defineHomeCms = require("./home/homeCms");
+const defineHomeBanner = require("./home/homeBanner");
 
+
+// FAQ
+const defineFaqCms = require("./faq/faqCms");
 const models = {
   AdminUser: defineAdminUser(sequelize),
 
   // HOME
   HomeCms: defineHomeCms(sequelize),
   HomeBanner: defineHomeBanner(sequelize),
+
+
+  // FAQ
+  FaqCms: defineFaqCms(sequelize),
 };
 
 Object.keys(models).forEach((modelName) => {

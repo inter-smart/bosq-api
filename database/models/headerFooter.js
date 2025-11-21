@@ -18,24 +18,77 @@ module.exports = (sequelize) => {
         type: DataTypes.TEXT,
         allowNull: true,
       },
-
-      address:{
+      logo_alt: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        defaultValue: "",
+      },
+      favicon: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      footer_title: {
         type: DataTypes.TEXT,
         allowNull: true,
       },
 
-      phone:{
+
+
+      location_one_address: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      location_one_email: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      location_one_phone: {
         type: DataTypes.STRING,
         allowNull: true,
       },
-      email:{
+      location_two_address: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      location_two_email: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      location_two_phone: {
         type: DataTypes.STRING,
         allowNull: true,
       },
-      newsletter_title:{ 
-        type: DataTypes.STRING,
+
+
+
+      apple_app_store_image: {
+        type: DataTypes.TEXT,
         allowNull: true,
       },
+      apple_app_store_image_alt: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+        defaultValue: "",
+      },
+      apple_app_store_image_link: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+
+      playstore_image: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      playstore_image_alt: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+        defaultValue: "",
+      },
+      playstore_image_link: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+     
      
     },
     {

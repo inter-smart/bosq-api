@@ -4,13 +4,14 @@ const defineAdminUser = require("./adminuser");
 
 // HOME
 const defineHomeCms = require("./home/HomeCms");
-
+const defineHomeBanner = require("./home/HomeBanner");
 
 const models = {
   AdminUser: defineAdminUser(sequelize),
 
   // HOME
   HomeCms: defineHomeCms(sequelize),
+  HomeBanner: defineHomeBanner(sequelize),
 };
 
 Object.keys(models).forEach((modelName) => {

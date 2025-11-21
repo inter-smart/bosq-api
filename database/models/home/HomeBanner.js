@@ -10,20 +10,44 @@ module.exports = (sequelize) => {
         autoIncrement: true,
       },
 
-      banner_media_path: {
+      media_desktop_path: {
         type: DataTypes.TEXT,
         allowNull: true,
       },
-      banner_media_alt: {
-        type: DataTypes.STRING,
-        allowNull: true,
-      },
-      banner_title: {
-        type: DataTypes.STRING,
-        allowNull: true,
-      },
-      banner_description: {
+      media_mobile_path: {
         type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      media_alt: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      title: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      description: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      link: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      button_text: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      sort_order: {
+        type: DataTypes.SMALLINT,
+        defaultValue: 1,
+      },
+      status: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: true,
+      },
+      deleted_at: {
+        type: DataTypes.DATE,
         allowNull: true,
       },
     },
@@ -32,5 +56,5 @@ module.exports = (sequelize) => {
     }
   );
 
-  return HomeBanner;
+  return HomeCms;
 };

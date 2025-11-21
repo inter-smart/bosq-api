@@ -7,6 +7,9 @@ const defineHomeCms = require("./home/homeCms");
 const defineHomeBanner = require("./home/homeBanner");
 
 
+// CONTACT
+const defineContactCms = require("./contact/contactCms");
+
 // FAQ
 const defineFaqCms = require("./faq/faqCms");
 const models = {
@@ -16,6 +19,8 @@ const models = {
   HomeCms: defineHomeCms(sequelize),
   HomeBanner: defineHomeBanner(sequelize),
 
+  // CONTACT
+  ContactCms: defineContactCms(sequelize),
 
   // FAQ
   FaqCms: defineFaqCms(sequelize),

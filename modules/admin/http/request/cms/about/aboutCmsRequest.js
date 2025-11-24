@@ -1,11 +1,6 @@
 const { body } = require("express-validator");
 
 exports.validationRequestPost = [
-  body("title")
-    .optional()
-    .isString()
-    .withMessage("Title must be a string"),
-
   body("banner_title")
     .notEmpty()
     .withMessage("Banner title is required"),

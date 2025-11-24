@@ -26,27 +26,7 @@ module.exports = (sequelize) => {
         type: DataTypes.STRING,
         allowNull: true,
       },
-
-      general_title:{
-        type: DataTypes.STRING,
-        allowNull: false,
-      },
-      payment_title:{
-        type: DataTypes.STRING,
-        allowNull: false,
-      },
-      refund_title:{
-        type: DataTypes.STRING,
-        allowNull: false,
-      },
-      product_title:{
-        type: DataTypes.STRING,
-        allowNull: false,
-      },
-      warrenty_title:{
-        type: DataTypes.STRING,
-        allowNull: false,
-      },
+     
       question_title:{
         type: DataTypes.STRING,
         allowNull: false,

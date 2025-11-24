@@ -22,27 +22,6 @@ exports.validationRequestPost = [
     .isString()
     .withMessage("Banner media alt must be a string"),
 
-  // TITLES
-  body("general_title")
-    .isString()
-    .withMessage("General title must be a string"),
-
-  body("payment_title")
-    .isString()
-    .withMessage("Payment title must be a string"),
-
-  body("refund_title")
-    .isString()
-    .withMessage("Refund title must be a string"),
-
-  body("product_title")
-    .isString()
-    .withMessage("Product title must be a string"),
-
-  body("warrenty_title")
-    .isString()
-    .withMessage("Warrenty title must be a string"),
-
   body("question_title")
     .isString()
     .withMessage("Question title must be a string"),

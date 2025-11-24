@@ -14,6 +14,9 @@ const defineContactCms = require("./cms/contact/contactCms");
 const defineAboutCms = require("./cms/about/aboutCms");
 // FAQ
 const defineFaqCms = require("./cms/faq/faqCms");
+const defineFaqList = require("./cms/faq/faqList");
+const defineFaqCategory = require("./cms/faq/faqCategory");
+
 const models = {
   AdminUser: defineAdminUser(sequelize),
 
@@ -29,6 +32,8 @@ const models = {
 
   // FAQ
   FaqCms: defineFaqCms(sequelize),
+  FaqList: defineFaqList(sequelize),
+  FaqCategory: defineFaqCategory(sequelize),
 };
 
 Object.keys(models).forEach((modelName) => {

@@ -57,7 +57,7 @@ module.exports = (sequelize) => {
       },
     },
     {
-      tableName: "header_footer",
+      tableName: "faq_cms",
       timestamps: true,
       createdAt: "created_at",
       updatedAt: "updated_at",

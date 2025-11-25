@@ -14,7 +14,7 @@ module.exports = (sequelize) => {
         type: DataTypes.TEXT,
         allowNull: true,
       },
-        media_mobile_path: {
+      media_mobile_path: {
         type: DataTypes.TEXT,
         allowNull: true,
       },
@@ -22,11 +22,23 @@ module.exports = (sequelize) => {
         type: DataTypes.STRING,
         allowNull: true,
       },
+      media_alt_ar: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
       title: {
         type: DataTypes.STRING,
         allowNull: true,
       },
+      title_ar: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
       description: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      description_ar: {
         type: DataTypes.TEXT,
         allowNull: true,
       },
@@ -35,6 +47,10 @@ module.exports = (sequelize) => {
         allowNull: true,
       },
       button_text: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      button_text_ar: {
         type: DataTypes.STRING,
         allowNull: true,
       },

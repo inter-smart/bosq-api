@@ -36,20 +36,6 @@ module.exports = (sequelize) => {
         allowNull: true,
       },
 
-      banner_button_text:{
-        type: DataTypes.STRING,
-        allowNull: false,
-      },
-      banner_button_text_ar:{
-        type: DataTypes.STRING,
-        allowNull: false,
-      },
-
-      banner_button_link:{
-        type: DataTypes.STRING,
-        allowNull: false,
-      },
-     
       question_title:{
         type: DataTypes.STRING,
         allowNull: false,

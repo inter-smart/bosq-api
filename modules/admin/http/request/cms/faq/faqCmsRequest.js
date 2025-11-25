@@ -1,6 +1,7 @@
 const { body } = require("express-validator");
 
 exports.validationRequestPost = [
+
   // Banner Title (English & Arabic)
   body("banner_title")
     .notEmpty()
@@ -34,25 +35,6 @@ exports.validationRequestPost = [
     .optional()
     .isString()
     .withMessage("Banner media alt in Arabic must be a string"),
-
-  // buttons
-  body("banner_button_text")
-    .notEmpty()
-    .withMessage("Banner button text is required")
-    .isString()
-    .withMessage("Banner button text must be a string"),
-
-  body("banner_button_text_ar")
-    .notEmpty()
-    .withMessage("Banner button text in Arabic is required")
-    .isString()
-    .withMessage("Banner button text in Arabic must be a string"),
-
-  body("banner_button_link")
-    .notEmpty()
-    .withMessage("Banner button link is required")
-    .isString()
-    .withMessage("Banner button link must be a string"),
 
   // Question Title (English & Arabic)
   body("question_title")

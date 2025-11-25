@@ -8,6 +8,12 @@ exports.validationRequestPost = [
     .isString()
     .withMessage("Category title must be a string"),
 
+  body("title_ar")
+    .notEmpty()
+    .withMessage("Category title in Arabic is required")
+    .isString()
+    .withMessage("Category title in Arabic must be a string"),
+
   // SORT ORDER
   body("sort_order")
     .isInt({ min: 1 })

@@ -13,9 +13,17 @@ module.exports = (sequelize) => {
         type: DataTypes.STRING,
         allowNull: false,
       },
+      question_ar: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
       answer: {
         type: DataTypes.TEXT,
         allowNull: false,
+      },
+      answer_ar: {
+        type: DataTypes.TEXT,
+        allowNull: true,
       },
       category: {
         type: DataTypes.INTEGER,

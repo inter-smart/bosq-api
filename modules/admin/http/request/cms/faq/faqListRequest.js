@@ -8,12 +8,24 @@ exports.validationRequestPost = [
     .isString()
     .withMessage("Question must be a string"),
 
+  body("question_ar")
+    .notEmpty()
+    .withMessage("Question in Arabic is required")
+    .isString()
+    .withMessage("Question in Arabic must be a string"),
+
   // ANSWER
   body("answer")
     .notEmpty()
     .withMessage("Answer is required")
     .isString()
     .withMessage("Answer must be a string"),
+
+  body("answer_ar")
+    .notEmpty()
+    .withMessage("Answer in Arabic is required")
+    .isString()
+    .withMessage("Answer in Arabic must be a string"),
 
   // CATEGORY (Foreign Key)
   body("category")

@@ -8,6 +8,9 @@ const authMiddleware = require("../../../http/middleware/authMiddleware");
 const fields = [
     { name: "media_desktop_path", maxCount: 1 },
     { name: "media_mobile_path", maxCount: 1 },
+    { name: "journey_one_media_path", maxCount: 1 },
+    { name: "journey_two_media_path", maxCount: 1 },
+    { name: "journey_three_media_path", maxCount: 1 },
 ];
 
 

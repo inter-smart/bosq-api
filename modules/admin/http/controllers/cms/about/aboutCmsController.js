@@ -45,6 +45,9 @@ class AboutCmsController {
             const fileFields = [
                 "banner_media_desktop_path",
                 "banner_media_mobile_path",
+                "journey_one_media_path",
+                "journey_two_media_path",
+                "journey_three_media_path"
             ];
 
             let data;

@@ -14,6 +14,11 @@ module.exports = (sequelize) => {
         type: DataTypes.STRING,
         allowNull: false,
       },
+      banner_title_ar:{
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+     
       banner_media_desktop_path:{
         type: DataTypes.TEXT,
         allowNull: true,
@@ -26,12 +31,38 @@ module.exports = (sequelize) => {
         type: DataTypes.STRING,
         allowNull: true,
       },
+      banner_media_alt_ar:{
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+
+      banner_button_text:{
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      banner_button_text_ar:{
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+
+      banner_button_link:{
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
      
       question_title:{
         type: DataTypes.STRING,
         allowNull: false,
       },
+      question_title_ar:{
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
       question_description:{
+        type: DataTypes.TEXT,
+        allowNull: false,
+      },
+      question_description_ar:{
         type: DataTypes.TEXT,
         allowNull: false,
       },

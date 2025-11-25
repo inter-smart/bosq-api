@@ -10,6 +10,14 @@ module.exports = (sequelize) => {
         autoIncrement: true,
       },
 
+      title:{
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      title_ar:{
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
       banner_title:{
         type: DataTypes.STRING,
         allowNull: false,

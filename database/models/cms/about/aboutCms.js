@@ -9,6 +9,14 @@ module.exports = (sequelize) => {
         primaryKey: true,
         autoIncrement: true,
       },
+      title:{
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      title_ar:{
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
       banner_media_type:{
         type: DataTypes.ENUM("image", "video"),
         allowNull: true,

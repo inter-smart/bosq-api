@@ -54,4 +54,65 @@ exports.validationRequestPost = [
   body("media_description_ar")
     .notEmpty()
     .withMessage("Arabic media description is required"),
+
+  // IFRAME (OPTIONAL)
+  body("iframe")
+    .optional()
+    .isString()
+    .withMessage("Iframe must be a string"),
+
+  // EMAIL TITLE
+  body("email_title")
+    .notEmpty()
+    .withMessage("Email title is required"),
+  body("email_title_ar")
+    .notEmpty()
+    .withMessage("Arabic email title is required"),
+
+  // EMAIL ADDRESS
+  body("email")
+    .notEmpty()
+    .withMessage("Email is required")
+    .isEmail()
+    .withMessage("Email must be valid"),
+
+  // PHONE TITLE
+  body("phone_title")
+    .notEmpty()
+    .withMessage("Phone title is required"),
+  body("phone_title_ar")
+    .notEmpty()
+    .withMessage("Arabic phone title is required"),
+
+  // PHONE NUMBER
+  body("phone_number")
+    .notEmpty()
+    .withMessage("Phone number is required")
+    .isString()
+    .withMessage("Phone number must be a string"),
+
+  // ADDRESS TITLE
+  body("address_title")
+    .notEmpty()
+    .withMessage("Address title is required"),
+  body("address_title_ar")
+    .notEmpty()
+    .withMessage("Arabic address title is required"),
+
+  // ADDRESS
+  body("address")
+    .notEmpty()
+    .withMessage("Address is required"),
+
+      body("address_ar")
+    .notEmpty()
+    .withMessage("Address is required"),
+
+  // SOCIAL MEDIA TITLE
+  body("social_media_title")
+    .notEmpty()
+    .withMessage("Social media title is required"),
+  body("social_media_title_ar")
+    .notEmpty()
+    .withMessage("Arabic social media title is required"),
 ];

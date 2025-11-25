@@ -1,6 +1,10 @@
 const { body } = require("express-validator");
 
 exports.validationRequestPost = [
+  // title
+
+  body("title").notEmpty().withMessage("Title is required"),
+  body("title_ar").notEmpty().withMessage("Arabic title is required"),
 
   // Banner Title (English & Arabic)
   body("banner_title")

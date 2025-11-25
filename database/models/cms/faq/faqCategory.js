@@ -13,10 +13,6 @@ module.exports = (sequelize) => {
         type: DataTypes.STRING,
         allowNull: false,
       },
-      title_ar: {
-        type: DataTypes.STRING,
-        allowNull: true,
-      },
       sort_order: {
         type: DataTypes.SMALLINT,
         allowNull: false,

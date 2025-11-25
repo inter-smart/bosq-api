@@ -23,7 +23,7 @@ const sequelize = new Sequelize(
       min: 2,       // Minimum connections (always keep some ready)
       acquire: 60000, // Time (ms) to wait before throwing error (increased to 60s)
       idle: 20000,    // Time (ms) a connection can be idle before released (increased)
-      evict: 5000,    // Time (ms) interval to check for evictable connections
+      evict: 4000,    // Time (ms) interval to check for evictable connections
       handleDisconnects: true // Automatically handle disconnects
     }
   }

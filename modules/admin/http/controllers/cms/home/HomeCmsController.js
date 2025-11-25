@@ -67,7 +67,7 @@ class HomeCmsController {
         } catch (error) {
             await transaction.rollback();
             console.error('Data save error:', error);
-            return sendErrorResponse(res, error);
+            return sendErrorResponse(res, error.message);
         }
     }
     //DATA UPDATE  END

@@ -1,6 +1,6 @@
 const express = require("express");
 const dotenv = require("dotenv");
-const { sequelize } = require("./database/models");
+const { sequelize, models } = require("./database/models");
 const backendApi = require("./modules/admin/routes/index");
 const frontendApi = require("./modules/frontend/routes/index");
 const errorMiddleware = require("./modules/admin/http/middleware/errorMiddleware");
@@ -70,28 +70,14 @@ const startServer = async () => {
     await sequelize.sync({ alter: true });
     Logger.info("✅ Database connected and synced");
 
+        // Add this to see which models are registered
+    console.log('Registered models:', Object.keys(sequelize.models));
+    
     await createAdminUser();
     await policyData();
     await seedMetaTags();
 
-    // app.listen(PORT, () => {
-    //   Logger.info(`🚀 Server running on port ${PORT}`);
-
-    //   // 🔥 Ensure endpoints exist AFTER mounting routes
-    //   const endpoints = expressListEndpoints(app);
-
-    //   if (endpoints.length === 0) {
-    //     Logger.warn("⚠️ No endpoints found. Check if your routes are registered.");
-    //   } else {
-    //     console.log("\n📋 Registered Endpoints:");
-    //     console.table(
-    //       endpoints.map((e) => ({
-    //         methods: e.methods.join(", "),
-    //         path: e.path,
-    //       }))
-    //     );
-    //   }
-    // });
+   
     app.listen(PORT, () => {
       Logger.info(`🚀 Server running on port ${PORT}`);
 

@@ -14,7 +14,23 @@ module.exports = (sequelize) => {
         type: DataTypes.STRING,
         allowNull: false,
       },
-      description: {
+      title_ar: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      banner_title:{
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      banner_title_ar:{
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      banner_description: {
+        type: DataTypes.TEXT,
+        allowNull: false,
+      },
+      banner_description_ar: {
         type: DataTypes.TEXT,
         allowNull: false,
       },
@@ -29,7 +45,28 @@ module.exports = (sequelize) => {
       media_alt:{
         type: DataTypes.STRING,
         allowNull: true,
-      }
+      },
+      media_alt_ar:{
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      popular_blogs_title: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      popular_blogs_title_ar: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+
+      related_blogs_title: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      related_blogs_title_ar: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
     },
     {
       tableName: "blog_cms",

@@ -14,12 +14,20 @@ module.exports = (sequelize) => {
         type: DataTypes.TEXT,
         allowNull: false,
       },
+      title_ar: {
+        type: DataTypes.TEXT,
+        allowNull: false,
+      },
       slug: {
         type: DataTypes.TEXT,
         allowNull: true,
         unique: true,
       },
       description: {
+        type: DataTypes.TEXT,
+        allowNull: false,
+      },
+      description_ar: {
         type: DataTypes.TEXT,
         allowNull: false,
       },
@@ -35,6 +43,10 @@ module.exports = (sequelize) => {
         type: DataTypes.STRING,
         allowNull: false,
       },
+      media_alt_ar: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
       thumbnail: {
         type: DataTypes.STRING,
         allowNull: true,
@@ -43,7 +55,10 @@ module.exports = (sequelize) => {
         type: DataTypes.STRING,
         allowNull: true,
       },
-
+      thumbnail_alt_ar: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
       published_date: {
         type: DataTypes.DATE,
         allowNull: false,

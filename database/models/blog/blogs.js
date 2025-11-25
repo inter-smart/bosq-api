@@ -23,11 +23,6 @@ module.exports = (sequelize) => {
         type: DataTypes.TEXT,
         allowNull: false,
       },
-      media_type: {
-        type: DataTypes.ENUM("image", "video"),
-        allowNull: false,
-        defaultValue: "image",
-      },
       media_desktop_path: {
         type: DataTypes.STRING,
         allowNull: false,

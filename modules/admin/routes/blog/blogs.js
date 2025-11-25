@@ -5,6 +5,7 @@ const { createUploadMiddleware } = require("../../http/middleware/multerMiddlewa
 const authMiddleware = require("../../http/middleware/authMiddleware");
 // Define upload fields
 const fields = [
+    { name: "thumbnail", maxCount: 1 },
     { name: "media_desktop_path", maxCount: 1 },
     { name: "media_mobile_path", maxCount: 1 },
 ];
@@ -13,7 +14,7 @@ const fields = [
 // Create upload middleware with fields
 const upload = createUploadMiddleware("blogs", fields);
 
-// router.use(authMiddleware(["admin"]));
+router.use(authMiddleware(["admin"]));
 
 router.get("/", Controller.index);
 

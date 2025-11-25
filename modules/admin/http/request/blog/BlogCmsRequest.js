@@ -11,18 +11,18 @@ exports.validationRequestPost = [
     .notEmpty()
     .withMessage("Banner description is required"),
 
-  body("banner_media_desktop_path")
+  body("media_desktop_path")
     .optional()
     .isString()
-    .withMessage("Banner desktop media path must be a string"),
+    .withMessage("Desktop media path must be a string"),
 
-  body("banner_media_mobile_path")
+  body("media_mobile_path")
     .optional()
     .isString()
-    .withMessage("Banner mobile media path must be a string"),
+    .withMessage("Mobile media path must be a string"),
 
-  body("banner_media_alt")
+  body("media_alt")
     .optional()
     .isString()
-    .withMessage("Banner media alt must be a string"),
+    .withMessage("Media alt must be a string"),
 ];

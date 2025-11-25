@@ -28,7 +28,7 @@ class BlogController {
           ["sort_order", "ASC"],
           ["createdAt", "DESC"],
         ],
-        searchFields: ["title", "slug", "authour_name"],
+        searchFields: ["title", "slug"],
       });
 
       const response = {
@@ -85,8 +85,8 @@ class BlogController {
       // ✅ Handle file uploads
       const fileFields = [
         "thumbnail",
-        "banner_media_desktop_path",
-        "banner_media_mobile_path",
+        "media_desktop_path",
+        "media_mobile_path",
       ];
       handleFileUploadStore(req, fileFields);
 

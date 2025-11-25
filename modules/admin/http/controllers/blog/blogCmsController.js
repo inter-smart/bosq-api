@@ -43,8 +43,8 @@ class BlogCmsController {
         try {
             const existingData = await DataModel.findOne();
             const fileFields = [
-                "banner_media_desktop_path",
-                "banner_media_mobile_path",
+                "media_desktop_path",
+                "media_mobile_path",
             ];
 
             let data;

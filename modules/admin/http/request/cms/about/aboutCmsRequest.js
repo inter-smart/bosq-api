@@ -76,15 +76,18 @@ exports.validationRequestPost = [
 
   // Journey Media Paths (Images 1, 2, 3) - REQUIRED
   body("journey_one_media_path")
-    .notEmpty()
+    .optional()
+    .isString()
     .withMessage("Journey image 1 is required"),
 
   body("journey_two_media_path")
-    .notEmpty()
+    .optional()
+    .isString()
     .withMessage("Journey image 2 is required"),
 
   body("journey_three_media_path")
-    .notEmpty()
+    .optional()
+    .isString()
     .withMessage("Journey image 3 is required"),
 
   // Journey Media Alt Texts (Image 1 - English & Arabic)

@@ -53,20 +53,20 @@ module.exports = (sequelize) => {
       },
 
       // JOURNEY
-      journy_title: {
+      journey_title: {
         type: DataTypes.STRING,
         allowNull: true,
       },
-      journy_title_ar: {
+      journey_title_ar: {
         type: DataTypes.STRING,
         allowNull: true,
       },
 
-      journy_description: {
+      journey_description: {
         type: DataTypes.TEXT,
         allowNull: true,
       },
-      journy_description_ar: {
+      journey_description_ar: {
         type: DataTypes.TEXT,
         allowNull: true,
       },
@@ -76,15 +76,15 @@ module.exports = (sequelize) => {
         allowNull: true,
       },
 
-      journy_media_path: {
+      journey_media_path: {
         type: DataTypes.TEXT,
         allowNull: true,
       },
-      journy_media_alt: {
+      journey_media_alt: {
         type: DataTypes.STRING,
         allowNull: true,
       },
-      journy_media_alt_ar: {
+      journey_media_alt_ar: {
         type: DataTypes.STRING,
         allowNull: true,
       },

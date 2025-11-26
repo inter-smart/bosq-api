@@ -7,7 +7,7 @@ const authMiddleware = require("../../../http/middleware/authMiddleware");
 // Define fields
 const fields = [
     { name: "about_media_path", maxCount: 1 },
-    { name: "journy_media_path", maxCount: 1 },
+    { name: "journey_media_path", maxCount: 1 },
     { name: "calculator_media_path", maxCount: 1 },
     { name: "customize_media_path", maxCount: 1 },
     { name: "form_media_path", maxCount: 1 },

@@ -44,19 +44,19 @@ exports.validationRequestPost = [
     .withMessage("Featured title (Arabic) must be a string"),
 
   // JOURNEY
-  body("journy_title")
+  body("journey_title")
     .isString()
     .withMessage("Journey title must be a string"),
 
-  body("journy_title_ar")
+  body("journey_title_ar")
     .isString()
     .withMessage("Journey title (Arabic) must be a string"),
 
-  body("journy_description")
+  body("journey_description")
     .isString()
     .withMessage("Journey description must be a string"),
 
-  body("journy_description_ar")
+  body("journey_description_ar")
     .isString()
     .withMessage("Journey description (Arabic) must be a string"),
 
@@ -64,17 +64,17 @@ exports.validationRequestPost = [
     .isIn(["image", "video"])
     .withMessage("Journey media type must be image or video"),
 
-  body("journy_media_path")
+  body("journey_media_path")
     .optional()
     .isString()
     .withMessage("Journey media path must be a string"),
 
-  body("journy_media_alt")
+  body("journey_media_alt")
     .optional()
     .isString()
     .withMessage("Journey media alt must be a string"),
 
-  body("journy_media_alt_ar")
+  body("journey_media_alt_ar")
     .optional()
     .isString()
     .withMessage("Journey media alt (Arabic) must be a string"),

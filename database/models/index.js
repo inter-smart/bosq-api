@@ -7,7 +7,7 @@ const defineHomeCms = require("./cms/home/homeCms");
 const defineHomeBanner = require("./cms/home/homeBanner");
 const defineSmartSpaceCalculator = require("./cms/home/smartSpaceCalculator");
 const defineHomeBrands = require("./cms/home/homeBrands");
-
+const defineFindYourFIts = require("./cms/home/fIndYourFits");
 
 // CONTACT
 const defineContactCms = require("./cms/contact/contactCms");
@@ -37,7 +37,7 @@ const models = {
   HomeBanner: defineHomeBanner(sequelize),
   SmartSpaceCalculator: defineSmartSpaceCalculator(sequelize),
   HomeBrands: defineHomeBrands(sequelize),
-
+  FIndYourFits: defineFindYourFIts(sequelize),
 
   // CONTACT
   ContactCms: defineContactCms(sequelize),

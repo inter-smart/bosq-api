@@ -6,20 +6,28 @@ const defineAdminUser = require("./adminuser");
 const defineHomeCms = require("./cms/home/homeCms");
 const defineHomeBanner = require("./cms/home/homeBanner");
 const defineSmartSpaceCalculator = require("./cms/home/smartSpaceCalculator");
+const defineHomeBrands = require("./cms/home/homeBrands");
+
 
 // CONTACT
 const defineContactCms = require("./cms/contact/contactCms");
 
+
 // ABOUT
 const defineAboutCms = require("./cms/about/aboutCms");
+
+
 // FAQ
 const defineFaqCms = require("./cms/faq/faqCms");
 const defineFaqList = require("./cms/faq/faqList");
 const defineFaqCategory = require("./cms/faq/faqCategory");
 
+
 // Blog
 const defineBlogCms = require("./blog/blogCms");
 const defineBlogs = require("./blog/blogs");
+
+
 
 const models = {
   AdminUser: defineAdminUser(sequelize),
@@ -28,6 +36,8 @@ const models = {
   HomeCms: defineHomeCms(sequelize),
   HomeBanner: defineHomeBanner(sequelize),
   SmartSpaceCalculator: defineSmartSpaceCalculator(sequelize),
+  HomeBrands: defineHomeBrands(sequelize),
+
 
   // CONTACT
   ContactCms: defineContactCms(sequelize),

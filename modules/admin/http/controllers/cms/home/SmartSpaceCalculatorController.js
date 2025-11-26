@@ -1,9 +1,9 @@
 const { validationResult } = require('express-validator');
 const { sequelize, models } = require('../../../../../../database/models');
 const { sendValidationError, sendSuccessResponse, sendErrorResponse, sendNotFoundError } = require("../../../traits/responseHandler");
-const { validationRequestPost, validateId } = require("../../../request/cms/home/smartSpaceCalculatorRequest");
+const { validationRequestPost, validateId } = require("../../../request/cms/home/SmartSpaceCalculatorRequest");
 const { handleFileUploadStore, handleFileUploadUpdate } = require('../../../middleware/multerMiddleware');
-const { paginate } = require('../../../../http/traits/datatablePaginationHelper');
+const { paginate } = require('../../../traits/datatablePaginationHelper');
 
 
 const DataModel = models.SmartSpaceCalculator;

@@ -45,8 +45,6 @@ class HomeCmsController {
             const fileFields = [
                 "about_media_path",
                 "journey_media_path",
-                "calculator_media_path",
-                "customize_media_path",
                 "form_media_path",
             ];
 

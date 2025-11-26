@@ -5,7 +5,7 @@ const defineAdminUser = require("./adminuser");
 // HOME
 const defineHomeCms = require("./cms/home/homeCms");
 const defineHomeBanner = require("./cms/home/homeBanner");
-
+const defineSmartSpaceCalculator = require("./cms/home/smartSpaceCalculator");
 
 // CONTACT
 const defineContactCms = require("./cms/contact/contactCms");
@@ -27,6 +27,7 @@ const models = {
   // HOME
   HomeCms: defineHomeCms(sequelize),
   HomeBanner: defineHomeBanner(sequelize),
+  SmartSpaceCalculator: defineSmartSpaceCalculator(sequelize),
 
   // CONTACT
   ContactCms: defineContactCms(sequelize),

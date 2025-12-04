@@ -18,6 +18,9 @@ const defineAboutCms = require("./cms/about/aboutCms");
 const defineAboutJourneys = require("./cms/about/aboutJourneys");
 const defineWhyBosq = require("./cms/about/whyBosq");
 const defineAboutTestimonials = require("./cms/about/aboutTestimonials");
+const defineAboutOurClients = require("./cms/about/aboutOurClients");
+
+
 // FAQ
 const defineFaqCms = require("./cms/faq/faqCms");
 const defineFaqList = require("./cms/faq/faqList");
@@ -48,7 +51,7 @@ const models = {
   AboutJourneys: defineAboutJourneys(sequelize),
   whyBosq: defineWhyBosq(sequelize),
   AboutTestimonials: defineAboutTestimonials(sequelize),
-
+  AboutOurClients: defineAboutOurClients(sequelize),
 
   // FAQ
   FaqCms: defineFaqCms(sequelize),

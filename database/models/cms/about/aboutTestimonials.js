@@ -1,36 +1,13 @@
 const { DataTypes } = require("sequelize");
 
 module.exports = (sequelize) => {
-  const WhyBosq = sequelize.define(
-    "WhyBosq",
+  const AboutTestimonials = sequelize.define(
+    "AboutTestimonials",
     {
       id: {
         type: DataTypes.INTEGER,
         primaryKey: true,
         autoIncrement: true,
-      },
-
-      media_path: {
-        type: DataTypes.STRING,
-        allowNull: true,
-      },
-      media_alt: {
-        type: DataTypes.STRING,
-        allowNull: true,
-      },
-      media_alt_ar: {
-        type: DataTypes.STRING,
-        allowNull: true,
-      },
-
-      
-      icon_media_path:{
-        type: DataTypes.STRING,
-        allowNull: true,
-      },
-      icon_media_alt:{
-        type: DataTypes.STRING,
-        allowNull: true,
       },
 
 
@@ -44,22 +21,32 @@ module.exports = (sequelize) => {
       },
 
 
-      subtitle: {
-        type: DataTypes.STRING,
-        allowNull: true,
-      },
-      subtitle_ar: {
-        type: DataTypes.STRING,
-        allowNull: true,
-      },
-
-
       description:{
         type: DataTypes.TEXT,
         allowNull: true,
       },
       description_ar: {
         type: DataTypes.TEXT,
+        allowNull: true,
+      },
+
+
+      name:{
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      name_ar: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+
+      
+      designation:{
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      designation_ar: {
+        type: DataTypes.STRING,
         allowNull: true,
       },
 
@@ -80,10 +67,10 @@ module.exports = (sequelize) => {
       },
     },
     {
-      tableName: "why_bosq",
+      tableName: "about_testimonials",
       timestamps: true,
     }
   );
   
-  return WhyBosq;
+  return AboutTestimonials;
 };

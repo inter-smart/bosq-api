@@ -1,18 +1,20 @@
 const { validationResult } = require('express-validator');
-const { sequelize, models } = require('../../../../../../database/models/index.js');
-const { sendValidationError, sendSuccessResponse, sendErrorResponse, sendNotFoundError } = require("../../../traits/responseHandler.js");
-const { validationRequestPost, validateId } = require("../../../request/cms/about/aboutJourneysRequest.js");
-const { paginate } = require('../../../traits/datatablePaginationHelper.js');
+const { sequelize, models } = require('../../../../../../database/models');
+const { sendValidationError, sendSuccessResponse, sendErrorResponse, sendNotFoundError } = require("../../../traits/responseHandler");
+const { validationRequestPost, validateId } = require("../../../request/cms/about/whyBosqRequest.js");
+const { handleFileUploadStore, handleFileUploadUpdate } = require('../../../middleware/multerMiddleware');
+const { paginate } = require('../../../../http/traits/datatablePaginationHelper');
+const { Op } = require('sequelize');
 
 
-const DataModel = models.AboutJourneys;
+const DataModel = models.whyBosq;
 
-class AboutJourneysController {
+class WhyBosqController {
     static async index(req, res) {
         try {
             const result = await paginate(DataModel, req, {
                 order: [['sort_order', 'ASC'], ['createdAt', 'DESC']],
-                searchFields: ['name', 'title', 'keywords'],
+                searchFields: ['title', 'title_ar'],
             });
 
             const response = {
@@ -38,6 +40,9 @@ class AboutJourneysController {
         const transaction = await sequelize.transaction();
 
         try {
+
+            const fileFields = ["media_path", "icon_media_path"];
+            handleFileUploadStore(req, fileFields);
 
             // Create data with transaction
             const data = await DataModel.create(req.body, { transaction });
@@ -98,6 +103,9 @@ class AboutJourneysController {
             }
 
 
+            const fileFields = ["media_path", "icon_media_path"];
+            await handleFileUploadUpdate(req, data, fileFields);
+
             await data.update(req.body, { transaction });
 
             await transaction.commit();
@@ -144,4 +152,4 @@ class AboutJourneysController {
 
 }
 
-module.exports = AboutJourneysController;
+module.exports = WhyBosqController;

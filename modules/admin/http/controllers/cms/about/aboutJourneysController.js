@@ -1,15 +1,14 @@
 const { validationResult } = require('express-validator');
 const { sequelize, models } = require('../../../../../../database/models/index.js');
 const { sendValidationError, sendSuccessResponse, sendErrorResponse, sendNotFoundError } = require("../../../traits/responseHandler.js");
-const { validationRequestPost, validateId } = require("../../../request/cms/home/FindsYourFitsRequest.js");
-const { handleFileUploadStore, handleFileUploadUpdate } = require('../../../middleware/multerMiddleware.js');
+const { validationRequestPost, validateId } = require("../../../request/cms/about/aboutJourneysRequest.js");
 const { paginate } = require('../../../traits/datatablePaginationHelper.js');
 const { Op } = require('sequelize');
 
 
-const DataModel = models.FindYourFits;
+const DataModel = models.AboutJourneys;
 
-class FindYourFItsController {
+class AboutJourneysController {
     static async index(req, res) {
         try {
             const result = await paginate(DataModel, req, {
@@ -40,22 +39,6 @@ class FindYourFItsController {
         const transaction = await sequelize.transaction();
 
         try {
-
-
-            const existingData = await DataModel.findOne({
-                where: {
-                    title: {
-                        [Op.iLike]: req.body.title,
-                    },
-                },
-            });
-            if (existingData) {
-                await transaction.rollback();
-                return sendErrorResponse(res, `${req.body.title} already exists`);
-            }
-
-            const fileFields = ["media_path"];
-            handleFileUploadStore(req, fileFields);
 
             // Create data with transaction
             const data = await DataModel.create(req.body, { transaction });
@@ -115,22 +98,6 @@ class FindYourFItsController {
                 return sendNotFoundError(res, 'Data');
             }
 
-            //  Avoid duplicate entry based on title
-            const existingData = await DataModel.findOne({
-                where: {
-                    title: req.body.title,
-                    title: { [Op.iLike]: req.body.title },
-                    id: { [Op.ne]: id },
-                },
-            });
-            if (existingData) {
-                await transaction.rollback();
-                return sendErrorResponse(res, `${req.body.title} exists`);
-            }
-            
-
-            const fileFields = ["media_path"];
-            await handleFileUploadUpdate(req, data, fileFields);
 
             await data.update(req.body, { transaction });
 
@@ -178,4 +145,4 @@ class FindYourFItsController {
 
 }
 
-module.exports = FindYourFItsController;
+module.exports = AboutJourneysController;

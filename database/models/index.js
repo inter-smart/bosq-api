@@ -15,7 +15,7 @@ const defineContactCms = require("./cms/contact/contactCms");
 
 // ABOUT
 const defineAboutCms = require("./cms/about/aboutCms");
-
+const defineAboutJourneys = require("./cms/about/aboutJourneys");
 
 // FAQ
 const defineFaqCms = require("./cms/faq/faqCms");
@@ -37,14 +37,15 @@ const models = {
   HomeBanner: defineHomeBanner(sequelize),
   SmartSpaceCalculator: defineSmartSpaceCalculator(sequelize),
   HomeBrands: defineHomeBrands(sequelize),
-  FIndYourFits: defineFindYourFIts(sequelize),
+  FindYourFits: defineFindYourFIts(sequelize),
 
   // CONTACT
   ContactCms: defineContactCms(sequelize),
 
   // ABOUT
   AboutCms: defineAboutCms(sequelize),
-
+  AboutJourneys: defineAboutJourneys(sequelize),
+  
   // FAQ
   FaqCms: defineFaqCms(sequelize),
   FaqList: defineFaqList(sequelize),

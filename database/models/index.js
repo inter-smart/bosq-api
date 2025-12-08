@@ -21,6 +21,11 @@ const defineAboutTestimonials = require("./cms/about/aboutTestimonials");
 const defineAboutOurClients = require("./cms/about/aboutOurClients");
 
 
+// MATERIALS
+const defineMaterialGuideCms = require("./cms/materialGuide/materialGuideCms");
+const defineMaterials = require("./cms/materialGuide/materials");
+const defineMaterialCategories = require("./cms/materialGuide/materialCategory");
+
 // FAQ
 const defineFaqCms = require("./cms/faq/faqCms");
 const defineFaqList = require("./cms/faq/faqList");
@@ -59,6 +64,12 @@ const models = {
   whyBosq: defineWhyBosq(sequelize),
   AboutTestimonials: defineAboutTestimonials(sequelize),
   AboutOurClients: defineAboutOurClients(sequelize),
+
+
+  // MATERIALS
+  MaterialGuideCms: defineMaterialGuideCms(sequelize),
+  Materials: defineMaterials(sequelize),
+  MaterialCategories: defineMaterialCategories(sequelize),
 
   // FAQ
   FaqCms: defineFaqCms(sequelize),

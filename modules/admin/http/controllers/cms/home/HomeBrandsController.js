@@ -129,6 +129,7 @@ class HomebrandsController {
             }
             
 
+
             const fileFields = ["media_path"];
             await handleFileUploadUpdate(req, data, fileFields);
 

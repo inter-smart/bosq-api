@@ -36,6 +36,9 @@ const defineBlogs = require("./blog/blogs");
 const defineTermsAndConditions = require("./cms/termsAndConditions/termsAndConditionsCms");
 const defineFaq = require("./cms/termsAndConditions/faq");
 
+// POLICY Warranty policy
+const defineWarrantyPolicy = require("./policy/warrantyPolicy");
+
 
 const models = {
   AdminUser: defineAdminUser(sequelize),
@@ -70,6 +73,10 @@ const models = {
   // TERMS AND CONDITIONS
   TermsAndConditions: defineTermsAndConditions(sequelize),
   Faq: defineFaq(sequelize),
+
+
+  // POLICY
+  WarrantyPolicy: defineWarrantyPolicy(sequelize),
 };
 
 Object.keys(models).forEach((modelName) => {

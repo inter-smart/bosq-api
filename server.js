@@ -59,6 +59,11 @@ app.use("/api/frontend", frontendApi);
 
 
 
+app.get("/", (req, res) => {
+  res.send("Hello World!");
+})
+
+
 // Error handler last
 app.use(errorMiddleware);
 

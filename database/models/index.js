@@ -32,6 +32,10 @@ const defineBlogCms = require("./blog/blogCms");
 const defineBlogs = require("./blog/blogs");
 
 
+// TERMS And Conditions
+const defineTermsAndConditions = require("./cms/termsAndConditions/termsAndConditionsCms");
+const defineFaq = require("./cms/termsAndConditions/faq");
+
 
 const models = {
   AdminUser: defineAdminUser(sequelize),
@@ -61,6 +65,11 @@ const models = {
   // Blog
   BlogCms: defineBlogCms(sequelize),
   Blogs: defineBlogs(sequelize),
+
+
+  // TERMS AND CONDITIONS
+  TermsAndConditions: defineTermsAndConditions(sequelize),
+  Faq: defineFaq(sequelize),
 };
 
 Object.keys(models).forEach((modelName) => {

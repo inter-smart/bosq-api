@@ -1,13 +1,14 @@
 const express = require("express");
 const router = express.Router();
 const Controller = require("../../../http/controllers/cms/materials/MaterialsController.js");
-const { createUploadMiddleware } = require("../../../http/middleware/multerMiddleware");
+const {
+  createUploadMiddleware,
+} = require("../../../http/middleware/multerMiddleware");
 const authMiddleware = require("../../../http/middleware/authMiddleware");
 // Define upload fields
 const fields = [
-    { name: "media_path", maxCount: 1 },
+  { name: "media_path", maxCount: 1, name: "icon_path", maxCount: 1 },
 ];
-
 
 // Create upload middleware with fields
 const upload = createUploadMiddleware("materials", fields);
@@ -15,7 +16,6 @@ const upload = createUploadMiddleware("materials", fields);
 // router.use(authMiddleware(["admin"]));
 
 router.get("/", Controller.index);
-
 
 router.get("/:id", Controller.show);
 

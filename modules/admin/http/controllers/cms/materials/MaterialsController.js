@@ -78,8 +78,8 @@ class MaterialsController {
 
           // ✅ Handle file uploads
       const fileFields = [
-        "thumbnail",
         "media_path",
+        "icon_media_path",
       ];
       handleFileUploadStore(req, fileFields);
 
@@ -175,6 +175,7 @@ class MaterialsController {
 
          const fileFields = [
         "media_path",
+        "icon_path"
       ];
       await handleFileUploadUpdate(req, data, fileFields);
 

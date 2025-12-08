@@ -54,6 +54,11 @@ module.exports = (sequelize) => {
         allowNull: false,
       },
 
+      icon_path:{
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+
       sort_order: {
         type: DataTypes.SMALLINT,
         allowNull: false,

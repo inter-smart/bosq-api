@@ -45,8 +45,17 @@ const defineFaq = require("./cms/termsAndConditions/faq");
 const defineWarrantyPolicy = require("./policy/warrantyPolicy");
 const definePrivacyPolicyCms = require("./policy/privacyPolicy/policyCms");
 const definePolicies = require("./policy/privacyPolicy/policies");
+const defineReturnPolicyCms = require("./policy/returnPolicy/returnPolicyCms");
+
 // Login Register
 const defineLoginRegisterCms = require("./cms/loginRegister/loginRegisterCms");
+
+
+
+
+
+
+
 
 const models = {
   AdminUser: defineAdminUser(sequelize),
@@ -92,6 +101,10 @@ const models = {
   WarrantyPolicy: defineWarrantyPolicy(sequelize),
   PrivacyPolicyCms: definePrivacyPolicyCms(sequelize),
   Policies: definePolicies(sequelize),
+  ReturnPolicyCms: defineReturnPolicyCms(sequelize),
+
+
+
   // Login Register
   LoginRegisterCms: defineLoginRegisterCms(sequelize),
 };

@@ -64,7 +64,7 @@ class AuthController {
 
       const tokenPayload = { id: user.id, username: user.username, role: user.role };
       const expiresIn = process.env.JWT_EXPIRES_IN || "1d";
-      const token = jwt.sign(tokenPayload, process.env.JWT_SECRET || "fallback-secret-key", {
+      const token = jwt.sign(tokenPayload, process.env.JWT_SECRET, {
         expiresIn,
         issuer: process.env.JWT_ISSUER || "your-app-name",
       });

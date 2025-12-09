@@ -25,7 +25,7 @@ module.exports = (roles = []) => {
       }
 
       // Verify JWT
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret-key');
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
       // Check role
       if (roles.length && !roles.includes(decoded.role)) {

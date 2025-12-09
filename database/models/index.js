@@ -73,7 +73,7 @@ const models = {
   // ABOUT
   AboutCms: defineAboutCms(sequelize),
   AboutJourneys: defineAboutJourneys(sequelize),
-  whyBosq: defineWhyBosq(sequelize),
+  WhyBosq: defineWhyBosq(sequelize),
   AboutTestimonials: defineAboutTestimonials(sequelize),
   AboutOurClients: defineAboutOurClients(sequelize),
 

@@ -7,7 +7,7 @@ const { paginate } = require('../../../traits/datatablePaginationHelper.js');
 const { Op } = require('sequelize');
 
 
-const DataModel = models.whyBosq;
+const DataModel = models.WhyBosq;
 
 class WhyBosqController {
     static async index(req, res) {

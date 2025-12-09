@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const Controller = require("../../../http/controllers/cms/about/aboutTestimonialsController.js");
+const Controller = require("../../../http/controllers/cms/about/AboutTestimonialsController.js");
 const authMiddleware = require("../../../http/middleware/authMiddleware");
 
 // router.use(authMiddleware(["admin"]));

@@ -57,13 +57,6 @@ const ReturnPolicies = require("./policy/returnPolicy/returnPolicies");
 // Login Register
 const defineLoginRegisterCms = require("./cms/loginRegister/loginRegisterCms");
 
-
-
-
-
-
-
-
 const models = {
   AdminUser: defineAdminUser(sequelize),
 

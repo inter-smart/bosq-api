@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const Controller = require("../../../http/controllers/cms/contact/contactCmsController.js");
+const Controller = require("../../../http/controllers/cms/contact/ContactCmsController.js");
 const { createUploadMiddleware } = require("../../../http/middleware/multerMiddleware");
 const authMiddleware = require("../../../http/middleware/authMiddleware");
 

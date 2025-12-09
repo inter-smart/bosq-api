@@ -36,6 +36,8 @@ const defineFaqCategory = require("./cms/faq/faqCategory");
 const defineBlogCms = require("./blog/blogCms");
 const defineBlogs = require("./blog/blogs");
 
+// DELIVERY
+const defineDeliveryCms = require("./cms/delivery/deliveryCms");
 
 // TERMS And Conditions
 const defineTermsAndConditions = require("./cms/termsAndConditions/termsAndConditionsCms");
@@ -94,6 +96,10 @@ const models = {
   // Blog
   BlogCms: defineBlogCms(sequelize),
   Blogs: defineBlogs(sequelize),
+
+
+  // DELIVERY
+  DeliveryCms: defineDeliveryCms(sequelize),
 
 
   // TERMS AND CONDITIONS

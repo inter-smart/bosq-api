@@ -13,11 +13,11 @@ module.exports = (sequelize) => {
 
       title:{
         type: DataTypes.STRING,
-        allowNull: true,
+        allowNull: false,
       },
       title_ar:{
         type: DataTypes.STRING,
-        allowNull: true,
+        allowNull: false,
       },
 
       banner_title: {

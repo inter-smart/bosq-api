@@ -1,22 +1,22 @@
 const { validationResult } = require("express-validator");
-const { sequelize, models } = require("../../../../../../database/models");
+const { sequelize, models } = require("../../../../../database/models/index.js");
 const {
   sendValidationError,
   sendSuccessResponse,
   sendErrorResponse,
   sendNotFoundError,
-} = require("../../../traits/responseHandler");
+} = require("../../traits/responseHandler.js");
+const { handleFileUploadStore, handleFileUploadUpdate } = require('../../middleware/multerMiddleware.js');
+
 const {
   validationRequestPost,
   validateId,
-} = require("../../../request/cms/about/aboutTestimonialsRequest.js");
-const {
-  paginate,
-} = require("../../../../http/traits/datatablePaginationHelper");
+} = require("../../request/policy/warrantyPolicyRequest.js");
+const { paginate } = require("../../traits/datatablePaginationHelper.js");
 
-const DataModel = models.AboutTestimonials;
+const DataModel = models.WarrantyPolicy;
 
-class AboutTestimonialsController {
+class WarrantyPolicyController {
   static async index(req, res) {
     try {
       const result = await paginate(DataModel, req, {
@@ -24,7 +24,7 @@ class AboutTestimonialsController {
           ["sort_order", "ASC"],
           ["createdAt", "DESC"],
         ],
-        searchFields: ["name", "description", "title"],
+        searchFields: ["title"],
       });
 
       const response = {
@@ -40,8 +40,6 @@ class AboutTestimonialsController {
   }
 
   static async store(req, res) {
-    console.log(req.body);
-
     await Promise.all(
       validationRequestPost.map((validation) => validation.run(req))
     );
@@ -53,7 +51,9 @@ class AboutTestimonialsController {
     const transaction = await sequelize.transaction();
 
     try {
-     
+      const fileFields = ["media_path"];
+      handleFileUploadStore(req, fileFields);
+
       // Create data with transaction
       const data = await DataModel.create(req.body, { transaction });
 
@@ -105,12 +105,14 @@ class AboutTestimonialsController {
     try {
       const { id } = req.params;
 
-
       const data = await DataModel.findByPk(id, { transaction });
       if (!data) {
         await transaction.rollback();
         return sendNotFoundError(res, "Data");
       }
+
+      const fileFields = ["media_path"];
+      await handleFileUploadUpdate(req, data, fileFields);
 
       await data.update(req.body, { transaction });
 
@@ -153,4 +155,4 @@ class AboutTestimonialsController {
   }
 }
 
-module.exports = AboutTestimonialsController;
+module.exports = WarrantyPolicyController;

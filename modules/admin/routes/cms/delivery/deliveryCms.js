@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const Controller = require("../../../http/controllers/cms/delivery/deliveryCmsController.js");
+const Controller = require("../../../http/controllers/cms/delivery/DeliveryCmsController.js");
 const { createUploadMiddleware } = require("../../../http/middleware/multerMiddleware.js");
 const authMiddleware = require("../../../http/middleware/authMiddleware.js");
 

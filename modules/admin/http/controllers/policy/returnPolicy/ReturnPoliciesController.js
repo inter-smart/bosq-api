@@ -1,11 +1,11 @@
 const { validationResult } = require("express-validator");
-const { sequelize, models } = require("../../../../../../database/models");
+const { sequelize, models } = require("../../../../../../database/models/index.js");
 const {
   sendValidationError,
   sendSuccessResponse,
   sendErrorResponse,
   sendNotFoundError,
-} = require("../../../traits/responseHandler");
+} = require("../../../traits/responseHandler.js");
 
 const { Op, where, fn, col } = require("sequelize");
 
@@ -15,7 +15,7 @@ const {
 } = require("../../../request/policy/returnPolicy/returnPoliciesRequest.js");
 const {
   paginate,
-} = require("../../../../http/traits/datatablePaginationHelper");
+} = require("../../../traits/datatablePaginationHelper.js");
 
 const DataModel = models.ReturnPolicies;
 

@@ -1,10 +1,10 @@
 const { body, validationResult } = require("express-validator");
-const { sequelize, models } = require("../../../../../../database/models");
+const { sequelize, models } = require("../../../../../../database/models/index.js");
 const {
   sendValidationError,
   sendSuccessResponse,
   sendErrorResponse,
-} = require("../../../traits/responseHandler");
+} = require("../../../traits/responseHandler.js");
 const {
   validationRequestPost,
 } = require("../../../request/policy/privacyPolicy/policyCmsRequest.js");

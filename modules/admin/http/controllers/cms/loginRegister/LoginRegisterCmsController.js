@@ -1,16 +1,16 @@
 const { validationResult } = require("express-validator");
-const { sequelize, models } = require("../../../../../../database/models");
+const { sequelize, models } = require("../../../../../../database/models/index.js");
 const {
   sendValidationError,
   sendSuccessResponse,
   sendErrorResponse,
-} = require("../../../traits/responseHandler");
+} = require("../../../traits/responseHandler.js");
 const {
   validationRequestPost,
 } = require("../../../request/cms/loginRegister/loginRegisterCmsRequest.js");
 const {
   handleFileUploadUpdate,
-} = require("../../../../http/middleware/multerMiddleware");
+} = require("../../../middleware/multerMiddleware.js");
 
 const DataModel = models.LoginRegisterCms;
 

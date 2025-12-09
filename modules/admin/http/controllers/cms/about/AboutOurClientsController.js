@@ -1,15 +1,14 @@
 const { validationResult } = require('express-validator');
-const { sequelize, models } = require('../../../../../../database/models');
-const { sendValidationError, sendSuccessResponse, sendErrorResponse, sendNotFoundError } = require("../../../traits/responseHandler");
-const { validationRequestPost, validateId } = require("../../../request/cms/about/whyBosqRequest.js");
-const { handleFileUploadStore, handleFileUploadUpdate } = require('../../../middleware/multerMiddleware');
-const { paginate } = require('../../../../http/traits/datatablePaginationHelper');
-const { Op } = require('sequelize');
+const { sequelize, models } = require('../../../../../../database/models/index.js');
+const { sendValidationError, sendSuccessResponse, sendErrorResponse, sendNotFoundError } = require("../../../traits/responseHandler.js");
+const { validationRequestPost, validateId } = require("../../../request/cms/about/aboutOurClientsRequest.js");
+const { handleFileUploadStore, handleFileUploadUpdate } = require('../../../middleware/multerMiddleware.js');
+const { paginate } = require('../../../traits/datatablePaginationHelper.js');
 
 
-const DataModel = models.whyBosq;
+const DataModel = models.AboutOurClients;
 
-class WhyBosqController {
+class AboutOurClientsController {
     static async index(req, res) {
         try {
             const result = await paginate(DataModel, req, {
@@ -41,7 +40,7 @@ class WhyBosqController {
 
         try {
 
-            const fileFields = ["media_path", "icon_media_path"];
+            const fileFields = ["media_path"];
             handleFileUploadStore(req, fileFields);
 
             // Create data with transaction
@@ -103,7 +102,7 @@ class WhyBosqController {
             }
 
 
-            const fileFields = ["media_path", "icon_media_path"];
+            const fileFields = ["media_path"];
             await handleFileUploadUpdate(req, data, fileFields);
 
             await data.update(req.body, { transaction });
@@ -152,4 +151,4 @@ class WhyBosqController {
 
 }
 
-module.exports = WhyBosqController;
+module.exports = AboutOurClientsController;

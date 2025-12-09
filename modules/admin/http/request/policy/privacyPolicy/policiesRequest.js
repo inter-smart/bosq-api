@@ -20,14 +20,14 @@ exports.validationRequestPost = [
     .withMessage("Arabic title must not exceed 255 characters"),
 
   // DESCRIPTION
-  body("desription")
+  body("description")
     .notEmpty()
     .withMessage("Description is required")
     .isString()
     .withMessage("Description must be a string"),
 
   // DESCRIPTION AR
-  body("desription_ar")
+  body("description_ar")
     .notEmpty()
     .withMessage("Arabic description is required")
     .isString()

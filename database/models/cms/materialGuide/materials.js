@@ -12,7 +12,7 @@ module.exports = (sequelize) => {
 
       category:{
         type: DataTypes.INTEGER,
-        allowNull: false,
+        allowNull: true,
         references: {
           model: "material_categories",
           key: "id",
@@ -21,37 +21,37 @@ module.exports = (sequelize) => {
 
       title: {
         type: DataTypes.STRING,
-        allowNull: false,
+        allowNull: true,
       },
 
       title_ar: {
         type: DataTypes.STRING,
-        allowNull: false,
+        allowNull: true,
       },
 
-      desription: {
+      description: {
         type: DataTypes.TEXT,
-        allowNull: false,
+        allowNull: true,
       },
 
-      desription_ar: {
+      description_ar: {
         type: DataTypes.TEXT,
-        allowNull: false,
+        allowNull: true,
       },
 
       media_path: {
         type: DataTypes.STRING,
-        allowNull: false,
+        allowNull: true,
       },
 
       media_alt: {
         type: DataTypes.STRING,
-        allowNull: false,
+        allowNull: true,
       },
 
       media_alt_ar: {
         type: DataTypes.STRING,
-        allowNull: false,
+        allowNull: true,
       },
 
       icon_path:{
@@ -61,12 +61,12 @@ module.exports = (sequelize) => {
 
       sort_order: {
         type: DataTypes.SMALLINT,
-        allowNull: false,
+        allowNull: true,
         defaultValue: 0,
       },
       status: {
         type: DataTypes.BOOLEAN,
-        allowNull: false,
+        allowNull: true,
         defaultValue: true,
       },
       deleted_at: {

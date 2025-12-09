@@ -11,22 +11,22 @@ module.exports = (sequelize) => {
       },
       title: {
         type: DataTypes.STRING,
-        allowNull: false,
+        allowNull: true,
       },
 
       title_ar: {
         type: DataTypes.STRING,
-        allowNull: false,
+        allowNull: true,
       },
 
-      desription: {
+      description: {
         type: DataTypes.TEXT,
-        allowNull: false,
+        allowNull: true,
       },
 
-      desription_ar: {
+      description_ar: {
         type: DataTypes.TEXT,
-        allowNull: false,
+        allowNull: true,
       },
 
 

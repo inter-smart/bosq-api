@@ -15,13 +15,13 @@ exports.validationRequestPost = [
     .withMessage("Title in Arabic must be a string"),
 
   // DESCRIPTION
-  body("desription")
+  body("description")
     .notEmpty()
     .withMessage("Description is required")
     .isString()
     .withMessage("Description must be a string"),
 
-  body("desription_ar")
+  body("description_ar")
     .notEmpty()
     .withMessage("Description in Arabic is required")
     .isString()

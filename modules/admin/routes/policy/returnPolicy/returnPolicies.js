@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const Controller = require("../../../http/controllers/policy/returnPolicy/returnPoliciesController.js");
+const Controller = require("../../../http/controllers/policy/returnPolicy/ReturnPoliciesController.js");
 const authMiddleware = require("../../../http/middleware/authMiddleware");
 
 // router.use(authMiddleware(["admin"]));

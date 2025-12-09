@@ -39,6 +39,8 @@ const defineBlogs = require("./blog/blogs");
 // DELIVERY
 const defineDeliveryCms = require("./cms/delivery/deliveryCms");
 const defineDeliveryTime = require("./cms/delivery/deliveryTime");
+const defineDeliveryMethods = require("./cms/delivery/deliveryMethods");
+
 // TERMS And Conditions
 const defineTermsAndConditions = require("./cms/termsAndConditions/termsAndConditionsCms");
 const defineFaq = require("./cms/termsAndConditions/faq");
@@ -101,7 +103,9 @@ const models = {
   // DELIVERY
   DeliveryCms: defineDeliveryCms(sequelize),
   DeliveryTime: defineDeliveryTime(sequelize),
+  DeliveryMethods: defineDeliveryMethods(sequelize),
 
+  
   // TERMS AND CONDITIONS
   TermsAndConditions: defineTermsAndConditions(sequelize),
   Faq: defineFaq(sequelize),

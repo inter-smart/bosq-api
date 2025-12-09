@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const Controller = require("../../../http/controllers/policy/privacyPolicy/policyCmsController.js");
+const Controller = require("../../../http/controllers/policy/privacyPolicy/PolicyCmsController.js");
 
 
 

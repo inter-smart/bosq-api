@@ -44,6 +44,8 @@ module.exports = (sequelize) => {
     MaterialCategory.hasMany(models.Materials, {
       foreignKey: "category",
       as: "materials",
+      onDelete: "CASCADE",
+      
     });
   };
 

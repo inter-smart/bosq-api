@@ -16,6 +16,7 @@ module.exports = (sequelize) => {
         references: {
           model: "material_categories",
           key: "id",
+          onDelete: "CASCADE",
         },
       },
 
@@ -85,6 +86,7 @@ module.exports = (sequelize) => {
     Materials.belongsTo(models.MaterialCategories, {
       foreignKey: "category",
       as: "material_categories",
+      onDelete: "CASCADE",
     });
   };
 

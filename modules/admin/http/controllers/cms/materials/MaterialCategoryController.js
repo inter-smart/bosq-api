@@ -16,7 +16,7 @@ const {
 const { Op } = require("sequelize");
 
 const DataModel = models.MaterialCategories;
-
+const Materials = models.Materials;
 class MaterialsCategoryController {
   static async index(req, res) {
     try {

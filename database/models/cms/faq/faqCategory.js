@@ -38,6 +38,7 @@ module.exports = (sequelize) => {
     FaqCategory.hasMany(models.FaqList, {
       foreignKey: "category",
       as: "faq_lists",
+      onDelete: "CASCADE",
     });
   };
 

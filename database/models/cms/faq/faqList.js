@@ -31,6 +31,7 @@ module.exports = (sequelize) => {
         references: {
           model: "faq_categories",
           key: "id",
+          onDelete: "CASCADE",
         },
       },
       sort_order: {
@@ -58,6 +59,7 @@ module.exports = (sequelize) => {
     FaqLists.belongsTo(models.FaqCategory, {
       foreignKey: "category",
       as: "faq_category",
+      onDelete: "CASCADE",
     });
   };
 

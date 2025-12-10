@@ -10,20 +10,19 @@ module.exports = (sequelize) => {
         autoIncrement: true,
       },
 
-      title:{
+      title: {
         type: DataTypes.STRING,
         allowNull: true,
       },
-      title_ar:{
+      title_ar: {
         type: DataTypes.STRING,
         allowNull: true,
       },
-
-      banner_media_desktop_path:{
+      banner_media_desktop_path: {
         type: DataTypes.TEXT,
         allowNull: true,
       },
-      banner_media_mobile_path:{
+      banner_media_mobile_path: {
         type: DataTypes.TEXT,
         allowNull: true,
       },
@@ -35,17 +34,18 @@ module.exports = (sequelize) => {
         type: DataTypes.STRING,
         allowNull: true,
       },
-
-
-      banner_title:{
+      banner_title: {
         type: DataTypes.STRING,
         allowNull: true,
       },
-
-      banner_title_ar:{
+      banner_media_type: {
+        type: DataTypes.ENUM("image", "video"),
+        allowNull: true,
+      },
+      banner_title_ar: {
         type: DataTypes.STRING,
         allowNull: true,
-      },    
+      },
 
       banner_description: {
         type: DataTypes.TEXT,
@@ -57,22 +57,22 @@ module.exports = (sequelize) => {
         allowNull: true,
       },
 
-      process_title:{
+      process_title: {
         type: DataTypes.STRING,
         allowNull: true,
       },
 
-      process_title_ar:{
+      process_title_ar: {
         type: DataTypes.STRING,
         allowNull: true,
       },
 
-      process_media_path:{
+      process_media_path: {
         type: DataTypes.TEXT,
         allowNull: true,
       },
 
-      process_media_alt:{
+      process_media_alt: {
         type: DataTypes.STRING,
         allowNull: true,
       },
@@ -81,8 +81,6 @@ module.exports = (sequelize) => {
         allowNull: true,
       },
 
-
-     
       options_title: {
         type: DataTypes.STRING,
         allowNull: true,
@@ -91,7 +89,6 @@ module.exports = (sequelize) => {
         type: DataTypes.STRING,
         allowNull: true,
       },
-
 
       options_description: {
         type: DataTypes.TEXT,
@@ -103,12 +100,12 @@ module.exports = (sequelize) => {
         allowNull: true,
       },
 
-      form_title:{
+      form_title: {
         type: DataTypes.STRING,
         allowNull: true,
       },
 
-      form_title_ar:{
+      form_title_ar: {
         type: DataTypes.STRING,
         allowNull: true,
       },

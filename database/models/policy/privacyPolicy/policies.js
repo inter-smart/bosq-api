@@ -30,15 +30,14 @@ module.exports = (sequelize) => {
       },
 
       status:{
-        type: DataTypes.INTEGER,
-        allowNull: true,
-        defaultValue: 1,
+        type: DataTypes.BOOLEAN,
+        defaultValue: true
       },
 
       sort_order: {
         type: DataTypes.SMALLINT,
         allowNull: true,
-        defaultValue: 0,
+        defaultValue: 0
       },
 
       deleted_at: {

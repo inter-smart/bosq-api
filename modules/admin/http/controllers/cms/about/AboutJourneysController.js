@@ -12,7 +12,7 @@ class AboutJourneysController {
         try {
             const result = await paginate(DataModel, req, {
                 order: [['sort_order', 'ASC'], ['createdAt', 'DESC']],
-                searchFields: ['name', 'title', 'keywords'],
+                searchFields: ['title'],
             });
 
             const response = {

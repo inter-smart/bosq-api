@@ -12,14 +12,12 @@ const defineFindYourFIts = require("./cms/home/fIndYourFits");
 // CONTACT
 const defineContactCms = require("./cms/contact/contactCms");
 
-
 // ABOUT
 const defineAboutCms = require("./cms/about/aboutCms");
 const defineAboutJourneys = require("./cms/about/aboutJourneys");
 const defineWhyBosq = require("./cms/about/whyBosq");
 const defineAboutTestimonials = require("./cms/about/aboutTestimonials");
 const defineAboutOurClients = require("./cms/about/aboutOurClients");
-
 
 // MATERIALS
 const defineMaterialGuideCms = require("./cms/materialGuide/materialGuideCms");
@@ -30,7 +28,6 @@ const defineMaterialCategories = require("./cms/materialGuide/materialCategory")
 const defineFaqCms = require("./cms/faq/faqCms");
 const defineFaqList = require("./cms/faq/faqList");
 const defineFaqCategory = require("./cms/faq/faqCategory");
-
 
 // Blog
 const defineBlogCms = require("./blog/blogCms");
@@ -52,7 +49,9 @@ const definePolicies = require("./policy/privacyPolicy/policies");
 const defineReturnPolicyCms = require("./policy/returnPolicy/returnPolicyCms");
 const ReturnPolicies = require("./policy/returnPolicy/returnPolicies");
 
-
+//Customization
+const defineCustomizationCms = require("./cms/customization/customizationCms");
+const defineCustomizationFeatures = require("./cms/customization/customizationFeatures");
 
 // Login Register
 const defineLoginRegisterCms = require("./cms/loginRegister/loginRegisterCms");
@@ -77,7 +76,6 @@ const models = {
   AboutTestimonials: defineAboutTestimonials(sequelize),
   AboutOurClients: defineAboutOurClients(sequelize),
 
-
   // MATERIALS
   MaterialGuideCms: defineMaterialGuideCms(sequelize),
   Materials: defineMaterials(sequelize),
@@ -92,13 +90,11 @@ const models = {
   BlogCms: defineBlogCms(sequelize),
   Blogs: defineBlogs(sequelize),
 
-
   // DELIVERY
   DeliveryCms: defineDeliveryCms(sequelize),
   DeliveryTime: defineDeliveryTime(sequelize),
   DeliveryMethods: defineDeliveryMethods(sequelize),
 
-  
   // TERMS AND CONDITIONS
   TermsAndConditions: defineTermsAndConditions(sequelize),
   Faq: defineFaq(sequelize),
@@ -110,6 +106,9 @@ const models = {
   ReturnPolicyCms: defineReturnPolicyCms(sequelize),
   ReturnPolicies: ReturnPolicies(sequelize),
 
+  //Customization
+  CustomizationCms: defineCustomizationCms(sequelize),
+  CustomizationFeatures: defineCustomizationFeatures(sequelize),
 
   // Login Register
   LoginRegisterCms: defineLoginRegisterCms(sequelize),

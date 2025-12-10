@@ -53,6 +53,7 @@ const ReturnPolicies = require("./policy/returnPolicy/returnPolicies");
 const defineCustomizationCms = require("./cms/customization/customizationCms");
 const defineCustomizationFeatures = require("./cms/customization/customizationFeatures");
 const defineCustomizationProcess = require("./cms/customization/customizationProcess");
+const defineCustomizationOptions = require("./cms/customization/customizationOptions");
 
 // Login Register
 const defineLoginRegisterCms = require("./cms/loginRegister/loginRegisterCms");
@@ -111,6 +112,7 @@ const models = {
   CustomizationCms: defineCustomizationCms(sequelize),
   CustomizationFeatures: defineCustomizationFeatures(sequelize),
   CustomizationProcess: defineCustomizationProcess(sequelize),
+  CustomizationOptions: defineCustomizationOptions(sequelize),
 
   // Login Register
   LoginRegisterCms: defineLoginRegisterCms(sequelize),

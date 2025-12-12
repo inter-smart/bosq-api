@@ -67,6 +67,15 @@ module.exports = (sequelize) => {
         allowNull: true,
       },
 
+      process_description: {
+        type: DataTypes.TEXT,
+        allowNull: true, 
+      },
+      process_description_ar: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      
       process_media_path: {
         type: DataTypes.TEXT,
         allowNull: true,

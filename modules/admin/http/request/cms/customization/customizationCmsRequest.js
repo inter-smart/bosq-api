@@ -22,6 +22,8 @@ exports.validationRequestPost = [
   // Process Section
   body("process_title").optional().isString().withMessage("Process title must be a string"),
   body("process_title_ar").optional().isString().withMessage("Process title in Arabic must be a string"),
+  body("process_description").optional().isString().withMessage("Process description must be a string"),
+  body("process_description_ar").optional().isString().withMessage("Process description in Arabic must be a string"),
   body("process_media_path").optional().isString().withMessage("Process media path must be a string"),
   body("process_media_alt").optional().isString().withMessage("Process media alt must be a string"),
   body("process_media_alt_ar").optional().isString().withMessage("Process media alt in Arabic must be a string"),

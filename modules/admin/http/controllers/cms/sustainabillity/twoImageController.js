@@ -1,13 +1,13 @@
 const { validationResult } = require("express-validator");
 const { sequelize, models } = require("../../../../../../database/models/index.js");
 const { sendValidationError, sendSuccessResponse, sendErrorResponse, sendNotFoundError } = require("../../../traits/responseHandler.js");
-const { paginate } = require("../../../traits/datatablePaginationHelper.js");
-const { validateId, validationRequestPost } = require("../../../request/cms/customization/customizationOptionsRequest.js");
 const { handleFileUploadStore, handleFileUploadUpdate } = require("../../../middleware/multerMiddleware.js");
+const { paginate } = require("../../../traits/datatablePaginationHelper.js");
+const { validateId, validateRequest } = require("../../../request/cms/sustainability/oneImageRequest.js");
 
-const DataModel = models.CustomizationOptions;
+const DataModel = models.TwoImage;
 
-class CustomizationOptionsController {
+class SustainabilityTwoImageController {
   static async index(req, res) {
     try {
       const result = await paginate(DataModel, req, {
@@ -31,7 +31,7 @@ class CustomizationOptionsController {
   }
 
   static async store(req, res) {
-    await Promise.all(validationRequestPost.map((validation) => validation.run(req)));
+    await Promise.all(validateRequest.map((validation) => validation.run(req)));
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return sendValidationError(res, errors.array());
@@ -40,7 +40,7 @@ class CustomizationOptionsController {
     const transaction = await sequelize.transaction();
 
     try {
-      const fileFields = ["media_path"];
+      const fileFields = ["img1_path", "img2_path"];
       handleFileUploadStore(req, fileFields);
 
       // Create data with transaction
@@ -81,7 +81,7 @@ class CustomizationOptionsController {
   }
 
   static async update(req, res) {
-    await Promise.all([...validateId, ...validationRequestPost].map((v) => v.run(req)));
+    await Promise.all([...validateId, ...validateRequest].map((v) => v.run(req)));
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return sendValidationError(res, errors.array());
@@ -98,7 +98,7 @@ class CustomizationOptionsController {
         return sendNotFoundError(res, "Data");
       }
 
-      const fileFields = ["media_path"];
+      const fileFields = ["img1_path", "img2_path"];
       await handleFileUploadUpdate(req, data, fileFields);
 
       await data.update(req.body, { transaction });
@@ -142,4 +142,4 @@ class CustomizationOptionsController {
   }
 }
 
-module.exports = CustomizationOptionsController;
+module.exports = SustainabilityTwoImageController;

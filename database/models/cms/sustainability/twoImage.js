@@ -1,14 +1,15 @@
 const { DataTypes } = require("sequelize");
 
 module.exports = (sequelize) => {
-  const CustomizationOptions = sequelize.define(
-    "CustomizationOptions",
+  const SustainabilityTwoImages = sequelize.define(
+    "SustainabilityTwoImages",
     {
       id: {
         type: DataTypes.INTEGER,
         primaryKey: true,
         autoIncrement: true,
       },
+
       title: {
         type: DataTypes.STRING,
         allowNull: true,
@@ -17,6 +18,7 @@ module.exports = (sequelize) => {
         type: DataTypes.STRING,
         allowNull: true,
       },
+
       description: {
         type: DataTypes.TEXT,
         allowNull: true,
@@ -25,29 +27,44 @@ module.exports = (sequelize) => {
         type: DataTypes.TEXT,
         allowNull: true,
       },
+
       points: {
-        type: DataTypes.TEXT,
+        type: DataTypes.JSON,
         allowNull: true,
       },
       points_ar: {
+        type: DataTypes.JSON,
+        allowNull: true,
+      },
+
+      img1_path: {
         type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      img1_alt: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      img1_alt_ar: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+
+      img2_path: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      img2_alt: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      img2_alt_ar: {
+        type: DataTypes.STRING,
         allowNull: true,
       },
       sort_order: {
         type: DataTypes.SMALLINT,
         defaultValue: 1,
-      },
-      media_path: {
-        type: DataTypes.STRING,
-        allowNull: true,
-      },
-      media_alt: {
-        type: DataTypes.STRING,
-        allowNull: true,
-      },
-      media_alt_ar: {
-        type: DataTypes.STRING,
-        allowNull: true,
       },
       status: {
         type: DataTypes.BOOLEAN,
@@ -59,10 +76,9 @@ module.exports = (sequelize) => {
       },
     },
     {
-      tableName: "customization_options",
-      timestamps: true,
+      tableName: "sustainability_two_images",
     }
   );
 
-  return CustomizationOptions;
+  return SustainabilityTwoImages;
 };

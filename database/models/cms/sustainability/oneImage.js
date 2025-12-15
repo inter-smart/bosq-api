@@ -1,8 +1,8 @@
 const { DataTypes } = require("sequelize");
 
 module.exports = (sequelize) => {
-  const CustomizationOptions = sequelize.define(
-    "CustomizationOptions",
+  const SustainabilityOneImages = sequelize.define(
+    "SustainabilityOneImages",
     {
       id: {
         type: DataTypes.INTEGER,
@@ -26,28 +26,28 @@ module.exports = (sequelize) => {
         allowNull: true,
       },
       points: {
-        type: DataTypes.TEXT,
+        type: DataTypes.JSON,
         allowNull: true,
       },
       points_ar: {
+        type: DataTypes.JSON,
+        allowNull: true,
+      },
+      image_path: {
         type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      image_alt: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      image_alt_ar: {
+        type: DataTypes.STRING,
         allowNull: true,
       },
       sort_order: {
         type: DataTypes.SMALLINT,
         defaultValue: 1,
-      },
-      media_path: {
-        type: DataTypes.STRING,
-        allowNull: true,
-      },
-      media_alt: {
-        type: DataTypes.STRING,
-        allowNull: true,
-      },
-      media_alt_ar: {
-        type: DataTypes.STRING,
-        allowNull: true,
       },
       status: {
         type: DataTypes.BOOLEAN,
@@ -59,10 +59,9 @@ module.exports = (sequelize) => {
       },
     },
     {
-      tableName: "customization_options",
-      timestamps: true,
+      tableName: "sustainability_one_images",
     }
   );
 
-  return CustomizationOptions;
+  return SustainabilityOneImages;
 };

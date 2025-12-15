@@ -2,7 +2,10 @@ const { body, param } = require("express-validator");
 
 exports.validationRequestPost = [
   // ICON (SVG / image path / HTML allowed)
-  body("icon_media_path").isString().withMessage("Icon must be a valid string"),
+  body("icon_media_path")
+    .optional()
+    .isString()
+    .withMessage("Icon must be a valid string"),
 
   // ICON ALT
   body("icon_alt")

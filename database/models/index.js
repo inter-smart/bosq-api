@@ -33,6 +33,10 @@ const defineFaqCategory = require("./cms/faq/faqCategory");
 const defineBlogCms = require("./blog/blogCms");
 const defineBlogs = require("./blog/blogs");
 
+// NEWS
+const defineNewsCms = require("./news/newsCms");
+const defineNews = require("./news/news");
+
 // DELIVERY
 const defineDeliveryCms = require("./cms/delivery/deliveryCms");
 const defineDeliveryTime = require("./cms/delivery/deliveryTime");
@@ -100,6 +104,11 @@ const models = {
   // Blog
   BlogCms: defineBlogCms(sequelize),
   Blogs: defineBlogs(sequelize),
+
+  // NEWS
+  NewsCms: defineNewsCms(sequelize),
+  News: defineNews(sequelize),
+
 
   // DELIVERY
   DeliveryCms: defineDeliveryCms(sequelize),

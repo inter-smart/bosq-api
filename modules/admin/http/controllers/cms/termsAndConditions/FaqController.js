@@ -14,8 +14,6 @@ const {
   paginate,
 } = require("../../../../http/traits/datatablePaginationHelper");
 
-
-
 const DataModel = models.Faq;
 
 class FaqController {
@@ -24,9 +22,8 @@ class FaqController {
       const result = await paginate(DataModel, req, {
         order: [
           ["sort_order", "ASC"],
-          ["createdAt", "DESC"],
         ],
-        searchFields: ["title"],
+        searchFields: ["question"],
       });
 
       const response = {
@@ -105,8 +102,6 @@ class FaqController {
 
     try {
       const { id } = req.params;
-
-  
 
       const data = await DataModel.findByPk(id, { transaction });
       if (!data) {

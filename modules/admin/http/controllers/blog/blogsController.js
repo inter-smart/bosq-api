@@ -148,12 +148,12 @@ class BlogController {
 
       // ✅ Slug validation + prevent duplicates
       if (title && title.trim() !== data.title) {
-        const newSlug = slugify(title.trim(), { lower: true, strict: true });
+        const bloglug = slugify(title.trim(), { lower: true, strict: true });
 
         // Check if slug exists for OTHER blogs
         const existing = await DataModel.findOne({
           where: {
-            slug: { [Op.iLike]: newSlug },
+            slug: { [Op.iLike]: bloglug },
             id: { [Op.ne]: id },
           },
           paranoid: true,
@@ -163,13 +163,13 @@ class BlogController {
           await transaction.rollback();
           return sendErrorResponse(
             res,
-            `Slug "${newSlug}" already exists`,
+            `Slug "${bloglug}" already exists`,
             { existing_id: existing.id },
             409
           );
         }
 
-        req.body.slug = newSlug;
+        req.body.slug = bloglug;
       }
 
       // -----------------------------------------

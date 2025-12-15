@@ -37,11 +37,22 @@ module.exports = (sequelize) => {
         type: DataTypes.SMALLINT,
         defaultValue: 1,
       },
+      media_path: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      media_alt: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      media_alt_ar: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
       status: {
         type: DataTypes.BOOLEAN,
         defaultValue: true,
       },
-
       deleted_at: {
         type: DataTypes.DATE,
         allowNull: true,

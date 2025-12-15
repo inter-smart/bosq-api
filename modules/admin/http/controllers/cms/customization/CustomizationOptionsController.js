@@ -3,6 +3,7 @@ const { sequelize, models } = require("../../../../../../database/models/index.j
 const { sendValidationError, sendSuccessResponse, sendErrorResponse, sendNotFoundError } = require("../../../traits/responseHandler.js");
 const { paginate } = require("../../../traits/datatablePaginationHelper.js");
 const { validateId, validationRequestPost } = require("../../../request/cms/customization/customizationOptionsRequest.js");
+const { handleFileUploadStore, handleFileUploadUpdate } = require("../../../middleware/multerMiddleware.js");
 
 const DataModel = models.CustomizationOptions;
 
@@ -39,6 +40,9 @@ class CustomizationOptionsController {
     const transaction = await sequelize.transaction();
 
     try {
+      const fileFields = ["media_path"];
+      handleFileUploadStore(req, fileFields);
+
       // Create data with transaction
       const data = await DataModel.create(req.body, { transaction });
 
@@ -93,6 +97,9 @@ class CustomizationOptionsController {
         await transaction.rollback();
         return sendNotFoundError(res, "Data");
       }
+
+      const fileFields = ["media_path"];
+      await handleFileUploadUpdate(req, data, fileFields);
 
       await data.update(req.body, { transaction });
 

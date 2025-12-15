@@ -18,8 +18,8 @@ router.get("/:id", Controller.show);
 
 // Protected routes (require admin auth)
 
-router.post("/", Controller.store);
-router.put("/:id", Controller.update);
+router.post("/", upload, Controller.store);
+router.put("/:id", upload, Controller.update);
 router.delete("/:id", Controller.destroy);
 
 module.exports = router;

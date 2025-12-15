@@ -55,6 +55,11 @@ const defineCustomizationFeatures = require("./cms/customization/customizationFe
 const defineCustomizationProcess = require("./cms/customization/customizationProcess");
 const defineCustomizationOptions = require("./cms/customization/customizationOptions");
 
+//Sustainability
+const defineSustainabilityCms = require("./cms/sustainability/cms");
+const defineOneImage = require("./cms/sustainability/oneImage");
+const defineTwoImage = require("./cms/sustainability/twoImage");
+
 // Login Register
 const defineLoginRegisterCms = require("./cms/loginRegister/loginRegisterCms");
 
@@ -113,6 +118,11 @@ const models = {
   CustomizationFeatures: defineCustomizationFeatures(sequelize),
   CustomizationProcess: defineCustomizationProcess(sequelize),
   CustomizationOptions: defineCustomizationOptions(sequelize),
+
+  //Sustainability
+  SustainabilityCms: defineSustainabilityCms(sequelize),
+  OneImage: defineOneImage(sequelize),
+  TwoImage: defineTwoImage(sequelize),
 
   // Login Register
   LoginRegisterCms: defineLoginRegisterCms(sequelize),

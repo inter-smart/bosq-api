@@ -28,7 +28,7 @@ class BlogController {
           ["sort_order", "ASC"],
           ["createdAt", "DESC"],
         ],
-        searchFields: ["title", "slug"],
+        searchFields: ["slug"],
       });
 
       const response = {

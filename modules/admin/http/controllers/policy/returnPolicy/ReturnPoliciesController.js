@@ -27,7 +27,7 @@ class ReturnPoliciesController {
           ["sort_order", "ASC"],
           ["createdAt", "DESC"],
         ],
-        searchFields: ["title"],
+        searchFields: ["title", "description"],
       });
 
       const response = {

@@ -2,18 +2,28 @@ const { body, param } = require("express-validator");
 
 exports.validationRequestPost = [
   // Title
-  body("title")
-    .notEmpty()
-    .withMessage("Title is required"),
+  body("title").notEmpty().withMessage("Title is required"),
 
-  body("title_ar")
-    .notEmpty()
-    .withMessage("Arabic title is required"),
+  body("title_ar").notEmpty().withMessage("Arabic title is required"),
+
+  // Thumbnail
+  body("thumbnail")
+    .optional()
+    .isString()
+    .withMessage("Thumbnail must be a string"),
+
+  body("thumbnail_alt")
+    .optional()
+    .isString()
+    .withMessage("Thumbnail alt must be a string"),
+
+  body("thumbnail_alt_ar")
+    .optional()
+    .isString()
+    .withMessage("Arabic thumbnail alt must be a string"),
 
   // Description (rich text allowed)
-  body("description")
-    .notEmpty()
-    .withMessage("Description is required"),
+  body("description").notEmpty().withMessage("Description is required"),
 
   body("description_ar")
     .notEmpty()
@@ -40,28 +50,14 @@ exports.validationRequestPost = [
 
   // Media ALT
   body("media_alt")
-    .notEmpty()
+    .optional()
+    .isString()
     .withMessage("Media alt text is required"),
 
   body("media_alt_ar")
-    .notEmpty()
+    .optional()
+    .isString()
     .withMessage("Arabic media alt text is required"),
-
-  // Thumbnail
-  body("thumbnail")
-    .optional()
-    .isString()
-    .withMessage("Thumbnail must be a string"),
-
-  body("thumbnail_alt")
-    .optional()
-    .isString()
-    .withMessage("Thumbnail alt must be a string"),
-
-  body("thumbnail_alt_ar")
-    .optional()
-    .isString()
-    .withMessage("Arabic thumbnail alt must be a string"),
 
   // Published date
   body("published_date")
@@ -71,16 +67,28 @@ exports.validationRequestPost = [
     .withMessage("Published date must be a valid date"),
 
   // Sort order
-  body("sort_order")
-    .optional()
-    .isInt()
-    .withMessage("Sort order must be an integer"),
+  body("sort_order").isInt().withMessage("Sort order must be an integer"),
 
   // Status
-  body("status")
-    .optional()
-    .isBoolean()
-    .withMessage("Status must be true or false"),
+  body("status").isBoolean().withMessage("Status must be true or false"),
+
+  // meta
+  body("meta_title").isString().withMessage("Meta title must be a string"),
+  body("meta_title_ar")
+    .isString()
+    .withMessage("Meta title Arabic must be a string"),
+  body("meta_description")
+    .isString()
+    .withMessage("Meta description must be a string"),
+  body("meta_description_ar")
+    .isString()
+    .withMessage("Meta description Arabic must be a string"),
+  body("meta_keywords")
+    .isString()
+    .withMessage("Meta keywords must be a string"),
+  body("meta_keywords_ar")
+    .isString()
+    .withMessage("Meta keywords Arabic must be a string"),
 ];
 
 // Validate blog ID

@@ -63,6 +63,10 @@ const defineTwoImage = require("./cms/sustainability/twoImage");
 // Login Register
 const defineLoginRegisterCms = require("./cms/loginRegister/loginRegisterCms");
 
+
+// FOOTER
+const defineSocialMedia = require("./socialMedia");
+
 const models = {
   AdminUser: defineAdminUser(sequelize),
 
@@ -126,6 +130,10 @@ const models = {
 
   // Login Register
   LoginRegisterCms: defineLoginRegisterCms(sequelize),
+
+
+  // FOOTER
+  SocialMedia: defineSocialMedia(sequelize),
 };
 
 Object.keys(models).forEach((modelName) => {

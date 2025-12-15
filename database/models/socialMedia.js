@@ -9,15 +9,15 @@ module.exports = (sequelize) => {
         primaryKey: true,
         autoIncrement: true,
       },
-      name: {
-        type: DataTypes.STRING,
-        allowNull: false,
-      },
-      icon: {
+      icon_media_path: {
         type: DataTypes.TEXT,
         allowNull: true,
       },
       icon_alt: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      icon_alt_ar: {
         type: DataTypes.STRING,
         allowNull: true,
       },

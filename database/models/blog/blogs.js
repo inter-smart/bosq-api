@@ -9,7 +9,6 @@ module.exports = (sequelize) => {
         primaryKey: true,
         autoIncrement: true,
       },
-
       title: {
         type: DataTypes.TEXT,
         allowNull: false,
@@ -23,6 +22,20 @@ module.exports = (sequelize) => {
         allowNull: true,
         unique: true,
       },
+
+      thumbnail: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      thumbnail_alt: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      thumbnail_alt_ar: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+
       description: {
         type: DataTypes.TEXT,
         allowNull: false,
@@ -31,6 +44,7 @@ module.exports = (sequelize) => {
         type: DataTypes.TEXT,
         allowNull: false,
       },
+
       media_desktop_path: {
         type: DataTypes.STRING,
         allowNull: false,
@@ -47,18 +61,7 @@ module.exports = (sequelize) => {
         type: DataTypes.STRING,
         allowNull: false,
       },
-      thumbnail: {
-        type: DataTypes.STRING,
-        allowNull: true,
-      },
-      thumbnail_alt: {
-        type: DataTypes.STRING,
-        allowNull: true,
-      },
-      thumbnail_alt_ar: {
-        type: DataTypes.STRING,
-        allowNull: true,
-      },
+
       published_date: {
         type: DataTypes.DATE,
         allowNull: false,
@@ -67,6 +70,7 @@ module.exports = (sequelize) => {
         type: DataTypes.BIGINT,
         defaultValue: 0,
       },
+
       sort_order: {
         type: DataTypes.SMALLINT,
         allowNull: false,
@@ -79,6 +83,32 @@ module.exports = (sequelize) => {
       },
       deleted_at: {
         type: DataTypes.DATE,
+        allowNull: true,
+      },
+
+      meta_title: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      meta_description: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      meta_keywords: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+
+      meta_title_ar: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      meta_description_ar: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      meta_keywords_ar: {
+        type: DataTypes.TEXT,
         allowNull: true,
       },
     },

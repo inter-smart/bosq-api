@@ -72,7 +72,7 @@ const defineLoginRegisterCms = require("./cms/loginRegister/loginRegisterCms");
 const defineSocialMedia = require("./siteSettings/socialMedia");
 const defineHeaderFooter = require("./siteSettings/headerFooter");
 const defineMetaTags = require("./siteSettings/metaTags");
-
+const definePaymentMethods = require("./siteSettings/paymentMethods");
 
 const models = {
   AdminUser: defineAdminUser(sequelize),
@@ -148,6 +148,7 @@ const models = {
   SocialMedia: defineSocialMedia(sequelize),
   HeaderFooter: defineHeaderFooter(sequelize),
   MetaTags: defineMetaTags(sequelize),
+  PaymentMethods: definePaymentMethods(sequelize),
 };
 
 Object.keys(models).forEach((modelName) => {

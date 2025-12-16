@@ -32,7 +32,10 @@ module.exports = (sequelize) => {
         type: DataTypes.STRING,
         allowNull: true,
       },
-
+      icon_media_alt_ar: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
 
       title: {
         type: DataTypes.STRING,

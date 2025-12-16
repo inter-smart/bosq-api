@@ -26,6 +26,10 @@ exports.validationRequestPost = [
 
   body("icon_media_alt").isString().withMessage("Icon alt must be a string"),
 
+  body("icon_media_alt_ar")
+    .isString()
+    .withMessage("Icon alt Arabic must be a string"),
+    
   /* ---------- TITLES ---------- */
   body("title").isString().withMessage("Title must be a string"),
 

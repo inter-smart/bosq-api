@@ -67,9 +67,13 @@ const defineTwoImage = require("./cms/sustainability/twoImage");
 // Login Register
 const defineLoginRegisterCms = require("./cms/loginRegister/loginRegisterCms");
 
-
 // FOOTER
 const defineSocialMedia = require("./siteSettings/socialMedia");
+
+// PROJECTS
+const defineProjectsCms = require("./cms/projects/cms");
+const defineProjectCategories = require("./cms/projects/projectCategories");
+const defineProjects = require("./cms/projects/projects");
 const defineHeaderFooter = require("./siteSettings/headerFooter");
 const defineMetaTags = require("./siteSettings/metaTags");
 const definePaymentMethods = require("./siteSettings/paymentMethods");
@@ -112,7 +116,6 @@ const models = {
   NewsCms: defineNewsCms(sequelize),
   News: defineNews(sequelize),
 
-
   // DELIVERY
   DeliveryCms: defineDeliveryCms(sequelize),
   DeliveryTime: defineDeliveryTime(sequelize),
@@ -143,9 +146,13 @@ const models = {
   // Login Register
   LoginRegisterCms: defineLoginRegisterCms(sequelize),
 
-
   // FOOTER
   SocialMedia: defineSocialMedia(sequelize),
+
+  // PROJECTS
+  ProjectsCms: defineProjectsCms(sequelize),
+  ProjectCategories: defineProjectCategories(sequelize),
+  Projects: defineProjects(sequelize),
   HeaderFooter: defineHeaderFooter(sequelize),
   MetaTags: defineMetaTags(sequelize),
   PaymentMethods: definePaymentMethods(sequelize),

@@ -71,9 +71,12 @@ exports.validateProjects = [
   body("meta_keywords_ar").optional().isString().withMessage("Arabic meta keywords must be a string"),
 
   /* ---------- JSONB FIELDS ---------- */
-  body("tags").optional().isArray().withMessage("Tags must be an array"),
+  body("tags").optional(),
 
-  body("features").optional().isArray().withMessage("Features must be an array"),
+  body("features").optional(),
+  body("tags_ar").optional(),
+
+  body("features_ar").optional(),
 
   /* ---------- SORT & STATUS ---------- */
   body("sort_order").optional().isInt({ min: 1 }).withMessage("Sort order must be a positive integer"),

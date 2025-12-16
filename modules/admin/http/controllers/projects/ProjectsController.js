@@ -71,7 +71,17 @@ class ProjectsController {
 
       handleFileUploadStore(req, fileFields);
 
+      // Parsing JSONB fields
+
+      const jsonbFields = ["tags", "tags_ar", "features", "features_ar"];
+      jsonbFields.forEach((field) => {
+        if (req.body[field] && typeof req.body[field] === "string") {
+          req.body[field] = JSON.parse(req.body[field]);
+        }
+      });
+
       // ✅ Create project
+
       const project = await DataModel.create(req.body, { transaction });
 
       await transaction.commit();
@@ -109,7 +119,7 @@ class ProjectsController {
 
   // ✅ Update project
   static async update(req, res) {
-    await Promise.all([...validateId, ...validationRequestPost].map((v) => v.run(req)));
+    await Promise.all([...validateId, ...validateProjects].map((v) => v.run(req)));
     const errors = validationResult(req);
     if (!errors.isEmpty()) return sendValidationError(res, errors.array());
 
@@ -159,6 +169,14 @@ class ProjectsController {
       ];
 
       await handleFileUploadUpdate(req, data, fileFields);
+
+      // Parsing JSONB fields
+      const jsonbFields = ["tags", "tags_ar", "features", "features_ar"];
+      jsonbFields.forEach((field) => {
+        if (req.body[field] && typeof req.body[field] === "string") {
+          req.body[field] = JSON.parse(req.body[field]);
+        }
+      });
 
       // -----------------------------------------
       // ✅ Update database

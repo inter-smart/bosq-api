@@ -74,6 +74,7 @@ const defineSocialMedia = require("./socialMedia");
 const defineProjectsCms = require("./cms/projects/cms");
 const defineProjectCategories = require("./cms/projects/projectCategories");
 const defineProjects = require("./cms/projects/projects");
+const defineSpecialisedAreas = require("./cms/projects/specialisedAreas");
 
 const models = {
   AdminUser: defineAdminUser(sequelize),
@@ -150,6 +151,7 @@ const models = {
   ProjectsCms: defineProjectsCms(sequelize),
   ProjectCategories: defineProjectCategories(sequelize),
   Projects: defineProjects(sequelize),
+  SpecialisedAreas: defineSpecialisedAreas(sequelize),
 };
 
 Object.keys(models).forEach((modelName) => {

@@ -33,5 +33,13 @@ module.exports = (sequelize) => {
     }
   );
 
+  ProjectCategories.associate = (models) => {
+    ProjectCategories.hasMany(models.Projects, {
+      foreignKey: "category_id",
+      as: "projects",
+      onDelete: "CASCADE",
+    });
+  };
+
   return ProjectCategories;
 };

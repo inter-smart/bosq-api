@@ -67,9 +67,13 @@ const defineTwoImage = require("./cms/sustainability/twoImage");
 // Login Register
 const defineLoginRegisterCms = require("./cms/loginRegister/loginRegisterCms");
 
-
 // FOOTER
 const defineSocialMedia = require("./socialMedia");
+
+// PROJECTS
+const defineProjectsCms = require("./cms/projects/cms");
+const defineProjectCategories = require("./cms/projects/projectCategories");
+const defineProjects = require("./cms/projects/projects");
 
 const models = {
   AdminUser: defineAdminUser(sequelize),
@@ -109,7 +113,6 @@ const models = {
   NewsCms: defineNewsCms(sequelize),
   News: defineNews(sequelize),
 
-
   // DELIVERY
   DeliveryCms: defineDeliveryCms(sequelize),
   DeliveryTime: defineDeliveryTime(sequelize),
@@ -140,9 +143,13 @@ const models = {
   // Login Register
   LoginRegisterCms: defineLoginRegisterCms(sequelize),
 
-
   // FOOTER
   SocialMedia: defineSocialMedia(sequelize),
+
+  // PROJECTS
+  ProjectsCms: defineProjectsCms(sequelize),
+  ProjectCategories: defineProjectCategories(sequelize),
+  Projects: defineProjects(sequelize),
 };
 
 Object.keys(models).forEach((modelName) => {

@@ -17,7 +17,15 @@ module.exports = (sequelize) => {
         type: DataTypes.TEXT,
         allowNull: true,
       },
+      meta_title_ar: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
       meta_description: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      meta_description_ar: {
         type: DataTypes.TEXT,
         allowNull: true,
       },
@@ -25,8 +33,7 @@ module.exports = (sequelize) => {
         type: DataTypes.TEXT,
         allowNull: true,
       },
-     
-      other_meta_tags: {
+      meta_keywords_ar: {
         type: DataTypes.TEXT,
         allowNull: true,
       },
@@ -37,7 +44,6 @@ module.exports = (sequelize) => {
     {
       tableName: "meta_tags",
       timestamps: true,
-      deletedAt: "deleted_at",
     }
   );
 

@@ -55,12 +55,12 @@ class MetaTagService {
 
       // fallback meta values
       const defaultMeta = {
-        meta_title: "Go Ec",
+        meta_title: "BOSQ",
         meta_description:
-          "Welcome to Go Ec",
-        meta_keywords: "Go Ec",
-        targeted_keywords: "Go Ec",
-        other_meta_tags: "<meta name='author' content='Go Ec'>",
+          "Welcome to BOSQ",
+        meta_keywords: "BOSQ",
+        targeted_keywords: "BOSQ",
+        other_meta_tags: "<meta name='author' content='BOSQ'>",
         canonical_url: "/",
       };
 

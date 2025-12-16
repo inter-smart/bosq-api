@@ -10,7 +10,6 @@ const cors = require("cors");
 const expressListEndpoints = require("express-list-endpoints");
 const cookieParser = require("cookie-parser");
 const { createAdminUser } = require("./database/seeders/adminUser");
-const { policyData } = require("./database/seeders/policy");
 const { seedMetaTags } = require("./database/seeders/metaTags");
 const { createClient } = require("redis");
 
@@ -59,10 +58,6 @@ app.use("/api/frontend", frontendApi);
 
 
 
-app.get("/", (req, res) => {
-  res.send("Hello World!");
-})
-
 
 // Error handler last
 app.use(errorMiddleware);
@@ -82,8 +77,7 @@ console.log("🔥 HomeCms table force-synced!");
     console.log('Registered models:', Object.keys(sequelize.models));
     
     await createAdminUser();
-    await policyData();
-    await seedMetaTags();
+    // await seedMetaTags();
 
    
     app.listen(PORT, () => {

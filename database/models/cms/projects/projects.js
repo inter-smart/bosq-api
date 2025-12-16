@@ -152,6 +152,16 @@ module.exports = (sequelize) => {
         allowNull: true,
         defaultValue: [],
       },
+      tags_ar: {
+        type: DataTypes.JSONB,
+        allowNull: true,
+        defaultValue: [],
+      },
+      features_ar: {
+        type: DataTypes.JSONB,
+        allowNull: true,
+        defaultValue: [],
+      },
       sort_order: {
         type: DataTypes.SMALLINT,
         defaultValue: 1,

@@ -23,60 +23,94 @@ module.exports = (sequelize) => {
         defaultValue: "",
       },
 
+      header_media_alt_ar: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        defaultValue: "",
+      },
+
       footer_media_alt: {
         type: DataTypes.STRING,
         allowNull: true,
       },
 
-      language:{
-        type: DataTypes.ENUM,
-        values: ['en', 'ar'],
-        allowNull: false,
-        defaultValue: 'en',
+      footer_media_alt_ar: {
+        type: DataTypes.STRING,
+        allowNull: true,
       },
 
-      address:{
+      address: {
         type: DataTypes.TEXT,
         allowNull: true,
       },
 
-      sale_enquiry_title:{
+      address_ar: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+
+      sale_enquiry_title: {
         type: DataTypes.STRING,
         allowNull: true,
       },
 
-      sale_enquiry_email:{
+      sale_enquiry_title_ar: {
         type: DataTypes.STRING,
         allowNull: true,
       },
 
-      support_email:{
+      sale_enquiry_email: {
         type: DataTypes.STRING,
         allowNull: true,
       },
 
-      phone_number:{
+      phone_number: {
         type: DataTypes.STRING,
         allowNull: true,
       },
 
-      news_letter_title:{
+      support_enquiry_title: {
         type: DataTypes.STRING,
         allowNull: true,
       },
 
-      po_box_number:{
+      support_enquiry_title_ar: {
         type: DataTypes.STRING,
         allowNull: true,
       },
-      
 
+      support_email: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+
+      news_letter_main_title: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+
+      news_letter_main_title_ar: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+
+      news_letter_title: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+
+      news_letter_title_ar: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+
+      po_box_number: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
     },
     {
       tableName: "header_footer",
-      timestamps: true,
-      createdAt: "created_at",
-      updatedAt: "updated_at",
     }
   );
 

@@ -69,7 +69,10 @@ const defineLoginRegisterCms = require("./cms/loginRegister/loginRegisterCms");
 
 
 // FOOTER
-const defineSocialMedia = require("./socialMedia");
+const defineSocialMedia = require("./siteSettings/socialMedia");
+const defineHeaderFooter = require("./siteSettings/headerFooter");
+const defineMetaTags = require("./siteSettings/metaTags");
+
 
 const models = {
   AdminUser: defineAdminUser(sequelize),
@@ -143,6 +146,8 @@ const models = {
 
   // FOOTER
   SocialMedia: defineSocialMedia(sequelize),
+  HeaderFooter: defineHeaderFooter(sequelize),
+  MetaTags: defineMetaTags(sequelize),
 };
 
 Object.keys(models).forEach((modelName) => {

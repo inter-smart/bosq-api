@@ -1,9 +1,9 @@
 const { validationResult } = require('express-validator');
-const { sequelize, models } = require('../../../../database/models');
-const { sendValidationError, sendSuccessResponse, sendErrorResponse, sendNotFoundError } = require("../traits/responseHandler");
-const { validationRequestPost, validateId } = require("../request/socialMediaRequest.js");
-const { handleFileUploadStore, handleFileUploadUpdate } = require('../middleware/multerMiddleware');
-const { paginate } = require('../../http/traits/datatablePaginationHelper');
+const { sequelize, models } = require('../../../../../database/models/index.js');
+const { sendValidationError, sendSuccessResponse, sendErrorResponse, sendNotFoundError } = require("../../traits/responseHandler.js");
+const { validationRequestPost, validateId } = require("../../request/siteSettings/socialMediaRequest.js");
+const { handleFileUploadStore, handleFileUploadUpdate } = require('../../middleware/multerMiddleware.js');
+const { paginate } = require('../../traits/datatablePaginationHelper.js');
 
 
 const DataModel = models.SocialMedia;

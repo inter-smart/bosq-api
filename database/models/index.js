@@ -77,6 +77,7 @@ const defineSocialMedia = require("./siteSettings/socialMedia");
 const defineProjectsCms = require("./cms/projects/cms");
 const defineProjectCategories = require("./cms/projects/projectCategories");
 const defineProjects = require("./cms/projects/projects");
+const defineSpecialisedAreas = require("./cms/projects/specialisedAreas");
 const defineHeaderFooter = require("./siteSettings/headerFooter");
 const defineMetaTags = require("./siteSettings/metaTags");
 const definePaymentMethods = require("./siteSettings/paymentMethods");
@@ -157,6 +158,7 @@ const models = {
   ProjectsCms: defineProjectsCms(sequelize),
   ProjectCategories: defineProjectCategories(sequelize),
   Projects: defineProjects(sequelize),
+  SpecialisedAreas: defineSpecialisedAreas(sequelize),
   HeaderFooter: defineHeaderFooter(sequelize),
   MetaTags: defineMetaTags(sequelize),
   PaymentMethods: definePaymentMethods(sequelize),

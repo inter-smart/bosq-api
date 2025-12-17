@@ -13,11 +13,18 @@ class ProjectsController {
   static async index(req, res) {
     try {
       const result = await paginate(DataModel, req, {
+        include: [
+          {
+            model: models.SpecialisedAreas,
+            as: "specialised_areas",
+            attributes: ["id", "title", "title_ar"],
+          },
+        ],
         order: [
           ["sort_order", "ASC"],
           ["createdAt", "DESC"],
         ],
-        searchFields: ["title"],
+        searchFields: ["title", "title_ar"],
       });
 
       const response = {

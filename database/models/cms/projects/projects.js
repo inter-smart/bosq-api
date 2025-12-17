@@ -178,5 +178,19 @@ module.exports = (sequelize) => {
     }
   );
 
+  Projects.associate = (models) => {
+    Projects.belongsTo(models.ProjectCategories, {
+      foreignKey: "category_id",
+      as: "project_categories",
+      onDelete: "CASCADE",
+    });
+
+    Projects.hasMany(models.SpecialisedAreas, {
+      foreignKey: "project_id",
+      as: "specialised_areas",
+      onDelete: "CASCADE",
+    });
+  };
+
   return Projects;
 };

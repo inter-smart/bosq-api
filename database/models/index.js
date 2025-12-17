@@ -78,7 +78,7 @@ const defineSpecialisedAreas = require("./projects/specialisedAreas");
 
 // ERGONOMIC
 const defineErgonomicCms = require("./cms/ergnomicGuide/cms");
-const defineErgonomicFeatures = require("./cms/ergnomicGuide/ergonomicFeatures");
+const defineErgonomicFeatures = require("./cms/ergnomicGuide/features");
 
 const models = {
   AdminUser: defineAdminUser(sequelize),

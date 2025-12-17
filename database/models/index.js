@@ -71,10 +71,10 @@ const defineLoginRegisterCms = require("./cms/loginRegister/loginRegisterCms");
 const defineSocialMedia = require("./socialMedia");
 
 // PROJECTS
-const defineProjectsCms = require("./cms/projects/cms");
-const defineProjectCategories = require("./cms/projects/projectCategories");
-const defineProjects = require("./cms/projects/projects");
-const defineSpecialisedAreas = require("./cms/projects/specialisedAreas");
+const defineProjectsCms = require("./projects/cms");
+const defineProjectCategories = require("./projects/projectCategories");
+const defineProjects = require("./projects/projects");
+const defineSpecialisedAreas = require("./projects/specialisedAreas");
 
 const models = {
   AdminUser: defineAdminUser(sequelize),

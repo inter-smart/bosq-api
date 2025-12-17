@@ -67,9 +67,6 @@ const defineTwoImage = require("./cms/sustainability/twoImage");
 // Login Register
 const defineLoginRegisterCms = require("./cms/loginRegister/loginRegisterCms");
 
- // ERGONIMICS
-const defineErgonimicsCms = require("./cms/ergonomicsChair/cms");
-
 // FOOTER
 const defineSocialMedia = require("./siteSettings/socialMedia");
 
@@ -82,6 +79,9 @@ const defineSpecialisedAreas = require("./projects/specialisedAreas");
 // ERGONOMIC
 const defineErgonomicCms = require("./cms/ergnomicGuide/cms");
 const defineErgonomicFeatures = require("./cms/ergnomicGuide/features");
+
+
+// Header and Footer
 const defineHeaderFooter = require("./siteSettings/headerFooter");
 const defineMetaTags = require("./siteSettings/metaTags");
 const definePaymentMethods = require("./siteSettings/paymentMethods");
@@ -167,6 +167,8 @@ const models = {
   // ERGONOMIC
   ErgonomicCms: defineErgonomicCms(sequelize),
   ErgonomicFeatures: defineErgonomicFeatures(sequelize),
+
+  // Header and Footer
   HeaderFooter: defineHeaderFooter(sequelize),
   MetaTags: defineMetaTags(sequelize),
   PaymentMethods: definePaymentMethods(sequelize),

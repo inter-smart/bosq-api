@@ -17,7 +17,7 @@ class ProjectsController {
           ["sort_order", "ASC"],
           ["createdAt", "DESC"],
         ],
-        searchFields: ["slug"],
+        searchFields: ["title"],
       });
 
       const response = {

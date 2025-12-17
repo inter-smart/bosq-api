@@ -10,7 +10,13 @@ const DataModel = models.SpecialisedAreas;
 class SpecialisedSectionController {
   static async index(req, res) {
     try {
+
+      const {project_id} = req.query;
+      console.log(project_id);
       const result = await paginate(DataModel, req, {
+        where: {
+          project_id
+        },
         include: [
           {
             model: models.Projects,

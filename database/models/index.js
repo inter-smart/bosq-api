@@ -74,10 +74,10 @@ const defineErgonimicsCms = require("./cms/ergonomicsChair/cms");
 const defineSocialMedia = require("./siteSettings/socialMedia");
 
 // PROJECTS
-const defineProjectsCms = require("./cms/projects/cms");
-const defineProjectCategories = require("./cms/projects/projectCategories");
-const defineProjects = require("./cms/projects/projects");
-const defineSpecialisedAreas = require("./cms/projects/specialisedAreas");
+const defineProjectsCms = require("./projects/cms");
+const defineProjectCategories = require("./projects/projectCategories");
+const defineProjects = require("./projects/projects");
+const defineSpecialisedAreas = require("./projects/specialisedAreas");
 const defineHeaderFooter = require("./siteSettings/headerFooter");
 const defineMetaTags = require("./siteSettings/metaTags");
 const definePaymentMethods = require("./siteSettings/paymentMethods");

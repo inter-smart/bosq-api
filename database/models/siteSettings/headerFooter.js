@@ -49,6 +49,17 @@ module.exports = (sequelize) => {
         allowNull: true,
       },
 
+
+      email:{
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+
+      sales_phone_number: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      
       sale_enquiry_title: {
         type: DataTypes.STRING,
         allowNull: true,

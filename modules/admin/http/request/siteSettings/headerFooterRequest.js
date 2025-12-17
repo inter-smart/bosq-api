@@ -1,7 +1,6 @@
 const { body, param } = require("express-validator");
 
 exports.validationRequestPost = [
-
   // HEADER LOGO
   body("header_logo_media_path")
     .optional()
@@ -45,13 +44,11 @@ exports.validationRequestPost = [
     .withMessage("Footer media alt Arabic must not exceed 255 characters"),
 
   // ADDRESS
-  body("address")
-    .isString()
-    .withMessage("Address must be a string"),
+  body("address").isString().withMessage("Address must be a string"),
 
-  body("address_ar")
-    .isString()
-    .withMessage("Address Arabic must be a string"),
+  body("address_ar").isString().withMessage("Address Arabic must be a string"),
+
+  body("email").isEmail().withMessage("Email must be valid"),
 
   // SALES ENQUIRY
   body("sale_enquiry_title")
@@ -65,6 +62,13 @@ exports.validationRequestPost = [
   body("sale_enquiry_email")
     .isEmail()
     .withMessage("Sale enquiry email must be valid"),
+
+  // sales phone
+  body("sales_phone_number")
+    .isString()
+    .withMessage("Phone number must be a string")
+    .isLength({ max: 20 })
+    .withMessage("Phone number must not exceed 20 characters"),
 
   body("phone_number")
     .isString()
@@ -81,9 +85,7 @@ exports.validationRequestPost = [
     .isString()
     .withMessage("Support enquiry title Arabic must be a string"),
 
-  body("support_email")
-    .isEmail()
-    .withMessage("Support email must be valid"),
+  body("support_email").isEmail().withMessage("Support email must be valid"),
 
   // NEWSLETTER
   body("news_letter_main_title")
@@ -112,7 +114,5 @@ exports.validationRequestPost = [
  * ID VALIDATION
  */
 exports.validateId = [
-  param("id")
-    .isInt({ min: 1 })
-    .withMessage("ID must be a positive integer"),
+  param("id").isInt({ min: 1 }).withMessage("ID must be a positive integer"),
 ];

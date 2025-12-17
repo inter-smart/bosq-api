@@ -162,6 +162,10 @@ module.exports = (sequelize) => {
         allowNull: true,
         defaultValue: [],
       },
+      show_in_home: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+      },
       sort_order: {
         type: DataTypes.SMALLINT,
         defaultValue: 1,

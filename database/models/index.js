@@ -76,6 +76,10 @@ const defineProjectCategories = require("./projects/projectCategories");
 const defineProjects = require("./projects/projects");
 const defineSpecialisedAreas = require("./projects/specialisedAreas");
 
+// ERGONOMIC
+const defineErgonomicCms = require("./cms/ergnomicGuide/cms");
+const defineErgonomicFeatures = require("./cms/ergnomicGuide/ergonomicFeatures");
+
 const models = {
   AdminUser: defineAdminUser(sequelize),
 
@@ -152,6 +156,10 @@ const models = {
   ProjectCategories: defineProjectCategories(sequelize),
   Projects: defineProjects(sequelize),
   SpecialisedAreas: defineSpecialisedAreas(sequelize),
+
+  // ERGONOMIC
+  ErgonomicCms: defineErgonomicCms(sequelize),
+  ErgonomicFeatures: defineErgonomicFeatures(sequelize),
 };
 
 Object.keys(models).forEach((modelName) => {

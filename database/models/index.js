@@ -67,6 +67,9 @@ const defineTwoImage = require("./cms/sustainability/twoImage");
 // Login Register
 const defineLoginRegisterCms = require("./cms/loginRegister/loginRegisterCms");
 
+ // ERGONIMICS
+const defineErgonimicsCms = require("./cms/ergonomicsChair/cms");
+
 // FOOTER
 const defineSocialMedia = require("./siteSettings/socialMedia");
 
@@ -145,6 +148,7 @@ const models = {
 
   // Login Register
   LoginRegisterCms: defineLoginRegisterCms(sequelize),
+
 
   // FOOTER
   SocialMedia: defineSocialMedia(sequelize),

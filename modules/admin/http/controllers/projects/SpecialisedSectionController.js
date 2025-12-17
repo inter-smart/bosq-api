@@ -12,11 +12,16 @@ class SpecialisedSectionController {
     try {
 
       const {project_id} = req.query;
-      console.log(project_id);
+
+
+      if(!project_id){
+        return sendNotFoundError(res, "Project id is required");
+      }
+
       const result = await paginate(DataModel, req, {
-        where: {
-          project_id
-        },
+        where:
+          {project_id},
+        
         include: [
           {
             model: models.Projects,

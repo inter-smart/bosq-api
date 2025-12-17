@@ -3,7 +3,7 @@ const { sequelize, models } = require("../../../../../../database/models/index.j
 const { sendValidationError, sendSuccessResponse, sendErrorResponse, sendNotFoundError } = require("../../../traits/responseHandler.js");
 const { handleFileUploadStore, handleFileUploadUpdate } = require("../../../middleware/multerMiddleware.js");
 const { paginate } = require("../../../traits/datatablePaginationHelper.js");
-const { validateId, validateRequest } = require("../../../request/cms/sustainability/oneImageRequest.js");
+const { validateId, validateRequest } = require("../../../request/cms/sustainability/twoImageRequest.js");
 
 const DataModel = models.TwoImage;
 

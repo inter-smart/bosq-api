@@ -61,7 +61,6 @@ const defineCustomizationOptions = require("./cms/customization/customizationOpt
 
 //Sustainability
 const defineSustainabilityCms = require("./cms/sustainability/cms");
-const defineOneImage = require("./cms/sustainability/oneImage");
 const defineTwoImage = require("./cms/sustainability/twoImage");
 
 // Login Register
@@ -148,7 +147,6 @@ const models = {
 
   //Sustainability
   SustainabilityCms: defineSustainabilityCms(sequelize),
-  OneImage: defineOneImage(sequelize),
   TwoImage: defineTwoImage(sequelize),
 
   // Login Register

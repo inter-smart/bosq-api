@@ -78,6 +78,10 @@ const defineProjectsCms = require("./projects/cms");
 const defineProjectCategories = require("./projects/projectCategories");
 const defineProjects = require("./projects/projects");
 const defineSpecialisedAreas = require("./projects/specialisedAreas");
+
+// ERGONOMIC
+const defineErgonomicCms = require("./cms/ergnomicGuide/cms");
+const defineErgonomicFeatures = require("./cms/ergnomicGuide/features");
 const defineHeaderFooter = require("./siteSettings/headerFooter");
 const defineMetaTags = require("./siteSettings/metaTags");
 const definePaymentMethods = require("./siteSettings/paymentMethods");
@@ -159,6 +163,10 @@ const models = {
   ProjectCategories: defineProjectCategories(sequelize),
   Projects: defineProjects(sequelize),
   SpecialisedAreas: defineSpecialisedAreas(sequelize),
+
+  // ERGONOMIC
+  ErgonomicCms: defineErgonomicCms(sequelize),
+  ErgonomicFeatures: defineErgonomicFeatures(sequelize),
   HeaderFooter: defineHeaderFooter(sequelize),
   MetaTags: defineMetaTags(sequelize),
   PaymentMethods: definePaymentMethods(sequelize),

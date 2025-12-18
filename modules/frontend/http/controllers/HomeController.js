@@ -4,8 +4,8 @@ const service = require("../services/HomeService");
 class HomeController {
   static async index(req, res) {
     try {
-      const data = await service.getData();
-      return sendSuccessResponse(res, data, "Data fetched  successfully", 200);
+      const { data, message } = await service.getData();
+      return sendSuccessResponse(res, data, message, 200);
     } catch (error) {
       return sendErrorResponse(res, error, "Internal Server Error", 500);
     }

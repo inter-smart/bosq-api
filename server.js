@@ -11,16 +11,12 @@ const expressListEndpoints = require("express-list-endpoints");
 const cookieParser = require("cookie-parser");
 const { createAdminUser } = require("./database/seeders/adminUser");
 const { seedMetaTags } = require("./database/seeders/metaTags");
-const { createClient } = require("redis");
+const { connectRedis } = require("./config/redis");
 
 dotenv.config();
 const app = express();
 
-const allowedOrigins = [
-  "http://localhost:3000",
-  "http://localhost:8080",
-  "http://localhost:8081",
-];
+const allowedOrigins = ["http://localhost:3000", "http://localhost:8080", "http://localhost:8081"];
 
 app.use(
   cors({
@@ -28,10 +24,7 @@ app.use(
       if (!origin || allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
-      return callback(
-        new Error(`CORS policy does not allow access from: ${origin}`),
-        false
-      );
+      return callback(new Error(`CORS policy does not allow access from: ${origin}`), false);
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
@@ -42,22 +35,13 @@ app.use(express.json({ limit: "10mb" }));
 app.use(cookieParser());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-const redisClient = createClient({ url: process.env.REDIS_URL });
-
-redisClient
-  .connect()
-  .then(() => {
-    Logger.info("✅ Redis connected");
-    app.set("redisClient", redisClient);
-  })
-  .catch((err) => Logger.error("❌ Redis connection failed:", err.message));
-
 // ✅ Register routes BEFORE listing endpoints
 app.use("/api/backend", backendApi);
 app.use("/api/frontend", frontendApi);
 
-
-
+app.get("/", (req, res) => {
+  res.send("Hello World!");
+});
 
 // Error handler last
 app.use(errorMiddleware);
@@ -67,27 +51,26 @@ const PORT = process.env.PORT || 3002;
 const startServer = async () => {
   try {
     await sequelize.authenticate();
-    await sequelize.sync({ alter: true });
+    await sequelize.sync({ alter: false });
     Logger.info("✅ Database connected and synced");
 
     await models.HomeCms.sync({ force: true });
-console.log("🔥 HomeCms table force-synced!");
+    console.log("🔥 HomeCms table force-synced!");
 
-        // Add this to see which models are registered
-    console.log('Registered models:', Object.keys(sequelize.models));
-    
+    // Add this to see which models are registered
+    console.log("Registered models:", Object.keys(sequelize.models));
+
     await createAdminUser();
     // await seedMetaTags();
 
-   
+    await connectRedis();
+
     app.listen(PORT, () => {
       Logger.info(`🚀 Server running on port ${PORT}`);
 
       let endpoints = expressListEndpoints(app);
       if (!endpoints.length) {
-        Logger.warn(
-          "⚠️ No endpoints found at app level. Checking sub-routers..."
-        );
+        Logger.warn("⚠️ No endpoints found at app level. Checking sub-routers...");
 
         const backendEndpoints = expressListEndpoints(backendApi);
         const frontendEndpoints = expressListEndpoints(frontendApi);
@@ -95,18 +78,14 @@ console.log("🔥 HomeCms table force-synced!");
         if (backendEndpoints.length) {
           Logger.info("📋 Backend Endpoints:");
           backendEndpoints.forEach((e) => {
-            Logger.info(
-              `${e.methods.join(", ").padEnd(10)} /api/backend${e.path}`
-            );
+            Logger.info(`${e.methods.join(", ").padEnd(10)} /api/backend${e.path}`);
           });
         }
 
         if (frontendEndpoints.length) {
           Logger.info("📋 Frontend Endpoints:");
           frontendEndpoints.forEach((e) => {
-            Logger.info(
-              `${e.methods.join(", ").padEnd(10)} /api/frontend${e.path}`
-            );
+            Logger.info(`${e.methods.join(", ").padEnd(10)} /api/frontend${e.path}`);
           });
         }
       } else {

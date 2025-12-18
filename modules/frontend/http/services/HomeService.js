@@ -1,9 +1,21 @@
+const { redisClient } = require("../../../../config/redis");
 const { models } = require("../../../../database/models");
-const { sendErrorResponse } = require("../../../admin/http/traits/responseHandler");
+const cacheKeys = require("../../../redis/cacheKeys");
+const { getCache, setCache } = require("../../../redis/redisService");
+const cacheKey = cacheKeys.home;
 
 class HomeService {
   static async getData() {
     try {
+      const cachedData = await getCache(cacheKey);
+      if (cachedData) {
+        return {
+          data: cachedData,
+          fromCache: true,
+          message: "Data fetched from cache",
+        };
+      }
+
       const [banners, projects] = await Promise.all([
         models.HomeBanner.findAll({
           where: {
@@ -48,9 +60,18 @@ class HomeService {
         return sliders;
       }
 
-      return {
+      await setCache(cacheKey, {
         sliders: buildHomeBannerSliders(banners),
         projects,
+      });
+
+      return {
+        data: {
+          sliders: buildHomeBannerSliders(banners),
+          projects,
+        },
+        fromCache: false,
+        message: "Data fetched successfully",
       };
     } catch (error) {
       console.error("Error getting HOME data:", error);

@@ -33,6 +33,10 @@ const invalidateCache = async (key) => {
   }
 };
 
+
+
+
+
 const getCache = async (key) => {
   try {
     const cachedData = await redisClient.get(key);
@@ -50,8 +54,68 @@ const getCache = async (key) => {
   }
 };
 
+const invalidateMultipleCaches = async (redisClient, keys) => {
+  try {
+    if (!keys || keys.length === 0) {
+      console.log("⚠️  No cache keys provided for invalidation");
+      return { success: 0, failed: 0, keys: [] };
+    }
+
+    const results = await Promise.allSettled(
+      keys.map(key => redisClient.del(key))
+    );
+
+    const successCount = results.filter(
+      r => r.status === "fulfilled" && r.value > 0
+    ).length;
+
+    const failedCount = results.filter(
+      r => r.status === "rejected"
+    ).length;
+
+    if (successCount > 0) {
+      console.log(`🗑️  Cache invalidated: ${successCount} key(s) - [${keys.join(", ")}]`);
+    }
+
+    if (failedCount > 0) {
+      console.error(`❌ Failed to invalidate: ${failedCount} key(s)`);
+    }
+
+    return {
+      success: successCount,
+      failed: failedCount,
+      keys: keys
+    };
+  } catch (error) {
+    console.error("Failed to invalidate multiple caches:", error);
+    return { success: 0, failed: keys.length, keys };
+  }
+};
+
+
+
+const invalidateCacheByModel = async (redisClient, modelName, cacheDependencies) => {
+  try {
+    const keysToInvalidate = cacheDependencies[modelName];
+    
+    if (!keysToInvalidate) {
+      console.log(`⚠️  No cache dependencies found for model: ${modelName}`);
+      return { success: 0, failed: 0, keys: [] };
+    }
+
+    // If keysToInvalidate is a string, convert to array
+    const keys = Array.isArray(keysToInvalidate) ? keysToInvalidate : [keysToInvalidate];
+    
+    return await invalidateMultipleCaches(redisClient, keys);
+  } catch (error) {
+    console.error(`Failed to invalidate cache for model ${modelName}:`, error);
+    return { success: 0, failed: 0, keys: [] };
+  }
+};
+
 module.exports = {
   setCache,
   invalidateCache,
   getCache,
+  invalidateCacheByModel
 };

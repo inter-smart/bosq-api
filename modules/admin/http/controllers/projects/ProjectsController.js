@@ -4,7 +4,7 @@ const { sendValidationError, sendSuccessResponse, sendErrorResponse, sendNotFoun
 const { handleFileUploadStore, handleFileUploadUpdate } = require("../../middleware/multerMiddleware");
 const { paginate } = require("../../traits/datatablePaginationHelper");
 const slugify = require("slugify");
-const { Op } = require("sequelize");
+const { Op, where } = require("sequelize");
 const { validateProjects, validateId } = require("../../request/projects/projectsRequest");
 
 const DataModel = models.Projects;
@@ -12,7 +12,19 @@ const DataModel = models.Projects;
 class ProjectsController {
   static async index(req, res) {
     try {
+
+      const {category_id} = req.query;
+
+      const whereClause = {};
+      if (category_id) {
+        whereClause.category_id = category_id
+      }
+
+
       const result = await paginate(DataModel, req, {
+        where: {
+          category_id
+        },
         include: [
           {
             model: models.SpecialisedAreas,

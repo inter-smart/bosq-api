@@ -3,7 +3,7 @@ const router = express.Router();
 const Controller = require("../../../http/controllers/cms/termsAndConditions/FaqController.js");
 const authMiddleware = require("../../../http/middleware/authMiddleware.js");
 
-// router.use(authMiddleware(["admin"]));
+router.use(authMiddleware(["admin"]));
 
 router.get("/", Controller.index);
 

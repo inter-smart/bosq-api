@@ -6,7 +6,7 @@ const authMiddleware = require("../../../http/middleware/authMiddleware.js");
 
 // Create upload middleware with fields
 
-// router.use(authMiddleware(["admin"]));
+router.use(authMiddleware(["admin"]));
 
 router.get("/", Controller.index);
 router.post("/", Controller.update);

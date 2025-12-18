@@ -10,7 +10,7 @@ router.get("/", Controller.index);
 router.get("/:id", Controller.show);
 
 // Protected routes (require admin auth)
-// router.use(authMiddleware(["admin"]));
+router.use(authMiddleware(["admin"]));
 
 router.post("/", Controller.store);
 router.put("/:id", Controller.update);

@@ -15,7 +15,7 @@ const fields = [
 // Create upload middleware with fields
 const upload = createUploadMiddleware("customization-cms", fields);
 
-// router.use(authMiddleware(["admin"]));
+router.use(authMiddleware(["admin"]));
 
 router.get("/", Controller.index);
 router.post("/", upload, Controller.update);

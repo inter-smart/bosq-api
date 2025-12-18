@@ -10,7 +10,7 @@ const fields = [];
 // Create upload middleware with fields
 const upload = createUploadMiddleware("about-journeys", fields);
 
-// router.use(authMiddleware(["admin"]));
+router.use(authMiddleware(["admin"]));
 
 router.get("/", Controller.index);
 

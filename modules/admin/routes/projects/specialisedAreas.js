@@ -9,7 +9,7 @@ const fields = [{ name: "media_path", maxCount: 1 }];
 // Create upload middleware with fields
 const upload = createUploadMiddleware("specialised-areas", fields);
 
-// router.use(authMiddleware(["admin"]));
+router.use(authMiddleware(["admin"]));
 
 router.get("/", Controller.index);
 

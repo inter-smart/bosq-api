@@ -3,7 +3,7 @@ const router = express.Router();
 const Controller = require("../../../http/controllers/policy/returnPolicy/ReturnPoliciesController.js");
 const authMiddleware = require("../../../http/middleware/authMiddleware");
 
-// router.use(authMiddleware(["admin"]));
+router.use(authMiddleware(["admin"]));
 
 router.get("/", Controller.index);
 

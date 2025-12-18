@@ -3,7 +3,7 @@ const router = express.Router();
 const Controller = require("../../../http/controllers/cms/materials/MaterialCategoryController.js");
 const authMiddleware = require("../../../http/middleware/authMiddleware.js");
 
-// router.use(authMiddleware(["admin"]));
+router.use(authMiddleware(["admin"]));
 
 router.get("/", Controller.index);
 

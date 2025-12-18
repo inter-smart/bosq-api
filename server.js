@@ -54,9 +54,6 @@ const startServer = async () => {
     await sequelize.sync({ alter: false });
     Logger.info("✅ Database connected and synced");
 
-    await models.HomeCms.sync({ force: true });
-    console.log("🔥 HomeCms table force-synced!");
-
     // Add this to see which models are registered
     console.log("Registered models:", Object.keys(sequelize.models));
 

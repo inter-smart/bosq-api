@@ -19,7 +19,7 @@ class HomeBannerController {
           ["sort_order", "ASC"],
           ["createdAt", "DESC"],
         ],
-        searchFields: [],
+        searchFields: ["title"],
       });
 
       const response = {

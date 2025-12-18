@@ -26,7 +26,7 @@ class PoliciesController {
           ["sort_order", "ASC"],
           ["createdAt", "DESC"],
         ],
-        searchFields: ["title"],
+        searchFields: ["title", "title_ar"],
       });
 
       const response = {

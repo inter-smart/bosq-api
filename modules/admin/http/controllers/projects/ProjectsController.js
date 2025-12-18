@@ -22,9 +22,7 @@ class ProjectsController {
 
 
       const result = await paginate(DataModel, req, {
-        where: {
-          category_id
-        },
+        where: whereClause,
         include: [
           {
             model: models.SpecialisedAreas,

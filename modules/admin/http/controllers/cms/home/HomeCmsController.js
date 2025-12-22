@@ -44,7 +44,8 @@ class HomeCmsController {
             const existingData = await DataModel.findOne();
             const fileFields = [
                 "about_media_path",
-                "journey_media_path",
+                "journey_media_desktop_path",
+                "journey_media_mobile_path",
                 "form_media_path",
             ];
 

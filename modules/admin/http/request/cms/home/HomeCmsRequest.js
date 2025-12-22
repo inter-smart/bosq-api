@@ -64,10 +64,16 @@ exports.validationRequestPost = [
     .isIn(["image", "video"])
     .withMessage("Journey media type must be image or video"),
 
-  body("journey_media_path")
+  body("journey_media_desktop_path")
     .optional()
     .isString()
     .withMessage("Journey media path must be a string"),
+
+  body("journey_media_mobile_path")
+    .optional()
+    .isString()
+    .withMessage("Journey media path must be a string"),
+
 
   body("journey_media_alt")
     .optional()

@@ -1,8 +1,8 @@
-const { DataTypes } = require('sequelize');
+const { DataTypes } = require("sequelize");
 
 module.exports = (sequelize) => {
   const HomeCms = sequelize.define(
-    'HomeCms',
+    "HomeCms",
     {
       id: {
         type: DataTypes.INTEGER,
@@ -72,11 +72,15 @@ module.exports = (sequelize) => {
       },
 
       journey_media_type: {
-        type: DataTypes.ENUM('image', 'video'),
+        type: DataTypes.ENUM("image", "video"),
         allowNull: true,
       },
 
-      journey_media_path: {
+      journey_media_desktop_path: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      journey_media_mobile_path: {
         type: DataTypes.TEXT,
         allowNull: true,
       },
@@ -161,7 +165,7 @@ module.exports = (sequelize) => {
       },
     },
     {
-      tableName: 'home_cms',
+      tableName: "home_cms",
     }
   );
 

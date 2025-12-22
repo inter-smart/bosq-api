@@ -7,7 +7,8 @@ const authMiddleware = require("../../../http/middleware/authMiddleware");
 // Define fields
 const fields = [
     { name: "about_media_path", maxCount: 1 },
-    { name: "journey_media_path", maxCount: 1 },
+    { name: "journey_media_desktop_path", maxCount: 1 },
+    { name: "journey_media_mobile_path", maxCount: 1 },
     { name: "calculator_media_path", maxCount: 1 },
     { name: "customize_media_path", maxCount: 1 },
     { name: "form_media_path", maxCount: 1 },
@@ -16,7 +17,7 @@ const fields = [
 // Create upload middleware with fields
 const upload = createUploadMiddleware("home-cms", fields);
 
-router.use(authMiddleware(["admin"]));
+// router.use(authMiddleware(["admin"]));
 
 router.get("/", Controller.index);
 router.post("/", upload, Controller.update);

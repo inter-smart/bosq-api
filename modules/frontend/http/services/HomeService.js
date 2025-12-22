@@ -2,21 +2,25 @@ const { redisClient } = require("../../../../config/redis");
 const { models } = require("../../../../database/models");
 const cacheKeys = require("../../../redis/cacheKeys");
 const { getCache, setCache } = require("../../../redis/redisService");
+const { generateImageUrl } = require("../../traits/imageUrlHelper");
+const { buildCmsSection, buildTitleSection } = require("../traits/dataManipulations.js/common");
+const { buildHomeBannerSliders, buildProjectsSection } = require("../traits/dataManipulations.js/homeCms");
 const cacheKey = cacheKeys.home;
 
 class HomeService {
   static async getData() {
     try {
       const cachedData = await getCache(cacheKey);
-      if (cachedData) {
-        return {
-          data: cachedData,
-          fromCache: true,
-          message: "Data fetched from cache",
-        };
-      }
+      // if (cachedData) {
+      //   return {
+      //     data: cachedData,
+      //     fromCache: true,
+      //     message: "Data fetched from cache",
+      //   };
+      // }
 
-      const [banners, projects] = await Promise.all([
+      const [homeCms, banners, projects] = await Promise.all([
+        models.HomeCms.findOne({}),
         models.HomeBanner.findAll({
           where: {
             status: true,
@@ -24,6 +28,7 @@ class HomeService {
           order: [["sort_order", "ASC"]],
         }),
         models.Projects.findAll({
+          attributes: ["id", "title", "title_ar", "thumbnail"],
           where: {
             show_in_home: true,
           },
@@ -31,44 +36,36 @@ class HomeService {
         }),
       ]);
 
-      function buildHomeBannerSliders(banners) {
-        if (!Array.isArray(banners) || banners.length === 0) {
-          return null;
-        }
+      const sliders = buildHomeBannerSliders(banners);
+      const aboutSection = buildCmsSection(homeCms, "about");
+      const formSection = buildCmsSection(homeCms, "form");
+      const journeySection = buildCmsSection(homeCms, "journey");
+      const featuredSection = buildTitleSection(homeCms, "featured");
+      const projectSection = buildProjectsSection(projects, homeCms);
+      const fitsSection = buildTitleSection(homeCms, "fits");
+      const brandsSection = buildTitleSection(homeCms, "brands");
 
-        const sliders = banners?.map((banner) => {
-          return {
-            id: banner.id,
-            title: banner.title ?? "N/A",
-            title_ar: banner.title_ar ?? "N/A",
-            description: banner.description ?? "N/A",
-            description_ar: banner.description_ar ?? "N/A",
-            media_type: banner.media_type ?? "image",
-            media_alt: banner.media_alt ?? null,
-            media_alt_ar: banner.media_alt_ar ?? null,
-            media: {
-              desktop: {
-                path: banner.media_desktop_path ?? null,
-              },
-              mobile: {
-                path: banner.media_mobile_path ?? null,
-              },
-            },
-          };
-        });
-
-        return sliders;
-      }
-
-      await setCache(cacheKey, {
-        sliders: buildHomeBannerSliders(banners),
-        projects,
-      });
+      // const projectsSection = await setCache(cacheKey, {
+      //   sliders,
+      //   aboutSection,
+      //   formSection,
+      //   journeySection,
+      //   featuredSection,
+      //   projectSection,
+      //   fitsSection,
+      //   brandsSection,
+      // });
 
       return {
         data: {
-          sliders: buildHomeBannerSliders(banners),
-          projects,
+          sliders,
+          aboutSection,
+          formSection,
+          journeySection,
+          featuredSection,
+          projectSection,
+          fitsSection,
+          brandsSection,
         },
         fromCache: false,
         message: "Data fetched successfully",

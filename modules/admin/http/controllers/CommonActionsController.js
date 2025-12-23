@@ -2,7 +2,6 @@ const { redisClient } = require("../../../../config/redis");
 const { models } = require("../../../../database/models");
 const cacheDependencies = require("../../../redis/cacheDependency");
 const {
-  invalidateCache,
   invalidateCacheByModel,
 } = require("../../../redis/redisService");
 

@@ -1,25 +1,36 @@
 const { validationResult } = require("express-validator");
 const { sequelize, models } = require("../../../../../database/models");
-const { sendValidationError, sendSuccessResponse, sendErrorResponse, sendNotFoundError } = require("../../traits/responseHandler");
-const { handleFileUploadStore, handleFileUploadUpdate } = require("../../middleware/multerMiddleware");
+const {
+  sendValidationError,
+  sendSuccessResponse,
+  sendErrorResponse,
+  sendNotFoundError,
+} = require("../../traits/responseHandler");
+const {
+  handleFileUploadStore,
+  handleFileUploadUpdate,
+} = require("../../middleware/multerMiddleware");
 const { paginate } = require("../../traits/datatablePaginationHelper");
 const slugify = require("slugify");
 const { Op, where } = require("sequelize");
-const { validateProjects, validateId } = require("../../request/projects/projectsRequest");
+const {
+  validateProjects,
+  validateId,
+} = require("../../request/projects/projectsRequest");
+const cacheKeys = require("../../../../redis/cacheKeys");
+const { invalidateCache } = require("../../../../redis/redisService");
 
 const DataModel = models.Projects;
 
 class ProjectsController {
   static async index(req, res) {
     try {
-
-      const {category_id} = req.query;
+      const { category_id } = req.query;
 
       const whereClause = {};
       if (category_id) {
-        whereClause.category_id = category_id
+        whereClause.category_id = category_id;
       }
-
 
       const result = await paginate(DataModel, req, {
         where: whereClause,
@@ -60,7 +71,13 @@ class ProjectsController {
     try {
       const { title } = req.body;
 
-      if (!title || title.trim() === "") return sendErrorResponse(res, "Title is required to generate slug", null, 400);
+      if (!title || title.trim() === "")
+        return sendErrorResponse(
+          res,
+          "Title is required to generate slug",
+          null,
+          400
+        );
 
       let baseSlug = req.body.slug;
 
@@ -71,7 +88,12 @@ class ProjectsController {
 
       if (existing) {
         await transaction.rollback();
-        return sendErrorResponse(res, `Slug "${baseSlug}" already exists`, { existing_id: existing.id }, 409);
+        return sendErrorResponse(
+          res,
+          `Slug "${baseSlug}" already exists`,
+          { existing_id: existing.id },
+          409
+        );
       }
 
       req.body.slug = baseSlug;
@@ -101,12 +123,19 @@ class ProjectsController {
 
       const project = await DataModel.create(req.body, { transaction });
 
+      await invalidateCache(cacheKeys.projects);
+      await invalidateCache(cacheKeys.home);
       await transaction.commit();
 
       // Fetch with association
       const createdData = await DataModel.findByPk(project.id);
 
-      sendSuccessResponse(res, createdData, "Project created successfully", 201);
+      sendSuccessResponse(
+        res,
+        createdData,
+        "Project created successfully",
+        201
+      );
     } catch (error) {
       await transaction.rollback();
       console.error("Project creation error:", error);
@@ -136,7 +165,9 @@ class ProjectsController {
 
   // ✅ Update project
   static async update(req, res) {
-    await Promise.all([...validateId, ...validateProjects].map((v) => v.run(req)));
+    await Promise.all(
+      [...validateId, ...validateProjects].map((v) => v.run(req))
+    );
     const errors = validationResult(req);
     if (!errors.isEmpty()) return sendValidationError(res, errors.array());
 
@@ -167,7 +198,12 @@ class ProjectsController {
 
         if (existing) {
           await transaction.rollback();
-          return sendErrorResponse(res, `Slug "${newSlug}" already exists`, { existing_id: existing.id }, 409);
+          return sendErrorResponse(
+            res,
+            `Slug "${newSlug}" already exists`,
+            { existing_id: existing.id },
+            409
+          );
         }
 
         req.body.slug = newSlug;
@@ -199,6 +235,10 @@ class ProjectsController {
       // ✅ Update database
       // -----------------------------------------
       await data.update(req.body, { transaction });
+
+      await invalidateCache(cacheKeys.projects);
+      await invalidateCache(cacheKeys.home);
+
       await transaction.commit();
 
       const updatedData = await DataModel.findByPk(id);
@@ -224,6 +264,10 @@ class ProjectsController {
       if (!data) return sendNotFoundError(res, "Project");
 
       await data.destroy();
+
+      await invalidateCache(cacheKeys.projects);
+      await invalidateCache(cacheKeys.home);
+
       sendSuccessResponse(res, { id }, "Project deleted successfully");
     } catch (error) {
       console.error("Project deletion error:", error);

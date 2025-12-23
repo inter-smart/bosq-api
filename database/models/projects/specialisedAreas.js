@@ -16,6 +16,7 @@ module.exports = (sequelize) => {
           model: "projects",
           key: "id",
         },
+        onDelete: "CASCADE",
       },
       media_path: {
         type: DataTypes.STRING,

@@ -53,7 +53,44 @@ function buildProjectsSection(projects, cmsData) {
   };
 }
 
+function buildJourneySection(cmsData, prefix, options = {}) {
+  const { defaultMediaType = "image", includeMedia = true } = options;
+
+  const get = (key, fallback = "N/A") =>
+    cmsData[`${prefix}_${key}`] ?? fallback;
+
+  const section = {
+    title: get("title"),
+    title_ar: get("title_ar"),
+    description: get("description"),
+    description_ar: get("description_ar"),
+    media_type: get("media_type", defaultMediaType),
+  };
+
+  if (includeMedia) {
+    section.media = {
+      desktop: {
+        path: cmsData[`${prefix}_media_desktop_path`]
+          ? generateImageUrl(cmsData[`${prefix}_media_desktop_path`])
+          : null,
+        alt: get("media_alt", null),
+        alt_ar: get("media_alt_ar", null),
+      },
+      mobile: {
+        path: cmsData[`${prefix}_media_mobile_path`]
+          ? generateImageUrl(cmsData[`${prefix}_media_mobile_path`])
+          : null,
+        alt: get("media_alt", null),
+        alt_ar: get("media_alt_ar", null),
+      },
+    };
+  }
+
+  return section;
+}
+
 module.exports = {
   buildHomeBannerSliders,
   buildProjectsSection,
+  buildJourneySection,
 };

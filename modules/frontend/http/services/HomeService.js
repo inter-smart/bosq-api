@@ -4,7 +4,7 @@ const cacheKeys = require("../../../redis/cacheKeys");
 const { getCache, setCache } = require("../../../redis/redisService");
 const { generateImageUrl } = require("../../traits/imageUrlHelper");
 const { buildCmsSection, buildTitleSection } = require("../traits/dataManipulations.js/common");
-const { buildHomeBannerSliders, buildProjectsSection } = require("../traits/dataManipulations.js/homeCms");
+const { buildHomeBannerSliders, buildProjectsSection, buildJourneySection } = require("../traits/dataManipulations.js/homeCms");
 const cacheKey = cacheKeys.home;
 
 class HomeService {
@@ -39,7 +39,7 @@ class HomeService {
       const sliders = buildHomeBannerSliders(banners);
       const aboutSection = buildCmsSection(homeCms, "about");
       const formSection = buildCmsSection(homeCms, "form");
-      const journeySection = buildCmsSection(homeCms, "journey");
+      const journeySection = buildJourneySection(homeCms, "journey");
       const featuredSection = buildTitleSection(homeCms, "featured");
       const projectSection = buildProjectsSection(projects, homeCms);
       const fitsSection = buildTitleSection(homeCms, "fits");

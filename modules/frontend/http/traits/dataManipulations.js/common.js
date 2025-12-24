@@ -1,19 +1,24 @@
 const { generateImageUrl } = require("../../../traits/imageUrlHelper");
 
 function buildTitleSection(cmsData, prefix) {
-  const section = {
-    title: cmsData[`${prefix}_title`] ?? "N/A",
-    title_ar: cmsData[`${prefix}_title_ar`] ?? "N/A",
+  const getValue = (key) =>
+    prefix ? cmsData[`${prefix}_${key}`] : cmsData[key]
+
+   const section = {
+    title: getValue("title") ?? "N/A",
+    title_ar: getValue("title_ar") ?? "N/A",
   };
 
-  // Add description only if present
-  if (cmsData[`${prefix}_description`] !== undefined) {
-    section.description = cmsData[`${prefix}_description`] ?? "N/A";
+  const description = getValue("description");
+  if (description !== undefined) {
+    section.description = description ?? "N/A";
   }
 
-  if (cmsData[`${prefix}_description_ar`] !== undefined) {
-    section.description_ar = cmsData[`${prefix}_description_ar`] ?? "N/A";
+  const descriptionAr = getValue("description_ar");
+  if (descriptionAr !== undefined) {
+    section.description_ar = descriptionAr ?? "N/A";
   }
+
 
   return section;
 }

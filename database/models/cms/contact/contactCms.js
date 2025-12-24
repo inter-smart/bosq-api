@@ -66,7 +66,7 @@ module.exports = (sequelize) => {
         allowNull: true,
       },
 
-      iframe:{
+      url:{
         type: DataTypes.TEXT,
         allowNull: true,
       },

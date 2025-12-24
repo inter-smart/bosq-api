@@ -56,10 +56,10 @@ exports.validationRequestPost = [
     .withMessage("Arabic media description is required"),
 
   // IFRAME (OPTIONAL)
-  body("iframe")
+  body("url")
     .optional()
     .isString()
-    .withMessage("Iframe must be a string"),
+    .withMessage("Iframe URL must be a string"),
 
   // EMAIL TITLE
   body("email_title")
@@ -72,9 +72,8 @@ exports.validationRequestPost = [
   // EMAIL ADDRESS
   body("email")
     .notEmpty()
-    .withMessage("Email is required")
-    .isEmail()
-    .withMessage("Email must be valid"),
+    .withMessage("Email is required"),
+
 
   // PHONE TITLE
   body("phone_title")

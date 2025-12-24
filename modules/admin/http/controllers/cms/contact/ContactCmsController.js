@@ -3,6 +3,8 @@ const { sequelize, models } = require('../../../../../../database/models');
 const { sendValidationError, sendSuccessResponse, sendErrorResponse } = require("../../../traits/responseHandler");
 const { validationRequestPost } = require("../../../request/cms/contact/contactCmsRequest");
 const { handleFileUploadUpdate } = require("../../../middleware/multerMiddleware");
+const { invalidateCache } = require("../../../../../redis/redisService");
+const cacheKeys = require("../../../../../redis/cacheKeys");
 
 
 
@@ -57,6 +59,7 @@ class ContactCmsController {
                 await handleFileUploadUpdate(req, data, fileFields);
             }
 
+            await invalidateCache(cacheKeys.contact)
             await transaction.commit();
             return sendSuccessResponse(res, data, 'Data updated successfully', 200);
 

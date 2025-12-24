@@ -3,21 +3,32 @@ const { sequelize, models } = require('../../../../../../database/models');
 const { sendValidationError, sendSuccessResponse, sendErrorResponse } = require("../../../traits/responseHandler");
 const { validationRequestPost } = require("../../../request/cms/home/HomeCmsRequest");
 const { handleFileUploadUpdate } = require("../../../../http/middleware/multerMiddleware");
+const { getCache, invalidateCache, setCache } = require("../../../../../redis/redisService");
 
 
 
 const DataModel = models.HomeCms;
+const cacheKey = 'home_cms_data';
 
 class HomeCmsController {
 
     //DATA VIEW  START
     static async index(req, res) {
         try {
+
+            const getCachedData = await getCache(cacheKey)
+
+            if (getCachedData) {
+                return sendSuccessResponse(res, getCachedData, 'Data fetched from cache', 200);
+            }
+
             let data = await DataModel.findOne();
 
             if (!data) {
                 data = await DataModel.create({});
             }
+
+            await setCache(cacheKey, data);
 
             return sendSuccessResponse(res, data, 'Data fetched  successfully', 200);
         } catch (error) {
@@ -59,6 +70,7 @@ class HomeCmsController {
                 await handleFileUploadUpdate(req, data, fileFields);
             }
 
+            await invalidateCache(cacheKey);
             await transaction.commit();
             return sendSuccessResponse(res, data, 'Data updated successfully', 200);
 

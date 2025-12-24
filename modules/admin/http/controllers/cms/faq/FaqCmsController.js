@@ -3,10 +3,11 @@ const { sequelize, models } = require('../../../../../../database/models');
 const { sendValidationError, sendSuccessResponse, sendErrorResponse } = require("../../../traits/responseHandler");
 const { validationRequestPost } = require("../../../request/cms/faq/faqCmsRequest");
 const { handleFileUploadUpdate } = require("../../../../http/middleware/multerMiddleware");
-
-
+const { setCache, invalidateCache } = require("../../../../../redis/redisService");
+const cacheKeys = require("../../../../../redis/cacheKeys");
 
 const DataModel = models.FaqCms;
+const cacheKey = cacheKeys.faq;
 
 
 class FaqCmsController {
@@ -56,6 +57,7 @@ class FaqCmsController {
                 await handleFileUploadUpdate(req, data, fileFields);
             }
 
+            await invalidateCache(cacheKey);
             await transaction.commit();
             return sendSuccessResponse(res, data, 'Data updated successfully', 200);
 

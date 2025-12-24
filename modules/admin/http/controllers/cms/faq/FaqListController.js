@@ -16,6 +16,10 @@ const {
 
 const DataModel = models.FaqList;
 const FaqCategoryModel = models.FaqCategory;
+const cacheKeys = require("../../../../../redis/cacheKeys");
+const { invalidateCache } = require("../../../../../redis/redisService");
+
+const cacheKey = cacheKeys.faq;
 
 class FaqListController {
   static async index(req, res) {
@@ -78,6 +82,7 @@ class FaqListController {
       // Create data with transaction
       const data = await DataModel.create(req.body, { transaction });
 
+      await invalidateCache(cacheKey);
       // Commit the transaction
       await transaction.commit();
 
@@ -164,7 +169,7 @@ class FaqListController {
       }
 
       await data.update(req.body, { transaction });
-
+      await invalidateCache(cacheKey);
       await transaction.commit();
 
       const updatedData = await DataModel.findByPk(data.id, {
@@ -203,7 +208,7 @@ class FaqListController {
 
       // Soft delete
       await data.destroy();
-
+      await invalidateCache(cacheKey);
       sendSuccessResponse(res, { id }, "Data deleted successfully");
     } catch (error) {
       console.error("Data deletion error:", error);

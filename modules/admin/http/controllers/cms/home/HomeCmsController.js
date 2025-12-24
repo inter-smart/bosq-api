@@ -8,7 +8,6 @@ const { handleFileUploadUpdate } = require("../../../../http/middleware/multerMi
 
 const DataModel = models.HomeCms;
 
-
 class HomeCmsController {
 
     //DATA VIEW  START

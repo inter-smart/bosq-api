@@ -1,5 +1,6 @@
 const { redisClient } = require("../../../../config/redis");
 const { models } = require("../../../../database/models");
+
 const cacheKeys = require("../../../redis/cacheKeys");
 const { getCache, setCache } = require("../../../redis/redisService");
 const { generateImageUrl } = require("../../traits/imageUrlHelper");
@@ -11,13 +12,13 @@ class HomeService {
   static async getData() {
     try {
       const cachedData = await getCache(cacheKey);
-      // if (cachedData) {
-      //   return {
-      //     data: cachedData,
-      //     fromCache: true,
-      //     message: "Data fetched from cache",
-      //   };
-      // }
+      if (cachedData) {
+        return {
+          data: cachedData,
+          fromCache: true,
+          message: "Data fetched from cache",
+        };
+      }
 
       const [homeCms, banners, projects] = await Promise.all([
         models.HomeCms.findOne({}),
@@ -31,6 +32,7 @@ class HomeService {
           attributes: ["id", "title", "title_ar", "thumbnail"],
           where: {
             show_in_home: true,
+            status: true,
           },
           order: [["sort_order", "ASC"]],
         }),

@@ -53,6 +53,10 @@ const cacheDependencies = {
   News: [cacheKeys.news],
   NewsCms: [cacheKeys.news],
   NewsCategories: [cacheKeys.news],
+
+  Blogs: [cacheKeys.blog],
+  BlogCms: [cacheKeys.blog],
+  BlogCategories: [cacheKeys.blog],
 };
 
 module.exports = cacheDependencies;

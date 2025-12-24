@@ -6,6 +6,7 @@ const cacheKeys = {
   faq: "faq",
   contact: "contact",
   projects: "home",
+  blog: "blog",
 };
 
 module.exports = cacheKeys;

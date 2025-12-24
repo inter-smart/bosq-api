@@ -17,8 +17,11 @@ const {
 const { paginate } = require("../../../http/traits/datatablePaginationHelper");
 const slugify = require("slugify");
 const { Op } = require("sequelize");
+const cacheKeys = require("../../../../redis/cacheKeys");
+const { invalidateCache } = require("../../../../redis/redisService");
 
 const DataModel = models.Blogs;
+const cacheKey = cacheKeys.blog;
 
 class BlogController {
   static async index(req, res) {
@@ -28,7 +31,7 @@ class BlogController {
           ["sort_order", "ASC"],
           ["createdAt", "DESC"],
         ],
-        searchFields: ["title","slug"],
+        searchFields: ["title", "slug"],
       });
 
       const response = {
@@ -92,7 +95,7 @@ class BlogController {
 
       // ✅ Create blog
       const blog = await DataModel.create(req.body, { transaction });
-
+      await invalidateCache(cacheKey);
       await transaction.commit();
 
       // Fetch with association
@@ -189,6 +192,7 @@ class BlogController {
       await transaction.commit();
 
       const updatedData = await DataModel.findByPk(id);
+      await invalidateCache(cacheKey);
 
       sendSuccessResponse(res, updatedData, "Blog updated successfully");
     } catch (error) {
@@ -211,6 +215,9 @@ class BlogController {
       if (!data) return sendNotFoundError(res, "Blog");
 
       await data.destroy();
+
+      await invalidateCache(cacheKey);
+
       sendSuccessResponse(res, { id }, "Blog deleted successfully");
     } catch (error) {
       console.error("Blog deletion error:", error);

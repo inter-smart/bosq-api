@@ -3,11 +3,13 @@ const { sequelize, models } = require('../../../../../database/models');
 const { sendValidationError, sendSuccessResponse, sendErrorResponse } = require("../../traits/responseHandler");
 const { validationRequestPost } = require("../../request/blog/BlogCmsRequest");
 const { handleFileUploadUpdate } = require("../../middleware/multerMiddleware");
+const { invalidateCache } = require("../../../../redis/redisService");
+const cacheKeys = require("../../../../redis/cacheKeys");
 
 
 
 const DataModel = models.BlogCms;
-
+const cacheKey = cacheKeys.blog;
 
 class BlogCmsController {
 
@@ -58,6 +60,8 @@ class BlogCmsController {
                 await handleFileUploadUpdate(req, data, fileFields);
             }
 
+
+            invalidateCache(cacheKey);
             await transaction.commit();
             return sendSuccessResponse(res, data, 'Data updated successfully', 200);
 

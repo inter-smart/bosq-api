@@ -34,8 +34,8 @@ const cacheDependencies = {
   PrivacyPolicy: [cacheKeys.privacyPolicy],
   
   // FAQ Module
-  Faq: [cacheKeys.faq],
-  FaqCategories: [cacheKeys.faq],
+  FaqList: [cacheKeys.faq],
+  FaqCategory: [cacheKeys.faq],
   
   // Contact Module
   Contact: [cacheKeys.contact],

@@ -1,8 +1,20 @@
 const { validationResult } = require("express-validator");
-const { models, sequelize } = require("../../../../../database/models/index.js");
-const { validationProjectCategories, validateId } = require("../../request/projects/categoriesRequest.js");
-const { sendValidationError, sendSuccessResponse, sendErrorResponse, sendNotFoundError } = require("../../traits/responseHandler.js");
+const {
+  models,
+  sequelize,
+} = require("../../../../../database/models/index.js");
+const {
+  validationProjectCategories,
+  validateId,
+} = require("../../request/projects/categoriesRequest.js");
+const {
+  sendValidationError,
+  sendSuccessResponse,
+  sendErrorResponse,
+  sendNotFoundError,
+} = require("../../traits/responseHandler.js");
 const { paginate } = require("../../traits/datatablePaginationHelper.js");
+const { Op } = require("sequelize");
 
 const DataModel = models.ProjectCategories;
 
@@ -30,7 +42,9 @@ class ProjectCategoriesController {
   }
 
   static async store(req, res) {
-    await Promise.all(validationProjectCategories.map((validation) => validation.run(req)));
+    await Promise.all(
+      validationProjectCategories.map((validation) => validation.run(req))
+    );
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return sendValidationError(res, errors.array());
@@ -39,6 +53,20 @@ class ProjectCategoriesController {
     const transaction = await sequelize.transaction();
 
     try {
+      const { name } = req.body;
+
+      const isExist = await DataModel.findOne({
+        where: {
+          name: {
+            [Op.iLike]: req.body.name,
+          },
+        },
+      });
+
+      if (isExist) {
+        return sendErrorResponse(res, `${name} already exists`);
+      }
+
       // Create data with transaction
       const data = await DataModel.create(req.body, { transaction });
 
@@ -77,7 +105,9 @@ class ProjectCategoriesController {
   }
 
   static async update(req, res) {
-    await Promise.all([...validateId, ...validationProjectCategories].map((v) => v.run(req)));
+    await Promise.all(
+      [...validateId, ...validationProjectCategories].map((v) => v.run(req))
+    );
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return sendValidationError(res, errors.array());
@@ -87,6 +117,21 @@ class ProjectCategoriesController {
 
     try {
       const { id } = req.params;
+      const { name } = req.body;
+
+      const isExist = await DataModel.findOne({
+        where: {
+          name: {
+            [Op.iLike]: req.body.name,
+          },
+          id: { [sequelize.Sequelize.Op.ne]: id },
+        },
+      });
+
+      if (isExist) {
+        await transaction.rollback();
+        return sendErrorResponse(res, `${name} already exists`);
+      }
 
       const data = await DataModel.findByPk(id, { transaction });
       if (!data) {

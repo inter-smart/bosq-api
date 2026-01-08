@@ -2,11 +2,13 @@ const {  validationResult } = require("express-validator");
 const { sequelize, models } = require('../../../../../../database/models');
 const { sendValidationError, sendSuccessResponse, sendErrorResponse } = require("../../../traits/responseHandler");
 const { validationRequestPost } = require("../../../request/cms/termsAndConditions/termsAndConditionsCmsRequest");
+const cacheKeys = require("../../../../../redis/cacheKeys");
+const { invalidateCache } = require("../../../../../redis/redisService");
 
 
 
 const DataModel = models.TermsAndConditions;
-
+const cacheKey = cacheKeys.termsAndConditions;
 
 class FaqCmsController {
 
@@ -48,7 +50,7 @@ class FaqCmsController {
             } else {
                 data = await DataModel.create(req.body, { transaction });
             }
-
+            await invalidateCache(cacheKey);
             await transaction.commit();
             return sendSuccessResponse(res, data, 'Data updated successfully', 200);
 

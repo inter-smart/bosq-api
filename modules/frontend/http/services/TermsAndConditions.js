@@ -13,13 +13,13 @@ class TermsAndConditionsService{
       const cachedData = await getCache(cacheKey);
 
       // 2. If cached data exists, return it
-    //   if (cachedData) {
-    //     return {
-    //       data: cachedData,
-    //       fromCache: true,
-    //       message: "Terms and conditions page data fetched from cache",
-    //     };
-    //   }
+      if (cachedData) {
+        return {
+          data: cachedData,
+          fromCache: true,
+          message: "Terms and conditions page data fetched from cache",
+        };
+      }
 
       //   3. If no cached data, fetch from database
       const [termsAndConditions, faq] = await Promise.all([
@@ -29,7 +29,7 @@ class TermsAndConditionsService{
             status: true,
           },
           order: [["sort_order", "ASC"]],
-        }),
+    }),
       ]);
 
       if (!termsAndConditions) {

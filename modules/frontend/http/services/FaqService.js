@@ -8,8 +8,8 @@ const {
 const {
   sendErrorResponse,
 } = require("../../../admin/http/traits/responseHandler");
-const { buildTitleSection } = require("../traits/dataManipulations.js/common");
-const { buildFaqData } = require("../traits/dataManipulations.js/faqs");
+const { buildTitleSection } = require("../traits/dataManipulations/common");
+const { buildFaqData } = require("../traits/dataManipulations/faqs");
 const cacheKey = cacheKeys.faq;
 
 class FaqService {

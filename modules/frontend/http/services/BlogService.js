@@ -1,7 +1,7 @@
 const { models } = require("../../../../database/models");
 const cacheKeys = require("../../../redis/cacheKeys");
 const { setCache, getCache } = require("../../../redis/redisService");
-const { buildBlogData, buildHeroData } = require("../traits/dataManipulations.js/blogCms");
+const { buildBlogData, buildHeroData } = require("../traits/dataManipulations/blogCms");
 
 const cacheKey = cacheKeys.blog;
 

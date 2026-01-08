@@ -13,9 +13,11 @@ const {
   validateId,
 } = require("../../request/policy/warrantyPolicyRequest.js");
 const { paginate } = require("../../traits/datatablePaginationHelper.js");
+const cacheKeys = require("../../../../redis/cacheKeys.js");
+const { invalidateCache } = require("../../../../redis/redisService.js");
 
 const DataModel = models.WarrantyPolicy;
-
+const cacheKey = cacheKeys.warrantyPolicy;
 class WarrantyPolicyController {
   static async index(req, res) {
     try {
@@ -57,6 +59,7 @@ class WarrantyPolicyController {
       // Create data with transaction
       const data = await DataModel.create(req.body, { transaction });
 
+      await invalidateCache(cacheKey);
       // Commit the transaction
       await transaction.commit();
       sendSuccessResponse(res, data, "Data created successfully", 201);
@@ -115,7 +118,7 @@ class WarrantyPolicyController {
       await handleFileUploadUpdate(req, data, fileFields);
 
       await data.update(req.body, { transaction });
-
+      await invalidateCache(cacheKey);
       await transaction.commit();
 
       const updatedData = await DataModel.findByPk(data.id);
@@ -146,7 +149,7 @@ class WarrantyPolicyController {
 
       // Soft delete
       await data.destroy();
-
+      await invalidateCache(cacheKey);
       sendSuccessResponse(res, { id }, "Data deleted successfully");
     } catch (error) {
       console.error("Data deletion error:", error);

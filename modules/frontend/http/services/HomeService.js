@@ -7,13 +7,13 @@ const { generateImageUrl } = require("../../traits/imageUrlHelper");
 const {
   buildCmsSection,
   buildTitleSection,
-} = require("../traits/dataManipulations.js/common");
+} = require("../traits/dataManipulations/common");
 const {
   buildHomeBannerSliders,
   buildProjectsSection,
   buildJourneySection,
   buildFitsSection,
-} = require("../traits/dataManipulations.js/homeCms");
+} = require("../traits/dataManipulations/homeCms");
 const cacheKey = cacheKeys.home;
 
 class HomeService {

@@ -1,10 +1,10 @@
 const { models } = require("../../../../database/models");
 const cacheKeys = require("../../../redis/cacheKeys");
 const { setCache, getCache } = require("../../../redis/redisService");
-const { buildTitleSection } = require("../traits/dataManipulations.js/common");
+const { buildTitleSection } = require("../traits/dataManipulations/common");
 const {
   buildPrivacyPolicyData,
-} = require("../traits/dataManipulations.js/policyCms");
+} = require("../traits/dataManipulations/policyCms");
 
 const cacheKey = cacheKeys.privacyPolicy;
 

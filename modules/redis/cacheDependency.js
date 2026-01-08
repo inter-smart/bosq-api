@@ -14,6 +14,7 @@ const cacheDependencies = {
   HomeBrands: [cacheKeys.home],
   HomeTestimonials: [cacheKeys.home],
   HomeServices: [cacheKeys.home],
+  FindYourFits: [cacheKeys.home],
   HomeCms: [cacheKeys.home],
   
   // About Module

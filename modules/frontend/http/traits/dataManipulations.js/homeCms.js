@@ -89,8 +89,41 @@ function buildJourneySection(cmsData, prefix, options = {}) {
   return section;
 }
 
+function buildFitsSection(cmsData, fits) {
+  const meta = buildTitleSection(cmsData, "fits");
+
+  return {
+    ...meta,
+    button:{
+      label: cmsData?.fits_button_text ?? "View All projects",
+      label_ar: cmsData?.fits_button_text_ar ?? "عرض جميع المشاريع",
+      link: cmsData?.fits_button_link ?? "/",
+    },
+    projects: fits.map((fit) => {
+      return {
+        id: fit?.id,
+        media:{
+          path: generateImageUrl(fit?.media_path) ?? null,
+          alt: fit?.media_alt ?? "N/A",
+          alt_ar: fit?.media_alt_ar ?? "N/A",
+        },
+        title: fit?.title ?? "N/A",
+        title_ar: fit?.title_ar ?? "N/A",
+        description: fit?.description ?? "N/A",
+        description_ar: fit?.description_ar ?? "N/A",
+        button:{
+          label: fit?.button_text ?? "View Details",
+          label_ar: fit?.button_text_ar ?? "عرض التفاصيل",
+          link: fit?.link ?? "/",
+        }
+      };
+    }),
+  };
+}
+
 module.exports = {
   buildHomeBannerSliders,
   buildProjectsSection,
   buildJourneySection,
+  buildFitsSection,
 };

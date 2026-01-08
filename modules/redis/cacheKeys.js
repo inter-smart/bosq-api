@@ -3,6 +3,7 @@ const cacheKeys = {
   about: "about",
   termsAndConditions: "termsAndConditions",
   privacyPolicy: "privacyPolicy",
+  returnPolicy: "returnPolicy",
   faq: "faq",
   contact: "contact",
   projects: "home",

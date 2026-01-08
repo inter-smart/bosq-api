@@ -16,8 +16,11 @@ const {
 const {
   paginate,
 } = require("../../../traits/datatablePaginationHelper.js");
+const cacheKeys = require("../../../../../redis/cacheKeys.js");
+const { invalidateCache } = require("../../../../../redis/redisService.js");
 
 const DataModel = models.ReturnPolicies;
+const cacheKey = cacheKeys.returnPolicy;
 
 class ReturnPoliciesController {
   static async index(req, res) {
@@ -94,6 +97,7 @@ static async store(req, res) {
 
     // Create data
     const data = await DataModel.create(req.body, { transaction });
+    await invalidateCache(cacheKey);
     await transaction.commit();
 
     sendSuccessResponse(res, data, "Data created successfully", 201);
@@ -196,7 +200,7 @@ static async store(req, res) {
       }
 
       await data.update(req.body, { transaction });
-
+      await invalidateCache(cacheKey);
       await transaction.commit();
 
       const updatedData = await DataModel.findByPk(data.id);
@@ -227,7 +231,7 @@ static async store(req, res) {
 
       // Soft delete
       await data.destroy();
-
+      await invalidateCache(cacheKey);
       sendSuccessResponse(res, { id }, "Data deleted successfully");
     } catch (error) {
       console.error("Data deletion error:", error);

@@ -1,0 +1,7 @@
+const express = require("express");
+const router = express.Router();
+const Controller = require("../http/controllers/ReturnPolicyController");
+
+router.get("/", Controller.index);
+
+module.exports = router;

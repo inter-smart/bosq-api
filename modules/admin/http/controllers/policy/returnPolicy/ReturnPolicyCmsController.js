@@ -3,11 +3,13 @@ const { sequelize, models } = require('../../../../../../database/models');
 const { sendValidationError, sendSuccessResponse, sendErrorResponse } = require("../../../traits/responseHandler");
 const { validationRequestPost } = require("../../../request/policy/returnPolicy/returnPolicyCmsRequest");
 const { handleFileUploadUpdate } = require("../../../middleware/multerMiddleware");
+const cacheKeys = require("../../../../../redis/cacheKeys");
+const { invalidateCache } = require("../../../../../redis/redisService");
 
 
 
 const DataModel = models.ReturnPolicyCms;
-
+const cacheKey = cacheKeys.returnPolicy;
 
 class ReturnPolicyCmsController {
 
@@ -57,6 +59,7 @@ class ReturnPolicyCmsController {
                 await handleFileUploadUpdate(req, data, fileFields);
             }
 
+            await invalidateCache(cacheKey)
             await transaction.commit();
             return sendSuccessResponse(res, data, 'Data updated successfully', 200);
 

@@ -1,5 +1,3 @@
-const { generateImageUrl } = require("../../../traits/imageUrlHelper");
-
 function buildPrivacyPolicyData(categories) {
   if (!Array.isArray(categories) || categories.length === 0) {
     return {

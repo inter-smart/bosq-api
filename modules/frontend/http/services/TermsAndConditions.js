@@ -1,8 +1,8 @@
 const { models } = require("../../../../database/models");
 const cacheKeys = require("../../../redis/cacheKeys");
 const { setCache, getCache } = require("../../../redis/redisService");
-const { buildTitleSection } = require("../traits/dataManipulations.js/common");
-const { buildFaqData } = require("../traits/dataManipulations.js/termsAndConditions");
+const { buildTitleSection } = require("../traits/dataManipulations/common");
+const { buildFaqData } = require("../traits/dataManipulations/termsAndConditions");
 
 const cacheKey = cacheKeys.termsAndConditions;
 

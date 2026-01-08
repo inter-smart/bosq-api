@@ -2,11 +2,6 @@ const { models } = require("../../../../database/models");
 const cacheKeys = require("../../../redis/cacheKeys");
 const { setCache, getCache } = require("../../../redis/redisService");
 const { buildBlogData, buildHeroData } = require("../traits/dataManipulations.js/blogCms");
-const {
-  mediaWithoutType,
-  singleMediaWithoutType,
-  formatDateTitle,
-} = require("../traits/mediaButtonHelper");
 
 const cacheKey = cacheKeys.blog;
 

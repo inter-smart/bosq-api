@@ -9,7 +9,7 @@ const cacheKeys = require("../../../../../redis/cacheKeys");
 
 
 const DataModel = models.ContactCms;
-
+const cacheKey = cacheKeys.contact;
 
 class ContactCmsController {
 
@@ -59,7 +59,7 @@ class ContactCmsController {
                 await handleFileUploadUpdate(req, data, fileFields);
             }
 
-            await invalidateCache(cacheKeys.contact)
+            await invalidateCache(cacheKey)
             await transaction.commit();
             return sendSuccessResponse(res, data, 'Data updated successfully', 200);
 

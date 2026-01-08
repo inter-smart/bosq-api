@@ -8,8 +8,11 @@ const {
 const {
   validationRequestPost,
 } = require("../../../request/policy/privacyPolicy/policyCmsRequest.js");
+const cacheKeys = require("../../../../../redis/cacheKeys.js");
+const { invalidateCache } = require("../../../../../redis/redisService.js");
 
 const DataModel = models.PrivacyPolicyCms;
+const cacheKey = cacheKeys.privacyPolicy;
 
 class PolicyCmsController {
   //DATA VIEW  START
@@ -56,6 +59,7 @@ class PolicyCmsController {
         data = await DataModel.create(req.body, { transaction });
       }
 
+      await invalidateCache(cacheKey);
       await transaction.commit();
       return sendSuccessResponse(res, data, "Data updated successfully", 200);
     } catch (error) {

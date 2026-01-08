@@ -1,35 +1,16 @@
-const { ApiResponse } = require("../traits/response");
-const { HTTP_STATUS, RESPONSE_MESSAGES } = require("../traits/constants");
-const { ErrorHandler } = require("../traits/errorHandler");
-const service = require("../services/PolicyService");
+const { sendSuccessResponse, sendErrorResponse } = require("../../../admin/http/traits/responseHandler");
+const service = require("../services/privacyPolicy");
 
 class PolicyController {
   static async index(req, res) {
     try {
-      const { slug } = req.params;
-
-      if (!slug) {
-        return ApiResponse.error(res, {
-          message: "Slug is required",
-          status: HTTP_STATUS.BAD_REQUEST,
-        });
-      }
-
-      const data = await service.index(slug);
-
-      return ApiResponse.success(res, {
-        message: RESPONSE_MESSAGES.SUCCESS.DATA_RETRIEVED,
-        data,
-        status: HTTP_STATUS.OK,
-      });
+      const { data, message } = await service.getData();
+      return sendSuccessResponse(res, data, message, 200);
     } catch (error) {
-      return ErrorHandler.handleControllerError(
-        error,
-        res,
-        "PolicyController.index"
-      );
+      return sendErrorResponse(res, error, "Internal Server Error", 500);
     }
   }
 }
+
 
 module.exports = PolicyController;

@@ -133,9 +133,9 @@ const models = {
   Faq: defineFaq(sequelize),
 
   // POLICY
+  PrivacyPolicyCms: definePrivacyPolicyCms(sequelize),
   Policies: definePolicies(sequelize),
   WarrantyPolicy: defineWarrantyPolicy(sequelize),
-  PrivacyPolicyCms: definePrivacyPolicyCms(sequelize),
   ReturnPolicyCms: defineReturnPolicyCms(sequelize),
   ReturnPolicies: ReturnPolicies(sequelize),
 

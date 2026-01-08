@@ -31,8 +31,9 @@ const cacheDependencies = {
   Sustainability: [cacheKeys.sustainability],
   
   // Legal Pages
+  PrivacyPolicyCms: [cacheKeys.privacyPolicy],
+  Policies: [cacheKeys.privacyPolicy],
   TermsAndConditions: [cacheKeys.termsAndConditions],
-  PrivacyPolicy: [cacheKeys.privacyPolicy],
   
   // FAQ Module
   FaqList: [cacheKeys.faq],
@@ -58,6 +59,10 @@ const cacheDependencies = {
   Blogs: [cacheKeys.blog],
   BlogCms: [cacheKeys.blog],
   BlogCategories: [cacheKeys.blog],
+
+  
+
+
 };
 
 module.exports = cacheDependencies;

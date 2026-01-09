@@ -3,11 +3,13 @@ const { sequelize, models } = require('../../../../../../database/models');
 const { sendValidationError, sendSuccessResponse, sendErrorResponse } = require("../../../traits/responseHandler");
 const { validationRequestPost } = require("../../../request/cms/delivery/deliveryCmsRequest");
 const { handleFileUploadUpdate } = require("../../../middleware/multerMiddleware");
+const cacheKeys = require("../../../../../redis/cacheKeys");
+const { invalidateCache } = require("../../../../../redis/redisService");
 
 
 
 const DataModel = models.DeliveryCms;
-
+const cachekey = cacheKeys.deliveryPolicy;
 
 class DeliveryCmsController {
 
@@ -36,6 +38,7 @@ class DeliveryCmsController {
             return sendValidationError(res, errors.array());
         }
 
+        await invalidateCache(cachekey);
         const transaction = await sequelize.transaction();
 
         try {

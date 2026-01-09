@@ -45,12 +45,12 @@ function buildDeliveryInfo(cmsData, deliveryTime) {
     description: cmsData?.delivery_time_subtitle ?? "N/A",
     description_ar: cmsData?.delivery_time_subtitle_ar ?? "N/A",
 
-    item: deliveryTime?.map((item) => ({
+    items: deliveryTime?.map((item) => ({
       media_path: generateImageUrl(item?.icon_media_path),
-      title: item?.title ?? "N/A",
-      title_ar: item?.title_ar ?? "N/A",
-      desceription: item?.duration ?? "N/A",
-      desceription_ar: item?.duration_ar ?? "N/A",
+      title: item?.duration ?? "N/A",
+      title_ar: item?.duration_ar ?? "N/A",
+      description: item?.title ?? "N/A",
+      description_ar: item?.title_ar ?? "N/A",
     })),
   };
 

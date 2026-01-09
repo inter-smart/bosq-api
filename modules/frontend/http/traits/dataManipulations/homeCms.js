@@ -45,9 +45,13 @@ function buildProjectsSection(projects, cmsData) {
         id: project?.id,
         title: project?.title ?? "N/A",
         title_ar: project?.title_ar ?? "N/A",
-        media_alt: project?.title ?? "N/A",
-        media_alt_ar: project?.title_ar ?? "N/A",
-        media: generateImageUrl(project?.thumbnail) ?? null,
+        slug: project?.slug ?? "N/A",
+        media: {
+          path: generateImageUrl(project?.thumbnail) ?? null,
+          type: project?.type?? "image",
+          alt: project?.title ?? "N/A",
+          alt_ar: project?.title_ar ?? "N/A",
+        }
       };
     }),
   };
@@ -89,6 +93,29 @@ function buildJourneySection(cmsData, prefix, options = {}) {
   return section;
 }
 
+function buildBrandSection(cmsData, brands){
+
+  const meta = buildTitleSection(cmsData, "brands");
+
+  return {
+    ...meta,
+    list: brands?.map((brand) => {
+      return {
+        id: brand?.id,
+        title: brand?.title ?? "N/A",
+        title_ar: brand?.title_ar ?? "N/A",
+        media: {
+          path: generateImageUrl(brand?.media_path) ?? null,
+          type: brand?.type?? "image",
+          alt: brand?.title ?? "N/A",
+          alt_ar: brand?.title_ar ?? "N/A",
+        }
+      };
+    }),
+  };
+
+}
+
 function buildFitsSection(cmsData, fits) {
   const meta = buildTitleSection(cmsData, "fits");
 
@@ -121,9 +148,12 @@ function buildFitsSection(cmsData, fits) {
   };
 }
 
+
+
 module.exports = {
   buildHomeBannerSliders,
   buildProjectsSection,
   buildJourneySection,
   buildFitsSection,
+  buildBrandSection,
 };

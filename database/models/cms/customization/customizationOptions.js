@@ -25,14 +25,6 @@ module.exports = (sequelize) => {
         type: DataTypes.TEXT,
         allowNull: true,
       },
-      points: {
-        type: DataTypes.TEXT,
-        allowNull: true,
-      },
-      points_ar: {
-        type: DataTypes.TEXT,
-        allowNull: true,
-      },
       sort_order: {
         type: DataTypes.SMALLINT,
         defaultValue: 1,

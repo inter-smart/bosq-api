@@ -4,8 +4,11 @@ const { sendValidationError, sendSuccessResponse, sendErrorResponse, sendNotFoun
 const { handleFileUploadStore, handleFileUploadUpdate } = require("../../../middleware/multerMiddleware.js");
 const { paginate } = require("../../../traits/datatablePaginationHelper.js");
 const { validateId, validationRequestPost } = require("../../../request/cms/customization/customizationFeaturesRequest.js");
+const cacheKeys = require("../../../../../redis/cacheKeys.js");
+const { invalidateCache } = require("../../../../../redis/redisService.js");
 
 const DataModel = models.CustomizationFeatures;
+const cacheKey = cacheKeys.customization;
 
 class DeliveryMethodsController {
   static async index(req, res) {
@@ -46,6 +49,7 @@ class DeliveryMethodsController {
       // Create data with transaction
       const data = await DataModel.create(req.body, { transaction });
 
+      await invalidateCache(cacheKey);
       // Commit the transaction
       await transaction.commit();
       sendSuccessResponse(res, data, "Data created successfully", 201);
@@ -102,7 +106,7 @@ class DeliveryMethodsController {
       await handleFileUploadUpdate(req, data, fileFields);
 
       await data.update(req.body, { transaction });
-
+      await invalidateCache(cacheKey);
       await transaction.commit();
 
       const updatedData = await DataModel.findByPk(data.id);
@@ -133,7 +137,7 @@ class DeliveryMethodsController {
 
       // Soft delete
       await data.destroy();
-
+      await invalidateCache(cacheKey);
       sendSuccessResponse(res, { id }, "Data deleted successfully");
     } catch (error) {
       console.error("Data deletion error:", error);

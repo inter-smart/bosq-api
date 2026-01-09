@@ -1,4 +1,5 @@
 const { generateImageUrl } = require("../../../traits/imageUrlHelper");
+const { buildCmsSection, buildTitleSection } = require("./common");
 
 function buildDeliveryData(cmsData, deliveryMethods) {
   const result = {
@@ -57,7 +58,69 @@ function buildDeliveryInfo(cmsData, deliveryTime) {
   return result;
 }
 
+function buildProcessSection(cmsData, process) {
+  const meta = buildCmsSection(cmsData, "process");
+  const result = {
+    ...meta,
+    items: process?.map((item) => ({
+      id: item?.id,
+      title: item?.title ?? "N/A",
+      title_ar: item?.title_ar ?? "N/A",
+      description: item?.description ?? "N/A",
+      description_ar: item?.description_ar ?? "N/A",
+    })),
+  };
+
+  return result;
+}
+
+function buildOptionsSection(cmsData, options){
+  const meta = buildTitleSection(cmsData, "options");
+  const result = {
+    ...meta,
+     items: options?.map((item) => ({
+      id: item?.id,
+      media: {
+        type: "image",
+        media_path: generateImageUrl(item?.media_path),
+        media_alt: item?.media_alt ?? "N/A",
+        media_alt_ar: item?.media_alt_ar ?? "N/A",
+      },
+      title: item?.title ?? "N/A",
+      title_ar: item?.title_ar ?? "N/A",
+      description: item?.description ?? "N/A",
+      description_ar: item?.description_ar ?? "N/A",
+    })),
+  }
+  return result
+}
+
+function buildrequestCustomQuoteSection(cmsData, options){
+  const meta = buildTitleSection(cmsData, "options");
+  const result = {
+    ...meta,
+     items: options?.map((item) => ({
+      id: item?.id,
+      media: {
+        type: "image",
+        media_path: generateImageUrl(item?.media_path),
+        media_alt: item?.media_alt ?? "N/A",
+        media_alt_ar: item?.media_alt_ar ?? "N/A",
+      },
+      title: item?.title ?? "N/A",
+      title_ar: item?.title_ar ?? "N/A",
+      description: item?.points ?? "N/A",
+      description_ar: item?.points_ar ?? "N/A",
+    })),
+  }
+  return result
+}
+
+
 module.exports = {
   buildDeliveryData,
   buildDeliveryInfo,
+  buildProcessSection,
+  buildOptionsSection,
+  buildrequestCustomQuoteSection
 };

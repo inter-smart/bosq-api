@@ -3,8 +3,11 @@ const { sequelize, models } = require("../../../../../../database/models");
 const { sendValidationError, sendSuccessResponse, sendErrorResponse } = require("../../../traits/responseHandler");
 const { handleFileUploadUpdate } = require("../../../middleware/multerMiddleware");
 const { validationRequestPost } = require("../../../request/cms/customization/customizationCmsRequest");
+const cacheKeys = require("../../../../../redis/cacheKeys");
+const { invalidateCache } = require("../../../../../redis/redisService");
 
 const DataModel = models.CustomizationCms;
+const cacheKey = cacheKeys.customization;
 
 class CustomizationCmsController {
   //DATA VIEW  START
@@ -49,6 +52,7 @@ class CustomizationCmsController {
         await handleFileUploadUpdate(req, data, fileFields);
       }
 
+      await invalidateCache(cacheKey)
       await transaction.commit();
       return sendSuccessResponse(res, data, "Data updated successfully", 200);
     } catch (error) {

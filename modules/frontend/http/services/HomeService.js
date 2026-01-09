@@ -13,6 +13,8 @@ const {
   buildProjectsSection,
   buildJourneySection,
   buildFitsSection,
+  buildBrandSection,
+  buildFormSection,
 } = require("../traits/dataManipulations/homeCms");
 const cacheKey = cacheKeys.home;
 
@@ -28,7 +30,7 @@ class HomeService {
       //   };
       // }
 
-      const [homeCms, banners, projects, fits] = await Promise.all([
+      const [homeCms, banners, projects, brands, fits] = await Promise.all([
         models.HomeCms.findOne({}),
         models.HomeBanner.findAll({
           where: {
@@ -37,9 +39,15 @@ class HomeService {
           order: [["sort_order", "ASC"]],
         }),
         models.Projects.findAll({
-          attributes: ["id", "title", "title_ar", "thumbnail"],
+          attributes: ["id", "title", "title_ar", "thumbnail", "slug"],
           where: {
             show_in_home: true,
+            status: true,
+          },
+          order: [["sort_order", "ASC"]],
+        }),
+        models.HomeBrands.findAll({
+          where: {
             status: true,
           },
           order: [["sort_order", "ASC"]],
@@ -54,24 +62,22 @@ class HomeService {
 
       const sliders = buildHomeBannerSliders(banners);
       const aboutSection = buildCmsSection(homeCms, "about");
-      const formSection = buildCmsSection(homeCms, "form");
       const journeySection = buildJourneySection(homeCms, "journey");
       const featuredSection = buildTitleSection(homeCms, "featured");
       const projectSection = buildProjectsSection(projects, homeCms);
       const fitsSection = buildFitsSection(homeCms, fits);
-      const brandsSection = buildTitleSection(homeCms, "brands");
-      // const formsSection = buildFormSection(homeCms, "form");
+      const brandsSection = buildBrandSection(homeCms, brands)
+      const formSection = buildCmsSection(homeCms, "form");
 
       const result = {
         sliders,
         aboutSection,
-        formSection,
         journeySection,
         featuredSection,
         projectSection,
         fitsSection,
         brandsSection,
-        // formsSection
+        formSection,
       };
       await setCache(cacheKey, result);
 

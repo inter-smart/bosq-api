@@ -11,6 +11,7 @@ const cacheKeys = {
   contact: "contact",
   projects: "home",
   blog: "blog",
+  customization: "customization",
 };
 
 module.exports = cacheKeys;

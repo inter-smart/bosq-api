@@ -34,9 +34,11 @@ function buildCmsSection(cmsData, prefix, options = {}) {
     title_ar: get("title_ar"),
     description: get("description"),
     description_ar: get("description_ar"),
-    media_type: get("media_type", defaultMediaType),
-    media_alt: get("media_alt", null),
-    media_alt_ar: get("media_alt_ar", null),
+    media:{
+      media_type: get("media_type", defaultMediaType),
+      media_alt: get("media_alt", null),
+      media_alt_ar: get("media_alt_ar", null),
+    }
   };
 
   if (includeMedia) {
@@ -52,7 +54,55 @@ function buildCmsSection(cmsData, prefix, options = {}) {
   return section;
 }
 
+
+function buildBannerSection(cmsData, prefix, options = {}) {
+  const {
+    defaultMediaType = "image",
+  } = options;
+
+  if (!cmsData || !prefix) return null;
+
+  const get = (key, fallback = null) =>
+    cmsData[`${prefix}_${key}`] ?? fallback;
+
+  // Detect media presence from model
+  const mediaType = get("media_type", defaultMediaType);
+  const desktopPath = get("media_desktop_path");
+  const mobilePath = get("media_mobile_path");
+  const singlePath = get("media_path");
+
+  console.log(desktopPath)
+
+  const hasMedia =
+    !!mediaType &&
+    (!!desktopPath || !!mobilePath || !!singlePath);
+
+  const section = {
+    title: get("title"),
+    title_ar: get("title_ar"),
+    description: get("description"),
+    description_ar: get("description_ar"),
+  };
+
+  // ✅ Include media ONLY if model contains media data
+  if (hasMedia) {
+    section.media = {
+      media_type: mediaType,
+      desktopPath: generateImageUrl(desktopPath),
+      mobilePath: generateImageUrl(mobilePath),
+      media_alt: get("media_alt"),
+      media_alt_ar: get("media_alt_ar"),
+    };
+  }
+
+  return section;
+}
+
+
+
+
 module.exports = {
   buildTitleSection,
   buildCmsSection,
+  buildBannerSection
 };

@@ -65,6 +65,13 @@ const cacheDependencies = {
   Blogs: [cacheKeys.blog],
   BlogCms: [cacheKeys.blog],
   BlogCategories: [cacheKeys.blog],
+
+
+  // CUSTOMIZATION
+  CustomizationCms: [cacheKeys.customization],
+  CustomizationFeatures: [cacheKeys.customization],
+  CustomizationOptions: [cacheKeys.customization],
+  CustomizationProcess: [cacheKeys.customization],
 };
 
 module.exports = cacheDependencies;

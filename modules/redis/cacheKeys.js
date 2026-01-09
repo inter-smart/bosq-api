@@ -6,6 +6,7 @@ const cacheKeys = {
   privacyPolicy: "privacyPolicy",
   returnPolicy: "returnPolicy",
   warrantyPolicy: "warrantyPolicy",
+  deliveryPolicy: "deliveryPolicy",
   faq: "faq",
   contact: "contact",
   projects: "home",

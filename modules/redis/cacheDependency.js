@@ -38,7 +38,9 @@ const cacheDependencies = {
   ReturnPolicyCms: [cacheKeys.returnPolicy],
   ReturnPolicies: [cacheKeys.returnPolicy],
   WarrantyPolicy: [cacheKeys.warrantyPolicy],
-  
+  DeliveryCms: [cacheKeys.deliveryPolicy],
+  DeliveryTime: [cacheKeys.deliveryPolicy],
+  DeliveryMethods: [cacheKeys.deliveryPolicy],
   // FAQ Module
   FaqList: [cacheKeys.faq],
   FaqCategory: [cacheKeys.faq],

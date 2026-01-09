@@ -18,7 +18,7 @@ class CustomizationService {
         return {
           data: cachedData,
           fromCache: true,
-          message: "Return Policy page data fetched from cache",
+          message: "Customization page data fetched from cache",
         };
       }
 
@@ -69,12 +69,12 @@ class CustomizationService {
       //   6. Return the result
       return {
         data: result,
-        message: "Return Policy page data fetched",
+        message: "Customization page data fetched",
       };
     } catch (error) {
-      console.error("Error getting Return POLICY PAGE data:", error);
+      console.error("Error getting Customization PAGE data:", error);
       throw new Error(
-        `Error fetching Return policy page data: ${error.message}`
+        `Error fetching Customization page data: ${error.message}`
       );
     }
   }

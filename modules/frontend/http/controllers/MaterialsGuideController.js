@@ -1,7 +1,7 @@
-const { sendSuccessResponse, sendErrorResponse } = require("../../../admin/http/traits/responseHandler.js");
-const service = require("../services/WarrantyPolicyService.js");
+const { sendSuccessResponse, sendErrorResponse } = require("../../../admin/http/traits/responseHandler");
+const service = require("../services/MaterialGuideService");
 
-class ReturnPolicyController {
+class MaterialsGuideController {
   static async index(req, res) {
     try {
       const { data, message } = await service.getData();
@@ -13,4 +13,4 @@ class ReturnPolicyController {
 }
 
 
-module.exports = ReturnPolicyController;
+module.exports = MaterialsGuideController;

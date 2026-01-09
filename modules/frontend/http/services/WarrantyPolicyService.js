@@ -1,8 +1,8 @@
 const { where } = require("sequelize");
-const { models } = require("../../../../database/models");
-const cacheKeys = require("../../../redis/cacheKeys");
-const { setCache, getCache } = require("../../../redis/redisService");
-const { buildReturnData , buildTitleSection, buildPolicyData} = require("../traits/dataManipulations/warrantyPolicy.js");
+const { models } = require("../../../../database/models/index.js");
+const cacheKeys = require("../../../redis/cacheKeys.js");
+const { setCache, getCache } = require("../../../redis/redisService.js");
+const { buildTitleSection, buildPolicyData} = require("../traits/dataManipulations/warrantyPolicy.js");
 
 const cacheKey = cacheKeys.warrantyPolicy;
 

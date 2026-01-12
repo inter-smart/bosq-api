@@ -6,6 +6,9 @@ exports.validationRequestPost = [
 
   body("title_ar").notEmpty().withMessage("Arabic title is required"),
 
+  body("name").notEmpty().withMessage("Name is required"),
+  body("name_ar").notEmpty().withMessage("Name is required"),
+
   // Thumbnail
   body("thumbnail")
     .optional()

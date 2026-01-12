@@ -4,10 +4,11 @@ const { sendValidationError, sendSuccessResponse, sendErrorResponse, sendNotFoun
 const { validationRequestPost, validateId } = require("../../../request/cms/about/whyBosqRequest.js");
 const { handleFileUploadStore, handleFileUploadUpdate } = require('../../../middleware/multerMiddleware.js');
 const { paginate } = require('../../../traits/datatablePaginationHelper.js');
-const { Op } = require('sequelize');
+const cacheKeys = require('../../../../../redis/cacheKeys.js');
 
 
 const DataModel = models.WhyBosq;
+const cacheKey = cacheKeys.about;
 
 class WhyBosqController {
     static async index(req, res) {
@@ -46,7 +47,7 @@ class WhyBosqController {
 
             // Create data with transaction
             const data = await DataModel.create(req.body, { transaction });
-
+            await invalidateCache(cacheKey);
             // Commit the transaction
             await transaction.commit();
             sendSuccessResponse(res, data, 'Data created successfully', 201);
@@ -107,7 +108,7 @@ class WhyBosqController {
             await handleFileUploadUpdate(req, data, fileFields);
 
             await data.update(req.body, { transaction });
-
+            await invalidateCache(cacheKey);
             await transaction.commit();
 
             const updatedData = await DataModel.findByPk(data.id);
@@ -140,7 +141,7 @@ class WhyBosqController {
 
             // Soft delete
             await data.destroy();
-
+            await invalidateCache(cacheKey);
             sendSuccessResponse(res, { id }, 'Data deleted successfully');
 
         } catch (error) {

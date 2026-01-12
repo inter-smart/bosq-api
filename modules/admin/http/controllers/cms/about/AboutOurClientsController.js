@@ -4,9 +4,12 @@ const { sendValidationError, sendSuccessResponse, sendErrorResponse, sendNotFoun
 const { validationRequestPost, validateId } = require("../../../request/cms/about/aboutOurClientsRequest.js");
 const { handleFileUploadStore, handleFileUploadUpdate } = require('../../../middleware/multerMiddleware.js');
 const { paginate } = require('../../../traits/datatablePaginationHelper.js');
+const { invalidateCache } = require('../../../../../redis/redisService.js');
+const cacheKeys = require('../../../../../redis/cacheKeys.js');
 
 
 const DataModel = models.AboutOurClients;
+const cacheKey = cacheKeys.about;
 
 class AboutOurClientsController {
     static async index(req, res) {
@@ -45,7 +48,7 @@ class AboutOurClientsController {
 
             // Create data with transaction
             const data = await DataModel.create(req.body, { transaction });
-
+            await invalidateCache(cacheKey);
             // Commit the transaction
             await transaction.commit();
             sendSuccessResponse(res, data, 'Data created successfully', 201);
@@ -74,7 +77,6 @@ class AboutOurClientsController {
             if (!data) {
                 return sendNotFoundError(res, 'Data');
             }
-
             sendSuccessResponse(res, data, 'Data retrieved successfully');
 
         } catch (error) {
@@ -106,7 +108,7 @@ class AboutOurClientsController {
             await handleFileUploadUpdate(req, data, fileFields);
 
             await data.update(req.body, { transaction });
-
+            await invalidateCache(cacheKey);
             await transaction.commit();
 
             const updatedData = await DataModel.findByPk(data.id);
@@ -139,7 +141,7 @@ class AboutOurClientsController {
 
             // Soft delete
             await data.destroy();
-
+            await invalidateCache(cacheKey);
             sendSuccessResponse(res, { id }, 'Data deleted successfully');
 
         } catch (error) {

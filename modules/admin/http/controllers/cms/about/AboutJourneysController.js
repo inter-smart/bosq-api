@@ -3,9 +3,12 @@ const { sequelize, models } = require('../../../../../../database/models/index.j
 const { sendValidationError, sendSuccessResponse, sendErrorResponse, sendNotFoundError } = require("../../../traits/responseHandler.js");
 const { validationRequestPost, validateId } = require("../../../request/cms/about/aboutJourneysRequest.js");
 const { paginate } = require('../../../traits/datatablePaginationHelper.js');
+const cacheKeys = require('../../../../../redis/cacheKeys.js');
+const { invalidateCache } = require('../../../../../redis/redisService.js');
 
 
 const DataModel = models.AboutJourneys;
+const cacheKey = cacheKeys.about;
 
 class AboutJourneysController {
     static async index(req, res) {
@@ -41,7 +44,7 @@ class AboutJourneysController {
 
             // Create data with transaction
             const data = await DataModel.create(req.body, { transaction });
-
+            await invalidateCache(cacheKey);
             // Commit the transaction
             await transaction.commit();
             sendSuccessResponse(res, data, 'Data created successfully', 201);
@@ -99,7 +102,7 @@ class AboutJourneysController {
 
 
             await data.update(req.body, { transaction });
-
+            await invalidateCache(cacheKey);
             await transaction.commit();
 
             const updatedData = await DataModel.findByPk(data.id);
@@ -132,7 +135,7 @@ class AboutJourneysController {
 
             // Soft delete
             await data.destroy();
-
+            await invalidateCache(cacheKey);
             sendSuccessResponse(res, { id }, 'Data deleted successfully');
 
         } catch (error) {

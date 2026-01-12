@@ -23,6 +23,14 @@ module.exports = (sequelize) => {
         unique: true,
       },
 
+      name:{
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      name_ar:{
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
       thumbnail: {
         type: DataTypes.STRING,
         allowNull: true,

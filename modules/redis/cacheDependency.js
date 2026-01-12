@@ -19,8 +19,10 @@ const cacheDependencies = {
 
   // About Module
   AboutCms: [cacheKeys.about],
-  AboutTeam: [cacheKeys.about],
-  AboutTimeline: [cacheKeys.about],
+  AboutJourneys: [cacheKeys.about],
+  WhyBosq: [cacheKeys.about],
+  AboutTestimonials: [cacheKeys.about],
+  AboutOurClients: [cacheKeys.about],
 
   // Materials Module
   MaterialsCms: [cacheKeys.materials],
@@ -58,7 +60,7 @@ const cacheDependencies = {
   ServicesCms: [cacheKeys.services],
 
   // News/Blog Module
-  News: [cacheKeys.news],
+  News: [cacheKeys.news, cacheKeys.about],
   NewsCms: [cacheKeys.news],
   NewsCategories: [cacheKeys.news],
 

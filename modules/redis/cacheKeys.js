@@ -1,4 +1,3 @@
-
 const cacheKeys = {
   home: "home",
   about: "about",
@@ -13,6 +12,7 @@ const cacheKeys = {
   blog: "blog",
   customization: "customization",
   materialsGuide: "materialsGuide",
+  sustainability: "sustainability",
 };
 
 module.exports = cacheKeys;

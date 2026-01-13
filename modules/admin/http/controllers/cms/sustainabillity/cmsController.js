@@ -3,8 +3,11 @@ const { sequelize, models } = require("../../../../../../database/models");
 const { sendValidationError, sendSuccessResponse, sendErrorResponse } = require("../../../traits/responseHandler");
 const { handleFileUploadUpdate } = require("../../../middleware/multerMiddleware");
 const { validateRequest } = require("../../../request/cms/sustainability/cmsRequest");
+const cacheKeys = require("../../../../../redis/cacheKeys");
+const { invalidateCache } = require("../../../../../redis/redisService");
 
 const DataModel = models.SustainabilityCms;
+const cacheKey = cacheKeys.sustainability;
 
 class SustainabilityCmsController {
   //DATA VIEW  START
@@ -48,6 +51,8 @@ class SustainabilityCmsController {
         data = await DataModel.create(req.body, { transaction });
         await handleFileUploadUpdate(req, data, fileFields);
       }
+
+      await invalidateCache(cacheKey);
 
       await transaction.commit();
       return sendSuccessResponse(res, data, "Data updated successfully", 200);

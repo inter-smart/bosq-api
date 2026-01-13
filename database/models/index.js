@@ -1,4 +1,4 @@
- const sequelize = require("../config/index");
+const sequelize = require("../config/index");
 
 const defineAdminUser = require("./adminuser");
 
@@ -23,6 +23,7 @@ const defineAboutOurClients = require("./cms/about/aboutOurClients");
 const defineMaterialGuideCms = require("./cms/materialGuide/materialGuideCms");
 const defineMaterials = require("./cms/materialGuide/materials");
 const defineMaterialCategories = require("./cms/materialGuide/materialCategory");
+const defineExtraMaterials = require("./cms/materialGuide/extraMaterials");
 
 // FAQ
 const defineFaqCms = require("./cms/faq/faqCms");
@@ -79,7 +80,6 @@ const defineSpecialisedAreas = require("./projects/specialisedAreas");
 const defineErgonomicCms = require("./cms/ergnomicGuide/cms");
 const defineErgonomicFeatures = require("./cms/ergnomicGuide/features");
 
-
 // Header and Footer
 const defineHeaderFooter = require("./siteSettings/headerFooter");
 const defineMetaTags = require("./siteSettings/metaTags");
@@ -109,6 +109,7 @@ const models = {
   MaterialGuideCms: defineMaterialGuideCms(sequelize),
   Materials: defineMaterials(sequelize),
   MaterialCategories: defineMaterialCategories(sequelize),
+  ExtraMaterials: defineExtraMaterials(sequelize),
 
   // FAQ
   FaqCms: defineFaqCms(sequelize),
@@ -151,7 +152,6 @@ const models = {
 
   // Login Register
   LoginRegisterCms: defineLoginRegisterCms(sequelize),
-
 
   // FOOTER
   SocialMedia: defineSocialMedia(sequelize),

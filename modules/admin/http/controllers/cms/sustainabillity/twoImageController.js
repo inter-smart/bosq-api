@@ -4,8 +4,11 @@ const { sendValidationError, sendSuccessResponse, sendErrorResponse, sendNotFoun
 const { handleFileUploadStore, handleFileUploadUpdate } = require("../../../middleware/multerMiddleware.js");
 const { paginate } = require("../../../traits/datatablePaginationHelper.js");
 const { validateId, validateRequest } = require("../../../request/cms/sustainability/twoImageRequest.js");
+const cacheKeys = require("../../../../../redis/cacheKeys.js");
+const { invalidateCache } = require("../../../../../redis/redisService.js");
 
 const DataModel = models.TwoImage;
+const cacheKey = cacheKeys.sustainability;
 
 class SustainabilityTwoImageController {
   static async index(req, res) {
@@ -40,12 +43,13 @@ class SustainabilityTwoImageController {
     const transaction = await sequelize.transaction();
 
     try {
-      const fileFields = ["img1_path", "img2_path"];
+      const fileFields = ["img1_path"];
       handleFileUploadStore(req, fileFields);
 
       // Create data with transaction
       const data = await DataModel.create(req.body, { transaction });
 
+      await invalidateCache(cacheKey);
       // Commit the transaction
       await transaction.commit();
       sendSuccessResponse(res, data, "Data created successfully", 201);
@@ -98,10 +102,12 @@ class SustainabilityTwoImageController {
         return sendNotFoundError(res, "Data");
       }
 
-      const fileFields = ["img1_path", "img2_path"];
+      const fileFields = ["img1_path"];
       await handleFileUploadUpdate(req, data, fileFields);
 
       await data.update(req.body, { transaction });
+
+      await invalidateCache(cacheKey);
 
       await transaction.commit();
 
@@ -133,6 +139,8 @@ class SustainabilityTwoImageController {
 
       // Soft delete
       await data.destroy();
+
+      await invalidateCache(cacheKey);
 
       sendSuccessResponse(res, { id }, "Data deleted successfully");
     } catch (error) {

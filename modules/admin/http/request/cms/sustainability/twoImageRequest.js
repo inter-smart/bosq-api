@@ -5,14 +5,9 @@ exports.validateRequest = [
   body("title_ar").optional().isString().withMessage("Arabic title must be a string"),
   body("description").optional().isString().withMessage("Description must be a string"),
   body("description_ar").optional().isString().withMessage("Arabic description must be a string"),
-  body("points").optional().isString().withMessage("Points must be an array"),
-  body("points_ar").optional().isString().withMessage("Arabic points must be an array"),
   body("img1_path").optional().isString().withMessage("Image path must be a string"),
   body("img1_alt").optional().isString().withMessage("Image alt must be a string"),
   body("img1_alt_ar").optional().isString().withMessage("Arabic image alt must be a string"),
-  body("img2_path").optional().isString().withMessage("Image path must be a string"),
-  body("img2_alt").optional().isString().withMessage("Image alt must be a string"),
-  body("img2_alt_ar").optional().isString().withMessage("Arabic image alt must be a string"),
 ];
 
 /* ---------- ID VALIDATION ---------- */

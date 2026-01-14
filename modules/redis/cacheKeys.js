@@ -1,4 +1,3 @@
-
 const cacheKeys = {
   home: "home",
   about: "about",
@@ -14,6 +13,7 @@ const cacheKeys = {
   blogDetail: (slug) => `blog-list:${slug}`,
   customization: "customization",
   materialsGuide: "materialsGuide",
+  sustainability: "sustainability",
 };
 
 module.exports = cacheKeys;

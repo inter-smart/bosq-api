@@ -13,6 +13,7 @@ const cacheKeys = {
   customization: "customization",
   materialsGuide: "materialsGuide",
   sustainability: "sustainability",
+  ergonomichair: "ergonomichair",
 };
 
 module.exports = cacheKeys;

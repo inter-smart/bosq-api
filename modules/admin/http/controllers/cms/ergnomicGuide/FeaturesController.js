@@ -4,8 +4,11 @@ const { sendValidationError, sendSuccessResponse, sendErrorResponse, sendNotFoun
 const { handleFileUploadStore, handleFileUploadUpdate } = require("../../../middleware/multerMiddleware.js");
 const { paginate } = require("../../../traits/datatablePaginationHelper.js");
 const { validateId, validationRequestPost } = require("../../../request/cms/ergnomicGuide/featuresRequest.js");
+const cacheKeys = require("../../../../../redis/cacheKeys.js");
+const { invalidateCache } = require("../../../../../redis/redisService.js");
 
 const DataModel = models.ErgonomicFeatures;
+const cacheKey = cacheKeys.ergonomichair;
 
 class ErgonomicFeaturesController {
   static async index(req, res) {
@@ -45,6 +48,8 @@ class ErgonomicFeaturesController {
 
       // Create data with transaction
       const data = await DataModel.create(req.body, { transaction });
+
+      await invalidateCache(cacheKey);
 
       // Commit the transaction
       await transaction.commit();
@@ -103,6 +108,8 @@ class ErgonomicFeaturesController {
 
       await data.update(req.body, { transaction });
 
+      await invalidateCache(cacheKey);
+
       await transaction.commit();
 
       const updatedData = await DataModel.findByPk(data.id);
@@ -133,6 +140,8 @@ class ErgonomicFeaturesController {
 
       // Soft delete
       await data.destroy();
+
+      await invalidateCache(cacheKey);
 
       sendSuccessResponse(res, { id }, "Data deleted successfully");
     } catch (error) {

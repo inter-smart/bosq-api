@@ -50,11 +50,11 @@ const PORT = process.env.PORT || 3002;
 
 const startServer = async () => {
   try {
-    // await sequelize.authenticate();
-    await sequelize.sync({ alter: true });
+    await sequelize.authenticate();
+    // await sequelize.sync({ alter: true });
     Logger.info("✅ Database connected and synced");
 
-    // await models.HomeCms.sync({ force: true });
+    await models.HomeCms.sync({ force: true });
     // console.log("🔥 HomeCms table force-synced!");
 
     // Add this to see which models are registered

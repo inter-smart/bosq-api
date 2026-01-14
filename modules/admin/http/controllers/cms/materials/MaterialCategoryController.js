@@ -14,9 +14,12 @@ const {
   paginate,
 } = require("../../../traits/datatablePaginationHelper");
 const { Op } = require("sequelize");
+const cacheKeys = require("../../../../../redis/cacheKeys");
+const { invalidateCache } = require("../../../../../redis/redisService");
 
 const DataModel = models.MaterialCategories;
-const Materials = models.Materials;
+const cacheKey = cacheKeys.materialsGuide;
+
 class MaterialsCategoryController {
   static async index(req, res) {
     try {
@@ -70,7 +73,7 @@ class MaterialsCategoryController {
 
       // Create data with transaction
       const data = await DataModel.create(req.body, { transaction });
-
+      await invalidateCache(cacheKey);
       // Commit the transaction
       await transaction.commit();
       sendSuccessResponse(res, data, "Data created successfully", 201);
@@ -139,7 +142,7 @@ class MaterialsCategoryController {
       }
 
       await data.update(req.body, { transaction });
-
+      await invalidateCache(cacheKey);
       await transaction.commit();
 
       const updatedData = await DataModel.findByPk(data.id);
@@ -170,7 +173,7 @@ class MaterialsCategoryController {
 
       // Soft delete
       await data.destroy();
-
+      await invalidateCache(cacheKey);
       sendSuccessResponse(res, { id }, "Data deleted successfully");
     } catch (error) {
       console.error("Data deletion error:", error);

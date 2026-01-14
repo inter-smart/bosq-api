@@ -56,6 +56,9 @@ const getCache = async (key) => {
 
 const invalidateMultipleCaches = async (redisClient, keys) => {
   try {
+
+
+
     if (!keys || keys.length === 0) {
       console.log("⚠️  No cache keys provided for invalidation");
       return { success: 0, failed: 0, keys: [] };
@@ -114,6 +117,7 @@ const invalidateCacheByModel = async (redisClient, modelName, cacheDependencies,
       return key;
     }).filter(Boolean); // Remove any null/undefined values
 
+    console.log(keys)
     return await invalidateMultipleCaches(redisClient, keys);
   } catch (error) {
     console.error(`Failed to invalidate cache for model ${modelName}:`, error);

@@ -11,8 +11,11 @@ const {
 const {
   handleFileUploadUpdate,
 } = require("../../../middleware/multerMiddleware.js");
+const cacheKeys = require("../../../../../redis/cacheKeys.js");
+const { invalidateCache } = require("../../../../../redis/redisService.js");
 
 const DataModel = models.MaterialGuideCms;
+const cacheKey = cacheKeys.materialsGuide;
 
 class MaterialGuideCmsController {
   //DATA VIEW  START
@@ -61,6 +64,7 @@ class MaterialGuideCmsController {
       if (existingData) {
         data = existingData;
         await handleFileUploadUpdate(req, data, fileFields);
+        await invalidateCache(cacheKey);
         await data.update(req.body, { transaction });
       } else {
         data = await DataModel.create(req.body, { transaction });

@@ -1,12 +1,25 @@
 const { validationResult } = require("express-validator");
 const { sequelize, models } = require("../../../../../../database/models");
-const { sendValidationError, sendSuccessResponse, sendErrorResponse, sendNotFoundError } = require("../../../traits/responseHandler");
-const { validationRequestPost, validateId } = require("../../../request/cms/materialGuide/extraMaterialRequest");
+const {
+  sendValidationError,
+  sendSuccessResponse,
+  sendErrorResponse,
+  sendNotFoundError,
+} = require("../../../traits/responseHandler");
+const {
+  validationRequestPost,
+  validateId,
+} = require("../../../request/cms/materialGuide/extraMaterialRequest");
 const { paginate } = require("../../../traits/datatablePaginationHelper");
-const { handleFileUploadStore, handleFileUploadUpdate } = require("../../../middleware/multerMiddleware");
+const {
+  handleFileUploadStore,
+  handleFileUploadUpdate,
+} = require("../../../middleware/multerMiddleware");
+const cacheKeys = require("../../../../../redis/cacheKeys");
+const { invalidateCache } = require("../../../../../redis/redisService");
 
 const DataModel = models.ExtraMaterials;
-
+const cacheKey = cacheKeys.materialsGuide;
 class ExtraMaterialsController {
   static async index(req, res) {
     try {
@@ -31,7 +44,9 @@ class ExtraMaterialsController {
   }
 
   static async store(req, res) {
-    await Promise.all(validationRequestPost.map((validation) => validation.run(req)));
+    await Promise.all(
+      validationRequestPost.map((validation) => validation.run(req))
+    );
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return sendValidationError(res, errors.array());
@@ -46,7 +61,7 @@ class ExtraMaterialsController {
 
       // Create data with transaction
       const data = await DataModel.create(req.body, { transaction });
-
+      await invalidateCache(cacheKey);
       // Commit the transaction
       await transaction.commit();
 
@@ -86,7 +101,9 @@ class ExtraMaterialsController {
   }
 
   static async update(req, res) {
-    await Promise.all([...validateId, ...validationRequestPost].map((v) => v.run(req)));
+    await Promise.all(
+      [...validateId, ...validationRequestPost].map((v) => v.run(req))
+    );
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return sendValidationError(res, errors.array());
@@ -107,7 +124,7 @@ class ExtraMaterialsController {
       await handleFileUploadUpdate(req, data, fileFields);
 
       await data.update(req.body, { transaction });
-
+      await invalidateCache(cacheKey);
       await transaction.commit();
 
       const updatedData = await DataModel.findByPk(data.id);
@@ -138,6 +155,7 @@ class ExtraMaterialsController {
 
       // Soft delete
       await data.destroy();
+      await invalidateCache(cacheKey);
 
       sendSuccessResponse(res, { id }, "Data deleted successfully");
     } catch (error) {

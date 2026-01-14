@@ -25,8 +25,10 @@ const cacheDependencies = {
   AboutOurClients: [cacheKeys.about],
 
   // Materials Module
-  MaterialsCms: [cacheKeys.materials],
-  Materials: [cacheKeys.materials],
+  MaterialGuideCms: [cacheKeys.materialsGuide],
+  Materials: [cacheKeys.materialsGuide],
+  MaterialCategories: [cacheKeys.materialsGuide],
+  ExtraMaterials: [cacheKeys.materialsGuide],
 
   // Sustainability Module
   SustainabilityCms: [cacheKeys.sustainability],

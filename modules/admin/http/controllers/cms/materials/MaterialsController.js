@@ -14,9 +14,12 @@ const {
   paginate,
 } = require("../../../traits/datatablePaginationHelper");
 const { handleFileUploadStore, handleFileUploadUpdate } = require("../../../middleware/multerMiddleware");
+const { invalidateCache } = require("../../../../../redis/redisService");
+const cacheKeys = require("../../../../../redis/cacheKeys");
 
 const DataModel = models.Materials;
 const MaterialCategoryModel = models.MaterialCategories;
+const cacheKey = cacheKeys.materialsGuide;
 
 class MaterialsController {
   static async index(req, res) {
@@ -87,7 +90,7 @@ class MaterialsController {
 
       // Create data with transaction
       const data = await DataModel.create(req.body, { transaction });
-
+      await invalidateCache(cacheKey);
       // Commit the transaction
       await transaction.commit();
 
@@ -183,7 +186,7 @@ class MaterialsController {
       await data.update(req.body, { transaction });
 
       await transaction.commit();
-
+      await invalidateCache(cacheKey);
       const updatedData = await DataModel.findByPk(data.id, {
         include: [
           {
@@ -220,7 +223,7 @@ class MaterialsController {
 
       // Soft delete
       await data.destroy();
-
+      await invalidateCache(cacheKey);
       sendSuccessResponse(res, { id }, "Data deleted successfully");
     } catch (error) {
       console.error("Data deletion error:", error);

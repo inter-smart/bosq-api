@@ -3,8 +3,11 @@ const { sequelize, models } = require("../../../../../../database/models");
 const { sendValidationError, sendSuccessResponse, sendErrorResponse } = require("../../../traits/responseHandler");
 const { handleFileUploadUpdate } = require("../../../middleware/multerMiddleware");
 const { validationRequestPost } = require("../../../request/cms/ergnomicGuide/cmsRequest");
+const cacheKeys = require("../../../../../redis/cacheKeys");
+const { invalidateCache } = require("../../../../../redis/redisService");
 
 const DataModel = models.ErgonomicCms;
+const cacheKey = cacheKeys.ergonomichair;
 
 class ErgnomicGuideCmsController {
   //DATA VIEW  START
@@ -48,6 +51,8 @@ class ErgnomicGuideCmsController {
         data = await DataModel.create(req.body, { transaction });
         await handleFileUploadUpdate(req, data, fileFields);
       }
+
+      await invalidateCache(cacheKey);
 
       await transaction.commit();
       return sendSuccessResponse(res, data, "Data updated successfully", 200);

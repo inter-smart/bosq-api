@@ -11,15 +11,15 @@ class DeliveryPolicyService {
     try {
       // 1. Get data from cache
       const cachedData = await getCache(cacheKey);
-
+      
       // 2. If cached data exists, return it
-      // if (cachedData) {
-      //   return {
-      //     data: cachedData,
-      //     fromCache: true,
-      //     message: "Return Policy page data fetched from cache",
-      //   };
-      // }
+      if (cachedData) {
+        return {
+          data: cachedData,
+          fromCache: true,
+          message: "Return Policy page data fetched from cache",
+        };
+      }
 
       //   3. If no cached data, fetch from database
       const [deliveryCms, deliveryTime, deliveryMethods] = await Promise.all([

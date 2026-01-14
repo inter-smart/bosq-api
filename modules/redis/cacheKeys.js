@@ -10,8 +10,8 @@ const cacheKeys = {
   faq: "faq",
   contact: "contact",
   projects: "home",
-  blog: "blog",
-  blogDetail: (slug) => `blog:detail:${slug}`,
+  blog: "blog-list",
+  blogDetail: (slug) => `blog-list:${slug}`,
   customization: "customization",
   materialsGuide: "materialsGuide",
 };

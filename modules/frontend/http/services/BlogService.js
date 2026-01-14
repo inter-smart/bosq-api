@@ -77,8 +77,7 @@ class BlogService {
         throw new Error("No slug found");
       }
 
-      const cacheKey = `blog:detail:${slug}`;
-      const cachedData = await getCache(cacheKey);
+      const cachedData = await getCache(`${cacheKey}:${slug}`);
 
       // 2. If cached data exists, return it
       if (cachedData) {
@@ -204,7 +203,7 @@ class BlogService {
         relatedBlogData,
       };
 
-      await setCache(cacheKey, result);
+      await setCache(`${cacheKey}:${slug}`, result);
 
       return {
         data: result,

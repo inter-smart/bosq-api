@@ -108,11 +108,9 @@ class ErgonomicFeaturesController {
 
       await data.update(req.body, { transaction });
 
-      await invalidateCache(cacheKey);
-
-      await transaction.commit();
-
       const updatedData = await DataModel.findByPk(data.id);
+      await invalidateCache(cacheKey);
+      await transaction.commit();
 
       return sendSuccessResponse(res, updatedData, "Data updated successfully");
     } catch (error) {

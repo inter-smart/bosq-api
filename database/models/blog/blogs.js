@@ -22,7 +22,11 @@ module.exports = (sequelize) => {
         allowNull: true,
         unique: true,
       },
-
+      isViewed: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+      },
       thumbnail: {
         type: DataTypes.STRING,
         allowNull: true,
@@ -70,7 +74,6 @@ module.exports = (sequelize) => {
         type: DataTypes.BIGINT,
         defaultValue: 0,
       },
-
       sort_order: {
         type: DataTypes.SMALLINT,
         allowNull: false,

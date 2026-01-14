@@ -89,6 +89,19 @@ function formatDate(dateInput) {
   });
 }
 
+function dateFirst(dateInput) {
+  if (!dateInput) return "N/A";
+
+  const date = new Date(dateInput);
+
+  return date.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
+}
+
+
 module.exports = {
   mediaWithType,
   mediaWithoutType,
@@ -96,4 +109,5 @@ module.exports = {
   singleMediaWithoutType,
   button,
   formatDate,
+  dateFirst
 };

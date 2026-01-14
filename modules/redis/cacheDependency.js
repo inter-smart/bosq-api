@@ -64,10 +64,12 @@ const cacheDependencies = {
   NewsCms: [cacheKeys.news],
   NewsCategories: [cacheKeys.news],
 
-  Blogs: [cacheKeys.blog],
+  Blogs: [
+    cacheKeys.blog, // static list cache
+    (row) => cacheKeys.blogDetail(row.slug), // dynamic individual blog cache
+  ],
   BlogCms: [cacheKeys.blog],
   BlogCategories: [cacheKeys.blog],
-
 
   // CUSTOMIZATION
   CustomizationCms: [cacheKeys.customization],

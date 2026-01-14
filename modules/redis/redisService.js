@@ -94,18 +94,26 @@ const invalidateMultipleCaches = async (redisClient, keys) => {
 
 
 
-const invalidateCacheByModel = async (redisClient, modelName, cacheDependencies) => {
+const invalidateCacheByModel = async (redisClient, modelName, cacheDependencies, rowData = null) => {
   try {
     const keysToInvalidate = cacheDependencies[modelName];
-    
+
     if (!keysToInvalidate) {
       console.log(`⚠️  No cache dependencies found for model: ${modelName}`);
       return { success: 0, failed: 0, keys: [] };
     }
 
     // If keysToInvalidate is a string, convert to array
-    const keys = Array.isArray(keysToInvalidate) ? keysToInvalidate : [keysToInvalidate];
-    
+    const keysArray = Array.isArray(keysToInvalidate) ? keysToInvalidate : [keysToInvalidate];
+
+    // Process keys - handle both static strings and dynamic functions
+    const keys = keysArray.map(key => {
+      if (typeof key === 'function' && rowData) {
+        return key(rowData);
+      }
+      return key;
+    }).filter(Boolean); // Remove any null/undefined values
+
     return await invalidateMultipleCaches(redisClient, keys);
   } catch (error) {
     console.error(`Failed to invalidate cache for model ${modelName}:`, error);

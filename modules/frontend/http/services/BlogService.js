@@ -1,10 +1,16 @@
+const { Op, literal } = require("sequelize");
 const { models } = require("../../../../database/models");
 const cacheKeys = require("../../../redis/cacheKeys");
 const { setCache, getCache } = require("../../../redis/redisService");
 const {
   buildBlogData,
   buildHeroData,
+  buildTitleConditions,
+  extractKeywords,
+  buildRelatedBlogSection,
+  buildBlogDetailsData,
 } = require("../traits/dataManipulations/blogCms");
+const { buildTitleSection } = require("../traits/dataManipulations/common");
 
 const cacheKey = cacheKeys.blog;
 
@@ -71,8 +77,7 @@ class BlogService {
         throw new Error("No slug found");
       }
 
-      const cacheKey = `blog:detail:${slug}`;
-      const cachedData = await getCache(cacheKey);
+      const cachedData = await getCache(`${cacheKey}:${slug}`);
 
       // 2. If cached data exists, return it
       if (cachedData) {
@@ -82,8 +87,6 @@ class BlogService {
           message: "Blog detail page data fetched from cache",
         };
       }
-
-
 
       const [cms, blog] = await Promise.all([
         models.BlogCms.findOne(
@@ -106,21 +109,104 @@ class BlogService {
         }),
       ]);
 
-      console.log("slug: ", blog)
+      const keywords = extractKeywords(blog.title || blog.title_ar).slice(0, 3);
 
+      const [prevBlog, nextBlog, relatedBlogs, popularBlogs] =
+        await Promise.all([
+          models.Blogs.findOne({
+            attributes: ["slug"],
+            where: {
+              createdAt: { [Op.lt]: blog.createdAt },
+              status: true
+            },
+            order: [["createdAt", "DESC"]],
+          }),
 
-      if (!blog) {
-        throw new Error("Blog not found");
-      }
+          models.Blogs.findOne({
+            attributes: ["slug"],
+            where: {
+              createdAt: { [Op.gt]: blog.createdAt },
+              status: true
+            },
+            order: [["createdAt", "ASC"]],
+          }),
 
-      const response = {
+          keywords.length
+            ? models.Blogs.findAll({
+                attributes: [
+                  "slug",
+                  "title",
+                  "title_ar",
+                  "thumbnail",
+                  "thumbnail_alt",
+                  "thumbnail_alt_ar",
+                  "published_date",
+                ],
+
+                where: {
+                  [Op.and]: [
+                    literal(`
+            to_tsvector('simple', title || ' ' || coalesce(title_ar, ''))
+            @@ plainto_tsquery('simple', '${keywords.join(" ")}')
+          `),
+                    {
+                      id: { [Op.ne]: blog.id },
+                    },
+                    {
+                      status: true
+                    }
+                  ],
+                },
+
+                limit: 5,
+                order: [["createdAt", "DESC"]],
+                limit: 5,
+              })
+            : Promise.resolve([]),
+
+          models.Blogs.findAll({
+            where:{
+              status: true
+            },
+            attributes: [
+              "slug",
+              "title",
+              "title_ar",
+              "thumbnail",
+              "thumbnail_alt",
+              "thumbnail_alt_ar",
+              "published_date",
+            ],
+            limit: 5,
+            order: [["createdAt", "DESC"]],
+            limit: 5,
+          }),
+        ]);
+
+      const heroData = buildTitleSection(cms);
+      const blogData = buildBlogDetailsData(blog, prevBlog, nextBlog);
+      const relatedBlogData = buildRelatedBlogSection(
         cms,
-        blog,
+        relatedBlogs,
+        "related_blogs"
+      );
+      const popularBlogData = buildRelatedBlogSection(
+        cms,
+        popularBlogs,
+        "popular_blogs"
+      );
+
+      const result = {
+        heroData,
+        blogData,
+        popularBlogData,
+        relatedBlogData,
       };
-      await setCache(cacheKey, response);
+
+      await setCache(`${cacheKey}:${slug}`, result);
 
       return {
-        data: response,
+        data: result,
         message: "Blog detail page data fetched",
       };
     } catch (error) {

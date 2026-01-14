@@ -96,8 +96,9 @@ class BlogController {
       // ✅ Create blog
       const blog = await DataModel.create(req.body, { transaction });
       await invalidateCache(cacheKey);
-      await transaction.commit();
+      await invalidateCache(`blog:detail:${baseSlug}`);
 
+      await transaction.commit();
       // Fetch with association
       const createdData = await DataModel.findByPk(blog.id);
 
@@ -149,6 +150,8 @@ class BlogController {
         return sendNotFoundError(res, "Blog");
       }
 
+      const oldSlug = data.slug;
+
       // ✅ Slug validation + prevent duplicates
       if (title && title.trim() !== data.title) {
         const bloglug = slugify(title.trim(), { lower: true, strict: true });
@@ -192,6 +195,15 @@ class BlogController {
       await transaction.commit();
 
       const updatedData = await DataModel.findByPk(id);
+      const newSlug = updatedData.slug;
+      if (oldSlug) {
+        await invalidateCache(`blog:detail:${oldSlug}`);
+      }
+
+      // Invalidate NEW detail cache (if changed)
+      if (newSlug && newSlug !== oldSlug) {
+        await invalidateCache(`blog:detail:${newSlug}`);
+      }
       await invalidateCache(cacheKey);
 
       sendSuccessResponse(res, updatedData, "Blog updated successfully");
@@ -214,9 +226,15 @@ class BlogController {
       const data = await DataModel.findByPk(id);
       if (!data) return sendNotFoundError(res, "Blog");
 
+      const slug = data.slug;
+
       await data.destroy();
 
       await invalidateCache(cacheKey);
+
+      if (slug) {
+        await invalidateCache(`blog:detail:${slug}`);
+      }
 
       sendSuccessResponse(res, { id }, "Blog deleted successfully");
     } catch (error) {

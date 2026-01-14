@@ -2,10 +2,6 @@ const cacheKeys = require("../../../redis/cacheKeys");
 const { getCache, setCache } = require("../../../redis/redisService");
 const { models } = require("../../../../database/models");
 const {
-  singleMediaWithoutType,
-  mediaWithoutType,
-} = require("../traits/mediaButtonHelper");
-const {
   sendErrorResponse,
 } = require("../../../admin/http/traits/responseHandler");
 const { buildTitleSection } = require("../traits/dataManipulations/common");
@@ -27,8 +23,8 @@ class FaqService {
 
       const [faqCms, faqCategory] = await Promise.all([
         models.FaqCms.findOne(),
+
         models.FaqCategory.findAll({
-          where: { status: true },
           include: [
             {
               model: models.FaqList,
@@ -41,15 +37,18 @@ class FaqService {
                 "answer_ar",
                 "sort_order",
               ],
+              where: {
+                status: true, // ✅ only active FAQs
+              },
+              required: true, // ✅ only categories WITH active FAQs
             },
           ],
-          order: [["sort_order", "ASC"],
-         [{ model: models.FaqList, as: "faq_lists" }, "sort_order", "ASC"]],
-          
+          order: [
+            ["sort_order", "ASC"], // category order
+            [{ model: models.FaqList, as: "faq_lists" }, "sort_order", "ASC"],
+          ],
         }),
       ]);
-
-      console.log(faqCategory);
 
       if (!faqCms) {
         throw new Error("No FAQ CMS data found");
@@ -61,10 +60,11 @@ class FaqService {
 
       const heroData = buildTitleSection(faqCms);
       const faqData = buildFaqData(faqCms, faqCategory);
-
+      const moreFaq = buildTitleSection(faqCms, "question");
       const result = {
         heroData,
         faqData,
+        moreFaq,
       };
 
       await setCache(cacheKey, result);

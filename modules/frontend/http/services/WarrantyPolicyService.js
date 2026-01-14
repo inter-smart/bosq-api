@@ -13,13 +13,13 @@ class WarrantyPolicyService {
       const cachedData = await getCache(cacheKey);
 
       // 2. If cached data exists, return it
-      // if (cachedData) {
-      //   return {
-      //     data: cachedData,
-      //     fromCache: true,
-      //     message: "Return Policy page data fetched from cache",
-      //   };
-      // }
+      if (cachedData) {
+        return {
+          data: cachedData,
+          fromCache: true,
+          message: "Return Policy page data fetched from cache",
+        };
+      }
 
       //   3. If no cached data, fetch from database
       const warrantyPolicy = await models.WarrantyPolicy.findAll({

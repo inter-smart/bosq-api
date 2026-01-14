@@ -30,11 +30,12 @@ class CommonActionsController {
 
       const updatedContent = await Model.findByPk(row_id);
 
-      // Invalidate cache
+      // Invalidate cache (pass updatedContent for dynamic cache keys)
       const cacheResult = await invalidateCacheByModel(
         redisClient,
         model_name,
-        cacheDependencies
+        cacheDependencies,
+        updatedContent
       );
 
       return res.json({
@@ -74,11 +75,12 @@ class CommonActionsController {
       // Fetch updated record
       const updatedContent = await Model.findByPk(row_id);
 
-      // Invalidate cache
+      // Invalidate cache (pass updatedContent for dynamic cache keys)
       const cacheResult = await invalidateCacheByModel(
         redisClient,
         model_name,
-        cacheDependencies
+        cacheDependencies,
+        updatedContent
       );
 
       console.log(

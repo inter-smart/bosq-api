@@ -5,9 +5,12 @@ const { validationRequestPost, validateId } = require("../../../request/cms/home
 const { handleFileUploadStore, handleFileUploadUpdate } = require('../../../middleware/multerMiddleware');
 const { paginate } = require('../../../../http/traits/datatablePaginationHelper');
 const { Op } = require('sequelize');
+const cacheKeys = require('../../../../../redis/cacheKeys.js');
+const { invalidateCache } = require('../../../../../redis/redisService.js');
 
 
 const DataModel = models.HomeBrands;
+const cahceKey = cacheKeys.home;
 
 class HomebrandsController {
     static async index(req, res) {
@@ -62,6 +65,7 @@ class HomebrandsController {
 
             // Commit the transaction
             await transaction.commit();
+            await invalidateCache(cahceKey);
             sendSuccessResponse(res, data, 'Data created successfully', 201);
 
         } catch (error) {
@@ -134,6 +138,7 @@ class HomebrandsController {
             await handleFileUploadUpdate(req, data, fileFields);
 
             await data.update(req.body, { transaction });
+            await invalidateCache(cahceKey);
 
             await transaction.commit();
 
@@ -167,6 +172,7 @@ class HomebrandsController {
 
             // Soft delete
             await data.destroy();
+            await invalidateCache(cahceKey);
 
             sendSuccessResponse(res, { id }, 'Data deleted successfully');
 

@@ -15,6 +15,7 @@ const cacheKeys = {
   materialsGuide: "materialsGuide",
   sustainability: "sustainability",
   ergonomichair: "ergonomichair",
+  siteSettings: "siteSettings",
 };
 
 module.exports = cacheKeys;

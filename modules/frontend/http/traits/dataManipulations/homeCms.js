@@ -19,9 +19,13 @@ function buildHomeBannerSliders(banners) {
       media: {
         desktop: {
           path: generateImageUrl(banner?.media_desktop_path) ?? null,
+          alt: banner?.media_alt ?? null,
+          alt_ar: banner?.media_alt_ar ?? null,
         },
         mobile: {
           path: generateImageUrl(banner?.media_mobile_path) ?? null,
+          alt: banner?.media_alt ?? null,
+          alt_ar: banner?.media_alt_ar ?? null,
         },
       },
       button: {

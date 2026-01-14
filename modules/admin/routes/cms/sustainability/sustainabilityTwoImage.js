@@ -4,10 +4,7 @@ const Controller = require("../../../http/controllers/cms/sustainabillity/twoIma
 const { createUploadMiddleware } = require("../../../http/middleware/multerMiddleware");
 const authMiddleware = require("../../../http/middleware/authMiddleware");
 // Define upload fields
-const fields = [
-  { name: "img1_path", maxCount: 1 },
-  { name: "img2_path", maxCount: 1 },
-];
+const fields = [{ name: "img1_path", maxCount: 1 }];
 
 // Create upload middleware with fields
 const upload = createUploadMiddleware("sustainability-two-images", fields);

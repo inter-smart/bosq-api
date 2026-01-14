@@ -43,7 +43,7 @@ class SustainabilityTwoImageController {
     const transaction = await sequelize.transaction();
 
     try {
-      const fileFields = ["img1_path", "img2_path"];
+      const fileFields = ["img1_path"];
       handleFileUploadStore(req, fileFields);
 
       // Create data with transaction
@@ -102,7 +102,7 @@ class SustainabilityTwoImageController {
         return sendNotFoundError(res, "Data");
       }
 
-      const fileFields = ["img1_path", "img2_path"];
+      const fileFields = ["img1_path"];
       await handleFileUploadUpdate(req, data, fileFields);
 
       await data.update(req.body, { transaction });

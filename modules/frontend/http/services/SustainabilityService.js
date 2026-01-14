@@ -11,13 +11,13 @@ class SustainabilityService {
     try {
       const cachedData = await getCache(cacheKey);
 
-      if (cachedData) {
-        return {
-          data: cachedData,
-          fromCache: true,
-          message: "Sustainability page data fetched from cache",
-        };
-      }
+      // if (cachedData) {
+      //   return {
+      //     data: cachedData,
+      //     fromCache: true,
+      //     message: "Sustainability page data fetched from cache",
+      //   };
+      // }
 
       const [sustainabilityInfo, sectionImages] = await Promise.all([
         models.SustainabilityCms.findOne(),

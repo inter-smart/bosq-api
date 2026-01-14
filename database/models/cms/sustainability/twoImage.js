@@ -18,7 +18,6 @@ module.exports = (sequelize) => {
         type: DataTypes.STRING,
         allowNull: true,
       },
-
       description: {
         type: DataTypes.TEXT,
         allowNull: true,
@@ -27,16 +26,6 @@ module.exports = (sequelize) => {
         type: DataTypes.TEXT,
         allowNull: true,
       },
-
-      points: {
-        type: DataTypes.JSON,
-        allowNull: true,
-      },
-      points_ar: {
-        type: DataTypes.JSON,
-        allowNull: true,
-      },
-
       img1_path: {
         type: DataTypes.TEXT,
         allowNull: true,
@@ -46,19 +35,6 @@ module.exports = (sequelize) => {
         allowNull: true,
       },
       img1_alt_ar: {
-        type: DataTypes.STRING,
-        allowNull: true,
-      },
-
-      img2_path: {
-        type: DataTypes.TEXT,
-        allowNull: true,
-      },
-      img2_alt: {
-        type: DataTypes.STRING,
-        allowNull: true,
-      },
-      img2_alt_ar: {
         type: DataTypes.STRING,
         allowNull: true,
       },

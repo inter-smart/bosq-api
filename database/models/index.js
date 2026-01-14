@@ -85,6 +85,9 @@ const defineHeaderFooter = require("./siteSettings/headerFooter");
 const defineMetaTags = require("./siteSettings/metaTags");
 const definePaymentMethods = require("./siteSettings/paymentMethods");
 
+// AUTH PAGE
+const defineAuthCms = require("./cms/auth/cms");
+
 const models = {
   AdminUser: defineAdminUser(sequelize),
 
@@ -170,6 +173,9 @@ const models = {
   HeaderFooter: defineHeaderFooter(sequelize),
   MetaTags: defineMetaTags(sequelize),
   PaymentMethods: definePaymentMethods(sequelize),
+
+  // AUTH PAGE
+  AuthCms: defineAuthCms(sequelize),
 };
 
 Object.keys(models).forEach((modelName) => {

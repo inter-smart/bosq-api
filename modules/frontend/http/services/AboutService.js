@@ -53,9 +53,6 @@ class AboutService {
           attributes: ["id", "title", "title_ar", "thumbnail", "slug", 'name', 'published_date', 'thumbnail_alt', 'thumbnail_alt_ar'],
         })
       ]);
-    
-
-      
 
       const heroData = buildTitleSection(aboutCms);
       const aboutBannerData = buildABoutBannerSection(aboutCms);

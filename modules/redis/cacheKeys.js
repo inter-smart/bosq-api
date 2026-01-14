@@ -11,6 +11,7 @@ const cacheKeys = {
   contact: "contact",
   projects: "home",
   blog: "blog",
+  blogDetail: (slug) => `blog:detail:${slug}`,
   customization: "customization",
   materialsGuide: "materialsGuide",
 };

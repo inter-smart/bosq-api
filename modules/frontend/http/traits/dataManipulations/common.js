@@ -55,6 +55,8 @@ function buildCmsSection(cmsData, prefix, options = {}) {
 }
 
 
+
+
 function buildBannerSection(cmsData, prefix, options = {}) {
   const {
     defaultMediaType = "image",
@@ -71,7 +73,6 @@ function buildBannerSection(cmsData, prefix, options = {}) {
   const mobilePath = get("media_mobile_path");
   const singlePath = get("media_path");
 
-  console.log(desktopPath)
 
   const hasMedia =
     !!mediaType &&

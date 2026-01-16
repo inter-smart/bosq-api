@@ -22,13 +22,13 @@ class HomeService {
   static async getData() {
     try {
       const cachedData = await getCache(cacheKey);
-      if (cachedData) {
-        return {
-          data: cachedData,
-          fromCache: true,
-          message: "Data fetched from cache",
-        };
-      }
+      // if (cachedData) {
+      //   return {
+      //     data: cachedData,
+      //     fromCache: true,
+      //     message: "Data fetched from cache",
+      //   };
+      // }
 
       const [homeCms, banners, projects, brands, fits] = await Promise.all([
         models.HomeCms.findOne({}),

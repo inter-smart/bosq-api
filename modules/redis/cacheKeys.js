@@ -16,6 +16,7 @@ const cacheKeys = {
   sustainability: "sustainability",
   ergonomichair: "ergonomichair",
   auth: "auth",
+  siteSettings: "siteSettings",
 };
 
 module.exports = cacheKeys;

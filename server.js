@@ -16,7 +16,7 @@ const { connectRedis } = require("./config/redis");
 dotenv.config();
 const app = express();
 
-const allowedOrigins = ["http://localhost:3000", "http://localhost:8080", "http://localhost:8081"];
+const allowedOrigins = ["http://localhost:3000", "http://localhost:8080", "http://localhost:8081", "https://bosq-admin-staging.netlify.app"];
 
 app.use(
   cors({

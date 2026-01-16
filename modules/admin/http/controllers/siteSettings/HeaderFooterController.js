@@ -3,10 +3,13 @@ const { sequelize, models } = require('../../../../../database/models/index.js')
 const { sendValidationError, sendSuccessResponse, sendErrorResponse } = require("../../traits/responseHandler.js");
 const { validationRequestPost } = require("../../request/siteSettings/headerFooterRequest.js");
 const { handleFileUploadUpdate } = require("../../middleware/multerMiddleware.js");
+const cacheKeys = require("../../../../redis/cacheKeys.js");
+const { invalidateCache } = require("../../../../redis/redisService.js");
 
 
 
 const DataModel = models.HeaderFooter;
+const cacheKey = cacheKeys.siteSettings;
 
 
 class HeaderFooterController {
@@ -58,6 +61,7 @@ class HeaderFooterController {
                 await handleFileUploadUpdate(req, data, fileFields);
             }
 
+            await invalidateCache(cacheKey)
             await transaction.commit();
             return sendSuccessResponse(res, data, 'Data updated successfully', 200);
 

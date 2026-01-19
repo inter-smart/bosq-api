@@ -1,0 +1,20 @@
+const { body, param } = require("express-validator");
+
+exports.validationRequestPost = [
+  /* ---------- NAME ---------- */
+  body("name").notEmpty().withMessage("Name is required").isString().withMessage("Name must be a string"),
+
+  /* ---------- CODE ---------- */
+  body("code").notEmpty().withMessage("Code is required").isString().withMessage("Code must be a string"),
+
+  /* ---------- SLUG (AUTO-GENERATED) ---------- */
+  body("slug").optional().isString().withMessage("Slug must be a string"),
+
+  /* ---------- STATUS ---------- */
+  body("status").optional().isBoolean().withMessage("Status must be true or false"),
+
+  /* ---------- SORT ORDER ---------- */
+  body("sort_order").optional().isInt({ min: 1 }).withMessage("Sort order must be a positive integer"),
+];
+
+exports.validateId = [param("id").isInt({ min: 1 }).withMessage("ID must be a positive integer")];

@@ -1,8 +1,8 @@
 const { DataTypes } = require("sequelize");
 
 module.exports = (sequelize) => {
-  const ProductSellingPoints = sequelize.define(
-    "ProductSellingPoints",
+  const ProductBase = sequelize.define(
+    "ProductBase",
     {
       id: {
         type: DataTypes.INTEGER,
@@ -10,7 +10,13 @@ module.exports = (sequelize) => {
         autoIncrement: true,
       },
 
-      name: {
+      title: {
+        type: DataTypes.STRING(255),
+        allowNull: false,
+        unique: true,
+      },
+
+      description: {
         type: DataTypes.STRING(255),
         allowNull: false,
         unique: true,
@@ -20,6 +26,21 @@ module.exports = (sequelize) => {
         type: DataTypes.STRING(255),
         allowNull: false,
         unique: true,
+      },
+
+      details: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+
+      details_points: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+
+      additional_details: {
+        type: DataTypes.TEXT,
+        allowNull: true,
       },
 
       media_path: {
@@ -38,20 +59,20 @@ module.exports = (sequelize) => {
       },
     },
     {
-      tableName: "product_selling_points",
+      tableName: "product_base",
       timestamps: true,
       paranoid: true,
     }
   );
 
-  ProductSellingPoints.associate = (models) => {
-    ProductSellingPoints.belongsToMany(models.ProductBase, {
+  ProductBase.associate = (models) => {
+    ProductBase.belongsToMany(models.ProductSellingPoints, {
       through: models.ProductBaseSellingPoints,
-      foreignKey: "product_selling_point_id",
-      otherKey: "product_base_id",
-      as: "productBases",
+      foreignKey: "product_base_id",
+      otherKey: "product_selling_point_id",
+      as: "sellingPoints",
     });
   };
 
-  return ProductSellingPoints;
+  return ProductBase;
 };

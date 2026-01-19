@@ -89,10 +89,10 @@ const definePaymentMethods = require("./siteSettings/paymentMethods");
 const defineAuthCms = require("./cms/auth/cms");
 
 // Resources
-// Product Category
 const defineProductCategory = require("./resources/productCategory");
-// Product Attribute
 const defineProductAttribute = require("./resources/productAttribute");
+const defineProductSellingPoints = require("./resources/productSellingPoints");
+const defineProductSectors = require("./resources/productSectors");
 
 const models = {
   AdminUser: defineAdminUser(sequelize),
@@ -184,10 +184,10 @@ const models = {
   AuthCms: defineAuthCms(sequelize),
 
   // Resources
-  // Product Category
   ProductCategory: defineProductCategory(sequelize),
-  // Product Attribute
   ProductAttribute: defineProductAttribute(sequelize),
+  ProductSellingPoints: defineProductSellingPoints(sequelize),
+  ProductSectors: defineProductSectors(sequelize),
 };
 
 Object.keys(models).forEach((modelName) => {

@@ -15,6 +15,11 @@ module.exports = (sequelize) => {
         allowNull: false,
         unique: true,
       },
+      name_ar: {
+        type: DataTypes.STRING(255),
+        allowNull: false,
+        unique: true,
+      },
 
       code: {
         type: DataTypes.STRING(255),

@@ -11,7 +11,7 @@ const expressListEndpoints = require("express-list-endpoints");
 const cookieParser = require("cookie-parser");
 const { createAdminUser } = require("./database/seeders/adminUser");
 const { seedMetaTags } = require("./database/seeders/metaTags");
-const { connectRedis } = require("./config/redis");
+const { redisClient, connectRedis } = require("./config/redis");
 const {  homeCmsData } = require("./database/seeders/HomeCms");
 
 dotenv.config();
@@ -65,6 +65,7 @@ const startServer = async () => {
     // await seedMetaTags();
 
     await connectRedis();
+    app.set("redisClient", redisClient);
 
     app.listen(PORT, () => {
       Logger.info(`🚀 Server running on port ${PORT}`);

@@ -5,7 +5,7 @@ const AdminUser = require("../models").models.AdminUser;
 const createAdminUser = async () => {
   try {
     const existingAdmin = await AdminUser.findOne({
-      where: { username: "admin@intersmart.in" },
+      where: { username: "govindnikhil508@gmail.com" },
     });
 
     if (existingAdmin) {
@@ -15,8 +15,8 @@ const createAdminUser = async () => {
     const hashedPassword = await bcrypt.hash("admin123", 10);
 
     await AdminUser.create({
-      username: "admin@intersmart.in",
-      email: "admin@intersmart.in",
+      username: "govindnikhil508@gmail.com",
+      email: "govindnikhil508@gmail.com",
       password: hashedPassword,
       role: "admin",
     });

@@ -18,7 +18,11 @@ class ProductBaseController {
           ["createdAt", "DESC"],
         ],
         searchFields: ["title", "slug", "description"],
-        include: [{ association: "sellingPoints", attributes: ["id", "name", "slug"], through: { attributes: [] } }],
+        include: [
+          { association: "sellingPoints", attributes: ["id", "name", "slug"], through: { attributes: [] } },
+          { association: "category", attributes: ["id", "name", "parent_id", "slug"] },
+          { association: "sectors", attributes: ["id", "name", "slug"], through: { attributes: [] } },
+        ],
       });
 
       const response = {
@@ -62,7 +66,7 @@ class ProductBaseController {
       const fileFields = ["media_path"];
       handleFileUploadStore(req, fileFields);
 
-      const { selling_points, ...productBaseData } = req.body;
+      const { selling_points, sectors, ...productBaseData } = req.body;
 
       const productBase = await DataModel.create(productBaseData, { transaction });
 
@@ -72,10 +76,19 @@ class ProductBaseController {
         parsedPoints?.length > 0 && (await productBase.setSellingPoints(parsedPoints, { transaction }));
       }
 
+      // Associate sectors if provided
+      if (sectors) {
+        const parsedSectors = JSON.parse(sectors);
+        parsedSectors?.length > 0 && (await productBase.setSectors(parsedSectors, { transaction }));
+      }
+
       await transaction.commit();
 
       const createdData = await DataModel.findByPk(productBase.id, {
-        include: [{ association: "sellingPoints", attributes: ["id", "name", "slug"] }],
+        include: [
+          { association: "sellingPoints", attributes: ["id", "name", "slug"] },
+          { association: "sectors", attributes: ["id", "name", "slug"] },
+        ],
       });
 
       sendSuccessResponse(res, createdData, "Product Base created successfully", 201);
@@ -95,7 +108,11 @@ class ProductBaseController {
       const { id } = req.params;
 
       const data = await DataModel.findByPk(id, {
-        include: [{ association: "sellingPoints", attributes: ["id", "name", "slug"] }],
+        include: [
+          { association: "category", attributes: ["id", "name", "parent_id", "slug"] },
+          { association: "sellingPoints", attributes: ["id", "name", "slug"] },
+          { association: "sectors", attributes: ["id", "name", "slug"] },
+        ],
       });
 
       if (!data) return sendNotFoundError(res, "Product Base");
@@ -146,7 +163,7 @@ class ProductBaseController {
       const fileFields = ["media_path"];
       await handleFileUploadUpdate(req, data, fileFields);
 
-      const { selling_points, ...productBaseData } = req.body;
+      const { selling_points, sectors, ...productBaseData } = req.body;
 
       await data.update(productBaseData, { transaction });
 
@@ -156,10 +173,19 @@ class ProductBaseController {
         await data.setSellingPoints(parsedPoints, { transaction });
       }
 
+      // Update sectors if provided
+      if (sectors) {
+        const parsedSectors = JSON.parse(sectors);
+        await data.setSectors(parsedSectors, { transaction });
+      }
+
       await transaction.commit();
 
       const updatedData = await DataModel.findByPk(id, {
-        include: [{ association: "sellingPoints", attributes: ["id", "name", "slug"] }],
+        include: [
+          { association: "sellingPoints", attributes: ["id", "name", "slug"] },
+          { association: "sectors", attributes: ["id", "name", "slug"] },
+        ],
       });
 
       sendSuccessResponse(res, updatedData, "Product Base updated successfully");

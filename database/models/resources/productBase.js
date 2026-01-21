@@ -10,6 +10,16 @@ module.exports = (sequelize) => {
         autoIncrement: true,
       },
 
+      category_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        references: {
+          model: "product_categories",
+          key: "id",
+          onDelete: "CASCADE",
+        },
+      },
+
       title: {
         type: DataTypes.STRING(255),
         allowNull: false,
@@ -62,7 +72,7 @@ module.exports = (sequelize) => {
       tableName: "product_base",
       timestamps: true,
       paranoid: true,
-    }
+    },
   );
 
   ProductBase.associate = (models) => {
@@ -71,6 +81,18 @@ module.exports = (sequelize) => {
       foreignKey: "product_base_id",
       otherKey: "product_selling_point_id",
       as: "sellingPoints",
+    });
+
+    ProductBase.belongsToMany(models.ProductSectors, {
+      through: models.ProductBaseSectors,
+      foreignKey: "product_base_id",
+      otherKey: "product_sector_id",
+      as: "sectors",
+    });
+
+    ProductBase.belongsTo(models.ProductCategory, {
+      foreignKey: "category_id",
+      as: "category",
     });
   };
 

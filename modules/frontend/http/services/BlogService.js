@@ -10,7 +10,7 @@ const {
   buildRelatedBlogSection,
   buildBlogDetailsData,
 } = require("../traits/dataManipulations/blogCms");
-const { buildTitleSection } = require("../traits/dataManipulations/common");
+const { buildTitleSection, buildOtherMetaData } = require("../traits/dataManipulations/common");
 
 const cacheKey = cacheKeys.blog;
 
@@ -80,13 +80,13 @@ class BlogService {
       const cachedData = await getCache(`${cacheKey}:${slug}`);
 
       // 2. If cached data exists, return it
-      if (cachedData) {
-        return {
-          data: cachedData,
-          fromCache: true,
-          message: "Blog detail page data fetched from cache",
-        };
-      }
+      // if (cachedData) {
+      //   return {
+      //     data: cachedData,
+      //     fromCache: true,
+      //     message: "Blog detail page data fetched from cache",
+      //   };
+      // }
 
       const [cms, blog] = await Promise.all([
         models.BlogCms.findOne(
@@ -196,11 +196,14 @@ class BlogService {
         "popular_blogs"
       );
 
+      const metaData = buildOtherMetaData(blog);
+
       const result = {
         heroData,
         blogData,
         popularBlogData,
         relatedBlogData,
+        metaData
       };
 
       await setCache(`${cacheKey}:${slug}`, result);

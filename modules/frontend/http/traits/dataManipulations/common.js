@@ -101,13 +101,17 @@ function buildBannerSection(cmsData, prefix, options = {}) {
 
 
 function buildOtherMetaData(data){
-
-      console.log("other meta: ", data);
-
-
   return {
+    
+    meta_title: data?.meta_title ?? "N/A",
+    meta_title_ar: data?.meta_title_ar ?? "N/A",
+    meta_description: data?.meta_description ?? "N/A",
+    meta_description_ar: data?.meta_description_ar ?? "N/A",
+    meta_keywords: data?.meta_keywords ?? "N/A",
+    meta_keywords_ar: data?.meta_keywords_ar ?? "N/A",
     other_meta: data?.other_meta ?? "N/A",
     other_meta_ar: data?.other_meta_ar ?? "N/A",
+
   };
 }
 

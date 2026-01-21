@@ -17,6 +17,13 @@ class ProductAttributeController {
           ["createdAt", "DESC"],
         ],
         searchFields: ["name", "code", "slug"],
+        include: [
+          {
+            model: models.AttributeValues,
+            as: "values",
+            attributes: ["id", "value", "value_ar", "slug"],
+          },
+        ],
       });
 
       const response = {
@@ -83,7 +90,15 @@ class ProductAttributeController {
     try {
       const { id } = req.params;
 
-      const data = await DataModel.findByPk(id);
+      const data = await DataModel.findByPk(id, {
+        include: [
+          {
+            model: models.AttributeValues,
+            as: "values",
+            attributes: ["id", "value", "value_ar", "slug"],
+          },
+        ],
+      });
 
       if (!data) return sendNotFoundError(res, "Product Attribute");
 

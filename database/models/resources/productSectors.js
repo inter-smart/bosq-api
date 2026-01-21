@@ -52,8 +52,17 @@ module.exports = (sequelize) => {
       tableName: "product_sectors",
       timestamps: true,
       paranoid: true,
-    }
+    },
   );
+
+  ProductSectors.associate = (models) => {
+    ProductSectors.belongsToMany(models.ProductBase, {
+      through: models.ProductBaseSectors,
+      foreignKey: "product_sector_id",
+      otherKey: "product_base_id",
+      as: "products",
+    });
+  };
 
   return ProductSectors;
 };

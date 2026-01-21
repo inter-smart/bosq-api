@@ -22,7 +22,7 @@ module.exports = (sequelize) => {
       },
       name_ar: {
         type: DataTypes.STRING(255),
-        allowNull: false,
+        allowNull: true,
         unique: true,
       },
 
@@ -50,7 +50,7 @@ module.exports = (sequelize) => {
     {
       tableName: "product_categories",
       timestamps: true,
-    }
+    },
   );
 
   ProductCategory.associate = (models) => {

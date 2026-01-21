@@ -1,9 +1,7 @@
 const { redisClient } = require("../../../../config/redis");
 const { models } = require("../../../../database/models");
 const cacheDependencies = require("../../../redis/cacheDependency");
-const {
-  invalidateCacheByModel,
-} = require("../../../redis/redisService");
+const { invalidateCacheByModel } = require("../../../redis/redisService");
 
 class CommonActionsController {
   static async updateStatus(req, res) {
@@ -31,12 +29,7 @@ class CommonActionsController {
       const updatedContent = await Model.findByPk(row_id);
 
       // Invalidate cache (pass updatedContent for dynamic cache keys)
-      const cacheResult = await invalidateCacheByModel(
-        redisClient,
-        model_name,
-        cacheDependencies,
-        updatedContent
-      );
+      const cacheResult = await invalidateCacheByModel(redisClient, model_name, cacheDependencies, updatedContent);
 
       return res.json({
         success: true,
@@ -47,8 +40,6 @@ class CommonActionsController {
           keys: cacheResult.keys,
         },
       });
-
-
     } catch (error) {
       return res.status(500).json({ message: error.message });
     }
@@ -68,24 +59,14 @@ class CommonActionsController {
         return res.status(404).json({ message: "Content not found" });
       }
 
-      const updated = await Model.update(
-        { sort_order },
-        { where: { id: row_id } }
-      );
+      const updated = await Model.update({ sort_order }, { where: { id: row_id } });
       // Fetch updated record
       const updatedContent = await Model.findByPk(row_id);
 
       // Invalidate cache (pass updatedContent for dynamic cache keys)
-      const cacheResult = await invalidateCacheByModel(
-        redisClient,
-        model_name,
-        cacheDependencies,
-        updatedContent
-      );
+      const cacheResult = await invalidateCacheByModel(redisClient, model_name, cacheDependencies, updatedContent);
 
-      console.log(
-        `✅ Sort order updated for ${model_name} ID:${row_id} - Cache invalidation: ${cacheResult.success} key(s)`
-      );
+      console.log(`✅ Sort order updated for ${model_name} ID:${row_id} - Cache invalidation: ${cacheResult.success} key(s)`);
 
       return res.json({
         success: true,
@@ -96,7 +77,33 @@ class CommonActionsController {
           keys: cacheResult.keys,
         },
       });
+    } catch (error) {
+      return res.status(500).json({ message: error.message });
+    }
+  }
 
+  static async getChildCategories(req, res) {
+    try {
+      const { parent_id } = req.query;
+
+      const category = await models?.ProductCategory.findByPk(parent_id);
+      if (!category) {
+        return res.status(404).json({ message: "Category not found" });
+      }
+
+      const childCategories = await models?.ProductCategory.findAll({
+        where: {
+          parent_id: parent_id,
+          status: true,
+        },
+        attributes: ["id", "name", "parent_id"],
+      });
+
+      return res.json({
+        success: true,
+        message: "Sort order updated successfully",
+        data: childCategories || [],
+      });
     } catch (error) {
       return res.status(500).json({ message: error.message });
     }

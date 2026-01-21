@@ -1,8 +1,8 @@
 const { DataTypes } = require("sequelize");
 
 module.exports = (sequelize) => {
-  const ProductAttribute = sequelize.define(
-    "ProductAttribute",
+  const AttributeValues = sequelize.define(
+    "AttributeValues",
     {
       id: {
         type: DataTypes.INTEGER,
@@ -10,21 +10,30 @@ module.exports = (sequelize) => {
         autoIncrement: true,
       },
 
-      name: {
+      attribute_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        references: {
+          model: "product_attributes",
+          key: "id",
+          onDelete: "CASCADE",
+        },
+      },
+
+      value: {
         type: DataTypes.STRING(255),
         allowNull: false,
         unique: true,
       },
 
-      name_ar: {
+      media_path: {
         type: DataTypes.STRING(255),
         allowNull: true,
-        unique: true,
       },
 
-      code: {
+      value_ar: {
         type: DataTypes.STRING(255),
-        allowNull: false,
+        allowNull: true,
         unique: true,
       },
 
@@ -45,19 +54,18 @@ module.exports = (sequelize) => {
       },
     },
     {
-      tableName: "product_attributes",
+      tableName: "attribute_values",
       timestamps: true,
       paranoid: true,
     },
   );
 
-  ProductAttribute.associate = (models) => {
-    ProductAttribute.hasMany(models.AttributeValues, {
+  AttributeValues.associate = (models) => {
+    AttributeValues.belongsTo(models.ProductAttribute, {
       foreignKey: "attribute_id",
-      as: "values",
-      onDelete: "CASCADE",
+      as: "attribute",
     });
   };
 
-  return ProductAttribute;
+  return AttributeValues;
 };

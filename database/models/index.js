@@ -95,6 +95,8 @@ const defineProductSellingPoints = require("./resources/productSellingPoints");
 const defineProductSectors = require("./resources/productSectors");
 const defineProductBase = require("./resources/productBase");
 const defineProductBaseSellingPoints = require("./resources/productBaseSellingPoints");
+const defineProductBaseSectors = require("./resources/productBaseSectors");
+const defineAttributeValues = require("./resources/attributeValues");
 
 const models = {
   AdminUser: defineAdminUser(sequelize),
@@ -192,6 +194,8 @@ const models = {
   ProductSectors: defineProductSectors(sequelize),
   ProductBase: defineProductBase(sequelize),
   ProductBaseSellingPoints: defineProductBaseSellingPoints(sequelize),
+  ProductBaseSectors: defineProductBaseSectors(sequelize),
+  AttributeValues: defineAttributeValues(sequelize),
 };
 
 Object.keys(models).forEach((modelName) => {

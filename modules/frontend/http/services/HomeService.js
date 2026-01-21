@@ -7,6 +7,7 @@ const { generateImageUrl } = require("../../traits/imageUrlHelper");
 const {
   buildCmsSection,
   buildTitleSection,
+  buildOtherMetaData,
 } = require("../traits/dataManipulations/common");
 const {
   buildHomeBannerSliders,
@@ -30,7 +31,7 @@ class HomeService {
       //   };
       // }
 
-      const [homeCms, banners, projects, brands, fits] = await Promise.all([
+      const [homeCms, banners, projects, brands, fits, otherMeta] = await Promise.all([
         models.HomeCms.findOne({}),
         models.HomeBanner.findAll({
           where: {
@@ -58,7 +59,17 @@ class HomeService {
           },
           order: [["sort_order", "ASC"]],
         }),
+        models.MetaTags.findOne({
+          where: {
+            page: "home",
+          },
+          attributes: ["other_meta_ar", "other_meta"],
+        }),
       ]);
+
+
+      console.log(homeCms)
+
 
       const sliders = buildHomeBannerSliders(banners);
       const aboutSection = buildCmsSection(homeCms, "about");
@@ -68,6 +79,8 @@ class HomeService {
       const fitsSection = buildFitsSection(homeCms, fits);
       const brandsSection = buildBrandSection(homeCms, brands)
       const formSection = buildCmsSection(homeCms, "form");
+      const otherMetaTags = buildOtherMetaData(otherMeta);
+      
 
       const result = {
         sliders,
@@ -78,6 +91,7 @@ class HomeService {
         fitsSection,
         brandsSection,
         formSection,
+        otherMetaTags
       };
       await setCache(cacheKey, result);
 

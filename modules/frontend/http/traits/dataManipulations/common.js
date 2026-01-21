@@ -100,10 +100,22 @@ function buildBannerSection(cmsData, prefix, options = {}) {
 }
 
 
+function buildOtherMetaData(data){
+
+      console.log("other meta: ", data);
+
+
+  return {
+    other_meta: data?.other_meta ?? "N/A",
+    other_meta_ar: data?.other_meta_ar ?? "N/A",
+  };
+}
+
 
 
 module.exports = {
   buildTitleSection,
   buildCmsSection,
-  buildBannerSection
+  buildBannerSection,
+  buildOtherMetaData
 };

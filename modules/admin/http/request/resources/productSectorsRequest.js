@@ -3,7 +3,8 @@ const { body, param } = require("express-validator");
 exports.validationRequestPost = [
   /* ---------- NAME ---------- */
   body("name").notEmpty().withMessage("Name is required").isString().withMessage("Name must be a string"),
-
+  body("name_ar").notEmpty().withMessage("Arabic name is required").isString().withMessage("Arabic name must be a string"),
+  
   /* ---------- CODE ---------- */
   body("code").notEmpty().withMessage("Code is required").isString().withMessage("Code must be a string"),
 

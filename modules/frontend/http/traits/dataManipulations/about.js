@@ -121,6 +121,7 @@ function buildNewsSection(aboutCms, aboutNews) {
       name_ar: item?.name_ar ?? "N/A",
       title: item?.title ?? "N/A",
       title_ar: item?.title_ar ?? "N/A",
+      slug: item?.slug ?? "N/A",
       date: formatNewsDate(item?.published_date) ?? "N/A",
      media: singleMediaWithoutType(item, "thumbnail", "thumbnail_alt", "thumbnail_alt_ar")
     }))

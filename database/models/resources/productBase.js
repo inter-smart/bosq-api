@@ -26,7 +26,18 @@ module.exports = (sequelize) => {
         unique: true,
       },
 
+      title_ar: {
+        type: DataTypes.STRING(255),
+        allowNull: false,
+        unique: true,
+      },
+
       description: {
+        type: DataTypes.STRING(255),
+        allowNull: false,
+        unique: true,
+      },
+      description_ar: {
         type: DataTypes.STRING(255),
         allowNull: false,
         unique: true,
@@ -43,12 +54,26 @@ module.exports = (sequelize) => {
         allowNull: true,
       },
 
+      details_ar: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+
       details_points: {
         type: DataTypes.TEXT,
         allowNull: true,
       },
 
+      details_points_ar: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+
       additional_details: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      additional_details_ar: {
         type: DataTypes.TEXT,
         allowNull: true,
       },

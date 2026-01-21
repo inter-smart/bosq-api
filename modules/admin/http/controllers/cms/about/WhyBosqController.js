@@ -5,6 +5,7 @@ const { validationRequestPost, validateId } = require("../../../request/cms/abou
 const { handleFileUploadStore, handleFileUploadUpdate } = require('../../../middleware/multerMiddleware.js');
 const { paginate } = require('../../../traits/datatablePaginationHelper.js');
 const cacheKeys = require('../../../../../redis/cacheKeys.js');
+const { invalidateCache } = require('../../../../../redis/redisService.js');
 
 
 const DataModel = models.WhyBosq;

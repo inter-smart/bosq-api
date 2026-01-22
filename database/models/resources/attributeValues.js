@@ -65,6 +65,13 @@ module.exports = (sequelize) => {
       foreignKey: "attribute_id",
       as: "attribute",
     });
+
+    AttributeValues.belongsToMany(models.ProductVariants, {
+      through: models.ProductVariantAttributes,
+      foreignKey: "attribute_value_id",
+      otherKey: "product_variant_id",
+      as: "variants",
+    });
   };
 
   return AttributeValues;

@@ -108,6 +108,31 @@ class CommonActionsController {
       return res.status(500).json({ message: error.message });
     }
   }
+
+  static async getAttributesWithValues(req, res) {
+    try {
+      const result = await models?.ProductAttribute.findAll({
+        attributes: ["id", "name", "name_ar", "slug", "code"],
+        where: { status: true },
+        order: [["sort_order", "ASC"]],
+        include: [
+          {
+            model: models.AttributeValues,
+            as: "values",
+            attributes: ["id", "value", "value_ar", "slug"],
+          },
+        ],
+      });
+
+      return res.json({
+        success: true,
+        message: "Attributes with values retrieved successfully",
+        data: result || [],
+      });
+    } catch (error) {
+      return res.status(500).json({ message: error.message });
+    }
+  }
 }
 
 module.exports = CommonActionsController;

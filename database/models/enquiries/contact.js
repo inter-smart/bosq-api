@@ -9,6 +9,10 @@ module.exports = (sequelize) => {
         primaryKey: true,
         autoIncrement: true,
       },
+      type: {
+        type: DataTypes.ENUM("contact", "lead-generation"),
+        allowNull: true,
+      },
       name: {
         type: DataTypes.STRING,
         allowNull: false,

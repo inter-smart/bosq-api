@@ -27,6 +27,7 @@ class ContactEnquiryService {
         email: data.email,
         phone: data.phone || null,
         message: data.message,
+        type: data.type
       });
 
       return enquiry;

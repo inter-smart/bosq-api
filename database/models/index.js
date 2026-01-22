@@ -99,6 +99,7 @@ const defineProductBaseSectors = require("./resources/productBaseSectors");
 const defineAttributeValues = require("./resources/attributeValues");
 const defineProductVariants = require("./resources/productVariants");
 const defineProductVariantAttributes = require("./resources/productVariantAttributes");
+const defineProductProjectImage = require("./resources/productProjectImage");
 
 // ENQUIRIES
 const defineContactEnquiry = require("./enquiries/contact");
@@ -207,6 +208,7 @@ const models = {
   AttributeValues: defineAttributeValues(sequelize),
   ProductVariants: defineProductVariants(sequelize),
   ProductVariantAttributes: defineProductVariantAttributes(sequelize),
+  ProductProjectImage: defineProductProjectImage(sequelize),
 };
 
 Object.keys(models).forEach((modelName) => {

@@ -129,6 +129,11 @@ module.exports = (sequelize) => {
       foreignKey: "product_id",
       as: "variants",
     });
+
+    ProductBase.hasMany(models.ProductProjectImage, {
+      foreignKey: "product_id",
+      as: "projectImages",
+    });
   };
 
   return ProductBase;

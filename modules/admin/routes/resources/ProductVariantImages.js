@@ -9,9 +9,11 @@ const uploadMiddleware = createUploadMiddleware("product-variant-images", [{ nam
 router.use(authMiddleware(["admin"]));
 
 router.get("/", Controller.index);
+router.get("/", Controller.index);
 router.get("/:id", Controller.show);
 router.post("/", uploadMiddleware, Controller.store);
 router.put("/:id", uploadMiddleware, Controller.update);
+router.delete("/all", Controller.destroyAll);
 router.delete("/:id", Controller.destroy);
 
 module.exports = router;

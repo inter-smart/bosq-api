@@ -1,66 +1,6 @@
-import { models } from "../../../../database/models/index.js";
+import { Op } from "sequelize";
+import { models, sequelize } from "../../../../database/models/index.js";
 
-export const createProductVariants = (attributes = [], baseSku = "EC") => {
-  if (!Array.isArray(attributes) || attributes.length === 0) {
-    return [];
-  }
-
-  // 1️⃣ Group by attribute_id
-  const grouped = attributes.reduce((acc, item) => {
-    if (!acc[item.attribute_id]) {
-      acc[item.attribute_id] = [];
-    }
-
-    acc[item.attribute_id].push({
-      attribute_id: item.attribute_id,
-      attribute_value_id: item.attribute_value_id,
-      sku_code: item.sku_code || "",
-      price: Number(item.price || 0),
-    });
-
-    return acc;
-  }, {});
-
-  // 2️⃣ Generate cartesian combinations
-  const groups = Object.values(grouped);
-
-  const combinations = groups.reduce((acc, group) => {
-    if (acc.length === 0) {
-      return group.map((item) => [item]);
-    }
-
-    return acc.flatMap((existing) => group.map((item) => [...existing, item]));
-  }, []);
-
-  return combinations.map((combo, index) => {
-    const additional_price = combo.reduce((sum, a) => sum + a.price, 0);
-
-    const sku = [baseSku, ...combo.map((a) => a.sku_code)].join("-");
-
-    return {
-      variant_index: index + 1,
-      sku,
-      attributes: combo.map((a) => ({
-        attribute_id: a.attribute_id,
-        attribute_value_id: a.attribute_value_id,
-        price: a.price,
-        sku_code: a.sku_code,
-      })),
-      additional_price,
-    };
-  });
-};
-
-/**
- * Creates or updates product variant attributes
- * @param {object} transaction - Sequelize transaction
- * @param {Array} attributes - Array of attribute objects with attribute_id, attribute_value_id, sku_code, price
- * @param {number} product_id - The product ID
- * @param {string} operation - Either "create" or "update"
- * @param {number|null} variantId - Required for update operation
- * @param {object} meta - Additional metadata for update (sort_order, status, stock)
- * @returns {Promise<Array>} - Array of created/updated variants
- */
 export const createOrUpdateVariantAttributes = async (transaction, attributes, product_id, operation, variantId = null, meta = {}) => {
   // Validate required parameters
   if (!transaction) {
@@ -188,4 +128,102 @@ export const createOrUpdateVariantAttributes = async (transaction, attributes, p
   }
 
   return createdVariants;
+};
+
+export const updateVariantsPrices = async (transaction, product_id, base_price) => {
+  try {
+    // 1. Get variant IDs
+    const productVariants = await models.ProductVariants.findAll({
+      attributes: ["id"],
+      where: { product_id },
+      transaction,
+      raw: true,
+    });
+
+    if (!productVariants.length) {
+      await transaction.commit();
+      return;
+    }
+
+    const variantIds = productVariants.map((v) => v.id);
+
+    // 2. Aggregate prices in DB
+    const variantTotals = await models.ProductVariantAttributes.findAll({
+      attributes: ["product_variant_id", [sequelize.fn("SUM", sequelize.col("price")), "total_price"]],
+      where: {
+        product_variant_id: { [Op.in]: variantIds },
+      },
+      group: ["product_variant_id"],
+      transaction,
+      raw: true,
+    });
+
+    // 3. Bulk update variants
+    await Promise.all(
+      variantTotals.map(({ product_variant_id, total_price }) =>
+        models.ProductVariants.update(
+          {
+            price: Number(base_price) + Number(total_price || 0),
+          },
+          {
+            where: { id: product_variant_id },
+            transaction,
+          },
+        ),
+      ),
+    );
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const createProductVariants = (attributes = [], baseSku = "EC") => {
+  if (!Array.isArray(attributes) || attributes.length === 0) {
+    return [];
+  }
+
+  // 1️⃣ Group by attribute_id
+  const grouped = attributes.reduce((acc, item) => {
+    if (!acc[item.attribute_id]) {
+      acc[item.attribute_id] = [];
+    }
+
+    acc[item.attribute_id].push({
+      attribute_id: item.attribute_id,
+      attribute_value_id: item.attribute_value_id,
+      sku_code: item.sku_code || "",
+      price: Number(item.price || 0),
+    });
+
+    return acc;
+  }, {});
+
+  // 2️⃣ Generate cartesian combinations
+  const groups = Object.values(grouped);
+
+  const combinations = groups.reduce((acc, group) => {
+    if (acc.length === 0) {
+      return group.map((item) => [item]);
+    }
+
+    return acc.flatMap((existing) => group.map((item) => [...existing, item]));
+  }, []);
+
+  return combinations.map((combo, index) => {
+    const additional_price = combo.reduce((sum, a) => sum + a.price, 0);
+
+    const sku = [baseSku, ...combo.map((a) => a.sku_code)].join("-");
+
+    return {
+      variant_index: index + 1,
+      sku,
+      attributes: combo.map((a) => ({
+        attribute_id: a.attribute_id,
+        attribute_value_id: a.attribute_value_id,
+        price: a.price,
+        sku_code: a.sku_code,
+      })),
+      additional_price,
+    };
+  });
 };

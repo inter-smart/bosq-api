@@ -6,6 +6,8 @@ const { sendSuccessResponse, sendErrorResponse, sendValidationError, sendNotFoun
 const { validationResult } = require("express-validator");
 const { handleFileUploadStore, handleFileUploadUpdate } = require("../../../middleware/multerMiddleware");
 const { Op } = require("sequelize");
+const { upateVariantsPrices, updateVariantsPrices } = require("../../../traits/ProductVariantHelper");
+const { RootNodesUnavailableError } = require("redis");
 
 const DataModel = models.ProductBase;
 
@@ -149,7 +151,7 @@ class ProductBaseController {
 
     try {
       const { id } = req.params;
-      const { title } = req.body;
+      const { title, base_price_changed } = req.body;
 
       const data = await DataModel.findByPk(id, { transaction });
       if (!data) {
@@ -194,6 +196,8 @@ class ProductBaseController {
         const parsedSectors = JSON.parse(sectors);
         await data.setSectors(parsedSectors, { transaction });
       }
+
+      base_price_changed == 1 && (await updateVariantsPrices(transaction, id, req.body.base_price));
 
       await transaction.commit();
 

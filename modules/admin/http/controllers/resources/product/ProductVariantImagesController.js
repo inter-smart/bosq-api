@@ -198,6 +198,25 @@ class ProductVariantImagesController {
       sendErrorResponse(res, error);
     }
   }
+
+  static async destroyAll(req, res) {
+    try {
+      const { ids } = req.body;
+
+      if (!Array.isArray(ids) || ids.length === 0) {
+        return sendValidationError(res, [{ msg: "IDs must be a non-empty array" }]);
+      }
+
+      await DataModel.destroy({
+        where: { id: ids },
+      });
+
+      sendSuccessResponse(res, { deleted_ids: ids }, "Product Variant Images deleted successfully");
+    } catch (error) {
+      console.error("Product Variant Image deletion error:", error);
+      sendErrorResponse(res, error);
+    }
+  }
 }
 
 module.exports = ProductVariantImagesController;

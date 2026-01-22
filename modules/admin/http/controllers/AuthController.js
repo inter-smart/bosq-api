@@ -13,7 +13,6 @@ const {
 const {
   validationRequestPost,
   validationLogin,
-  validatePasswordReset,
   validateResendOtp,
   validateCurrentUserPassword,
   validateResetPassword,
@@ -42,6 +41,7 @@ class AuthController {
       const existingUserByUsername = await AdminUser.findOne({
         where: { username },
       });
+
       if (existingUserByUsername) {
         return sendErrorResponse(res, new Error("Username already exists"), {
           statusCode: 409,
@@ -107,7 +107,7 @@ class AuthController {
       const expiresIn = process.env.JWT_EXPIRES_IN || "1d";
       const token = jwt.sign(tokenPayload, process.env.JWT_SECRET, {
         expiresIn,
-        issuer: process.env.JWT_ISSUER || "your-app-name",
+        issuer: process.env.JWT_ISSUER || "bosq",
       });
 
       const expiresAt = new Date(Date.now() + ms(expiresIn));
@@ -197,7 +197,7 @@ class AuthController {
 
       await redisClient.setEx(
         `password-reset-otp:${user.email.toLowerCase()}`,
-        600, // 10 minutes
+        3600, // 1 hour
         JSON.stringify(otpData),
       );
 
@@ -206,7 +206,7 @@ class AuthController {
         await EmailService.sendPasswordResetEmail(user.email, {
           first_name: user.username || "User",
           otp: otp,
-          expiry_minutes: "10",
+          expiry_minutes: "60",
           year: new Date().getFullYear(),
         });
 

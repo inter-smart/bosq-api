@@ -24,6 +24,7 @@ class ProductBaseController {
           { association: "sellingPoints", attributes: ["id", "name", "slug"], through: { attributes: [] } },
           { association: "category", attributes: ["id", "name", "parent_id", "slug"] },
           { association: "sectors", attributes: ["id", "name", "slug"], through: { attributes: [] } },
+          {association: "projectImages", attributes: ["id", "media_path", "media_alt", "media_alt_ar"]},
           {
             model: models.ProductVariants,
             as: "variants",
@@ -38,8 +39,14 @@ class ProductBaseController {
                 as: "attribute_values",
                 through: { attributes: [] },
               },
+             
             ],
           },
+          // {
+          //   model: models.ProductProjectImage,
+          //   as: "projectImages",
+          //   attributes: ["id", "media_path", "media_alt", "media_alt_ar"],
+          // }
         ],
       });
 

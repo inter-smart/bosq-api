@@ -57,6 +57,13 @@ module.exports = (sequelize) => {
       as: "values",
       onDelete: "CASCADE",
     });
+
+    ProductAttribute.belongsToMany(models.ProductVariants, {
+      through: models.ProductVariantAttributes,
+      foreignKey: "attribute_id",
+      otherKey: "product_variant_id",
+      as: "variants",
+    });
   };
 
   return ProductAttribute;

@@ -191,6 +191,32 @@ class ProductAttributeController {
       sendErrorResponse(res, error);
     }
   }
+
+  static async getAttributesWithValues(req, res) {
+    try {
+      const result = await models?.ProductAttribute.findAll({
+        attributes: ["id", "name", "name_ar", "slug"],
+        where: { status: true },
+        order: [["sort_order", "ASC"]],
+        include: [
+          {
+            model: models.AttributeValues,
+            as: "values",
+            attributes: ["id", "value", "value_ar", "slug"],
+          },
+        ],
+      });
+
+      const response = {
+        list: result,
+      };
+
+      sendSuccessResponse(res, response, "Product Attributes retrieved successfully");
+    } catch (error) {
+      console.error("Product Attributes index error:", error);
+      sendErrorResponse(res, error);
+    }
+  }
 }
 
 module.exports = ProductAttributeController;

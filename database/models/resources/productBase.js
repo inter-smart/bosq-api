@@ -88,6 +88,11 @@ module.exports = (sequelize) => {
         defaultValue: 1,
       },
 
+      base_price: {
+        type: DataTypes.DECIMAL(10, 2),
+        allowNull: true,
+      },
+
       status: {
         type: DataTypes.BOOLEAN,
         defaultValue: true,
@@ -118,6 +123,11 @@ module.exports = (sequelize) => {
     ProductBase.belongsTo(models.ProductCategory, {
       foreignKey: "category_id",
       as: "category",
+    });
+
+    ProductBase.hasMany(models.ProductVariants, {
+      foreignKey: "product_id",
+      as: "variants",
     });
   };
 

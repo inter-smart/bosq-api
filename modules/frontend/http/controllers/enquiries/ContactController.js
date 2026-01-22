@@ -1,6 +1,5 @@
 const { ApiResponse } = require("../../traits/response");
 const { HTTP_STATUS } = require("../../traits/constants");
-const { ErrorHandler } = require("../../traits/errorHandler");
 const service = require("../../services/ContactEnquiryService.js");
 
 class ContactEnquiryController {
@@ -8,12 +7,15 @@ class ContactEnquiryController {
     try {
       const result = await service.store(req.body);
       return ApiResponse.success(res, {
-        message: "Contact enquiry submitted successfully",
+        message:
+          req.body.type === "contact"
+            ? "Contact enquiry submitted successfully"
+            : "Lead generation enquiry submitted successfully",
         data: result,
         status: HTTP_STATUS.CREATED,
       });
     } catch (error) {
-      return ErrorHandler.handleControllerError(error, res, "ContactEnquiryController.store");
+      return sendErrorResponse(res, error, "Internal Server Error", 500);
     }
   }
 }

@@ -1,6 +1,6 @@
 const { body, validationResult } = require("express-validator");
-const { ApiResponse } = require("../../traits/response");
-const { HTTP_STATUS } = require("../../traits/constants");
+const { ApiResponse } = require("../traits/response");
+const { HTTP_STATUS } = require("../traits/constants");
 
 exports.validationRequestPost = [
   body("name")

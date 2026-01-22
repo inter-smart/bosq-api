@@ -1,5 +1,5 @@
 const { validationResult } = require("express-validator");
-const { sequelize, models } = require("../../../../../database/models/index.js");
+const { models } = require("../../../../../database/models/index.js");
 const {
   sendValidationError,
   sendSuccessResponse,
@@ -7,26 +7,20 @@ const {
   sendNotFoundError,
 } = require("../../traits/responseHandler.js");
 
-const { Op } = require("sequelize");
 
 const {
-  validateLeadGenerationCreate,
   validateId,
-} = require("../../request/enquiry/leadGenerationRequest.js");
+} = require("../../request/enquiry/newsletterRequest.js");
 const {
   paginate,
 } = require("../../traits/datatablePaginationHelper.js");
 
-const DataModel = models.ContactEnquiry;
-const LEAD_TYPE = "lead-generation";
+const DataModel = models.NewsLetter;
 
-class LeadGenerationController {
+class NewsLetterController {
   static async index(req, res) {
     try {
       const result = await paginate(DataModel, req, {
-        where: {
-          type: LEAD_TYPE,
-        },
         order: [["createdAt", "DESC"]],
         searchFields: ["name", "email", "phone", "message"],
       });
@@ -36,7 +30,7 @@ class LeadGenerationController {
         pagination: result.pagination,
       };
 
-      sendSuccessResponse(res, response, "Data retrieved successfully");
+      sendSuccessResponse(res, response, "Data data retrieved successfully");
     } catch (error) {
       console.error("Data index error:", error);
       sendErrorResponse(res, error);
@@ -53,18 +47,13 @@ class LeadGenerationController {
     try {
       const { id } = req.params;
 
-      const data = await DataModel.findOne({
-        where: {
-          id,
-          type: LEAD_TYPE,
-        },
-      });
+      const data = await DataModel.findOne();
 
       if (!data) {
-        return sendNotFoundError(res, "Lead");
+        return sendNotFoundError(res, "NewsLetter");
       }
 
-      sendSuccessResponse(res, data, "Lead retrieved successfully");
+      sendSuccessResponse(res, data, "email retrieved successfully");
     } catch (error) {
       console.error("Data show error:", error);
       sendErrorResponse(res, error);
@@ -82,19 +71,14 @@ class LeadGenerationController {
     try {
       const { id } = req.params;
 
-      const data = await DataModel.findOne({
-        where: {
-          id,
-          type: LEAD_TYPE,
-        },
-      });
+      const data = await DataModel.findOne();
 
       if (!data) {
-        return sendNotFoundError(res, "Lead");
+        return sendNotFoundError(res, "Data");
       }
 
       await data.destroy();
-      sendSuccessResponse(res, { id }, "Lead deleted successfully");
+      sendSuccessResponse(res, { id }, "Data deleted successfully");
     } catch (error) {
       console.error("Data deletion error:", error);
       sendErrorResponse(res, error);
@@ -102,4 +86,4 @@ class LeadGenerationController {
   }
 }
 
-module.exports = LeadGenerationController;
+module.exports = NewsLetterController;

@@ -15,7 +15,7 @@ class ProductVariantsController {
 
       const whereClause = {};
       if (product_id) {
-        whereClause.product_id = product_id;
+        whereClause.product_model_id = product_id;
       }
 
       const result = await paginate(DataModel, req, {
@@ -25,13 +25,6 @@ class ProductVariantsController {
           ["createdAt", "DESC"],
         ],
         searchFields: ["sku", "product_code"],
-        include: [
-          {
-            model: models.ProductBase,
-            as: "product",
-            attributes: ["id", "title", "title_ar", "slug"],
-          },
-        ],
       });
 
       const response = {

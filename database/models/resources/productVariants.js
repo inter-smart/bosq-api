@@ -10,11 +10,11 @@ module.exports = (sequelize) => {
         autoIncrement: true,
       },
 
-      product_id: {
+      product_model_id: {
         type: DataTypes.INTEGER,
         allowNull: false,
         references: {
-          model: "product_base",
+          model: "product_models",
           key: "id",
           onDelete: "CASCADE",
         },
@@ -60,9 +60,9 @@ module.exports = (sequelize) => {
   );
 
   ProductVariants.associate = (models) => {
-    ProductVariants.belongsTo(models.ProductBase, {
-      foreignKey: "product_id",
-      as: "product",
+    ProductVariants.belongsTo(models.ProductModels, {
+      foreignKey: "product_model_id",
+      as: "productModel",
     });
 
     // ProductVariant

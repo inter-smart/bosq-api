@@ -79,6 +79,11 @@ module.exports = (sequelize) => {
       otherKey: "attribute_value_id",
       as: "attribute_values",
     });
+
+    ProductVariants.hasMany(models.ProductVariantAttributes, {
+      foreignKey: "product_variant_id",
+      as: "variant_attributes",
+    });
   };
 
   return ProductVariants;

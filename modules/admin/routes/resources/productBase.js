@@ -16,7 +16,7 @@ router.get("/", Controller.index);
 router.get("/:id", Controller.show);
 
 // Protected routes (require admin auth)
-router.post("/", upload, Controller.storeDumy);
+router.post("/", upload, Controller.store);
 router.put("/:id", upload, Controller.update);
 router.delete("/:id", Controller.destroy);
 

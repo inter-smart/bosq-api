@@ -1,3 +1,5 @@
+import { models } from "../../../../database/models/index.js";
+
 export const createProductVariants = (attributes = [], baseSku = "EC") => {
   if (!Array.isArray(attributes) || attributes.length === 0) {
     return [];
@@ -47,4 +49,143 @@ export const createProductVariants = (attributes = [], baseSku = "EC") => {
       additional_price,
     };
   });
+};
+
+/**
+ * Creates or updates product variant attributes
+ * @param {object} transaction - Sequelize transaction
+ * @param {Array} attributes - Array of attribute objects with attribute_id, attribute_value_id, sku_code, price
+ * @param {number} product_id - The product ID
+ * @param {string} operation - Either "create" or "update"
+ * @param {number|null} variantId - Required for update operation
+ * @param {object} meta - Additional metadata for update (sort_order, status, stock)
+ * @returns {Promise<Array>} - Array of created/updated variants
+ */
+export const createOrUpdateVariantAttributes = async (transaction, attributes, product_id, operation, variantId = null, meta = {}) => {
+  // Validate required parameters
+  if (!transaction) {
+    throw new Error("Transaction is required");
+  }
+
+  if (!Array.isArray(attributes) || attributes.length === 0) {
+    throw new Error("Attributes array is required and cannot be empty");
+  }
+
+  if (!product_id) {
+    throw new Error("Product ID is required");
+  }
+
+  if (!["create", "update"].includes(operation)) {
+    throw new Error("Invalid operation. Must be 'create' or 'update'");
+  }
+
+  if (operation === "update" && !variantId) {
+    throw new Error("Variant ID is required for update operation");
+  }
+
+  // Verify product exists
+  const product = await models.ProductBase.findByPk(product_id, {
+    attributes: ["id", "slug", "base_price"],
+    transaction,
+  });
+
+  if (!product) {
+    throw new Error("Product not found");
+  }
+
+  const baseSku = product.slug || "PROD";
+  const basePrice = Number(product.base_price || 0);
+
+  const variantCombinations = createProductVariants(attributes, baseSku);
+
+  if (variantCombinations.length === 0) {
+    throw new Error("No valid product variants could be created from the provided attributes");
+  }
+
+  const createdVariants = [];
+
+  switch (operation) {
+    case "create": {
+      for (const variantData of variantCombinations) {
+        const createdVariant = await models.ProductVariants.create(
+          {
+            product_id: product_id,
+            sku: variantData.sku,
+            product_code: null,
+            price: basePrice + variantData.additional_price,
+            stock: 0,
+            status: true,
+          },
+          { transaction },
+        );
+
+        for (const attr of variantData.attributes) {
+          await models.ProductVariantAttributes.create(
+            {
+              product_variant_id: createdVariant.id,
+              attribute_id: attr.attribute_id,
+              attribute_value_id: attr.attribute_value_id,
+              price: attr.price,
+            },
+            { transaction },
+          );
+        }
+
+        createdVariants.push(createdVariant);
+      }
+      break;
+    }
+
+    case "update": {
+      const currentVariant = await models.ProductVariants.findByPk(variantId, { transaction });
+
+      if (!currentVariant) {
+        throw new Error("Product Variant not found for update");
+      }
+
+      const { sort_order, status, stock } = meta;
+
+      // Delete existing variant attributes
+      await models.ProductVariantAttributes.destroy({
+        where: { product_variant_id: variantId },
+        transaction,
+      });
+
+      // For update, we use the first combination since we're updating a single variant
+      const variantData = variantCombinations[0];
+
+      await currentVariant.update(
+        {
+          sku: variantData.sku,
+          product_code: null,
+          price: basePrice + variantData.additional_price,
+          stock: stock ?? currentVariant.stock,
+          status: status ?? currentVariant.status,
+          sort_order: sort_order ?? currentVariant.sort_order,
+        },
+        { transaction },
+      );
+
+      // Create new variant attributes
+      for (const attr of variantData.attributes) {
+        await models.ProductVariantAttributes.create(
+          {
+            product_variant_id: currentVariant.id,
+            attribute_id: attr.attribute_id,
+            attribute_value_id: attr.attribute_value_id,
+            price: attr.price,
+          },
+          { transaction },
+        );
+      }
+
+      createdVariants.push(currentVariant);
+      break;
+    }
+
+    default:
+      throw new Error("Invalid operation for variant attributes");
+  }
+
+  return createdVariants;
 };

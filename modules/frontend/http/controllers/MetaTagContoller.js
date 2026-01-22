@@ -2,32 +2,20 @@ const { ApiResponse } = require("../traits/response");
 const { HTTP_STATUS, RESPONSE_MESSAGES } = require("../traits/constants");
 const { ErrorHandler } = require("../traits/errorHandler");
 const service = require("../services/MetaTagService");
+const { sendSuccessResponse, sendErrorResponse } = require("../../../admin/http/traits/responseHandler");
 
 class MetaTagController {
   static async index(req, res) {
     try {
-      const { slug, type } = req.params;
+      const { page } = req.params;
 
-      if (!slug || !type) {
-        return ApiResponse.error(res, {
-          message: "Type and slug are required",
-          status: HTTP_STATUS.BAD_REQUEST,
-        });
-      }
+      const language = req.headers["accept-language"] || "en";
 
-      const data = await service.index(type, slug);
+      const {data, message} = await service.index(page, language);
+      return sendSuccessResponse(res, data, message, 200);
 
-      return ApiResponse.success(res, {
-        message: RESPONSE_MESSAGES.SUCCESS.DATA_RETRIEVED,
-        data,
-        status: HTTP_STATUS.OK,
-      });
     } catch (error) {
-      return ErrorHandler.handleControllerError(
-        error,
-        res,
-        "MetaTagController.index"
-      );
+      return sendErrorResponse(res, error, "Internal Server Error", 500);
     }
   }
 }

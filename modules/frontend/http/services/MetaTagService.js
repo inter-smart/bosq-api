@@ -2,82 +2,72 @@ const { models } = require("../../../../database/models");
 const { ErrorHandler } = require("../traits/errorHandler");
 
 class MetaTagService {
-  static async index(type, slug) {
+  /**
+   * Get meta tags for a page according to language
+   * @param {string} page - The page slug
+   * @param {string} language - 'en' or 'ar'
+   * @returns {object} meta tags
+   */
+  static async index(page, language = "en") {
     try {
-      let data;
+      // Fetch record from DB
+      const record = await models.MetaTags.findOne({ where: { page } });
 
-      switch (type) {
-        case "blog":
-          data = await models.Blogs.findOne({
-            attributes: [
-              "meta_title",
-              "meta_description",
-              "meta_keywords",
-              "targeted_keywords",
-              "other_meta_tags",
-              "canonical_url",
-            ],
-            where: { slug },
-          });
-          break;
-
-        case "news":
-          data = await models.News.findOne({
-            attributes: [
-              "meta_title",
-              "meta_description",
-              "meta_keywords",
-              "targeted_keywords",
-              "other_meta_tags",
-              "canonical_url",
-            ],
-            where: { slug },
-          });
-          break;
-
-        case "common-page":
-          data = await models.MetaTags.findOne({
-            attributes: [
-              "meta_title",
-              "meta_description",
-              "meta_keywords",
-              "targeted_keywords",
-              "other_meta_tags",
-              "canonical_url",
-            ],
-            where: { page: slug },
-          });
-          break;
-
-        default:
-          return null; 
-      }
-
-      // fallback meta values
+      // fallback default meta
       const defaultMeta = {
-        meta_title: "BOSQ",
-        meta_description:
-          "Welcome to BOSQ",
-        meta_keywords: "BOSQ",
-        targeted_keywords: "BOSQ",
-        other_meta_tags: "<meta name='author' content='BOSQ'>",
-        canonical_url: "/",
+        en: {
+          meta_title: "BOSQ",
+          meta_description: "Welcome to BOSQ",
+          meta_keywords: "BOSQ",
+          other_meta: "<meta name='author' content='BOSQ'>",
+          canonical_url: "/",
+        },
+        ar: {
+          meta_title: "بوسك",
+          meta_description: "مرحبا بكم في بوسك",
+          meta_keywords: "بوسك",
+          other_meta: "<meta name='author' content='بوسك'>",
+          canonical_url: "/ar",
+        },
       };
 
-      if (!data) {
-        return defaultMeta;
+      // If no record in DB, return default
+      if (!record) {
+        return defaultMeta[language] || defaultMeta.en;
       }
 
-      data = data.toJSON();
-      Object.keys(defaultMeta).forEach((key) => {
-        if (!data[key]) {
-          data[key] = defaultMeta[key];
-        }
-      });
+      const data = record.toJSON();
 
-      return data;
+      // Build meta based on requested language
+      const meta = {
+        meta_title:
+          language === "ar"
+            ? data.meta_title_ar || data.meta_title || defaultMeta.ar.meta_title
+            : data.meta_title || defaultMeta.en.meta_title,
+        meta_description:
+          language === "ar"
+            ? data.meta_description_ar || data.meta_description || defaultMeta.ar.meta_description
+            : data.meta_description || defaultMeta.en.meta_description,
+        meta_keywords:
+          language === "ar"
+            ? data.meta_keywords_ar || data.meta_keywords || defaultMeta.ar.meta_keywords
+            : data.meta_keywords || defaultMeta.en.meta_keywords,
+        other_meta:
+          language === "ar"
+            ? data.other_meta_ar || data.other_meta || defaultMeta.ar.other_meta
+            : data.other_meta || defaultMeta.en.other_meta,
+      
+      };
+
+      return {
+        data: meta,
+        fromCache: false,
+        message: "FAQs fetched successfully",
+      };
+
     } catch (error) {
-      throw ErrorHandler.handleServiceError(error, null, "MetaTagService.index");
+      // Do NOT pass null here; just throw the error
+      throw error;
     }
   }
 }

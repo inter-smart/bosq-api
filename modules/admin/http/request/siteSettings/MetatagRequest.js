@@ -37,6 +37,21 @@ const validationRequestPost = [
     .isString()
     .isLength({ max: 255 })
     .withMessage("Keywords must be a string with max 255 characters"),
+
+    // othe meta
+  
+      body("other_meta")
+    .optional()
+    .isString()
+    .isLength({ max: 255 })
+    .withMessage("Other meta tags must be a string with max 255 characters"),
+
+  body("other_meta_ar")
+    .optional()
+    .isString()
+    .isLength({ max: 255 })
+    .withMessage("Other meta tags must be a string with max 255 characters"),
+
 ];
 
 // ID parameter validation

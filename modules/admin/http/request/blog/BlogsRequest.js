@@ -89,6 +89,15 @@ exports.validationRequestPost = [
   body("meta_keywords_ar")
     .isString()
     .withMessage("Meta keywords Arabic must be a string"),
+
+  body("other_meta")
+    .optional()
+    .isString()
+    .withMessage("Other meta must be a string"),
+  body("other_meta_ar")
+    .optional()
+    .isString()
+    .withMessage("Other meta Arabic must be a string"),
 ];
 
 // Validate blog ID

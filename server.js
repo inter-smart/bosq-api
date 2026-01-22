@@ -11,7 +11,8 @@ const expressListEndpoints = require("express-list-endpoints");
 const cookieParser = require("cookie-parser");
 const { createAdminUser } = require("./database/seeders/adminUser");
 const { seedMetaTags } = require("./database/seeders/metaTags");
-const { connectRedis } = require("./config/redis");
+const { redisClient, connectRedis } = require("./config/redis");
+const {  homeCmsData } = require("./database/seeders/HomeCms");
 
 dotenv.config();
 const app = express();
@@ -52,18 +53,19 @@ const startServer = async () => {
   try {
     await sequelize.authenticate();
     // await sequelize.sync({ alter: true });
-    Logger.info("✅ Database connected and synced");
+    // Logger.info("✅ Database connected and synced");
 
-    await models.HomeCms.sync({ force: true });
-    // console.log("🔥 HomeCms table force-synced!");
+
+    // homeCmsData();
 
     // Add this to see which models are registered
     console.log("Registered models:", Object.keys(sequelize.models));
 
-    await createAdminUser();
+    // await createAdminUser();
     // await seedMetaTags();
 
     await connectRedis();
+    app.set("redisClient", redisClient);
 
     app.listen(PORT, () => {
       Logger.info(`🚀 Server running on port ${PORT}`);

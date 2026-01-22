@@ -18,9 +18,9 @@ class HomeCmsController {
 
             const getCachedData = await getCache(cacheKey)
 
-            if (getCachedData) {
-                return sendSuccessResponse(res, getCachedData, 'Data fetched from cache', 200);
-            }
+            // if (getCachedData) {
+            //     return sendSuccessResponse(res, getCachedData, 'Data fetched from cache', 200);
+            // }
 
             let data = await DataModel.findOne();
 

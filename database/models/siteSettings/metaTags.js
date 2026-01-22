@@ -37,6 +37,16 @@ module.exports = (sequelize) => {
         type: DataTypes.TEXT,
         allowNull: true,
       },
+
+      other_meta: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      other_meta_ar: { 
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+
       deleted_at: {
         type: DataTypes.DATE,
       },

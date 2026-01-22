@@ -7,24 +7,24 @@ class NewsLetterService {
   static async store(data) {
     try {
       // ✅ Correct token key
-      // const token = data?.recaptcha_token;
+      const token = data?.recaptcha_token;
 
-      // if (!token) {
-      //   throw new Error("reCAPTCHA token missing");
-      // }
+      if (!token) {
+        throw new Error("reCAPTCHA token missing");
+      }
 
-      // const { success, score, action } = await validateRecaptcha(token);
+      const { success, score, action } = await validateRecaptcha(token);
 
-      // console.log("reCAPTCHA result:", { success, score, action });
+      console.log("reCAPTCHA result:", { success, score, action });
 
-      // // ✅ v3 validation
-      // if (!success || score < 0.5) {
-      //   const error = new Error(
-      //     "reCAPTCHA verification failed. Please try again.",
-      //   );
-      //   error.statusCode = 403;
-      //   throw error;
-      // }
+      // ✅ v3 validation
+      if (!success || score < 0.5) {
+        const error = new Error(
+          "reCAPTCHA verification failed. Please try again.",
+        );
+        error.statusCode = 403;
+        throw error;
+      }
 
       // check user already exist
       const existingEntry = await models.NewsLetter.findOne({

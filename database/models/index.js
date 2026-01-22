@@ -99,6 +99,7 @@ const defineProductBaseSectors = require("./resources/productBaseSectors");
 const defineAttributeValues = require("./resources/attributeValues");
 const defineProductVariants = require("./resources/productVariants");
 const defineProductVariantAttributes = require("./resources/productVariantAttributes");
+const defineProductVariantImages = require("./resources/productVariantImages");
 
 const models = {
   AdminUser: defineAdminUser(sequelize),
@@ -200,6 +201,7 @@ const models = {
   AttributeValues: defineAttributeValues(sequelize),
   ProductVariants: defineProductVariants(sequelize),
   ProductVariantAttributes: defineProductVariantAttributes(sequelize),
+  ProductVariantImages: defineProductVariantImages(sequelize),
 };
 
 Object.keys(models).forEach((modelName) => {

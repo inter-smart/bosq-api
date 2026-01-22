@@ -100,6 +100,9 @@ const defineAttributeValues = require("./resources/attributeValues");
 const defineProductVariants = require("./resources/productVariants");
 const defineProductVariantAttributes = require("./resources/productVariantAttributes");
 
+// ENQUIRIES
+const defineContactEnquiry = require("./enquiries/contact");
+
 const models = {
   AdminUser: defineAdminUser(sequelize),
 
@@ -188,6 +191,10 @@ const models = {
 
   // AUTH PAGE
   AuthCms: defineAuthCms(sequelize),
+
+
+  // ENQUIRIES
+  ContactEnquiry: defineContactEnquiry(sequelize),
 
   // Resources
   ProductCategory: defineProductCategory(sequelize),

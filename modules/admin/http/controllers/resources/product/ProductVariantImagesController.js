@@ -49,8 +49,6 @@ class ProductVariantImagesController {
     try {
       const { product_variant_id } = req.body;
 
-      console.log(req.files);
-
       const uploadedFiles = req.files?.images || [];
 
       if (!product_variant_id) {
@@ -95,7 +93,7 @@ class ProductVariantImagesController {
         media_type: mediaTypeArr[index] || "image",
         sort_order: parseInt(sortOrderArr[index], 10) || index,
         status: statusArr[index] !== "false" && statusArr[index] !== false,
-        is_primary: isPrimaryArr[index] === "true" || isPrimaryArr[index] === true,
+        is_primary: isPrimaryArr[index] == 1 || isPrimaryArr[index] == "1",
       }));
 
       const createdImages = await DataModel.bulkCreate(imagesToCreate, { transaction });

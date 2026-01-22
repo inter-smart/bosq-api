@@ -4,7 +4,7 @@ const { paginate } = require("../../../traits/datatablePaginationHelper");
 const { sendSuccessResponse, sendErrorResponse, sendValidationError, sendNotFoundError } = require("../../../traits/responseHandler");
 const { validationResult } = require("express-validator");
 const { Op } = require("sequelize");
-const { createProductVariants } = require("../../../traits/ProductVariantHelper");
+const { createProductVariants, createOrUpdateVariantAttributes } = require("../../../traits/ProductVariantHelper");
 
 const DataModel = models.ProductVariants;
 
@@ -90,39 +90,7 @@ class ProductVariantsController {
         return sendNotFoundError(res, "Invalid attribute or attribute value detected");
       }
 
-      // Create variantCombinations
-      const variantCombinations = createProductVariants(attributes, baseSku);
-
-      if (variantCombinations.length === 0) {
-        await transaction.rollback();
-        return sendErrorResponse(res, "No valid product variants could be created from the provided attributes.");
-      }
-
-      for (const variantData of variantCombinations) {
-        const createdVariant = await models?.ProductVariants.create(
-          {
-            product_id: product_id,
-            sku: variantData?.sku,
-            product_code: null,
-            price: basePrice + variantData?.additional_price,
-            stock: 0,
-            status: true,
-          },
-          { transaction },
-        );
-
-        for (const attr of variantData.attributes) {
-          await models?.ProductVariantAttributes.create(
-            {
-              product_variant_id: createdVariant.id,
-              attribute_id: attr.attribute_id,
-              attribute_value_id: attr.attribute_value_id,
-              price: attr.price,
-            },
-            { transaction },
-          );
-        }
-      }
+      await createOrUpdateVariantAttributes(transaction, attributes, product_id, "create", null, {});
 
       await transaction.commit();
 
@@ -143,16 +111,12 @@ class ProductVariantsController {
       const { id } = req.params;
 
       const data = await DataModel.findByPk(id, {
+        attributes: ["id", "status", "product_id", "sku", "product_code", "price", "status", "stock"],
         include: [
           {
-            model: models.ProductAttribute,
-            as: "attributes",
-            through: { attributes: [] },
-          },
-          {
-            model: models.AttributeValues,
-            as: "attribute_values",
-            through: { attributes: [] },
+            model: models.ProductVariantAttributes,
+            as: "variant_attributes",
+            attributes: ["id", "attribute_id", "attribute_value_id", "price"],
           },
         ],
       });
@@ -175,67 +139,15 @@ class ProductVariantsController {
 
     try {
       const { id } = req.params;
-      const { product_id, sku, product_code } = req.body;
+      const { product_id, attributes, sort_order, status, stock } = req.body;
 
-      const data = await DataModel.findByPk(id, { transaction });
-      if (!data) {
-        await transaction.rollback();
-        return sendNotFoundError(res, "Product Variant");
-      }
+      const meta = { sort_order, status, stock };
 
-      // Verify product exists if changing
-      if (product_id && product_id !== data.product_id) {
-        const product = await models.ProductBase.findByPk(product_id);
-        if (!product) {
-          await transaction.rollback();
-          return sendNotFoundError(res, "Product");
-        }
-      }
+      await createOrUpdateVariantAttributes(transaction, attributes, product_id, "update", id, meta);
 
-      // Check for duplicate SKU (excluding current record)
-      if (sku && sku !== data.sku) {
-        const existingSku = await DataModel.findOne({
-          where: {
-            sku,
-            id: { [Op.ne]: id },
-          },
-          paranoid: false,
-        });
-        if (existingSku) {
-          await transaction.rollback();
-          return sendErrorResponse(res, `SKU "${sku}" already exists`, { existing_id: existingSku.id }, 409);
-        }
-      }
-
-      // Check for duplicate product code (excluding current record)
-      if (product_code && product_code !== data.product_code) {
-        const existingCode = await DataModel.findOne({
-          where: {
-            product_code,
-            id: { [Op.ne]: id },
-          },
-          paranoid: false,
-        });
-        if (existingCode) {
-          await transaction.rollback();
-          return sendErrorResponse(res, `Product code "${product_code}" already exists`, { existing_id: existingCode.id }, 409);
-        }
-      }
-
-      await data.update(req.body, { transaction });
       await transaction.commit();
 
-      const updatedData = await DataModel.findByPk(id, {
-        include: [
-          {
-            model: models.ProductBase,
-            as: "product",
-            attributes: ["id", "name", "name_ar", "slug"],
-          },
-        ],
-      });
-
-      sendSuccessResponse(res, updatedData, "Product Variant updated successfully");
+      sendSuccessResponse(res, null, "Product Variant updated successfully");
     } catch (error) {
       await transaction.rollback();
       console.error("Product Variant update error:", error);

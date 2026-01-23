@@ -17,6 +17,7 @@ const cacheKeys = {
   ergonomichair: "ergonomichair",
   auth: "auth",
   siteSettings: "siteSettings",
+  listingDropdownFilters: "listingDropdownFilters",
 };
 
 module.exports = cacheKeys;

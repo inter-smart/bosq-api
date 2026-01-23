@@ -101,7 +101,7 @@ class ProductVariantsController {
       const { id } = req.params;
 
       const data = await DataModel.findByPk(id, {
-        attributes: ["id", "status", "product_id", "sku", "product_code", "price", "status", "stock"],
+        attributes: ["id", "status", "product_model_id", "sku", "product_code", "price", "status", "stock"],
         include: [
           {
             model: models.ProductVariantAttributes,
@@ -129,11 +129,11 @@ class ProductVariantsController {
 
     try {
       const { id } = req.params;
-      const { product_id, attributes, sort_order, status, stock } = req.body;
+      const { product_model_id, attributes, sort_order, status, stock } = req.body;
 
       const meta = { sort_order, status, stock };
 
-      await createOrUpdateVariantAttributes(transaction, attributes, product_id, "update", id, meta);
+      await createOrUpdateVariantAttributes(transaction, attributes, product_model_id, "update", id, meta);
 
       await transaction.commit();
 

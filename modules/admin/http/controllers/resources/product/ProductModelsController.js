@@ -6,6 +6,7 @@ const { validationResult } = require("express-validator");
 const { Op } = require("sequelize");
 const { handleFileUploadStore, handleFileUploadUpdate } = require("../../../middleware/multerMiddleware");
 const { default: slugify } = require("slugify");
+const { updateVariantsPrices } = require("../../../traits/ProductVariantHelper");
 
 const DataModel = models.ProductModels;
 
@@ -155,7 +156,7 @@ class ProductModelsController {
         return sendNotFoundError(res, "Product model");
       }
 
-      const { code, title } = req.body;
+      const { code, title, base_price_changed } = req.body;
 
       if (code && code.trim() !== data.code) {
         const existingCode = await DataModel.findOne({
@@ -192,6 +193,7 @@ class ProductModelsController {
       await handleFileUploadUpdate(req, data, fileFields);
 
       await data.update(req.body, { transaction });
+      base_price_changed == 1 && (await updateVariantsPrices(transaction, id, req.body.base_price));
       await transaction.commit();
 
       const updatedData = await DataModel.findByPk(id, {

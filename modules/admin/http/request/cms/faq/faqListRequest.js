@@ -27,12 +27,13 @@ exports.validationRequestPost = [
     .isString()
     .withMessage("Answer in Arabic must be a string"),
 
-  // CATEGORY (Foreign Key)
-  body("category")
+
+    // type
+  body("type")
     .notEmpty()
-    .withMessage("Category is required")
-    .isInt({ min: 1 })
-    .withMessage("Category must be a valid positive integer"),
+    .withMessage("Type is required")
+    .isIn(["general", "product"])
+    .withMessage("Type must be either 'general' or 'product'"),
 
   // SORT ORDER
   body("sort_order")

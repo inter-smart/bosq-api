@@ -2,8 +2,21 @@ const { redisClient } = require("../../config/redis");
 
 const MAX_EXPIRY = 2 * 60 * 60;
 
+// Cache bypass switch - set CACHE_ENABLED=false in .env to bypass cache in dev/test
+const isCacheEnabled = () => {
+  const cacheEnabled = process.env.CACHE_ENABLED;
+  // Default to true if not set, only disable when explicitly set to 'false'
+  return cacheEnabled !== 'false';
+};
+
 const setCache = async (key, value, expiry = MAX_EXPIRY) => {
   try {
+    // Skip caching if disabled (dev/test mode)
+    if (!isCacheEnabled()) {
+      console.log(`⏭️  Cache skip (disabled): ${key}`);
+      return;
+    }
+
     const serialized = JSON.stringify(value);
 
     if (expiry) {
@@ -39,6 +52,12 @@ const invalidateCache = async (key) => {
 
 const getCache = async (key) => {
   try {
+    // Skip cache lookup if disabled (dev/test mode) - always return null to force fresh data
+    if (!isCacheEnabled()) {
+      console.log(`⏭️  Cache bypass (disabled): ${key}`);
+      return null;
+    }
+
     const cachedData = await redisClient.get(key);
 
     if (cachedData) {

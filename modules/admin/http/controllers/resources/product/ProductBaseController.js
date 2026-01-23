@@ -136,7 +136,7 @@ class ProductBaseController {
 
     try {
       const { id } = req.params;
-      const { title, base_price_changed } = req.body;
+      const { title } = req.body;
 
       const data = await DataModel.findByPk(id, { transaction });
       if (!data) {
@@ -181,8 +181,6 @@ class ProductBaseController {
         const parsedSectors = JSON.parse(sectors);
         await data.setSectors(parsedSectors, { transaction });
       }
-
-      base_price_changed == 1 && (await updateVariantsPrices(transaction, id, req.body.base_price));
 
       await transaction.commit();
 

@@ -47,16 +47,13 @@ class ProductVariantsController {
     const transaction = await sequelize.transaction();
 
     try {
-      const { product_id, attributes, product_code = null } = req.body;
+      const { product_model_id, attributes, product_code = null } = req.body;
 
-      const product = await models.ProductBase.findByPk(product_id);
+      const product = await models.ProductModels.findByPk(product_model_id);
       if (!product) {
         await transaction.rollback();
         return sendNotFoundError(res, "Product");
       }
-
-      const baseSku = product?.slug;
-      const basePrice = Number(product?.base_price || 0);
 
       const pairs = attributes.map((a) => ({
         attribute_id: a.attribute_id,
@@ -83,7 +80,7 @@ class ProductVariantsController {
         return sendNotFoundError(res, "Invalid attribute or attribute value detected");
       }
 
-      await createOrUpdateVariantAttributes(transaction, attributes, product_id, "create", null, {});
+      await createOrUpdateVariantAttributes(transaction, attributes, product_model_id, "create", null, {});
 
       await transaction.commit();
 

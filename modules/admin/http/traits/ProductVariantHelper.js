@@ -1,7 +1,7 @@
 import { Op } from "sequelize";
 import { models, sequelize } from "../../../../database/models/index.js";
 
-export const createOrUpdateVariantAttributes = async (transaction, attributes, product_id, operation, variantId = null, meta = {}) => {
+export const createOrUpdateVariantAttributes = async (transaction, attributes, product_model_id, operation, variantId = null, meta = {}) => {
   // Validate required parameters
   if (!transaction) {
     throw new Error("Transaction is required");
@@ -11,8 +11,8 @@ export const createOrUpdateVariantAttributes = async (transaction, attributes, p
     throw new Error("Attributes array is required and cannot be empty");
   }
 
-  if (!product_id) {
-    throw new Error("Product ID is required");
+  if (!product_model_id) {
+    throw new Error("Product model ID is required");
   }
 
   if (!["create", "update"].includes(operation)) {
@@ -24,8 +24,8 @@ export const createOrUpdateVariantAttributes = async (transaction, attributes, p
   }
 
   // Verify product exists
-  const product = await models.ProductBase.findByPk(product_id, {
-    attributes: ["id", "slug", "base_price"],
+  const product = await models.ProductModels.findByPk(product_model_id, {
+    attributes: ["id", "code", "base_price"],
     transaction,
   });
 
@@ -33,7 +33,7 @@ export const createOrUpdateVariantAttributes = async (transaction, attributes, p
     throw new Error("Product not found");
   }
 
-  const baseSku = product.slug || "PROD";
+  const baseSku = product.code || "PROD";
   const basePrice = Number(product.base_price || 0);
 
   const variantCombinations = createProductVariants(attributes, baseSku);
@@ -49,7 +49,7 @@ export const createOrUpdateVariantAttributes = async (transaction, attributes, p
       for (const variantData of variantCombinations) {
         const createdVariant = await models.ProductVariants.create(
           {
-            product_id: product_id,
+            product_model_id: product_model_id,
             sku: variantData.sku,
             product_code: null,
             price: basePrice + variantData.additional_price,
@@ -130,12 +130,12 @@ export const createOrUpdateVariantAttributes = async (transaction, attributes, p
   return createdVariants;
 };
 
-export const updateVariantsPrices = async (transaction, product_id, base_price) => {
+export const updateVariantsPrices = async (transaction, product_model_id, base_price) => {
   try {
     // 1. Get variant IDs
     const productVariants = await models.ProductVariants.findAll({
       attributes: ["id"],
-      where: { product_id },
+      where: { product_model_id },
       transaction,
       raw: true,
     });
@@ -212,7 +212,7 @@ export const createProductVariants = (attributes = [], baseSku = "EC") => {
   return combinations.map((combo, index) => {
     const additional_price = combo.reduce((sum, a) => sum + a.price, 0);
 
-    const sku = [baseSku, ...combo.map((a) => a.sku_code)].join("-");
+    const sku = [baseSku, ...combo.map((a) => a.sku_code)].map((v) => String(v).toUpperCase()).join("-");
 
     return {
       variant_index: index + 1,

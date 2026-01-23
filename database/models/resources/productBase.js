@@ -88,11 +88,6 @@ module.exports = (sequelize) => {
         defaultValue: 1,
       },
 
-      base_price: {
-        type: DataTypes.DECIMAL(10, 2),
-        allowNull: true,
-      },
-
       status: {
         type: DataTypes.BOOLEAN,
         defaultValue: true,
@@ -125,9 +120,9 @@ module.exports = (sequelize) => {
       as: "category",
     });
 
-    ProductBase.hasMany(models.ProductVariants, {
+    ProductBase.hasMany(models.ProductModels, {
       foreignKey: "product_id",
-      as: "variants",
+      as: "models",
     });
 
     ProductBase.hasMany(models.ProductProjectImage, {

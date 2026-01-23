@@ -99,7 +99,9 @@ const defineProductBaseSectors = require("./resources/productBaseSectors");
 const defineAttributeValues = require("./resources/attributeValues");
 const defineProductVariants = require("./resources/productVariants");
 const defineProductVariantAttributes = require("./resources/productVariantAttributes");
+const defineProductVariantImages = require("./resources/productVariantImages");
 const defineProductProjectImage = require("./resources/productProjectImage");
+const defineProductModels = require("./resources/productModels");
 
 // ENQUIRIES
 const defineContactEnquiry = require("./enquiries/contact");
@@ -193,7 +195,6 @@ const models = {
   // AUTH PAGE
   AuthCms: defineAuthCms(sequelize),
 
-
   // ENQUIRIES
   ContactEnquiry: defineContactEnquiry(sequelize),
   NewsLetter: defineNewsLetter(sequelize),
@@ -208,7 +209,9 @@ const models = {
   AttributeValues: defineAttributeValues(sequelize),
   ProductVariants: defineProductVariants(sequelize),
   ProductVariantAttributes: defineProductVariantAttributes(sequelize),
+  ProductVariantImages: defineProductVariantImages(sequelize),
   ProductProjectImage: defineProductProjectImage(sequelize),
+  ProductModels: defineProductModels(sequelize),
 };
 
 Object.keys(models).forEach((modelName) => {

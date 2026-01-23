@@ -24,27 +24,40 @@ const cacheKey = cacheKeys.faq;
 class FaqListController {
   static async index(req, res) {
     try {
-      const { category } = req.query;
 
-      // Build where clause for filtering
       const whereClause = {};
-      if (category) {
-        whereClause.category = parseInt(category, 10);
+      const { product, type, faq_category } = req.query;
+      // Build where clause for filtering
+      if (faq_category) {
+        whereClause.faq_category_id = parseInt(faq_category, 10);
+      }
+
+
+      if(product){
+        whereClause.product_id = parseInt(product, 10);
+      }
+
+      if (type) {
+        whereClause.type = type;
       }
 
       const result = await paginate(DataModel, req, {
-        where:whereClause,
+        where: whereClause,
         order: [
           ["sort_order", "ASC"],
           ["createdAt", "DESC"],
         ],
         searchFields: ["question", "answer"],
+        
         include: [
           {
             model: FaqCategoryModel,
             as: "faq_category",
             attributes: ["id", "title", "status"],
           },
+          {
+            association: "product", attributes: ["id", "title"]
+          }
         ],
       });
 
@@ -62,7 +75,7 @@ class FaqListController {
 
   static async store(req, res) {
     await Promise.all(
-      validationRequestPost.map((validation) => validation.run(req))
+      validationRequestPost.map((validation) => validation.run(req)),
     );
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -72,15 +85,50 @@ class FaqListController {
     const transaction = await sequelize.transaction();
 
     try {
+      const { type, faq_category_id, product_id, ...rest } = req.body;
+
       // Verify category exists
-      const categoryExists = await FaqCategoryModel.findByPk(req.body.category);
-      if (!categoryExists) {
-        await transaction.rollback();
-        return sendNotFoundError(res, "Category");
+
+      if (faq_category_id) {
+        const categoryExists = await FaqCategoryModel.findByPk(faq_category_id);
+        if (!categoryExists) {
+          await transaction.rollback();
+          return sendNotFoundError(res, "Category");
+        }
       }
 
+      if (type === "general" && !faq_category_id) {
+        return res.status(422).json({
+          success: false,
+          message: "FAQ category is required for general FAQs",
+        });
+      }
+
+      if (type === "product" && !product_id) {
+        return res.status(422).json({
+          success: false,
+          message: "Product is required for product FAQs",
+        });
+      }
+
+      if (type === "general" && product_id) {
+        return res.status(422).json({
+          success: false,
+          message: "Product is not allowed for general FAQs",
+        });
+      }
+
+
       // Create data with transaction
-      const data = await DataModel.create(req.body, { transaction });
+      const data = await DataModel.create(
+        {
+          ...rest,
+          type,
+          faq_category_id: type === "general" ? faq_category_id : null,
+          product_id: type === "product" ? product_id : null,
+        },
+        { transaction },
+      );
 
       await invalidateCache(cacheKey);
       // Commit the transaction
@@ -139,7 +187,7 @@ class FaqListController {
 
   static async update(req, res) {
     await Promise.all(
-      [...validateId, ...validationRequestPost].map((v) => v.run(req))
+      [...validateId, ...validationRequestPost].map((v) => v.run(req)),
     );
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -157,10 +205,43 @@ class FaqListController {
         return sendNotFoundError(res, "Data");
       }
 
+      const { type, faq_category_id, product_id, ...rest } = req.body;
+
+      // 🔐 SAME RULES APPLY
+      if (type === "general" && !faq_category_id) {
+        return res.status(422).json({
+          success: false,
+          message: "FAQ category is required for general FAQs",
+        });
+      }
+
+      if (type === "product" && !product_id) {
+        return res.status(422).json({
+          success: false,
+          message: "Product is required for product FAQs",
+        });
+      }
+
+      if (type === "general" && product_id) {
+        return res.status(422).json({
+          success: false,
+          message: "Product not allowed for general FAQs",
+        });
+      }
+
+      const faq = await models.FaqList.findByPk(id);
+
+      if (!faq) {
+        return res.status(404).json({
+          success: false,
+          message: "FAQ not found",
+        });
+      }
+
       // Verify category exists if category is being updated
       if (req.body.category) {
         const categoryExists = await FaqCategoryModel.findByPk(
-          req.body.category
+          req.body.category,
         );
         if (!categoryExists) {
           await transaction.rollback();
@@ -168,7 +249,15 @@ class FaqListController {
         }
       }
 
-      await data.update(req.body, { transaction });
+      await data.update(
+        {
+          ...rest,
+          type,
+          faq_category_id: type === "general" ? faq_category_id : null,
+          product_id: type === "product" ? product_id : null,
+        },
+        { transaction },
+      );
       await invalidateCache(cacheKey);
       await transaction.commit();
 
@@ -212,6 +301,35 @@ class FaqListController {
       sendSuccessResponse(res, { id }, "Data deleted successfully");
     } catch (error) {
       console.error("Data deletion error:", error);
+      sendErrorResponse(res, error);
+    }
+  }
+
+  static async getFaqDropDown(req,res){
+    try {
+
+      const [products, category] = await Promise.all([
+        await models.ProductBase.findAll({
+          where: { status: true },
+          attributes: ['id', 'title'],
+          order: [['title', 'ASC']],
+        }),
+        await models.FaqCategory.findAll({
+          where: { status: true },
+          attributes: ['id', 'title'],
+          order: [['title', 'ASC']],
+        })
+      ])
+
+      const result = {
+        products: products,
+        categories: category
+      }
+
+      sendSuccessResponse(res, result, "Product list retrieved successfully");
+    }
+    catch (error) {
+      console.error("Product list retrieval error:", error);
       sendErrorResponse(res, error);
     }
   }

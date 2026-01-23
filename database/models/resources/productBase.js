@@ -129,7 +129,13 @@ module.exports = (sequelize) => {
       foreignKey: "product_id",
       as: "projectImages",
     });
+
+    ProductBase.hasMany(models.FaqList, {
+      foreignKey: "product_id",
+      as: "faqs",
+    });
   };
+  
 
   return ProductBase;
 };

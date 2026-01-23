@@ -25,15 +25,32 @@ module.exports = (sequelize) => {
         type: DataTypes.TEXT,
         allowNull: true,
       },
-      category: {
-        type: DataTypes.INTEGER,
+
+      type: {
+        type: DataTypes.ENUM("general", "product"),
         allowNull: false,
+      },
+
+      faq_category_id: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
         references: {
           model: "faq_categories",
           key: "id",
           onDelete: "CASCADE",
         },
       },
+
+      product_id: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        references: {
+          model: "product_base",
+          key: "id",
+          onDelete: "CASECADE",
+        },
+      },
+
       sort_order: {
         type: DataTypes.SMALLINT,
         allowNull: false,
@@ -52,13 +69,20 @@ module.exports = (sequelize) => {
     {
       tableName: "faq_lists",
       timestamps: true,
-    }
+      paranoid: true,
+    },
   );
 
   FaqLists.associate = (models) => {
     FaqLists.belongsTo(models.FaqCategory, {
-      foreignKey: "category",
+      foreignKey: "faq_category_id",
       as: "faq_category",
+      onDelete: "CASCADE",
+    });
+
+    FaqLists.belongsTo(models.ProductBase, {
+      foreignKey: "product_id",
+      as: "product",
       onDelete: "CASCADE",
     });
   };

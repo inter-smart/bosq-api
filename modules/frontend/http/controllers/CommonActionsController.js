@@ -10,9 +10,9 @@ class CommonActionsController {
     try {
       // 1️⃣ Return cached response early
       const cachedData = await getCache(cacheKey);
-      if (cachedData) {
-        return sendSuccessResponse(res, cachedData, "Data fetched from cache");
-      }
+      // if (cachedData) {
+      //   return sendSuccessResponse(res, cachedData, "Data fetched from cache");
+      // }
 
       // 2️⃣ Fetch all data in parallel
       const [categories, sectors, attributes] = await Promise.all([

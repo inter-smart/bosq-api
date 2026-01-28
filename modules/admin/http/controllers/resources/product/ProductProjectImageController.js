@@ -11,7 +11,7 @@ const {
   sendValidationError,
   sendNotFoundError,
 } = require("../../../traits/responseHandler");
-const { validationResult } = require("express-validator");
+const { validationResult, param } = require("express-validator");
 const { Op } = require("sequelize");
 const {
   handleFileUploadStore,
@@ -23,7 +23,13 @@ const DataModel = models.ProductProjectImage;
 class ProductProjectImageController {
   static async index(req, res) {
     try {
+
+      const {product_id} = req.query;
+
       const result = await paginate(DataModel, req, {
+        where: {
+          product_id
+        },
         order: [
           ["sort_order", "ASC"],
           ["createdAt", "DESC"],

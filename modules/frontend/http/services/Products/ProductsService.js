@@ -32,6 +32,8 @@ class ProductsService {
           { association: "models", attributes: ["id", "code", "title", "slug"] },
           { association: "sectors", attributes: ["id", "name", "slug"], through: { attributes: [] } },
           { association: "projectImages", attributes: ["id", "media_path", "media_alt", "media_alt_ar"] },
+          // faq
+          {association: "faqs", attributes: ["id", "question", "question_ar", "answer", "answer_ar"]},
         ],
       });
       return {
@@ -59,6 +61,9 @@ static async getProductListing(params) {
       page = 1,
       limit = 12
     } = params;
+
+
+    console.log("params:", params)
 
     // Parse array parameters (handle both string and array inputs)
     const parseArrayParam = (param) => {

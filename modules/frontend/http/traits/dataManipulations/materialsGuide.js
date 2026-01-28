@@ -19,7 +19,6 @@ function buildMaterialInfoSection(cmsData, materials = [], categories = []) {
 
         return {
           id: category.id,
-
           title: category.title ?? null,
           title_ar: category.title_ar ?? null,
 
@@ -47,38 +46,48 @@ function buildMaterialInfoSection(cmsData, materials = [], categories = []) {
           })),
         };
       })
-      .filter(Boolean), // 🧹 remove null categories
+      .filter(Boolean),
   };
 }
 
 
-function buildExtraMaterialsSection( materials = []) {
-  return {
-      info_list: materials
-        .map((material) => ({
-          title: material?.title ?? "N/A",
-          title_ar: material?.title_ar ?? "N/A",
+function buildExtraMaterialsSection(materials = [], extraMaterials = []) {
+  return [{
+    title: null,
+    title_ar: null,
 
-          description: material?.description ?? null,
-          description_ar: material?.description_ar ?? null,
+    info_list: materials.map((material) => ({
+      title: material?.title ?? "N/A",
+      title_ar: material?.title_ar ?? "N/A",
 
-          media: {
+      description: material?.description ?? null,
+      description_ar: material?.description_ar ?? null,
+
+      media: {
+        type: "image",
+        path: generateImageUrl(material?.media_path),
+        alt: material?.media_alt ?? "N/A",
+        alt_ar: material?.media_alt_ar ?? "N/A",
+      },
+
+      icon: material?.icon_path
+        ? {
             type: "image",
-            path: generateImageUrl(material?.media_path),
-            alt: material?.media_alt ?? "N/A",
-            alt_ar: material?.media_alt_ar ?? "N/A",
-          },
+            path: generateImageUrl(material.icon_path),
+            alt: material?.title ?? "icon",
+          }
+        : null,
+    })),
 
-          icon: material?.icon_path
-            ? {
-                type: "image",
-                path: generateImageUrl(material.icon_path),
-                alt: material?.title ?? "icon",
-              }
-            : null,
-        })),
-  };
+    extra_info_list: extraMaterials.map((item) => ({
+      title: item?.title ?? "N/A",
+      title_ar: item?.title_ar ?? "N/A",
+      description: item?.description ?? null,
+      description_ar: item?.description_ar ?? null,
+    })),
+  }]
 }
+
 
 module.exports = {
   buildMaterialInfoSection,

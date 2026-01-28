@@ -7,9 +7,11 @@ const { validationResult } = require("express-validator");
 const { handleFileUploadStore, handleFileUploadUpdate } = require("../../../middleware/multerMiddleware");
 const { Op } = require("sequelize");
 const { invalidateCache } = require("../../../../../redis/redisService");
+const cacheKeys = require("../../../../../redis/cacheKeys");
+
 
 const DataModel = models.ProductCategory;
-const cacheKey = cacheKey.listingDropdownFilters;
+const cacheKey = cacheKeys.listingDropdownFilters;
 class ProductCategoryController {
   static async index(req, res) {
     try {

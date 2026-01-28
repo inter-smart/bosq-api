@@ -12,7 +12,7 @@ const cookieParser = require("cookie-parser");
 const { createAdminUser } = require("./database/seeders/adminUser");
 const { seedMetaTags } = require("./database/seeders/metaTags");
 const { redisClient, connectRedis } = require("./config/redis");
-const {  homeCmsData } = require("./database/seeders/HomeCms");
+const { homeCmsData } = require("./database/seeders/HomeCms");
 
 dotenv.config();
 const app = express();
@@ -29,7 +29,7 @@ app.use(
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  })
+  }),
 );
 
 app.use(express.json({ limit: "10mb" }));
@@ -55,12 +55,10 @@ const startServer = async () => {
     // await sequelize.sync({ alter: true });
     // Logger.info("✅ Database connected and synced");
 
-
     // homeCmsData();
 
     // Add this to see which models are registered
     console.log("Registered models:", Object.keys(sequelize.models));
-
 
     // await createAdminUser();
     // await seedMetaTags();

@@ -42,6 +42,11 @@ module.exports = (sequelize) => {
         type: DataTypes.SMALLINT,
         defaultValue: 1,
       },
+
+      thumbnail_path: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
     },
     {
       tableName: "product_variant_images",

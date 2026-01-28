@@ -51,6 +51,16 @@ class ProductVariantImagesController {
 
       const uploadedFiles = req.files?.images || [];
 
+      // Build a map of thumbnails by index (handles thumbnail[0], thumbnail[1], etc.)
+      const thumbnailMap = {};
+      Object.keys(req.files || {}).forEach((key) => {
+        const match = key.match(/^thumbnail\[(\d+)\]$/);
+        if (match) {
+          const idx = parseInt(match[1], 10);
+          thumbnailMap[idx] = req.files[key][0];
+        }
+      });
+
       if (!product_variant_id) {
         await transaction.rollback();
         return sendValidationError(res, [{ msg: "Product variant ID is required" }]);
@@ -87,14 +97,20 @@ class ProductVariantImagesController {
         return sendValidationError(res, [{ msg: "Only one image can be marked as primary" }]);
       }
 
-      const imagesToCreate = uploadedFiles.map((file, index) => ({
-        product_variant_id,
-        media_path: file.path.replace(/\\/g, "/"),
-        media_type: mediaTypeArr[index] || "image",
-        sort_order: parseInt(sortOrderArr[index], 10) || index,
-        status: statusArr[index] !== "false" && statusArr[index] !== false,
-        is_primary: isPrimaryArr[index] == 1 || isPrimaryArr[index] == "1",
-      }));
+      const imagesToCreate = uploadedFiles.map((file, index) => {
+        const mediaType = mediaTypeArr[index] || "image";
+        const thumbnail = thumbnailMap[index];
+
+        return {
+          product_variant_id,
+          media_path: file.path.replace(/\\/g, "/"),
+          media_type: mediaType,
+          sort_order: parseInt(sortOrderArr[index], 10) || index,
+          status: statusArr[index] !== "false" && statusArr[index] !== false,
+          is_primary: isPrimaryArr[index] == 1 || isPrimaryArr[index] == "1",
+          thumbnail_path: mediaType === "video" && thumbnail ? thumbnail.path.replace(/\\/g, "/") : null,
+        };
+      });
 
       const createdImages = await DataModel.bulkCreate(imagesToCreate, { transaction });
       await transaction.commit();
@@ -152,6 +168,19 @@ class ProductVariantImagesController {
       if (req.files?.images?.[0]) {
         const newFile = req.files.images[0];
         req.body.media_path = newFile.path.replace(/\\/g, "/");
+      }
+
+      // Handle thumbnail upload for video media type
+      // Check for thumbnail, thumbnail[0], or any thumbnail[index] pattern
+      let thumbnailFile = req.files?.thumbnail?.[0];
+      if (!thumbnailFile) {
+        const thumbnailKey = Object.keys(req.files || {}).find((key) => key.match(/^thumbnail(\[\d+\])?$/));
+        if (thumbnailKey) {
+          thumbnailFile = req.files[thumbnailKey][0];
+        }
+      }
+      if (thumbnailFile) {
+        req.body.thumbnail_path = thumbnailFile.path.replace(/\\/g, "/");
       }
 
       // Parse boolean and integer fields from form-data

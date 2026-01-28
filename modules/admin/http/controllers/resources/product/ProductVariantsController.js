@@ -25,6 +25,7 @@ class ProductVariantsController {
           ["createdAt", "DESC"],
         ],
         searchFields: ["sku", "product_code"],
+        include: [{ association: "productModel", attributes: ["id", "title"] }],
       });
 
       const response = {
@@ -147,7 +148,7 @@ class ProductVariantsController {
 
   static async destroy(req, res) {
     await Promise.all(validateId.map((v) => v.run(req)));
-  const errors = validationResult(req);
+    const errors = validationResult(req);
     if (!errors.isEmpty()) return sendValidationError(res, errors.array());
 
     try {

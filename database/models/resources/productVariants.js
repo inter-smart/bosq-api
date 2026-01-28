@@ -20,6 +20,11 @@ module.exports = (sequelize) => {
         },
       },
 
+      is_primary: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+      },
+
       sku: {
         type: DataTypes.STRING(200),
         allowNull: true,

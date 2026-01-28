@@ -4,7 +4,10 @@ const Controller = require("../../http/controllers/resources/product/ProductVari
 const authMiddleware = require("../../http/middleware/authMiddleware");
 const { createUploadMiddleware } = require("../../http/middleware/multerMiddleware");
 
-const uploadMiddleware = createUploadMiddleware("product-variant-images", [{ name: "images", maxCount: 10 }]);
+const uploadMiddleware = createUploadMiddleware("product-variant-images", [
+  { name: "images", maxCount: 10 },
+  { name: "thumbnail", maxCount: 10 },
+]);
 
 router.use(authMiddleware(["admin"]));
 

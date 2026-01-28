@@ -32,7 +32,7 @@ class ProductsController {
     try {
       const params = req.query;
 
-      const { data, message } = await service.getProductListing(params);
+      const { data, message } = await service.getProductListingNew(params);
       return sendSuccessResponse(res, data, message, 200);
     } catch (error) {
       return sendErrorResponse(res, error, "Internal Server Error", 500);

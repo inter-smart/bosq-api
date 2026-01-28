@@ -26,6 +26,18 @@ class ProductsController {
       return sendErrorResponse(res, error, "Internal Server Error", 500);
     }
   }
+
+  // getProductListing
+  static async getProductListing(req, res) {
+    try {
+      const params = req.query;
+
+      const { data, message } = await service.getProductListing(params);
+      return sendSuccessResponse(res, data, message, 200);
+    } catch (error) {
+      return sendErrorResponse(res, error, "Internal Server Error", 500);
+    }
+  }
 }
 
 module.exports = ProductsController;

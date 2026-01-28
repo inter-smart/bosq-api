@@ -13,11 +13,17 @@ const DataModel = models.ProductModels;
 class ProductModelsController {
   static async index(req, res) {
     try {
+
+      const {product_id} = req.query;
+
       const result = await paginate(DataModel, req, {
         order: [
           ["sort_order", "ASC"],
           ["createdAt", "DESC"],
         ],
+        where:{
+          product_id
+        },
         searchFields: ["title", "title_ar"],
         include: [
           {

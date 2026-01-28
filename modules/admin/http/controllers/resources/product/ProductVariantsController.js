@@ -147,7 +147,7 @@ class ProductVariantsController {
 
   static async destroy(req, res) {
     await Promise.all(validateId.map((v) => v.run(req)));
-    const errors = validationResult(req);
+  const errors = validationResult(req);
     if (!errors.isEmpty()) return sendValidationError(res, errors.array());
 
     try {

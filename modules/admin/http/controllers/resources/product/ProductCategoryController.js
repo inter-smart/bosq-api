@@ -5,9 +5,13 @@ const { paginate } = require("../../../traits/datatablePaginationHelper");
 const { sendSuccessResponse, sendErrorResponse, sendValidationError, sendNotFoundError } = require("../../../traits/responseHandler");
 const { validationResult } = require("express-validator");
 const { handleFileUploadStore, handleFileUploadUpdate } = require("../../../middleware/multerMiddleware");
+const { Op } = require("sequelize");
+const { invalidateCache } = require("../../../../../redis/redisService");
+const cacheKeys = require("../../../../../redis/cacheKeys");
+
 
 const DataModel = models.ProductCategory;
-
+const cacheKey = cacheKeys.listingDropdownFilters;
 class ProductCategoryController {
   static async index(req, res) {
     try {
@@ -61,8 +65,8 @@ class ProductCategoryController {
       handleFileUploadStore(req, fileFields);
 
       const productCategory = await DataModel.create(req.body, { transaction });
+      await invalidateCache(cacheKey);
       await transaction.commit();
-
       const createdData = await DataModel.findByPk(productCategory.id);
 
       sendSuccessResponse(res, createdData, "Product Categories created successfully", 201);
@@ -115,8 +119,9 @@ class ProductCategoryController {
 
     try {
       const { id } = req.params;
-      const { title } = req.body;
+      const { name } = req.body;
 
+      console.log("titlw", name)
       const data = await DataModel.findByPk(id, { transaction });
       if (!data) {
         await transaction.rollback();
@@ -124,8 +129,8 @@ class ProductCategoryController {
       }
 
       // ✅ Slug validation + prevent duplicates
-      if (title && title.trim() !== data.title) {
-        const newSlug = slugify(title.trim(), { lower: true, strict: true });
+      if (name && name.trim() !== data.name) {
+        const newSlug = slugify(name.trim(), { lower: true, strict: true });
 
         // Check if slug exists for OTHER news
         const existing = await DataModel.findOne({
@@ -148,6 +153,7 @@ class ProductCategoryController {
       await handleFileUploadUpdate(req, data, fileFields);
 
       await data.update(req.body, { transaction });
+      await invalidateCache(cacheKey);
       await transaction.commit();
 
       const updatedData = await DataModel.findByPk(id);

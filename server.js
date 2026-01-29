@@ -13,6 +13,7 @@ const { createAdminUser } = require("./database/seeders/adminUser");
 const { seedMetaTags } = require("./database/seeders/metaTags");
 const { redisClient, connectRedis } = require("./config/redis");
 const {  homeCmsData } = require("./database/seeders/HomeCms");
+const users = require("./database/models/users/users");
 
 dotenv.config();
 const app = express();
@@ -40,9 +41,7 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/api/backend", backendApi);
 app.use("/api/frontend", frontendApi);
 
-app.get("/", (req, res) => {
-  res.send("Hello World!");
-});
+
 
 // Error handler last
 app.use(errorMiddleware);

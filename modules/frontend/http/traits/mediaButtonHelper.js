@@ -1,3 +1,5 @@
+const { default: slugify } = require("slugify");
+
 const backendUrl = `${process.env.BASE_URL}/`|| "http://localhost:4000/";
 
 
@@ -102,6 +104,21 @@ function dateFirst(dateInput) {
 }
 
 
+const generateSlugWithTimestamp = (name) => {
+  if (!name) return null;
+
+  // Convert name to slug (lowercase, remove special chars)
+  const baseSlug = slugify(name, { lower: true, strict: true });
+
+  // Append timestamp (milliseconds) to make it unique
+  const timestamp = Date.now(); // or you could use Math.floor(Date.now() / 1000) for seconds
+
+  return `${baseSlug}-${timestamp}`;
+};
+
+
+
+
 module.exports = {
   mediaWithType,
   mediaWithoutType,
@@ -109,5 +126,6 @@ module.exports = {
   singleMediaWithoutType,
   button,
   formatDate,
-  dateFirst
+  dateFirst,
+  generateSlugWithTimestamp
 };

@@ -32,7 +32,6 @@ class ProductsService {
           { association: "models", attributes: ["id", "code", "title", "slug"] },
           { association: "sectors", attributes: ["id", "name", "slug"], through: { attributes: [] } },
           { association: "projectImages", attributes: ["id", "media_path", "media_alt", "media_alt_ar"] },
-          // faq
           {association: "faqs", attributes: ["id", "question", "question_ar", "answer", "answer_ar"]},
         ],
       });
@@ -54,6 +53,7 @@ static async getProductListing(params) {
       categories: categoriesParam,
       subCategories: subCategoriesParam,
       sectors: sectorsParam,
+
       // priceMin,
       // priceMax,
       attributes: attributesParam,

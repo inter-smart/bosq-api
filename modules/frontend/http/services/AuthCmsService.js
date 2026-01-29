@@ -18,7 +18,7 @@ class AuthCmsService {
       //   };
       // }
 
-      const cmsData = await models.AuthCms.findOne();
+      const cmsData = await models.LoginRegisterCms.findOne();
 
       if (!cmsData) {
         throw new Error("No auth information found");

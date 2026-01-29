@@ -1,5 +1,8 @@
 const { validationResult } = require("express-validator");
-const { sequelize, models } = require("../../../../../../database/models/index.js");
+const {
+  sequelize,
+  models,
+} = require("../../../../../../database/models/index.js");
 const {
   sendValidationError,
   sendSuccessResponse,
@@ -27,12 +30,7 @@ class LoginRegisterCmsController {
       return sendSuccessResponse(res, data, "Data fetched  successfully", 200);
     } catch (error) {
       console.error("Index Error:", error);
-      return sendErrorResponse(
-        res,
-        "Internal Server Error",
-        500,
-        "INTERNAL_ERROR"
-      );
+        return sendErrorResponse(res, error.message);
     }
   }
   //DATA VIEW  END
@@ -40,7 +38,7 @@ class LoginRegisterCmsController {
   //DATA UPDATE  START
   static async update(req, res) {
     await Promise.all(
-      validationRequestPost.map((validation) => validation.run(req))
+      validationRequestPost.map((validation) => validation.run(req)),
     );
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -54,10 +52,10 @@ class LoginRegisterCmsController {
       const fileFields = [
         "signup_media_path",
         "otp_media_path",
-        "new_password_media_path",
+        "create_password_media_path",
         "login_media_path",
         "recover_email_media_path",
-        "your_password_media_path",
+        "recover_password_otp_media_path",
         "recover_password_media_path",
       ];
 

@@ -8,18 +8,18 @@ const authMiddleware = require("../../../http/middleware/authMiddleware");
 const fields = [
   { name: "signup_media_path", maxCount: 1 },
   { name: "otp_media_path", maxCount: 1 },
-  { name: "your_password_media_path", maxCount: 1 },
+  { name: "create_password_media_path", maxCount: 1 },
   { name: "login_media_path", maxCount: 1 },
   { name: "recover_email_media_path", maxCount: 1 },
+  { name: "recover_password_otp_media_path", maxCount: 1 },
   { name: "recover_password_media_path", maxCount: 1 },
-  { name: "new_password_media_path", maxCount: 1 },
 ];
 
 
 // Create upload middleware with fields
 const upload = createUploadMiddleware("login-register", fields);
 
-router.use(authMiddleware(["admin"]));
+// router.use(authMiddleware(["admin"]));
 
 router.get("/", Controller.index);
 router.post("/", upload, Controller.update);

@@ -57,24 +57,24 @@ module.exports = (sequelize) => {
       },
 
 
-
-      your_password_title:{
+      
+      create_password_title:{
         type: DataTypes.STRING,
         allowNull: true,
       }, 
-      your_password_title_ar:{
+      create_password_title_ar:{
         type: DataTypes.STRING,
         allowNull: true,
       },
-      your_password_subtitle: {
+      create_password_subtitle: {
         type: DataTypes.TEXT,
         allowNull: true,
       },
-      your_password_subtitle_ar: {
+      create_password_subtitle_ar: {
         type: DataTypes.TEXT,
         allowNull: true,
       },
-      your_password_media_path:{
+      create_password_media_path:{
         type: DataTypes.STRING,
         allowNull: true,
       },
@@ -127,37 +127,37 @@ module.exports = (sequelize) => {
 
 
 
-      recover_password_title:{
+      recover_password_otp_title:{
         type: DataTypes.STRING,
         allowNull: true,
       },
+      recover_password_otp_title_ar:{
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      recover_password_otp_subtitle: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      recover_password_otp_subtitle_ar: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      recover_password_otp_media_path:{
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+
+
+      recover_password_title:{
+        type: DataTypes.STRING,
+        allowNull: true,
+      }, 
       recover_password_title_ar:{
         type: DataTypes.STRING,
         allowNull: true,
       },
-      recover_password_subtitle: {
-        type: DataTypes.TEXT,
-        allowNull: true,
-      },
-      recover_password_subtitle_ar: {
-        type: DataTypes.TEXT,
-        allowNull: true,
-      },
       recover_password_media_path:{
-        type: DataTypes.STRING,
-        allowNull: true,
-      },
-
-
-      new_password_title:{
-        type: DataTypes.STRING,
-        allowNull: true,
-      }, 
-      new_password_title_ar:{
-        type: DataTypes.STRING,
-        allowNull: true,
-      },
-      new_password_media_path:{
         type: DataTypes.STRING,
         allowNull: true,
       },

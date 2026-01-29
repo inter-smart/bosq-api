@@ -24,7 +24,6 @@ const {
 } = require("../../traits/mediaButtonHelper.js");
 const { Op } = require("sequelize");
 
-
 const Users = models.Users;
 const Otps = models.Otps;
 
@@ -32,9 +31,7 @@ const generateOtp = () => {
   return Math.floor(1000 + Math.random() * 9000).toString();
 };
 
-
 class UsersService {
-
   static async register(req, res) {
     const transaction = await sequelize.transaction();
     try {
@@ -483,7 +480,7 @@ class UsersService {
     }
   }
 
-    static async verifyForgotPasswordOtp(req, res) {
+  static async verifyForgotPasswordOtp(req, res) {
     const transaction = await sequelize.transaction();
 
     try {
@@ -504,7 +501,7 @@ class UsersService {
         where: {
           email,
           otp_code: otp,
-          purpose: "forgot_password",
+            purpose: "forgot_password",
           is_used: false,
         },
         transaction,
@@ -570,8 +567,7 @@ class UsersService {
     }
   }
 
-
-   // Password creation
+  // Password creation
   static async createNewPassword(req, res) {
     const transaction = await sequelize.transaction();
 
@@ -625,7 +621,6 @@ class UsersService {
         await transaction.rollback();
         return sendErrorResponse(res, "User not found", null, 404);
       }
-
 
       // Hash password
       const hashedPassword = await bcrypt.hash(password, 10);

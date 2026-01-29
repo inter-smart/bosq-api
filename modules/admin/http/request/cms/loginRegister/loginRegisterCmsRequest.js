@@ -4,11 +4,11 @@ const { body, param } = require("express-validator");
 const optionalImageFields = [
   "signup_media_path",
   "otp_media_path",
-  "your_password_media_path",
+  "create_password_media_path",
   "login_media_path",
   "recover_email_media_path",
+  "recover_password_otp_media_path",
   "recover_password_media_path",
-  "new_password_media_path",
 ];
 
 // Required TEXT fields
@@ -23,10 +23,10 @@ const requiredStringFields = [
   "otp_subtitle",
   "otp_subtitle_ar",
 
-  "your_password_title",
-  "your_password_title_ar",
-  "your_password_subtitle",
-  "your_password_subtitle_ar",
+  "create_password_title",
+  "create_password_title_ar",
+  "create_password_subtitle",
+  "create_password_subtitle_ar",
 
   "login_title",
   "login_title_ar",
@@ -38,13 +38,13 @@ const requiredStringFields = [
   "recover_email_subtitle",
   "recover_email_subtitle_ar",
 
+  "recover_password_otp_title",
+  "recover_password_otp_title_ar",
+  "recover_password_otp_subtitle",
+  "recover_password_otp_subtitle_ar",
+
   "recover_password_title",
   "recover_password_title_ar",
-  "recover_password_subtitle",
-  "recover_password_subtitle_ar",
-
-  "new_password_title",
-  "new_password_title_ar",
 ];
 
 exports.validationRequestPost = [

@@ -7,7 +7,9 @@ export const createOrUpdateVariantAttributes = async (transaction, attributes, p
     throw new Error("Transaction is required");
   }
 
-  if (!Array.isArray(attributes) || attributes.length === 0) {
+  let parsedAttributes = attributes;
+
+  if ((operation == "create" && !Array.isArray(attributes)) || attributes.length === 0) {
     throw new Error("Attributes array is required and cannot be empty");
   }
 
@@ -36,7 +38,11 @@ export const createOrUpdateVariantAttributes = async (transaction, attributes, p
   const baseSku = product.code || "PROD";
   const basePrice = Number(product.base_price || 0);
 
-  const variantCombinations = createProductVariants(attributes, baseSku);
+  if (operation == "update") {
+    parsedAttributes = JSON.parse(attributes);
+  }
+
+  const variantCombinations = createProductVariants(parsedAttributes, baseSku);
 
   if (variantCombinations.length === 0) {
     throw new Error("No valid product variants could be created from the provided attributes");
@@ -83,7 +89,7 @@ export const createOrUpdateVariantAttributes = async (transaction, attributes, p
         throw new Error("Product Variant not found for update");
       }
 
-      const { sort_order, status, stock } = meta;
+      const { sort_order, status, stock, media_path, title, title_ar } = meta;
 
       // Delete existing variant attributes
       await models.ProductVariantAttributes.destroy({
@@ -97,11 +103,14 @@ export const createOrUpdateVariantAttributes = async (transaction, attributes, p
       await currentVariant.update(
         {
           sku: variantData.sku,
+          title: title || "",
+          title_ar: title_ar || "",
           product_code: null,
           price: basePrice + variantData.additional_price,
           stock: stock ?? currentVariant.stock,
           status: status ?? currentVariant.status,
           sort_order: sort_order ?? currentVariant.sort_order,
+          media_path: media_path ?? currentVariant.media_path,
         },
         { transaction },
       );

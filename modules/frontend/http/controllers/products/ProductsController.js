@@ -27,12 +27,21 @@ class ProductsController {
     }
   }
 
-  // getProductListing
   static async getProductListing(req, res) {
     try {
       const params = req.query;
 
-      const { data, message } = await service.getProductListingNew(params);
+      const { data, message } = await service.getProductListing(params);
+      return sendSuccessResponse(res, data, message, 200);
+    } catch (error) {
+      return sendErrorResponse(res, error, "Internal Server Error", 500);
+    }
+  }
+
+  static async getInitialProductList(req, res) {
+    try {
+      const { page, limit } = req.query;
+      const { data, message } = await service.getInitialProductList(page, limit);
       return sendSuccessResponse(res, data, message, 200);
     } catch (error) {
       return sendErrorResponse(res, error, "Internal Server Error", 500);

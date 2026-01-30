@@ -31,6 +31,21 @@ module.exports = (sequelize) => {
         unique: true,
       },
 
+      title: {
+        type: DataTypes.STRING(200),
+        allowNull: true,
+      },
+
+      title_ar: {
+        type: DataTypes.STRING(200),
+        allowNull: true,
+      },
+
+      media_path: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
+      },
+
       price: {
         type: DataTypes.DECIMAL(10, 2),
         allowNull: true,

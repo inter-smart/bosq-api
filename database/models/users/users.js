@@ -10,17 +10,25 @@ module.exports = (sequelize) => {
         primaryKey: true,
       },
 
+      first_name: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      last_name: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
       name: {
-        type: DataTypes.STRING(150),
-        allowNull: false,
+        type: DataTypes.STRING,
+        allowNull: true,
       },
       slug:{
-        type: DataTypes.STRING(150),
+        type: DataTypes.TEXT,
         allowNull: true,
         unique: true,
       },
       email: {
-        type: DataTypes.STRING(150),
+        type: DataTypes.STRING,
         allowNull: false,
         unique: true,
       },
@@ -34,6 +42,11 @@ module.exports = (sequelize) => {
         allowNull: true,
       },
 
+      profile_image:{
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      
       password: {
         type: DataTypes.TEXT,
         allowNull: true,
@@ -84,6 +97,13 @@ module.exports = (sequelize) => {
       as: "auth_sessions",
       onDelete: "CASCADE",
     })
+
+    Users.hasMany(models.Address, {
+      foreignKey: "user_id",
+      as: "addresses",
+      onDelete: "CASCADE",
+    })
+
   };
 
 

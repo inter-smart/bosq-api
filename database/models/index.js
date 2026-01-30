@@ -103,21 +103,18 @@ const defineProductVariantImages = require("./resources/productVariantImages");
 const defineProductProjectImage = require("./resources/productProjectImage");
 const defineProductModels = require("./resources/productModels");
 
-
-
 // USER AUTH
 
 const defineUsers = require("./users/users");
 const defineAuthSessions = require("./users/authSessions");
 const defineSocialAccounts = require("./users/socialAccounts");
 const defineOtps = require("./users/otps");
+const defineAddress = require("./users/address");
 
 
 // ENQUIRIES
 const defineContactEnquiry = require("./enquiries/contact");
 const defineNewsLetter = require("./enquiries/newsletter");
-
-
 
 const models = {
   AdminUser: defineAdminUser(sequelize),
@@ -231,7 +228,7 @@ const models = {
   AuthSessions: defineAuthSessions(sequelize),
   socialAccounts: defineSocialAccounts(sequelize),
   Otps: defineOtps(sequelize),
-
+  Address: defineAddress(sequelize),
 };
 
 Object.keys(models).forEach((modelName) => {

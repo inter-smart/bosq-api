@@ -337,7 +337,7 @@ class UsersService {
       const { email, password } = req.body;
       const user = await Users.findOne({
         where: { email },
-        attributes: ["id", "email", "password", "name"],
+        attributes: ["id", "email", "password", "name", "country_code", "mobile"],
         transaction,
       });
 
@@ -346,7 +346,7 @@ class UsersService {
         return sendErrorResponse(res, "User not found", null, 404);
       }
 
-      const isPasswordValid = await bcrypt.compare(password, user.password);
+      const isPasswordValid = await bcrypt.compare(password, user?.password);
 
       if (!isPasswordValid) {
         await transaction.rollback();
@@ -365,12 +365,15 @@ class UsersService {
         },
       );
 
+      const moibleNumber = `${user?.country_code} ${user?.mobile}`;
+
       await transaction.commit();
 
       const userData = {
-        id: user.id,
-        name: user.name,
-        email: user.email,
+        id: user?.id,
+        name: user?.name,
+        phone: moibleNumber,
+        email: user?.email,
       };
       return {
         message: "Login successful",
@@ -501,7 +504,7 @@ class UsersService {
         where: {
           email,
           otp_code: otp,
-            purpose: "forgot_password",
+          purpose: "forgot_password",
           is_used: false,
         },
         transaction,

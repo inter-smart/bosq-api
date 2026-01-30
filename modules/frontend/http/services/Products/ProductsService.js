@@ -1,6 +1,6 @@
 const { Op, literal } = require("sequelize");
 const { models } = require("../../../../../database/models/index");
-const { transformProductData, transformModelData } = require("../../traits/dataManipulations/product/product");
+const { transformProductData, transformModelData, buildAttributesFromVariants } = require("../../traits/dataManipulations/product/product");
 const { generateImageUrl } = require("../../../traits/imageUrlHelper");
 const productAttributes = [
   "id",
@@ -22,10 +22,10 @@ const productAttributes = [
 ];
 
 class ProductsService {
-  static async getProductBySlug(slug) {
+  static async getProductBySlug(slug, base_slug, model_slug) {
     try {
       const productBase = await models.ProductBase.findOne({
-        where: { slug, status: true },
+        where: { slug: base_slug, status: true },
         attributes: ["id"],
       });
 
@@ -38,7 +38,7 @@ class ProductsService {
       }
 
       const productData = await models.ProductBase.findOne({
-        where: { slug, status: true },
+        where: { slug: base_slug, status: true },
         attributes: productAttributes,
         include: [
           { association: "sellingPoints", attributes: ["id", "name", "slug", "media_path"], through: { attributes: [] } },
@@ -46,11 +46,13 @@ class ProductsService {
           {
             association: "models",
             attributes: ["id", "code", "title", "base_price", "slug", "media_path"],
+            where: { slug: model_slug },
             required: true,
             include: [
               {
                 association: "variants",
-                attributes: ["id", "sku"],
+                attributes: ["id", "sku", "title", "title_ar", "price", "stock", "media_path"],
+                where: { sku: slug },
                 required: true,
                 include: [
                   { association: "variant_images", attributes: ["id", "media_path", "media_type", "is_primary", "sort_order", "thumbnail_path"] },
@@ -82,14 +84,43 @@ class ProductsService {
       const productmodels = await models?.ProductModels?.findAll({
         where: { product_id: productBase.id, status: true },
         attributes: ["id", "code", "title", "title_ar", "slug", "media_path"],
+        include: [
+          {
+            association: "variants",
+            as: "allVariants",
+            attributes: ["id", "sku"],
+            required: false,
+            include: [
+              {
+                association: "attribute_values",
+                attributes: ["id"],
+                through: { attributes: [] },
+                include: [
+                  {
+                    association: "attribute",
+                    attributes: ["id", "name", "code", "slug"],
+                    include: [
+                      {
+                        association: "values",
+                        attributes: ["id", "attribute_id", "value", "slug"],
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
       });
 
       const transformedData = transformProductData(productData);
 
+      console.log(transformedData);
+
       return {
         data: {
           product: transformedData?.data?.productBaseData,
-          initialModel: transformedData?.data?.modelWiseData,
+          initialVariant: transformedData?.data?.variantData,
           models: productmodels?.map((model) => ({
             id: model.id,
             code: model.code,
@@ -97,6 +128,7 @@ class ProductsService {
             title_ar: model.title_ar,
             slug: model.slug,
             media_path: generateImageUrl(model.media_path),
+            attributes: buildAttributesFromVariants(model.variants || []),
           })),
         },
         fromCache: false,
@@ -122,8 +154,6 @@ class ProductsService {
         page = 1,
         limit = 12,
       } = params;
-
-      console.log(params);
 
       // Parse array parameters (handle both string and array inputs)
       const parseArrayParam = (param) => {
@@ -203,12 +233,9 @@ class ProductsService {
 
       // Build attribute filter conditions
 
-      console.log(attributes && Object.keys(attributes).length > 0);
-
       let variantAttributeWhere = null;
       if (attributes && Object.keys(attributes).length > 0) {
         const attributeConditions = [];
-        console.log(attributes);
         Object.entries(attributes).forEach(([attributeId, valueIds]) => {
           if (valueIds && Array.isArray(valueIds) && valueIds.length > 0) {
             attributeConditions.push({
@@ -225,8 +252,6 @@ class ProductsService {
           };
         }
       }
-
-      console.log(variantAttributeWhere);
 
       // Build ORDER BY clause
       let orderClause = [["createdAt", "DESC"]]; // default
@@ -259,7 +284,7 @@ class ProductsService {
           ...(variantAttributeWhere ? { where: variantAttributeWhere, required: true } : {}),
         },
         {
-          attributes: ["id"],
+          attributes: ["id", "slug"],
           model: models.ProductModels,
           as: "productModel",
           required: needsCategoryFilter || needsSectorFilter,
@@ -296,7 +321,7 @@ class ProductsService {
       console.log(whereClause);
 
       const { rows: products, count: totalCount } = await models.ProductVariants.findAndCountAll({
-        attributes: ["id", "title", "title_ar", "media_path", "price", "stock", "product_code"],
+        attributes: ["id", "title", "title_ar", "media_path", "price", "stock", "product_code", "sku"],
         where: whereClause,
         limit: limitNum,
         offset,
@@ -313,7 +338,9 @@ class ProductsService {
           title: json?.title,
           title_ar: json?.title_ar,
           media_path: generateImageUrl(json?.media_path),
-          slug: json?.productModel?.product?.slug,
+          slug: json?.sku,
+          base_slug: json?.productModel?.product?.slug,
+          model_slug: json?.productModel?.slug,
           product_code: json?.product_code,
           variants_available: json?.has_more_items,
           price: json?.price,
@@ -353,7 +380,7 @@ class ProductsService {
         include: [
           {
             association: "variants",
-            attributes: ["id", "sku"],
+            attributes: ["id", "sku", "title", "title_ar", "price", "stock", "media_path"],
             required: true,
             include: [
               { association: "variant_images", attributes: ["id", "media_path", "media_type", "is_primary", "sort_order"] },
@@ -371,7 +398,7 @@ class ProductsService {
       const transformedData = transformModelData(productModelData);
 
       return {
-        data: transformedData,
+        data: transformedData || [],
         fromCache: false,
         message: "About page data fetched",
       };
@@ -388,13 +415,13 @@ class ProductsService {
       const offset = (pageNum - 1) * limitNum;
 
       const { rows: products, count: totalCount } = await models.ProductVariants.findAndCountAll({
-        attributes: ["id", "title", "title_ar", "media_path", "price", "stock"],
+        attributes: ["id", "title", "title_ar", "media_path", "price", "stock", "sku"],
         where: { status: true },
         limit: limitNum,
         offset,
         include: [
           {
-            attributes: ["id"],
+            attributes: ["id", "slug"],
             model: models.ProductModels,
             as: "productModel",
             include: [
@@ -422,7 +449,9 @@ class ProductsService {
           title: json?.title,
           title_ar: json?.title_ar,
           media_path: generateImageUrl(json?.media_path),
-          slug: json?.productModel?.product?.slug,
+          slug: json?.sku,
+          base_slug: json?.productModel?.product?.slug,
+          model_slug: json?.productModel?.slug,
           product_code: json?.product_code,
           variants_available: json?.has_more_items,
           price: json?.price,

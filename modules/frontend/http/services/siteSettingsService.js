@@ -37,8 +37,6 @@ class SiteSettingsService {
         }),
       ]);
 
-      console.log(JSON.stringify(siteSettings, null, 2));
-
       const headerData = buildHeaderSection(siteSettings);
       const footerData = buildFooterSection(siteSettings);
       const socialMedia = buildFooterIcons(socialLinks);

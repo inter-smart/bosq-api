@@ -4,11 +4,7 @@ const { models } = require("../../../../database/models");
 const cacheKeys = require("../../../redis/cacheKeys");
 const { getCache, setCache } = require("../../../redis/redisService");
 const { generateImageUrl } = require("../../traits/imageUrlHelper");
-const {
-  buildCmsSection,
-  buildTitleSection,
-  buildOtherMetaData,
-} = require("../traits/dataManipulations/common");
+const { buildCmsSection, buildTitleSection, buildOtherMetaData } = require("../traits/dataManipulations/common");
 const {
   buildHomeBannerSliders,
   buildProjectsSection,
@@ -67,20 +63,15 @@ class HomeService {
         }),
       ]);
 
-
-      console.log(homeCms)
-
-
       const sliders = buildHomeBannerSliders(banners);
       const aboutSection = buildCmsSection(homeCms, "about");
       const journeySection = buildJourneySection(homeCms, "journey");
       const featuredSection = buildTitleSection(homeCms, "featured");
       const projectSection = buildProjectsSection(projects, homeCms);
       const fitsSection = buildFitsSection(homeCms, fits);
-      const brandsSection = buildBrandSection(homeCms, brands)
+      const brandsSection = buildBrandSection(homeCms, brands);
       const formSection = buildCmsSection(homeCms, "form");
       const otherMetaTags = buildOtherMetaData(otherMeta);
-      
 
       const result = {
         sliders,
@@ -91,7 +82,7 @@ class HomeService {
         fitsSection,
         brandsSection,
         formSection,
-        otherMetaTags
+        otherMetaTags,
       };
       await setCache(cacheKey, result);
 

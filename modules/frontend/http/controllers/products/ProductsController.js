@@ -3,15 +3,10 @@ const service = require("../../services/Products/ProductsService");
 
 class ProductsController {
   static async getProductBySlug(req, res) {
-    const { slug, base_slug, model_slug } = req.query;
+    const params = req.query;
     try {
-      if (!slug) {
-        return sendErrorResponse(res, null, "Product slug is required", 400);
-      }
-      if (!base_slug) {
-        return sendErrorResponse(res, null, "Product slug is required", 400);
-      }
-      const { data, message } = await service.getProductBySlug(slug, base_slug, model_slug);
+      const { data, message } = await service.getProductBySlug(params);
+
       return sendSuccessResponse(res, data, message, 200);
     } catch (error) {
       return sendErrorResponse(res, error, "Internal Server Error", 500);
@@ -45,6 +40,16 @@ class ProductsController {
     try {
       const { page, limit } = req.query;
       const { data, message } = await service.getInitialProductList(page, limit);
+      return sendSuccessResponse(res, data, message, 200);
+    } catch (error) {
+      return sendErrorResponse(res, error, "Internal Server Error", 500);
+    }
+  }
+
+  static async productSearchList(req, res) {
+    try {
+      const params = req.query;
+      const { data, message } = await service.productSearchList(params);
       return sendSuccessResponse(res, data, message, 200);
     } catch (error) {
       return sendErrorResponse(res, error, "Internal Server Error", 500);

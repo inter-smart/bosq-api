@@ -57,6 +57,26 @@ class CommonActionsController {
       sendErrorResponse(res, error);
     }
   }
+
+  static async productSearchCategories(req, res) {
+    try {
+      const categories = await models.ProductCategory.findAll({
+        where: { status: true },
+        attributes: ["id", "name", "name_ar", "parent_id", "slug"],
+        order: [["sort_order", "ASC"]],
+        raw: true,
+        limit: 5,
+      });
+
+      const parentCategories = categories.filter((category) => !category.parent_id);
+      const childCategories = categories.filter((category) => category.parent_id);
+
+      sendSuccessResponse(res, { suggestions: parentCategories, categories: childCategories }, "Product search categories retrieved successfully");
+    } catch (error) {
+      console.error("Product search categories error:", error);
+      sendErrorResponse(res, error);
+    }
+  }
 }
 
 module.exports = CommonActionsController;

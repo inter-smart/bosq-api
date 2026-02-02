@@ -18,7 +18,7 @@ exports.personalInfoRequestPost = [
     .withMessage("Last name must be a string")
     .isLength({ max: 255 })
     .withMessage("Last name must not exceed 255 characters"),
-  body("name")
+  body("display_name")
     .notEmpty()
     .withMessage("Name is required")
     .isString()
@@ -47,7 +47,7 @@ exports.personalInfoRequestPost = [
 
 exports.changePasswordRequestPost = [
   // password
-  body("password")
+  body("currentPassword")
     .notEmpty()
     .withMessage("Password is required")
     .isString()
@@ -55,7 +55,7 @@ exports.changePasswordRequestPost = [
     .isLength({ max: 255 })
     .withMessage("Password must not exceed 255 characters"),
 
-  body("new_password")
+  body("newPassword")
     .notEmpty()
     .withMessage("New Password is required")
     .isString()
@@ -64,7 +64,6 @@ exports.changePasswordRequestPost = [
     .withMessage("New Password must not exceed 255 characters"),
     
 ]
-
 
 
 exports.handleValidationErrors = (req, res, next) => {

@@ -364,6 +364,8 @@ static async login(req, res) {
 
     res.cookie("access_token", token, {
       httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
       maxAge: 24 * 60 * 60 * 1000
     });
 
@@ -387,6 +389,8 @@ static async login(req, res) {
     }
   }
 }
+
+ 
 
   // forgot password
   static async forgotPassword(req, res) {

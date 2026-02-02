@@ -58,9 +58,16 @@ class AddressService {
   static async store(req) {
     const transaction = await sequelize.transaction();
 
-    try {
+  try {
       const { id: user_id } = req.auth;
       const payload = req.body;
+
+      await Promise.all(createAddressRequest.map((v) => v.run(req)));
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        await transaction.rollback();
+        return sendValidationError(res, errors.array());
+      }
 
       const { shipToDifferentAddress } = payload;
 

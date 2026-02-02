@@ -59,11 +59,6 @@ module.exports = (sequelize) => {
         allowNull: false,
       },
 
-      state: {
-        type: DataTypes.STRING(100),
-        allowNull: false,
-      },
-
       street_address: {
         type: DataTypes.TEXT,
         allowNull: false,
@@ -72,6 +67,10 @@ module.exports = (sequelize) => {
       apartment: {
         type: DataTypes.STRING(150),
         allowNull: true,
+      },
+      state: {
+        type: DataTypes.STRING(100),
+        allowNull: false,
       },
 
       order_notes: {
@@ -84,7 +83,7 @@ module.exports = (sequelize) => {
         allowNull: false,
         defaultValue: false,
       },
-      
+
       parent_address_id: {
         type: DataTypes.BIGINT,
         allowNull: true,

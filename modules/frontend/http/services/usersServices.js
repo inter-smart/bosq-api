@@ -1,32 +1,100 @@
 const { models, sequelize } = require("../../../../database/models/index.js");
 const bcrypt = require("bcrypt");
-const { changePasswordRequestPost } = require("../request/profileRequest.js");
+const {
+  changePasswordRequestPost,
+  personalInfoRequestPost,
+} = require("../request/profileRequest.js");
 const { validationResult } = require("express-validator");
 const {
   sendValidationError,
+  sendErrorResponse,
+  sendSuccessResponse,
 } = require("../../../admin/http/traits/responseHandler.js");
+const {
+  buildProfieSection,
+  buildProfileEditSection,
+} = require("../traits/dataManipulations/profileSections.js");
 
 class UsersServices {
   static async getProfileData(req, res) {
-
-    console.log("req cookies", req.cookie)
     try {
-      const { email } = req.auth;
+      const { id } = req.auth;
       const data = await models.Users.findOne({
-        where: { email },
+        where: { id },
         attributes: [
           "name",
+          "first_name",
+          "last_name",
           "profile_image",
           "country_code",
           "mobile",
-          "address",
+          "email",
+        ],
+        include: [
+          {
+            model: models.Address,
+            as: "addresses",
+            where: {
+              is_default: true,
+              status: "active",
+            },
+            required: false,
+            attributes: [
+              "id",
+              "address_type",
+              "name",
+              "company_name",
+              "email",
+              "country_code",
+              "phone",
+              "country",
+              "state",
+              "street_address",
+              "apartment",
+              "order_notes",
+            ],
+          },
+        ],
+      });
+
+      const profileData = buildProfieSection(data);
+
+      return profileData;
+    } catch (error) {
+      console.error("Error getting profile data:", error);
+      throw new Error(`Error fetching profile data: ${error.message}`);
+    }
+  }
+
+  // Fetch profile by id
+  static async fetchProfileById(req, res) {
+    const { id } = req.auth;
+
+    try {
+      // Fetch the user profile data
+      const user = await models.Users.findOne({
+        where: { id },
+        attributes: [
+          "name",
+          "first_name",
+          "last_name",
+          "country_code",
+          "mobile",
           "email",
         ],
       });
 
-      return data;
+      if (!user) {
+        return res.status(404).json({
+          message: "User not found",
+        });
+      }
+
+      const profileData = buildProfileEditSection(user);
+
+      return profileData;
     } catch (error) {
-      console.error("Error getting profile data:", error);
+      console.error("Error fetching profile data:", error);
       throw new Error(`Error fetching profile data: ${error.message}`);
     }
   }
@@ -34,25 +102,49 @@ class UsersServices {
   static async editProfile(req, res) {
     const transaction = await sequelize.transaction();
     try {
+      await Promise.all(
+        personalInfoRequestPost.map((validation) => validation.run(req)),
+      );
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return sendValidationError(res, errors.array());
+      }
+
       const { id } = req.auth;
-      const { name, first_name, last_name, country_code, mobile, email } =
-        req.body || {};
+      const {
+        display_name,
+        first_name,
+        last_name,
+        country_code,
+        mobile,
+        email,
+      } = req.body || {};
 
       const user = await models.Users.findOne({
         where: { id },
         transaction,
       });
 
-      if (!user) {
-        await transaction.rollback();
-        return res.status(404).json({
-          success: false,
-          message: "User not found",
+      // Check if email is being changed and if it's already used by another user
+      if (email && email !== user.email) {
+        const isEmailTaken = await models.Users.findOne({
+          where: { email },
+          transaction,
         });
+
+        if (isEmailTaken) {
+          await transaction.rollback();
+          return sendErrorResponse(
+            res,
+            "Email already in use by another account",
+            null,
+            400,
+          );
+        }
       }
 
       const updatedData = {};
-      if (name !== undefined) updatedData.name = name;
+      if (display_name !== undefined) updatedData.name = display_name;
       if (first_name !== undefined) updatedData.first_name = first_name;
       if (last_name !== undefined) updatedData.last_name = last_name;
       if (country_code !== undefined) updatedData.country_code = country_code;
@@ -75,10 +167,12 @@ class UsersServices {
         ],
       });
 
-      return res.status(200).json({
-        success: true,
-        data: responseUser,
-      });
+      return sendSuccessResponse(
+        res,
+        responseUser,
+        "Profile updated successfully",
+        200,
+      );
     } catch (error) {
       await transaction.rollback(); // Added rollback on error
       console.error("Error updating profile data:", error);
@@ -102,10 +196,8 @@ class UsersServices {
       }
 
       const { id: userId } = req.auth;
-      const { password, new_password } = req.body;
+      const { currentPassword, newPassword } = req.body;
 
-
-      console.log("passwords:", password, new_password)
       // 1. Fetch user with row lock
       const user = await models.Users.findOne({
         where: { id: userId },
@@ -124,25 +216,29 @@ class UsersServices {
       // 2. Handle users without password (social login)
       if (!user.password) {
         await transaction.rollback();
-        return res.status(400).json({
-          success: false,
-          message: "Password not set. Please use reset password",
-        });
+        return sendErrorResponse(
+          res,
+          "User does not have a password",
+          null,
+          401,
+        );
       }
 
       // 3. Verify old password
-      const isPasswordValid = await bcrypt.compare(password, user.password);
+      const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
 
       if (!isPasswordValid) {
         await transaction.rollback();
-        return res.status(401).json({
-          success: false,
-          message: "Current password is incorrect",
-        });
+        return sendErrorResponse(
+          res,
+          "Current password is incorrect",
+          null,
+          401,
+        );
       }
 
       // 4. Prevent reusing same password
-      const isSamePassword = await bcrypt.compare(new_password, user.password);
+      const isSamePassword = await bcrypt.compare(newPassword, user.password);
       if (isSamePassword) {
         await transaction.rollback();
         return res.status(400).json({
@@ -152,7 +248,7 @@ class UsersServices {
       }
 
       // 5. Hash new password
-      const hashedPassword = await bcrypt.hash(new_password, 12);
+      const hashedPassword = await bcrypt.hash(newPassword, 12);
 
       // 6. Update password
       await user.update(
@@ -172,16 +268,36 @@ class UsersServices {
       // 8. Commit transaction
       await transaction.commit();
 
-      return res.status(200).json({
-        success: true,
-        message: "Password changed successfully. Please login again.",
-      });
+      return sendSuccessResponse(
+        res,
+        null,
+        "Password changed successfully. Please login later.",
+        200,
+      );
     } catch (error) {
       await transaction.rollback();
       console.error("Change password error:", error);
       throw new Error(`Error fetching profile data: ${error.message}`);
     }
   }
+
+   static async logout(req, res) {
+      try {
+
+
+        console.log(req.auth)
+        res.clearCookie("access_token", {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+        });
+  
+        return sendSuccessResponse(res, null, "Logout successful", 200);
+      } catch (error) {
+        console.error("Logout Error:", error);
+        return sendErrorResponse(res, error.message, null, 500);
+      }
+    }
 }
 
 module.exports = UsersServices;

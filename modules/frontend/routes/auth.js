@@ -11,4 +11,5 @@ router.post("/login", Controller.login);
 router.post("/forgot-password", Controller.forgotPassword)
 router.post("/verify-reset-password-otp",Controller.verifyForgotPasswordOtp)
 router.post("/reset-password",verifyTempToken, Controller.createNewPassword)
+router.post("/reset-password",verifyTempToken, Controller.createNewPassword)
 module.exports = router;

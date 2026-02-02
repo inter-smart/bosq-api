@@ -18,7 +18,20 @@ class UserController {
         }
     }
 
-    static async editProfile(req, res) {
+    // fetch profileDatabyid
+       static async fetchProfileById(req, res) {
+        try {
+            const data = await service.fetchProfileById(req,res);
+            return ApiResponse.success(res, {
+                message: RESPONSE_MESSAGES.SUCCESS.DATA_RETRIEVED,
+                data,
+                status: HTTP_STATUS.OK,
+            });
+        } catch (error) {
+            return ErrorHandler.handleControllerError(error, res, "homeController");
+        }
+    }
+        static async editProfile(req, res) {
         try {
             const data = await service.editProfile(req,res);
             return ApiResponse.success(res, {
@@ -45,6 +58,15 @@ class UserController {
             return ErrorHandler.handleControllerError(error, res, "homeController");
         }
     }
+
+
+  static async logout(req, res) {
+    try {
+      return await service.logout(req, res);
+    } catch (error) {
+      return ErrorHandler.handleControllerError(error, res, "userController");
+    }
+  }
 
 }
 

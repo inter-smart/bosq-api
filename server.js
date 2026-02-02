@@ -14,6 +14,7 @@ const { seedMetaTags } = require("./database/seeders/metaTags");
 const { redisClient, connectRedis } = require("./config/redis");
 const { homeCmsData } = require("./database/seeders/HomeCms");
 const users = require("./database/models/users/users");
+const { seedCountriesAndStates } = require("./database/seeders/stateCountry");
 
 dotenv.config();
 const app = express();
@@ -64,7 +65,7 @@ const startServer = async () => {
     // Logger.info("✅ Database connected and synced");
 
     // homeCmsData();
-
+    //  await seedCountriesAndStates()
     // Add this to see which models are registered
     console.log("Registered models:", Object.keys(sequelize.models));
 

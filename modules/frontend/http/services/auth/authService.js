@@ -323,71 +323,70 @@ class UsersService {
     }
   }
 
-  static async login(req, res) {
-    const transaction = await sequelize.transaction();
+static async login(req, res) {
+  const transaction = await sequelize.transaction();
 
-    try {
-      await Promise.all(loginRequest.map((v) => v.run(req)));
-      const errors = validationResult(req);
+  try {
+    await Promise.all(loginRequest.map((v) => v.run(req)));
+    const errors = validationResult(req);
 
-      if (!errors.isEmpty()) {
-        return sendValidationError(res, errors.array());
-      }
-
-      const { email, password } = req.body;
-      const user = await Users.findOne({
-        where: { email },
-        attributes: ["id", "email", "password", "name", "country_code", "mobile"],
-        transaction,
-      });
-
-      if (!user) {
-        await transaction.rollback();
-        return sendErrorResponse(res, "User not found", null, 404);
-      }
-
-      const isPasswordValid = await bcrypt.compare(password, user?.password);
-
-      if (!isPasswordValid) {
-        await transaction.rollback();
-        return sendErrorResponse(res, "Invalid password", null, 401);
-      }
-
-      const token = jwt.sign(
-        {
-          id: user.id,
-          email: user.email,
-        },
-        process.env.JWT_SECRET,
-        {
-          expiresIn: process.env.JWT_EXPIRES_IN || "1d",
-          issuer: process.env.JWT_ISSUER || "BOSQ",
-        },
-      );
-
-      const moibleNumber = `${user?.country_code} ${user?.mobile}`;
-
-      await transaction.commit();
-
-      const userData = {
-        id: user?.id,
-        name: user?.name,
-        phone: moibleNumber,
-        email: user?.email,
-      };
-      return {
-        message: "Login successful",
-        data: {
-          accessToken: token,
-          user: userData,
-        },
-      };
-    } catch (error) {
+    if (!errors.isEmpty()) {
       await transaction.rollback();
-      console.error("Login Error:", error);
+      return sendValidationError(res, errors.array());
+    }
+
+    const { email, password } = req.body;
+    const user = await Users.findOne({
+      where: { email },
+      attributes: ["id", "email", "password", "name", "country_code", "mobile"],
+      transaction,
+    });
+
+    if (!user) {
+      await transaction.rollback();
+      return sendErrorResponse(res, "User not found", null, 404);
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+
+    if (!isPasswordValid) {
+      await transaction.rollback();
+      return sendErrorResponse(res, "Invalid password", null, 401);
+    }
+
+    const token = jwt.sign(
+      { id: user.id, email: user.email },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN || "1d", issuer: process.env.JWT_ISSUER || "BOSQ" }
+    );
+
+    
+
+    res.cookie("access_token", token, {
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000
+    });
+
+
+    const mobileNumber = `${user.country_code} ${user.mobile}`;
+
+    await transaction.commit();
+
+    return res.status(200).json({
+      success: true,
+      message: "Login successful",
+      data: { user: { id: user.id, name: user.name, phone: mobileNumber, email: user.email } },
+    });
+
+  } catch (error) {
+    await transaction.rollback();
+    console.error("Login Error:", error);
+
+    if (!res.headersSent) {
       return sendErrorResponse(res, error.message, null, 500);
     }
   }
+}
 
   // forgot password
   static async forgotPassword(req, res) {

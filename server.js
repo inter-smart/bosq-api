@@ -12,13 +12,19 @@ const cookieParser = require("cookie-parser");
 const { createAdminUser } = require("./database/seeders/adminUser");
 const { seedMetaTags } = require("./database/seeders/metaTags");
 const { redisClient, connectRedis } = require("./config/redis");
-const {  homeCmsData } = require("./database/seeders/HomeCms");
+const { homeCmsData } = require("./database/seeders/HomeCms");
 const users = require("./database/models/users/users");
 
 dotenv.config();
 const app = express();
+app.use(cookieParser());
 
-const allowedOrigins = ["http://localhost:3000", "http://localhost:8080", "http://localhost:8081", "https://bosq-admin-staging.netlify.app"];
+const allowedOrigins = [
+  "http://localhost:3000",
+  "http://localhost:8080",
+  "http://localhost:8081",
+  "https://bosq-admin-staging.netlify.app",
+];
 
 app.use(
   cors({
@@ -26,22 +32,25 @@ app.use(
       if (!origin || allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
-      return callback(new Error(`CORS policy does not allow access from: ${origin}`), false);
+      return callback(
+        new Error(`CORS policy does not allow access from: ${origin}`),
+        false,
+      );
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  })
+    allowedHeaders: ["Content-Type", "Authorization"], // ⭐ Added Cookie header
+  }),
 );
 
 app.use(express.json({ limit: "10mb" }));
-app.use(cookieParser());
+app.use(express.urlencoded({ extended: true })); // ⭐ Added for form data
+
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // ✅ Register routes BEFORE listing endpoints
 app.use("/api/backend", backendApi);
 app.use("/api/frontend", frontendApi);
-
-
 
 // Error handler last
 app.use(errorMiddleware);
@@ -54,12 +63,10 @@ const startServer = async () => {
     // await sequelize.sync({ alter: true });
     // Logger.info("✅ Database connected and synced");
 
-
     // homeCmsData();
 
     // Add this to see which models are registered
     console.log("Registered models:", Object.keys(sequelize.models));
-
 
     // await createAdminUser();
     // await seedMetaTags();
@@ -72,7 +79,9 @@ const startServer = async () => {
 
       let endpoints = expressListEndpoints(app);
       if (!endpoints.length) {
-        Logger.warn("⚠️ No endpoints found at app level. Checking sub-routers...");
+        Logger.warn(
+          "⚠️ No endpoints found at app level. Checking sub-routers...",
+        );
 
         const backendEndpoints = expressListEndpoints(backendApi);
         const frontendEndpoints = expressListEndpoints(frontendApi);
@@ -80,14 +89,18 @@ const startServer = async () => {
         if (backendEndpoints.length) {
           Logger.info("📋 Backend Endpoints:");
           backendEndpoints.forEach((e) => {
-            Logger.info(`${e.methods.join(", ").padEnd(10)} /api/backend${e.path}`);
+            Logger.info(
+              `${e.methods.join(", ").padEnd(10)} /api/backend${e.path}`,
+            );
           });
         }
 
         if (frontendEndpoints.length) {
           Logger.info("📋 Frontend Endpoints:");
           frontendEndpoints.forEach((e) => {
-            Logger.info(`${e.methods.join(", ").padEnd(10)} /api/frontend${e.path}`);
+            Logger.info(
+              `${e.methods.join(", ").padEnd(10)} /api/frontend${e.path}`,
+            );
           });
         }
       } else {

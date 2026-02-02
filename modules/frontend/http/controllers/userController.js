@@ -30,6 +30,22 @@ class UserController {
             return ErrorHandler.handleControllerError(error, res, "homeController");
         }
     }
+
+    // change password
+
+    static async changePassword(req, res) {
+        try {
+            const data = await service.changePassword(req,res);
+            return ApiResponse.success(res, {
+                message: RESPONSE_MESSAGES.SUCCESS.DATA_RETRIEVED,
+                data,
+                status: HTTP_STATUS.OK,
+            });
+        } catch (error) {
+            return ErrorHandler.handleControllerError(error, res, "homeController");
+        }
+    }
+
 }
 
 module.exports = UserController;

@@ -272,7 +272,7 @@ const getOrderedImagesFn = (images = []) =>
   });
 
 const generateQueryParams = (variantSku, model, attributes = []) => {
-  const params = ["initial_fetch=true"];
+  let params = [];
 
   if (variantSku) {
     params.push(`sku=${variantSku}`);

@@ -12,9 +12,7 @@ const ProductServiceHelpers = require("../../traits/products");
 
 class ProductsService {
   static async getProductBySlug(params) {
-    const { initialFetch, slug, variantSku = null, model = null } = params;
-
-    const initialFetchBoolean = initialFetch === "true" ? true : false;
+    const { slug, variantSku = null, model = null } = params;
 
     const filters = Object.entries(params)
       .filter(([key]) => key.startsWith("attr["))
@@ -26,7 +24,10 @@ class ProductsService {
     const filterEntries = Object.entries(filters);
 
     console.log(filters);
+    console.log(variantSku);
     console.log(model);
+
+    const isModelAndFilters = model && filterEntries.length > 0;
 
     try {
       const baseProduct = await ProductServiceHelpers?.getProductBaseData(slug);
@@ -38,7 +39,7 @@ class ProductsService {
 
       let initialVariant;
 
-      if (initialFetchBoolean) {
+      if (variantSku) {
         const variantData = await models.ProductVariants.findOne({
           where: { sku: variantSku, status: true },
           attributes: ["id", "sku", "title", "title_ar", "price", "stock", "media_path"],
@@ -60,7 +61,7 @@ class ProductsService {
         const transformedData = transformProductData(variantData, true);
         initialVariant = transformedData?.data?.variantData;
       } else {
-        if (model) {
+        if (model && !isModelAndFilters) {
           const productModelData = await models.ProductModels.findOne({
             where: { slug: model, status: true },
             attributes: ["id", "code", "title", "slug", "media_path"],
@@ -140,6 +141,7 @@ class ProductsService {
               {
                 association: "productModel",
                 attributes: ["id", "code", "title", "base_price", "slug", "media_path"],
+                where: isModelAndFilters ? { slug: model } : undefined,
               },
             ],
           });

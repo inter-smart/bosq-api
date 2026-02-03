@@ -54,11 +54,6 @@ module.exports = (sequelize) => {
         allowNull: false,
       },
 
-      country: {
-        type: DataTypes.STRING(100),
-        allowNull: false,
-      },
-
       street_address: {
         type: DataTypes.TEXT,
         allowNull: false,
@@ -68,9 +63,14 @@ module.exports = (sequelize) => {
         type: DataTypes.STRING(150),
         allowNull: true,
       },
-      state: {
-        type: DataTypes.STRING(100),
-        allowNull: false,
+
+      state_id: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        references: {
+          model: "states",
+          key: "id",
+        },
       },
 
       order_notes: {
@@ -129,6 +129,13 @@ module.exports = (sequelize) => {
       foreignKey: "parent_address_id",
       as: "billing_address",
     });
+
+    // state and country
+    Address.belongsTo(models.State, {
+      foreignKey: "state_id",
+      as: "state",
+    });
+
   };
 
   return Address;

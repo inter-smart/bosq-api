@@ -102,7 +102,6 @@ function buildBannerSection(cmsData, prefix, options = {}) {
 
 function buildOtherMetaData(data){
   return {
-    
     meta_title: data?.meta_title ?? "N/A",
     meta_title_ar: data?.meta_title_ar ?? "N/A",
     meta_description: data?.meta_description ?? "N/A",

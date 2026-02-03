@@ -47,12 +47,43 @@ class UsersServices {
               "email",
               "country_code",
               "phone",
-              "country",
-              "state",
               "street_address",
               "apartment",
               "order_notes",
             ],
+            include: [
+              {
+                model: models.State,
+                as: "state",
+                attributes: ["name", "slug"],
+                include: [
+                  {
+                    model: models.Country,
+                    as: "country",
+                    attributes: ["name", "slug"],
+                  },
+                ],
+              },
+              {
+                model: models.Address,
+                as: "shipping_address",
+                // attributes: ["id", "name", "country_code", "phone"],
+                include: [
+                  {
+                    model: models.State,
+                    as: "state",
+                    attributes: ["name", "slug"],
+                    include: [
+                      {
+                        model: models.Country,
+                        as: "country",
+                        attributes: ["name", "slug"],
+                      },
+                    ],
+                  },
+                ],
+              }
+            ]
           },
         ],
       });

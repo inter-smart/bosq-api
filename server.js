@@ -67,7 +67,7 @@ const startServer = async () => {
     // homeCmsData();
     //  await seedCountriesAndStates()
     // Add this to see which models are registered
-    console.log("Registered models:", Object.keys(sequelize.models));
+    // console.log("Registered models:", Object.keys(sequelize.models));
 
     // await createAdminUser();
     // await seedMetaTags();

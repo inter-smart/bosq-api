@@ -6,7 +6,7 @@ const service = require("../services/addressService");
 class AddressController {
     static async index(req, res) {
         try {
-            const data = await service.index(req);
+            const data = await service.index(req, res);
             return ApiResponse.success(res, {
                 message: RESPONSE_MESSAGES.SUCCESS.DATA_RETRIEVED,
                 data,
@@ -19,7 +19,7 @@ class AddressController {
 
     static async get(req, res) {
         try {
-            const data = await service.get(req);
+            const data = await service.get(req,res);
             return ApiResponse.success(res, {
                 message: RESPONSE_MESSAGES.SUCCESS.DATA_RETRIEVED,
                 data,
@@ -32,7 +32,7 @@ class AddressController {
 
     static async store(req, res) {
         try {
-            const data = await service.store(req);
+            const data = await service.store(req, res);
             return ApiResponse.success(res, {
                 message: RESPONSE_MESSAGES.SUCCESS.DATA_CREATED,
                 data,
@@ -45,7 +45,7 @@ class AddressController {
 
     static async update(req, res) {
         try {
-            const data = await service.update(req);
+            const data = await service.update(req, res);
             return ApiResponse.success(res, {
                 message: RESPONSE_MESSAGES.SUCCESS.DATA_UPDATED,
                 data,

@@ -110,6 +110,14 @@ module.exports = (sequelize) => {
       as: "country",
       onDelete: "CASCADE",
     });
+
+
+    // address
+    State.hasMany(models.Address, {
+      foreignKey: "state_id",
+      as: "addresses",
+      onDelete: "CASCADE",
+    });
   };
 
   return State;

@@ -1,17 +1,53 @@
+const { validationResult } = require("express-validator");
 const { models, sequelize } = require("../../../../database/models/index.js");
+const { createAddressRequest } = require("../request/addressRequest.js");
+const {
+  sendValidationError,
+  sendSuccessResponse,
+  sendErrorResponse,
+} = require("../../../admin/http/traits/responseHandler.js");
+const {
+  buildAddressSection,
+  buildCheckoutFormPayload,
+} = require("../traits/dataManipulations/address.js");
 
 class AddressService {
-  static async index(req) {
+  static async index(req, res) {
     try {
       const { id: user_id } = req.auth;
-      const addresses = await models.Address.findAll({
-        where: { user_id,
-          address_type: "billing"
-         },
+      const data = await models.Address.findAll({
+        where: { user_id, address_type: "billing" },
         include: [
+          {
+            model: models.State,
+            as: "state",
+            attributes: ["name", "slug"],
+            include: [
+              {
+                model: models.Country,
+                as: "country",
+                attributes: ["name", "slug"],
+              },
+            ],
+          },
           {
             model: models.Address,
             as: "shipping_address",
+            // attributes: ["id", "name", "country_code", "phone", "is_default"],
+            include: [
+              {
+                model: models.State,
+                as: "state",
+                attributes: ["name", "slug"],
+                include: [
+                  {
+                    model: models.Country,
+                    as: "country",
+                    attributes: ["name", "slug"],
+                  },
+                ],
+              },
+            ],
           },
         ],
         order: [
@@ -19,57 +55,116 @@ class AddressService {
           ["created_at", "DESC"],
         ],
       });
-      return addresses;
+
+      const result = buildAddressSection(data);
+
+      return sendSuccessResponse(
+        res,
+        result,
+        "Addresses fetched successfully",
+        200,
+      );
     } catch (error) {
-      console.error("Error fetching addresses:", error);
-      throw new Error(`Error fetching addresses: ${error.message}`);
+      console.error("Error fetching address:", error);
+      return res.json({
+        success: false,
+        message: `Error fetching address: ${error.message}`,
+      });
     }
   }
 
-  static async get(req) {
+  static async get(req, res) {
     try {
       const { id: user_id } = req.auth;
       const { id } = req.params;
 
       const address = await models.Address.findOne({
-        where: { id, user_id },
+        where: { id, user_id, address_type: "billing" },
         include: [
+          {
+            model: models.State,
+            as: "state",
+            attributes: ["id", "name", "slug"],
+            include: [
+              {
+                model: models.Country,
+                as: "country",
+                attributes: ["id", "name", "slug"],
+              },
+            ],
+          },
           {
             model: models.Address,
             as: "shipping_address",
+            include: [
+              {
+                model: models.State,
+                as: "state",
+                attributes: ["id", "name", "slug"],
+                include: [
+                  {
+                    model: models.Country,
+                    as: "country",
+                    attributes: ["id", "name", "slug"],
+                  },
+                ],
+              },
+            ],
           },
         ],
       });
 
       if (!address) {
-        const error = new Error("Address not found");
-        error.statusCode = 404;
-        error.isOperational = true;
-        throw error;
+        return res.status(404).json({
+          success: false,
+          message: "Address not found",
+        });
       }
 
-      return address;
+      const result = buildCheckoutFormPayload(address);
+      return sendSuccessResponse(
+        res,
+        result,
+        "Address fetched successfully",
+        200,
+      );
     } catch (error) {
       console.error("Error fetching address:", error);
-      throw error;
+      return res.status(500).json({
+        success: false,
+        message: `Error fetching address: ${error.message}`,
+      });
     }
   }
 
-  static async store(req) {
+  static async store(req, res) {
     const transaction = await sequelize.transaction();
-
-  try {
-      const { id: user_id } = req.auth;
-      const payload = req.body;
-
+    try {
+      // Validate request
       await Promise.all(createAddressRequest.map((v) => v.run(req)));
       const errors = validationResult(req);
+
       if (!errors.isEmpty()) {
         await transaction.rollback();
         return sendValidationError(res, errors.array());
       }
 
+      const { id: user_id } = req.auth;
+      const payload = req.body;
       const { shipToDifferentAddress } = payload;
+
+      // Look up state ID from slug
+      let stateId = null;
+      if (payload.state) {
+        const state = await models.State.findOne({
+          where: { slug: payload.state },
+          attributes: ["id"],
+          transaction,
+        });
+        if (state) {
+          stateId = state.id;
+        }
+      }
 
       // 1️⃣ Build billing object
       const billingData = {
@@ -79,8 +174,7 @@ class AddressService {
         company_name: payload.companyName,
         email: payload.email,
         phone: payload.phone,
-        country: payload.country,
-        state: payload.region,
+        state_id: stateId,
         street_address: payload.streetAddress,
         apartment: payload.apartment,
         order_notes: payload.orderNotes,
@@ -95,7 +189,6 @@ class AddressService {
       });
 
       const shouldBeDefault = existingAddresses.length === 0;
-
       billingData.is_default = shouldBeDefault;
 
       // 3️⃣ Create billing address
@@ -107,18 +200,29 @@ class AddressService {
 
       // 4️⃣ Create shipping address (if required)
       if (shipToDifferentAddress === true) {
+        // Look up shipping state ID from slug
+        let shippingStateId = null;
+        if (payload.shippingState) {
+          const shippingState = await models.State.findOne({
+            where: { slug: payload.shippingState },
+            attributes: ["id"],
+            transaction,
+          });
+          if (shippingState) {
+            shippingStateId = shippingState.id;
+          }
+        }
+
         shippingAddress = await models.Address.create(
           {
             user_id,
             address_type: "shipping",
             parent_address_id: billingAddress.id,
-
             name: payload.shippingFullName,
             company_name: payload.shippingCompanyName,
-            email: payload.email, // usually same email
-            phone: payload.phone, // usually same phone
-            country: payload.shippingCountry,
-            state: payload.shippingRegion,
+            email: payload.email,
+            phone: payload.phone,
+            state_id: shippingStateId,
             street_address: payload.shippingStreetAddress,
             apartment: payload.shippingApartment,
             status: "active",
@@ -129,23 +233,33 @@ class AddressService {
 
       await transaction.commit();
 
-      return {
-        billing: billingAddress,
-        shipping: shippingAddress,
-      };
+      // ✅ FIX: Actually send the response
+      return sendSuccessResponse(
+        res,
+        {
+          billing: billingAddress,
+          shipping: shippingAddress,
+        },
+        "Address created successfully",
+      );
     } catch (error) {
-      await transaction.rollback();
+      // Rollback only if transaction is still pending
+      if (!transaction.finished) {
+        await transaction.rollback();
+      }
       console.error("Error creating billing/shipping address:", error);
-      throw error;
+      return res.status(500).json({
+        success: false,
+        message: `Error creating address: ${error.message}`,
+      });
     }
   }
 
-  static async update(req) {
+  static async update(req, res) {
     const transaction = await sequelize.transaction();
-
     try {
       const { id: user_id } = req.auth;
-      const { id } = req.params; // billing address id
+      const { id } = req.params;
       const payload = req.body;
 
       const billingAddress = await models.Address.findOne({
@@ -159,9 +273,24 @@ class AddressService {
       });
 
       if (!billingAddress) {
-        const error = new Error("Billing address not found");
-        error.statusCode = 404;
-        throw error;
+        await transaction.rollback();
+        return res.status(404).json({
+          success: false,
+          message: "Billing address not found",
+        });
+      }
+
+      // Look up state ID from slug (for billing)
+      let stateId = null;
+      if (payload.state) {
+        const state = await models.State.findOne({
+          where: { slug: payload.state },
+          attributes: ["id"],
+          transaction,
+        });
+        if (state) {
+          stateId = state.id;
+        }
       }
 
       // 1️⃣ Update billing
@@ -171,8 +300,7 @@ class AddressService {
           company_name: payload.companyName,
           email: payload.email,
           phone: payload.phone,
-          country: payload.country,
-          state: payload.region,
+          state_id: stateId,
           street_address: payload.streetAddress,
           apartment: payload.apartment,
           order_notes: payload.orderNotes,
@@ -191,13 +319,25 @@ class AddressService {
           lock: transaction.LOCK.UPDATE,
         });
 
+        // Look up shipping state ID from slug
+        let shippingStateId = null;
+        if (payload.shippingState) {
+          const shippingState = await models.State.findOne({
+            where: { slug: payload.shippingState },
+            attributes: ["id"],
+            transaction,
+          });
+          if (shippingState) {
+            shippingStateId = shippingState.id;
+          }
+        }
+
         const shippingPayload = {
           name: payload.shippingFullName,
           company_name: payload.shippingCompanyName,
           email: payload.email,
           phone: payload.phone,
-          country: payload.shippingCountry,
-          state: payload.shippingRegion,
+          state_id: shippingStateId,
           street_address: payload.shippingStreetAddress,
           apartment: payload.shippingApartment,
           status: "active",
@@ -228,17 +368,26 @@ class AddressService {
       }
 
       await transaction.commit();
-      return billingAddress;
+
+      return sendSuccessResponse(
+        res,
+        billingAddress,
+        "Address updated successfully",
+      );
     } catch (error) {
-      await transaction.rollback();
+      if (!transaction.finished) {
+        await transaction.rollback();
+      }
       console.error("Error updating addresses:", error);
-      throw error;
+      return res.status(500).json({
+        success: false,
+        message: `Error updating address: ${error.message}`,
+      });
     }
   }
 
-  static async destroy(req) {
+  static async destroy(req, res) {
     const transaction = await sequelize.transaction();
-
     try {
       const { id: user_id } = req.auth;
       const { id } = req.params;
@@ -250,9 +399,11 @@ class AddressService {
       });
 
       if (!address) {
-        const error = new Error("Address not found");
-        error.statusCode = 404;
-        throw error;
+        await transaction.rollback();
+        return res.status(404).json({
+          success: false,
+          message: "Address not found",
+        });
       }
 
       const wasDefault = address.is_default;
@@ -291,17 +442,26 @@ class AddressService {
       }
 
       await transaction.commit();
-      return { deletedId: id };
+
+      return sendSuccessResponse(
+        res,
+        { deletedId: id },
+        "Address deleted successfully",
+      );
     } catch (error) {
-      await transaction.rollback();
+      if (!transaction.finished) {
+        await transaction.rollback();
+      }
       console.error("Error deleting address:", error);
-      throw error;
+      return res.status(500).json({
+        success: false,
+        message: `Error deleting address: ${error.message}`,
+      });
     }
   }
 
-  static async setDefault(req) {
+  static async setDefault(req, res) {
     const transaction = await sequelize.transaction();
-
     try {
       const { id: user_id } = req.auth;
       const { id } = req.params;
@@ -319,15 +479,17 @@ class AddressService {
       });
 
       if (!address) {
-        const error = new Error("Billing address not found");
-        error.statusCode = 404;
-        throw error;
+        await transaction.rollback();
+        return res.status(404).json({
+          success: false,
+          message: "Billing address not found",
+        });
       }
 
       // 2️⃣ No-op if already default
       if (address.is_default === true) {
         await transaction.commit();
-        return address;
+        return sendSuccessResponse(res, address, "Address is already default");
       }
 
       // 3️⃣ Unset default from other billing addresses
@@ -346,11 +508,19 @@ class AddressService {
       await address.update({ is_default: true }, { transaction });
 
       await transaction.commit();
-      return address;
+
+      return sendSuccessResponse(
+        res,
+        address,
+        "Default address set successfully",
+        200
+      );
     } catch (error) {
-      await transaction.rollback();
+      if (!transaction.finished) {
+        await transaction.rollback();
+      }
       console.error("Error setting default address:", error);
-      throw error;
+     sendErrorResponse(res, "Error setting default address", null, 500);
     }
   }
 }

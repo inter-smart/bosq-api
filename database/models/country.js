@@ -46,7 +46,7 @@ module.exports = (sequelize) => {
       tableName: "countries",
       timestamps: true,
       paranoid: true,
-    }
+    },
   );
 
   Country.associate = (models) => {
@@ -55,6 +55,7 @@ module.exports = (sequelize) => {
       as: "states",
       onDelete: "CASCADE",
     });
+
   };
 
   return Country;

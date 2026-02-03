@@ -18,6 +18,8 @@ const cacheKeys = {
   auth: "auth",
   siteSettings: "siteSettings",
   listingDropdownFilters: "listingDropdownFilters",
+  state: "state",
+  country: "country",
 };
 
 module.exports = cacheKeys;

@@ -158,46 +158,43 @@ const transformModelData = (model) => {
 
   const { variants = [], ...modelData } = model.toJSON();
   const initialModel = modelData;
-
-  const attributesMap = {};
-
-  variants.forEach((variant) => {
-    const { attribute_values = [] } = variant;
-
-    attribute_values.forEach((item) => {
-      const attr = item.attribute;
-      if (!attr) return;
-
-      const key = attr.code || attr.slug;
-
-      if (!attributesMap[key]) {
-        attributesMap[key] = {
-          id: attr.id,
-          name: attr.name,
-          name_ar: attr.name_ar,
-          code: attr.code,
-          slug: attr.slug,
-          values: [],
-        };
-      }
-
-      // Check if value already exists to avoid duplicates
-      const valueExists = attributesMap[key].values.some((v) => v.id === item.id);
-      if (!valueExists) {
-        attributesMap[key].values.push({
-          id: item.id,
-          value: item.value,
-          value_ar: item.value_ar,
-          slug: item.slug,
-          media_path: item.media_path,
-        });
-      }
-    });
-  });
-
   // Get images from the first variant if available
   const firstVariantImages = variants.length > 0 && variants[0].variant_images ? variants[0].variant_images : [];
   const variant = variants[0] ? variants[0] : null;
+
+  const attributesMap = {};
+
+  const { attribute_values = [] } = variant;
+
+  attribute_values.forEach((item) => {
+    const attr = item.attribute;
+    if (!attr) return;
+
+    const key = attr.code || attr.slug;
+
+    if (!attributesMap[key]) {
+      attributesMap[key] = {
+        id: attr.id,
+        name: attr.name,
+        name_ar: attr.name_ar,
+        code: attr.code,
+        slug: attr.slug,
+        values: [],
+      };
+    }
+
+    // Check if value already exists to avoid duplicates
+    const valueExists = attributesMap[key].values.some((v) => v.id === item.id);
+    if (!valueExists) {
+      attributesMap[key].values.push({
+        id: item.id,
+        value: item.value,
+        value_ar: item.value_ar,
+        slug: item.slug,
+        media_path: item.media_path,
+      });
+    }
+  });
 
   const orderedImages = getOrderedImagesFn(firstVariantImages);
 
@@ -279,9 +276,6 @@ const generateQueryParams = (variantSku, model, attributes = []) => {
 
   if (variantSku) {
     params.push(`sku=${variantSku}`);
-  }
-  if (model) {
-    params.push(`model=${model}`);
   }
 
   if (attributes && attributes.length > 0) {

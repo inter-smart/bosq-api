@@ -4,6 +4,7 @@ const service = require("../../services/Products/ProductsService");
 class ProductsController {
   static async getProductBySlug(req, res) {
     const params = req.query;
+    console.log(params);
     try {
       const { data, message } = await service.getProductBySlug(params);
 

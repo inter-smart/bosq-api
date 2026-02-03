@@ -27,12 +27,12 @@ class ProductServiceHelpers {
   static async getProductBaseData(slug) {
     const cacheKey = cacheKeys?.productBaseDetail(slug);
     const baseDataFromCache = await getCache(cacheKey);
-    if (baseDataFromCache) {
-      return {
-        data: baseDataFromCache,
-        fromCache: true,
-      };
-    }
+    // if (baseDataFromCache) {
+    //   return {
+    //     data: baseDataFromCache,
+    //     fromCache: true,
+    //   };
+    // }
 
     const productBaseData = await models.ProductBase.findOne({
       where: { slug: slug, status: true },
@@ -56,12 +56,12 @@ class ProductServiceHelpers {
   static async getProductVariantRelatedModels(product_base_id) {
     const cacheKey = cacheKeys?.productVariantRelatedModels(product_base_id);
     const baseDataFromCache = await getCache(cacheKey);
-    if (baseDataFromCache) {
-      return {
-        data: baseDataFromCache,
-        fromCache: true,
-      };
-    }
+    // if (baseDataFromCache) {
+    //   return {
+    //     data: baseDataFromCache,
+    //     fromCache: true,
+    //   };
+    // }
 
     const productmodels = await models?.ProductModels?.findAll({
       where: { product_id: product_base_id, status: true },

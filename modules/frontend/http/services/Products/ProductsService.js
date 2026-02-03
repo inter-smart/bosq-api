@@ -16,7 +16,17 @@ class ProductsService {
 
     const initialFetchBoolean = initialFetch === "true" ? true : false;
 
-    console.log(params);
+    const filters = Object.entries(params)
+      .filter(([key]) => key.startsWith("attr["))
+      .reduce((acc, [key, value]) => {
+        const attrSlug = key.match(/^attr\[(.+)\]$/)?.[1];
+        if (attrSlug) acc[attrSlug] = value;
+        return acc;
+      }, {});
+    const filterEntries = Object.entries(filters);
+
+    console.log(filters);
+    console.log(model);
 
     try {
       const baseProduct = await ProductServiceHelpers?.getProductBaseData(slug);
@@ -49,33 +59,98 @@ class ProductsService {
 
         const transformedData = transformProductData(variantData, true);
         initialVariant = transformedData?.data?.variantData;
-        console.log("initial true");
       } else {
-        console.log("initial FALSE");
-        const productModelData = await models.ProductModels.findOne({
-          where: { slug: model, status: true },
-          attributes: ["id", "code", "title", "slug", "media_path"],
-          required: true,
-          include: [
-            {
-              association: "variants",
-              attributes: ["id", "sku", "title", "title_ar", "price", "stock", "media_path"],
-              required: true,
+        if (model) {
+          const productModelData = await models.ProductModels.findOne({
+            where: { slug: model, status: true },
+            attributes: ["id", "code", "title", "slug", "media_path"],
+            required: true,
+            include: [
+              {
+                association: "variants",
+                attributes: ["id", "sku", "title", "title_ar", "price", "stock", "media_path"],
+                required: true,
+                include: [
+                  { association: "variant_images", attributes: ["id", "media_path", "media_type", "is_primary", "sort_order"] },
+                  {
+                    association: "attribute_values",
+                    attributes: ["id", "attribute_id", "value", "value_ar", "slug", "media_path"],
+                    through: { attributes: [] },
+                    include: [{ association: "attribute", attributes: ["id", "name", "name_ar", "code", "slug"] }],
+                  },
+                ],
+              },
+            ],
+          });
+          const transformedData = transformModelData(productModelData);
+          initialVariant = transformedData;
+        } else {
+          // When filters are present without model, query variants directly with attribute filters
+          // First, resolve attribute slugs and value slugs to their IDs
+          const attributeFilterConditions = [];
+
+          for (const [attributeSlug, valueSlug] of filterEntries) {
+            // Find the attribute value that matches both the attribute slug and value slug
+            const attributeValue = await models.AttributeValues.findOne({
+              where: { slug: valueSlug },
+              attributes: ["id", "attribute_id"],
               include: [
-                { association: "variant_images", attributes: ["id", "media_path", "media_type", "is_primary", "sort_order"] },
                 {
-                  association: "attribute_values",
-                  attributes: ["id", "attribute_id", "value", "value_ar", "slug", "media_path"],
-                  through: { attributes: [] },
-                  include: [{ association: "attribute", attributes: ["id", "name", "name_ar", "code", "slug"] }],
+                  association: "attribute",
+                  where: { slug: attributeSlug },
+                  attributes: ["id"],
                 },
               ],
-            },
-          ],
-        });
+            });
 
-        const transformedData = transformModelData(productModelData);
-        initialVariant = transformedData;
+            if (attributeValue) {
+              attributeFilterConditions.push({
+                attribute_id: attributeValue.attribute_id,
+                attribute_value_id: attributeValue.id,
+              });
+            }
+          }
+
+          // Build where clause for variant_attributes
+          let variantAttributeWhere = null;
+          if (attributeFilterConditions.length > 0) {
+            variantAttributeWhere = {
+              [Op.or]: attributeFilterConditions,
+            };
+          }
+
+          // Find variant matching the filters using variant_attributes (hasMany)
+          const variantData = await models.ProductVariants.findOne({
+            where: { status: true },
+            attributes: ["id", "sku", "title", "title_ar", "price", "stock", "media_path"],
+            include: [
+              { association: "variant_images", attributes: ["id", "media_path", "media_type", "is_primary", "sort_order", "thumbnail_path"] },
+              {
+                association: "variant_attributes",
+                required: variantAttributeWhere ? true : false,
+                where: variantAttributeWhere || undefined,
+                attributes: ["id", "attribute_id", "attribute_value_id"],
+              },
+              {
+                association: "attribute_values",
+                attributes: ["id", "attribute_id", "value", "value_ar", "slug", "media_path"],
+                through: { attributes: [] },
+                include: [{ association: "attribute", attributes: ["id", "name", "name_ar", "code", "slug"] }],
+              },
+              {
+                association: "productModel",
+                attributes: ["id", "code", "title", "base_price", "slug", "media_path"],
+              },
+            ],
+          });
+
+          if (variantData) {
+            const transformedData = transformProductData(variantData, true);
+            initialVariant = transformedData?.data?.variantData;
+          } else {
+            initialVariant = null;
+          }
+        }
       }
 
       return {

@@ -10,21 +10,22 @@ class AuthCmsService {
     try {
       const cachedData = await getCache(cacheKey);
 
-      if (cachedData) {
-        return {
-          data: cachedData,
-          fromCache: true,
-          message: "Auth Page data fetched from cache",
-        };
-      }
+      // if (cachedData) {
+      //   return {
+      //     data: cachedData,
+      //     fromCache: true,
+      //     message: "Auth Page data fetched from cache",
+      //   };
+      // }
 
-      const cmsData = await models.AuthCms.findOne();
+      const cmsData = await models.LoginRegisterCms.findOne();
 
       if (!cmsData) {
         throw new Error("No auth information found");
       }
 
       const authPageData = buildData(cmsData);
+
 
       const result = {
         authPageData,

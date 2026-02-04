@@ -143,6 +143,37 @@ class EmailService {
 </html>
     `.trim();
   }
+
+
+
+
+  /**
+   * Send an OTP to a user
+   * @param {Object} options - OTP sending options
+   * @param {string} options.to - Recipient email
+   * @param {string} options.otp - 6-digit OTP
+   */
+static async sendOtp(to, otp) {
+    const transporter = this.getTransporter();
+
+    return transporter.sendMail({
+      from: `"${process.env.EMAIL_FROM_NAME || "BOSQ"}" <${
+        process.env.EMAIL_FROM || process.env.SMTP_USER
+      }>`,
+      to,
+      subject: "Your OTP for Registration",
+      html: `
+        <div style="font-family: Arial, sans-serif;">
+          <h2>Email Verification</h2>
+          <p>Your OTP is:</p>
+          <h1 style="letter-spacing: 3px;">${otp}</h1>
+          <p>This OTP is valid for <strong>5 minutes</strong>.</p>
+          <p>If you did not request this, please ignore this email.</p>
+        </div>
+      `,
+    });
+  }
+
 }
 
 module.exports = EmailService;

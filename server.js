@@ -13,9 +13,12 @@ const { createAdminUser } = require("./database/seeders/adminUser");
 const { seedMetaTags } = require("./database/seeders/metaTags");
 const { redisClient, connectRedis } = require("./config/redis");
 const { homeCmsData } = require("./database/seeders/HomeCms");
+const users = require("./database/models/users/users");
+const { seedCountriesAndStates } = require("./database/seeders/stateCountry");
 
 dotenv.config();
 const app = express();
+app.use(cookieParser());
 
 const allowedOrigins = ["http://localhost:3000", "http://localhost:8080", "http://localhost:8081", "https://bosq-admin-staging.netlify.app"];
 
@@ -29,20 +32,18 @@ app.use(
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"], // ⭐ Added Cookie header
   }),
 );
 
 app.use(express.json({ limit: "10mb" }));
-app.use(cookieParser());
+app.use(express.urlencoded({ extended: true })); // ⭐ Added for form data
+
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // ✅ Register routes BEFORE listing endpoints
 app.use("/api/backend", backendApi);
 app.use("/api/frontend", frontendApi);
-
-app.get("/", (req, res) => {
-  res.send("Hello World!");
-});
 
 // Error handler last
 app.use(errorMiddleware);
@@ -56,9 +57,9 @@ const startServer = async () => {
     // Logger.info("✅ Database connected and synced");
 
     // homeCmsData();
-
+    //  await seedCountriesAndStates()
     // Add this to see which models are registered
-    console.log("Registered models:", Object.keys(sequelize.models));
+    // console.log("Registered models:", Object.keys(sequelize.models));
 
     // await createAdminUser();
     // await seedMetaTags();

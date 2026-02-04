@@ -22,7 +22,6 @@ class AboutCmsController {
                 data = await DataModel.create({});
             }
 
-            return sendSuccessResponse(res, data, 'Data fetched  successfully', 200);
         } catch (error) {
             console.error("Index Error:", error);
             return sendErrorResponse(res, "Internal Server Error", 500, "INTERNAL_ERROR");

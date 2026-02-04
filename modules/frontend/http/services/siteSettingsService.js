@@ -35,19 +35,18 @@ class SiteSettingsService {
           },
           order: [["sort_order", "ASC"]],
         }),
-      ])
-
+      ]);
 
       const headerData = buildHeaderSection(siteSettings);
       const footerData = buildFooterSection(siteSettings);
-      const socialMedia = buildFooterIcons(socialLinks)
-      const cards = buildFooterIcons(paymentMethods)
-      const result ={
+      const socialMedia = buildFooterIcons(socialLinks);
+      const cards = buildFooterIcons(paymentMethods);
+      const result = {
         headerData,
         footerData,
         socialMedia,
-        cards
-      }
+        cards,
+      };
 
       //   5. Store the result in cache for future requests
       await setCache(cacheKey, result);

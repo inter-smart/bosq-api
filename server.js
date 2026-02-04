@@ -20,12 +20,7 @@ dotenv.config();
 const app = express();
 app.use(cookieParser());
 
-const allowedOrigins = [
-  "http://localhost:3000",
-  "http://localhost:8080",
-  "http://localhost:8081",
-  "https://bosq-admin-staging.netlify.app",
-];
+const allowedOrigins = ["http://localhost:3000", "http://localhost:8080", "http://localhost:8081", "https://bosq-admin-staging.netlify.app"];
 
 app.use(
   cors({
@@ -33,10 +28,7 @@ app.use(
       if (!origin || allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
-      return callback(
-        new Error(`CORS policy does not allow access from: ${origin}`),
-        false,
-      );
+      return callback(new Error(`CORS policy does not allow access from: ${origin}`), false);
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
@@ -80,9 +72,7 @@ const startServer = async () => {
 
       let endpoints = expressListEndpoints(app);
       if (!endpoints.length) {
-        Logger.warn(
-          "⚠️ No endpoints found at app level. Checking sub-routers...",
-        );
+        Logger.warn("⚠️ No endpoints found at app level. Checking sub-routers...");
 
         const backendEndpoints = expressListEndpoints(backendApi);
         const frontendEndpoints = expressListEndpoints(frontendApi);
@@ -90,18 +80,14 @@ const startServer = async () => {
         if (backendEndpoints.length) {
           Logger.info("📋 Backend Endpoints:");
           backendEndpoints.forEach((e) => {
-            Logger.info(
-              `${e.methods.join(", ").padEnd(10)} /api/backend${e.path}`,
-            );
+            Logger.info(`${e.methods.join(", ").padEnd(10)} /api/backend${e.path}`);
           });
         }
 
         if (frontendEndpoints.length) {
           Logger.info("📋 Frontend Endpoints:");
           frontendEndpoints.forEach((e) => {
-            Logger.info(
-              `${e.methods.join(", ").padEnd(10)} /api/frontend${e.path}`,
-            );
+            Logger.info(`${e.methods.join(", ").padEnd(10)} /api/frontend${e.path}`);
           });
         }
       } else {

@@ -48,24 +48,16 @@ const createUploadMiddleware = (subfolder, fields) => {
     storage: getStorage(subfolder),
     fileFilter: (req, file, cb) => {
       const allowedTypes = /jpeg|jpg|png|svg|webp|mp4|mov|avi|mkv|webm/;
-      const extname = allowedTypes.test(
-        path.extname(file.originalname).toLowerCase()
-      );
+      const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
       const mimetype = allowedTypes.test(file.mimetype);
 
       if (extname && mimetype) {
         return cb(null, true);
       }
-      cb(
-        new CustomError(
-          "Only image files (jpeg, jpg, png, svg, webp) are allowed",
-          400,
-          "INVALID_FILE_TYPE"
-        )
-      );
+      cb(new CustomError("Only image files (jpeg, jpg, png, svg, webp) are allowed", 400, "INVALID_FILE_TYPE"));
     },
     limits: {
-      fileSize: 5 * 1024 * 1024, // 5MB max size
+      fileSize: 10 * 1024 * 1024, // 5MB max size
     },
   });
 
@@ -85,7 +77,7 @@ const createUploadMiddleware = (subfolder, fields) => {
       // Convert req.files array to object for easier access
       const filesObj = {};
       if (req.files && Array.isArray(req.files)) {
-        req.files.forEach(file => {
+        req.files.forEach((file) => {
           if (!filesObj[file.fieldname]) {
             filesObj[file.fieldname] = [];
           }
@@ -100,21 +92,14 @@ const createUploadMiddleware = (subfolder, fields) => {
         if (req.files && req.files[fieldName]) {
           // File was uploaded; use the file path
           const file = req.files[fieldName][0];
-          normalizedBody[fieldName] = path
-            .join("uploads", subfolder, file.filename)
-            .replace(/\\/g, "/");
+          normalizedBody[fieldName] = path.join("uploads", subfolder, file.filename).replace(/\\/g, "/");
         } else {
           let input = req.body[fieldName];
 
           // Handle array inputs (e.g., client sends multiple values)
           if (Array.isArray(input)) {
-            console.warn(
-              `Array input for ${fieldName}: ${JSON.stringify(input)}`
-            );
-            input =
-              input.find(
-                (val) => isValidUrl(val) || (typeof val === "string" && val)
-              ) || undefined;
+            console.warn(`Array input for ${fieldName}: ${JSON.stringify(input)}`);
+            input = input.find((val) => isValidUrl(val) || (typeof val === "string" && val)) || undefined;
           }
 
           if (input) {
@@ -167,12 +152,7 @@ const deleteOldFiles = async (existingData, newFiles, fields) => {
       const oldFilePath = existingData[field.name];
       const newFilePath = newFiles[field.name];
 
-      if (
-        oldFilePath &&
-        newFilePath &&
-        oldFilePath !== newFilePath &&
-        !isValidUrl(newFilePath)
-      ) {
+      if (oldFilePath && newFilePath && oldFilePath !== newFilePath && !isValidUrl(newFilePath)) {
         await deleteOldFile(oldFilePath);
       }
     }
@@ -182,7 +162,7 @@ const deleteOldFiles = async (existingData, newFiles, fields) => {
 };
 
 function handleFileUploadStore(req, fileFields) {
-  fileFields.forEach(field => {
+  fileFields.forEach((field) => {
     if (req.files?.[field]?.[0]) {
       req.body[field] = req.files[field][0].path;
     }

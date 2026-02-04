@@ -18,6 +18,8 @@ const cacheKeys = {
   auth: "auth",
   siteSettings: "siteSettings",
   listingDropdownFilters: "listingDropdownFilters",
+  productBaseDetail: (slug) => `productBaseDetail:${slug}`,
+  productVariantRelatedModels: (product_base_id) => `productVariantRelatedModels:${product_base_id}`,
   state: "state",
   country: "country",
 };

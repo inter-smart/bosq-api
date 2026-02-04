@@ -5,6 +5,7 @@ const { sendSuccessResponse, sendErrorResponse, sendValidationError, sendNotFoun
 const { validationResult } = require("express-validator");
 const { Op } = require("sequelize");
 const { createProductVariants, createOrUpdateVariantAttributes } = require("../../../traits/ProductVariantHelper");
+const { handleFileUploadStore } = require("../../../middleware/multerMiddleware");
 
 const DataModel = models.ProductVariants;
 
@@ -25,6 +26,7 @@ class ProductVariantsController {
           ["createdAt", "DESC"],
         ],
         searchFields: ["sku", "product_code"],
+        include: [{ association: "productModel", attributes: ["id", "title"] }],
       });
 
       const response = {
@@ -101,7 +103,7 @@ class ProductVariantsController {
       const { id } = req.params;
 
       const data = await DataModel.findByPk(id, {
-        attributes: ["id", "status", "product_model_id", "sku", "product_code", "price", "status", "stock"],
+        attributes: ["id", "status", "product_model_id", "sku", "product_code", "price", "status", "stock", "title", "title_ar", "media_path"],
         include: [
           {
             model: models.ProductVariantAttributes,
@@ -129,9 +131,12 @@ class ProductVariantsController {
 
     try {
       const { id } = req.params;
-      const { product_model_id, attributes, sort_order, status, stock } = req.body;
+      const { product_model_id, attributes } = req.body;
 
-      const meta = { sort_order, status, stock };
+      const fileFields = ["media_path"];
+      handleFileUploadStore(req, fileFields);
+
+      const meta = req.body;
 
       await createOrUpdateVariantAttributes(transaction, attributes, product_model_id, "update", id, meta);
 
@@ -147,7 +152,7 @@ class ProductVariantsController {
 
   static async destroy(req, res) {
     await Promise.all(validateId.map((v) => v.run(req)));
-  const errors = validationResult(req);
+    const errors = validationResult(req);
     if (!errors.isEmpty()) return sendValidationError(res, errors.array());
 
     try {

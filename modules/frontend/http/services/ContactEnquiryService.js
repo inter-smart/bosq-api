@@ -13,7 +13,6 @@ class ContactEnquiryService {
 
       const { success, score, action } = await validateRecaptcha(token);
 
-      console.log("reCAPTCHA result:", { success, score, action });
 
       // ✅ v3 validation
       if (!success || score < 0.5) {

@@ -74,6 +74,7 @@ const defineSocialMedia = require("./siteSettings/socialMedia");
 const defineProjectsCms = require("./projects/cms");
 const defineProjectCategories = require("./projects/projectCategories");
 const defineProjects = require("./projects/projects");
+const defineProjectImage = require("./projects/projectImage");
 const defineSpecialisedAreas = require("./projects/specialisedAreas");
 
 // ERGONOMIC
@@ -201,6 +202,7 @@ const models = {
   ProjectsCms: defineProjectsCms(sequelize),
   ProjectCategories: defineProjectCategories(sequelize),
   Projects: defineProjects(sequelize),
+  ProjectImage: defineProjectImage(sequelize),
   SpecialisedAreas: defineSpecialisedAreas(sequelize),
 
   // ERGONOMIC

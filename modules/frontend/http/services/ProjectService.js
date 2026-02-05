@@ -4,11 +4,17 @@ const {
 } = require("../../../admin/http/traits/responseHandler.js");
 const cacheKeys = require("../../../redis/cacheKeys");
 const { setCache, getCache } = require("../../../redis/redisService");
-const { buildTitleSection } = require("../traits/dataManipulations/common");
+const {
+  buildTitleSection,
+  buildCmsSection,
+} = require("../traits/dataManipulations/common");
 const {
   buildProjectCategorySection,
   buildProjectBannerSection,
   buildProjectListSection,
+  buildProjectDetailsSection,
+  buildProfileTitleSection,
+  buildSpecialisedAreaSection,
 } = require("../traits/dataManipulations/projects.js");
 
 const cacheKey = cacheKeys.projects;
@@ -41,7 +47,7 @@ class PrivacyPolicyService {
               required: true, // INNER JOIN
               where: { status: true }, // only active projects
             },
-          ]
+          ],
         }),
       ]);
 
@@ -114,7 +120,6 @@ class PrivacyPolicyService {
         sendErrorResponse(res, "Project not found", "Project not found", 404);
       }
 
-
       const projectData = buildProjectListSection(projects);
 
       return {
@@ -127,34 +132,73 @@ class PrivacyPolicyService {
     }
   }
 
-
   static async show(req, res) {
     try {
       const { slug } = req.query;
-     
-      console.log(req.query)
 
+      console.log(req.query);
 
-      if(!slug){
+      if (!slug) {
         sendErrorResponse(res, "Project not found", "Project not found", 404);
       }
 
-        const projects = await models.Projects.findAll({
+      const [cms, projects] = await Promise.all([
+        models.ProjectsCms.findOne({
+          attributes: [
+            "form_title",
+            "form_title_ar",
+            "form_description",
+            "form_description_ar",
+            "form_media_path",
+            "form_media_alt",
+            "form_media_alt_ar",
+          ],
+        }),
+        models.Projects.findOne({
           where: {
             status: true,
-            slug
+            slug,
           },
           order: [["sort_order", "ASC"]],
-        });
+          include: [
+            {
+              model: models.SpecialisedAreas,
+              as: "specialised_areas",
+              where: { status: true },
+            },
+            {
+              model: models.ProjectImage,
+              as: "project_images",
+              where: { status: true },
+            },
+          ],
+        }),
+      ]);
 
       if (!projects || projects.length === 0) {
         sendErrorResponse(res, "Project not found", "Project not found", 404);
       }
 
+      if (!cms || cms.length === 0) {
+        sendErrorResponse(res, "Project not found", "Project not found", 404);
+      }
 
+      const heroData = buildProfileTitleSection(projects);
+      const projectData = buildProjectDetailsSection(projects);
+      const solutionData = buildCmsSection(projects, "section3");
+      const specializedAreasData = buildSpecialisedAreaSection(projects);
+      const enquiryData = buildCmsSection(cms, "form");
+
+      const result = {
+        heroData,
+        projectData,
+        solutionData,
+        specializedAreasData,
+        enquiryData,
+      };
 
       return {
-        data: projects,
+        data: result,
         message: "project page data fetched",
       };
     } catch (error) {
@@ -162,8 +206,6 @@ class PrivacyPolicyService {
       throw new Error(`Error fetching project page data: ${error.message}`);
     }
   }
-
-
 }
 
 module.exports = PrivacyPolicyService;

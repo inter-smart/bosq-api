@@ -7,7 +7,7 @@ function buildCouponSections(data) {
     coupons: data.map((coupon) => {
       return {
         is_expired: coupon?.end_at,
-        discount_value: coupon?.discount_type === "percentage"? `${coupon?.discount_value}%` : `${coupon?.discount_value} AED`,
+        discount_value: coupon?.discount_type === "percentage"? `${coupon?.discount_value}%` : `AED ${coupon?.discount_value}`,
         title: coupon?.title,
         title_ar: coupon?.title_ar,
         code: coupon?.code,

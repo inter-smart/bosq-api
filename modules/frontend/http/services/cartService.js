@@ -421,7 +421,7 @@ class CartService {
       }
 
       // Mark guest cart as abandoned
-      await guestCart.update({ status: "abandoned" }, { transaction });
+      await guestCart.destroy({ force: true, transaction });
 
       // Recalculate user cart totals
       await this.recalculateCartTotals(userCart.id, transaction);

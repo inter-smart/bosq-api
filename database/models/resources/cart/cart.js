@@ -63,6 +63,7 @@ module.exports = (sequelize) => {
     {
       tableName: "carts",
       timestamps: true, // creates createdAt & updatedAt
+      paranoid: true,
     },
   );
 

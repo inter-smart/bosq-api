@@ -45,6 +45,7 @@ module.exports = (sequelize) => {
     {
       tableName: "cart_items",
       timestamps: true,
+      paranoid: true,
     },
   );
 

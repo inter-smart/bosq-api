@@ -22,6 +22,7 @@ const cacheKeys = {
   productVariantRelatedModels: (product_base_id) => `productVariantRelatedModels:${product_base_id}`,
   state: "state",
   country: "country",
+  coupons: "coupons"
 };
 
 module.exports = cacheKeys;

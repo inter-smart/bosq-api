@@ -135,7 +135,6 @@ module.exports = (sequelize) => {
       as: "faqs",
     });
   };
-  
 
   return ProductBase;
 };

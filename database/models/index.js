@@ -104,7 +104,6 @@ const defineProductProjectImage = require("./resources/productProjectImage");
 const defineProductModels = require("./resources/productModels");
 
 // USER AUTH
-
 const defineUsers = require("./users/users");
 const defineAuthSessions = require("./users/authSessions");
 const defineSocialAccounts = require("./users/socialAccounts");
@@ -118,6 +117,10 @@ const defineNewsLetter = require("./enquiries/newsletter");
 // STATE AND COUNTRY
 const defineState = require("./state");
 const defineCountry = require("./country");
+
+// COUPONS
+const defineCoupons = require("./coupons");
+const defineCouponUsage = require("./couponUsage");
 
 const models = {
   AdminUser: defineAdminUser(sequelize),
@@ -235,6 +238,10 @@ const models = {
 
   Country: defineCountry(sequelize),
   State: defineState(sequelize),
+
+  // COUPONS
+  Coupons: defineCoupons(sequelize),
+  CouponUsage: defineCouponUsage(sequelize),
 };
 
 Object.keys(models).forEach((modelName) => {

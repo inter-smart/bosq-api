@@ -8,7 +8,7 @@ const cacheKeys = {
   deliveryPolicy: "deliveryPolicy",
   faq: "faq",
   contact: "contact",
-  projects: "home",
+  projects: "projects",
   blog: "blog-list",
   blogDetail: (slug) => `blog-list:${slug}`,
   customization: "customization",

@@ -17,6 +17,10 @@ module.exports = (sequelize) => {
         type: DataTypes.STRING,
         allowNull: true,
       },
+      slug:{
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
       sort_order: {
         type: DataTypes.SMALLINT,
         defaultValue: 1,

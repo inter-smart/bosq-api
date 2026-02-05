@@ -103,6 +103,10 @@ const defineProductVariantImages = require("./resources/productVariantImages");
 const defineProductProjectImage = require("./resources/productProjectImage");
 const defineProductModels = require("./resources/productModels");
 
+// Cart
+const defineCart = require("./resources/cart/cart");
+const defineCartItems = require("./resources/cart/cartItems");
+
 // USER AUTH
 const defineUsers = require("./users/users");
 const defineAuthSessions = require("./users/authSessions");
@@ -228,6 +232,10 @@ const models = {
   ProductVariantImages: defineProductVariantImages(sequelize),
   ProductProjectImage: defineProductProjectImage(sequelize),
   ProductModels: defineProductModels(sequelize),
+
+  // CART
+  Cart: defineCart(sequelize),
+  CartItems: defineCartItems(sequelize),
 
   // USER AUTH
   Users: defineUsers(sequelize),

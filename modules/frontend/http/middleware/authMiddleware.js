@@ -32,6 +32,8 @@ export const verifyToken = () => {
       return next();
     }
 
+    console.log("FOR PRO", req.cookies);
+
     try {
       // Get token from Authorization header or cookie
       const token = req.headers.authorization?.split(" ")[1] || req.cookies.access_token;

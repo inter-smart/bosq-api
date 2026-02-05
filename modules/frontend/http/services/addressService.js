@@ -1,22 +1,50 @@
 const { validationResult } = require("express-validator");
 const { models, sequelize } = require("../../../../database/models/index.js");
 const { createAddressRequest } = require("../request/addressRequest.js");
-const {
-  sendValidationError,
-  sendSuccessResponse,
-  sendErrorResponse,
-} = require("../../../admin/http/traits/responseHandler.js");
-const {
-  buildAddressSection,
-  buildCheckoutFormPayload,
-} = require("../traits/dataManipulations/address.js");
+const { sendValidationError, sendSuccessResponse, sendErrorResponse } = require("../../../admin/http/traits/responseHandler.js");
+const { buildAddressSection, buildCheckoutFormPayload } = require("../traits/dataManipulations/address.js");
+
+const modelsMap = {
+  user: {
+    model: models.Address,
+    field: "user_id",
+    aliasName: "shipping_address",
+  },
+  guest: {
+    model: models.CartAddress,
+    field: "session_id",
+    aliasName: "shipping_CartAddress",
+  },
+};
 
 class AddressService {
   static async index(req, res) {
     try {
-      const { id: user_id } = req.auth;
-      const data = await models.Address.findAll({
-        where: { user_id, address_type: "billing" },
+      if (!req.cartOwner) {
+        return res.status(400).json({
+          message: "Cart context not found",
+        });
+      }
+
+      const { type, id } = req.cartOwner;
+
+      const config = modelsMap[type];
+
+      if (!config) {
+        return res.status(400).json({
+          message: "Invalid cart owner type",
+        });
+      }
+
+      const { model: Model, field, aliasName: alias } = config;
+
+      const where = {
+        address_type: "billing",
+        [field]: id, // ✅ computed property
+      };
+
+      const data = await Model.findAll({
+        where,
         include: [
           {
             model: models.State,
@@ -31,9 +59,8 @@ class AddressService {
             ],
           },
           {
-            model: models.Address,
-            as: "shipping_address",
-            // attributes: ["id", "name", "country_code", "phone", "is_default"],
+            model: Model,
+            as: alias,
             include: [
               {
                 model: models.State,
@@ -58,15 +85,10 @@ class AddressService {
 
       const result = buildAddressSection(data);
 
-      return sendSuccessResponse(
-        res,
-        result,
-        "Addresses fetched successfully",
-        200,
-      );
+      return sendSuccessResponse(res, result, "Addresses fetched successfully", 200);
     } catch (error) {
       console.error("Error fetching address:", error);
-      return res.json({
+      return res.status(500).json({
         success: false,
         message: `Error fetching address: ${error.message}`,
       });
@@ -75,11 +97,34 @@ class AddressService {
 
   static async get(req, res) {
     try {
-      const { id: user_id } = req.auth;
       const { id } = req.params;
 
-      const address = await models.Address.findOne({
-        where: { id, user_id, address_type: "billing" },
+      if (!req.cartOwner) {
+        return res.status(400).json({
+          message: "Cart context not found",
+        });
+      }
+
+      const { type, id: userId } = req.cartOwner;
+
+      const config = modelsMap[type];
+
+      if (!config) {
+        return res.status(400).json({
+          message: "Invalid cart owner type",
+        });
+      }
+
+      const { model: Model, field } = config;
+
+      const where = {
+        id,
+        address_type: "billing",
+        [field]: userId,
+      };
+
+      const address = await Model.findOne({
+        where,
         include: [
           {
             model: models.State,
@@ -94,8 +139,8 @@ class AddressService {
             ],
           },
           {
-            model: models.Address,
-            as: "shipping_address",
+            model: Model,
+            as: alias,
             include: [
               {
                 model: models.State,
@@ -122,12 +167,7 @@ class AddressService {
       }
 
       const result = buildCheckoutFormPayload(address);
-      return sendSuccessResponse(
-        res,
-        result,
-        "Address fetched successfully",
-        200,
-      );
+      return sendSuccessResponse(res, result, "Address fetched successfully", 200);
     } catch (error) {
       console.error("Error fetching address:", error);
       return res.status(500).json({
@@ -149,7 +189,29 @@ class AddressService {
         return sendValidationError(res, errors.array());
       }
 
-      const { id: user_id } = req.auth;
+      if (!req.cartOwner) {
+        return res.status(400).json({
+          message: "Cart context not found",
+        });
+      }
+
+      const { type, id } = req.cartOwner;
+
+      const config = modelsMap[type];
+
+      if (!config) {
+        return res.status(400).json({
+          message: "Invalid cart owner type",
+        });
+      }
+
+      const { model: Model, field } = config;
+
+      const where = {
+        address_type: "billing",
+        [field]: id,
+      };
+
       const payload = req.body;
       const { shipToDifferentAddress } = payload;
 
@@ -168,7 +230,7 @@ class AddressService {
 
       // 1️⃣ Build billing object
       const billingData = {
-        user_id,
+        [field]: id,
         address_type: "billing",
         name: payload.fullName,
         company_name: payload.companyName,
@@ -182,17 +244,16 @@ class AddressService {
       };
 
       // 2️⃣ Default logic (production-safe)
-      const existingAddresses = await models.Address.findAll({
-        where: { user_id, address_type: "billing" },
+      const existingAddresses = await Model.findAll({
+        where,
         transaction,
-        lock: transaction.LOCK.UPDATE,
       });
 
       const shouldBeDefault = existingAddresses.length === 0;
       billingData.is_default = shouldBeDefault;
 
       // 3️⃣ Create billing address
-      const billingAddress = await models.Address.create(billingData, {
+      const billingAddress = await Model.create(billingData, {
         transaction,
       });
 
@@ -213,9 +274,9 @@ class AddressService {
           }
         }
 
-        shippingAddress = await models.Address.create(
+        shippingAddress = await Model.create(
           {
-            user_id,
+            field: id,
             address_type: "shipping",
             parent_address_id: billingAddress.id,
             name: payload.shippingFullName,
@@ -369,11 +430,7 @@ class AddressService {
 
       await transaction.commit();
 
-      return sendSuccessResponse(
-        res,
-        billingAddress,
-        "Address updated successfully",
-      );
+      return sendSuccessResponse(res, billingAddress, "Address updated successfully");
     } catch (error) {
       if (!transaction.finished) {
         await transaction.rollback();
@@ -443,11 +500,7 @@ class AddressService {
 
       await transaction.commit();
 
-      return sendSuccessResponse(
-        res,
-        { deletedId: id },
-        "Address deleted successfully",
-      );
+      return sendSuccessResponse(res, { deletedId: id }, "Address deleted successfully");
     } catch (error) {
       if (!transaction.finished) {
         await transaction.rollback();
@@ -509,18 +562,13 @@ class AddressService {
 
       await transaction.commit();
 
-      return sendSuccessResponse(
-        res,
-        address,
-        "Default address set successfully",
-        200
-      );
+      return sendSuccessResponse(res, address, "Default address set successfully", 200);
     } catch (error) {
       if (!transaction.finished) {
         await transaction.rollback();
       }
       console.error("Error setting default address:", error);
-     sendErrorResponse(res, "Error setting default address", null, 500);
+      sendErrorResponse(res, "Error setting default address", null, 500);
     }
   }
 }

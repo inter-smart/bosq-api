@@ -11,10 +11,7 @@ export const verifyTempToken = (req, res, next) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    if (
-      decoded.type !== "TEMP_TOKEN" ||
-      (decoded.purpose !== "register" && decoded.purpose !== "forgot_password")
-    ) {
+    if (decoded.type !== "TEMP_TOKEN" || (decoded.purpose !== "register" && decoded.purpose !== "forgot_password")) {
       return sendErrorResponse(res, "Invalid token purpose", null, 401);
     }
 
@@ -28,8 +25,6 @@ export const verifyTempToken = (req, res, next) => {
   }
 };
 
-
-
 export const verifyToken = () => {
   return async (req, res, next) => {
     // Skip processing during module loading (no valid req/res)
@@ -41,7 +36,6 @@ export const verifyToken = () => {
       // Get token from Authorization header or cookie
       const token = req.headers.authorization?.split(" ")[1] || req.cookies.access_token;
 
-      console.log("token:", req?.cookies)
       if (!token) {
         return sendUnauthorizedError(res, "Authorization token required");
       }
@@ -49,7 +43,7 @@ export const verifyToken = () => {
       // Verify JWT
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-     req.auth = decoded;
+      req.auth = decoded;
       next();
     } catch (error) {
       console.error("Auth middleware error:", {
@@ -60,6 +54,3 @@ export const verifyToken = () => {
     }
   };
 };
-
-
-

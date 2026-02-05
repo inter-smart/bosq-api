@@ -8,23 +8,17 @@ import jwt from "jsonwebtoken";
 export const optionalAuth = () => {
   return async (req, res, next) => {
     try {
-      const token = req.headers.authorization?.split(" ")[1] || req.cookies?.access_token;
+      const token = req.cookies?.access_token;
 
-      if (token) {
-        try {
-          const decoded = jwt.verify(token, process.env.JWT_SECRET);
-          req.auth = decoded;
-        } catch (error) {
-          // Token invalid or expired - continue as guest
-          req.auth = null;
-        }
-      } else {
-        req.auth = null;
+      if (!token) {
+        return next(); // guest request
       }
+
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      req.auth = decoded;
 
       next();
     } catch (error) {
-      // On any error, continue as guest
       req.auth = null;
       next();
     }

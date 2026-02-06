@@ -23,6 +23,9 @@ function buildTitleSection(cmsData, prefix) {
   return section;
 }
 
+
+
+
 function buildCmsSection(cmsData, prefix, options = {}) {
   const { defaultMediaType = "image", includeMedia = true } = options;
 

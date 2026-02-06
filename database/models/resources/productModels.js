@@ -81,6 +81,16 @@ module.exports = (sequelize) => {
       foreignKey: "product_id",
       as: "product",
     });
+
+ProductModels.hasMany(models.Coupons, {
+  foreignKey: "scope_id",
+  as: "coupons",
+  constraints: false,
+  scope: {
+    scope_type: "model",
+  },
+});
+
   };
 
   return ProductModels;

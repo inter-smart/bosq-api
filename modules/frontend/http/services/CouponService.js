@@ -1,18 +1,21 @@
 const { Op } = require("sequelize");
 const { models } = require("../../../../database/models");
 const cacheKeys = require("../../../redis/cacheKeys");
-const { setCache, getCache } = require("../../../redis/redisService");
 const { buildCouponSections } = require("../traits/dataManipulations/coupons");
-
-const cacheKey = cacheKeys.coupons;
 
 class CouponsServices {
   static async getData() {
     try {
-      const data = await models.Coupons.findAll();
+      const data = await models.Coupons.findAll({
+        where: {
+          status: true,
+        },
+      
+      });
+
       const coupons = buildCouponSections(data);
       return {
-        data: coupons,
+        data:coupons,
         message: "data fetched",
       };
     } catch (error) {

@@ -24,12 +24,26 @@ const DataModel = models.ProjectImage;
 class ProjectsImageController {
   static async index(req, res) {
     try {
+      const { project_id } = req.query;
+
+      if (!project_id) {
+        return sendNotFoundError(res, "Project id is required");
+      }
+
       const result = await paginate(DataModel, req, {
+        where: { project_id },
+        include: [
+          {
+            model: models.Projects,
+            as: "projects",
+            attributes: ["id", "title", "title_ar"],
+          },
+        ],
         order: [
           ["sort_order", "ASC"],
           ["createdAt", "DESC"],
         ],
-        searchFields: ["media_alt"],
+        searchFields: ["media_alt", "media_alt_ar"],
       });
 
       const response = {

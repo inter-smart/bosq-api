@@ -114,6 +114,31 @@ module.exports = (sequelize) => {
       as: "usages",
       onDelete: "CASCADE",
     });
+
+    // Polymorphic associations based on scope_type
+    Coupon.belongsTo(models.ProductCategory, {
+      foreignKey: "scope_id",
+      as: "category",
+      constraints: false,
+    });
+
+    Coupon.belongsTo(models.ProductBase, {
+      foreignKey: "scope_id",
+      as: "product",
+      constraints: false,
+    });
+
+    Coupon.belongsTo(models.ProductModels, {
+      foreignKey: "scope_id",
+      as: "model",
+      constraints: false,
+    });
+
+    Coupon.belongsTo(models.ProductVariants, {
+      foreignKey: "scope_id",
+      as: "variant",
+      constraints: false,
+    });
   };
 
   return Coupon;

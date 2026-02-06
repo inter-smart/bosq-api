@@ -110,6 +110,15 @@ module.exports = (sequelize) => {
       as: "variant_images",
       onDelete: "CASCADE",
     });
+
+    ProductVariants.hasMany(models.Coupons, {
+      foreignKey: "scope_id",
+      as: "coupons",
+      constraints: false,
+      scope: {
+        scope_type: "variant",
+      },
+    });
   };
 
   return ProductVariants;

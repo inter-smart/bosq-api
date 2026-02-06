@@ -64,6 +64,14 @@ module.exports = (sequelize) => {
       foreignKey: "parent_id",
       as: "children",
     });
+    ProductCategory.hasMany(models.Coupons, {
+      foreignKey: "scope_id",
+      as: "coupons",
+      constraints: false,
+      scope: {
+        scope_type: "category",
+      },
+    });
   };
 
   return ProductCategory;

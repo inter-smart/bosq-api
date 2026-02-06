@@ -21,9 +21,7 @@ class AddressService {
   static async index(req, res) {
     try {
       if (!req.cartOwner) {
-        return res.status(400).json({
-          message: "Cart context not found",
-        });
+        throw new Error("Cart owner not found");
       }
 
       const { type, id } = req.cartOwner;
@@ -85,13 +83,12 @@ class AddressService {
 
       const result = buildAddressSection(data);
 
-      return sendSuccessResponse(res, result, "Addresses fetched successfully", 200);
+      return {
+        data: result,
+      };
     } catch (error) {
       console.error("Error fetching address:", error);
-      return res.status(500).json({
-        success: false,
-        message: `Error fetching address: ${error.message}`,
-      });
+      throw error;
     }
   }
 
@@ -167,6 +164,90 @@ class AddressService {
       }
 
       const result = buildCheckoutFormPayload(address);
+
+      console.log(result);
+
+      return sendSuccessResponse(res, result, "Address fetched successfully", 200);
+    } catch (error) {
+      console.error("Error fetching address:", error);
+      return res.status(500).json({
+        success: false,
+        message: `Error fetching address: ${error.message}`,
+      });
+    }
+  }
+
+  static async getAllAddressByUser(req, res) {
+    try {
+      if (!req.cartOwner) {
+        return res.status(400).json({
+          message: "Cart context not found",
+        });
+      }
+
+      const { type, id: userId } = req.cartOwner;
+
+      const config = modelsMap[type];
+
+      if (!config) {
+        return res.status(400).json({
+          message: "Invalid cart owner type",
+        });
+      }
+
+      const { model: Model, field } = config;
+
+      const where = {
+        id,
+        address_type: "billing",
+        [field]: userId,
+      };
+
+      const address = await Model.findAll({
+        where,
+        include: [
+          {
+            model: models.State,
+            as: "state",
+            attributes: ["id", "name", "slug"],
+            include: [
+              {
+                model: models.Country,
+                as: "country",
+                attributes: ["id", "name", "slug"],
+              },
+            ],
+          },
+          {
+            model: Model,
+            as: alias,
+            include: [
+              {
+                model: models.State,
+                as: "state",
+                attributes: ["id", "name", "slug"],
+                include: [
+                  {
+                    model: models.Country,
+                    as: "country",
+                    attributes: ["id", "name", "slug"],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      });
+
+      if (!address) {
+        return res.status(404).json({
+          success: false,
+          message: "Address not found",
+        });
+      }
+
+      const result = address?.map((item) => buildCheckoutFormPayload(item));
+
       return sendSuccessResponse(res, result, "Address fetched successfully", 200);
     } catch (error) {
       console.error("Error fetching address:", error);
@@ -319,29 +400,33 @@ class AddressService {
   static async update(req, res) {
     const transaction = await sequelize.transaction();
     try {
-      const { id: user_id } = req.auth;
+      if (!req.cartOwner) {
+        throw new Error("Cart owner not found");
+      }
+
+      const { type, id: userId } = req.cartOwner;
       const { id } = req.params;
+
+      const config = modelsMap[type];
+
+      const { model: Model, field } = config;
+
+      const where = {
+        address_type: "billing",
+        [field]: userId,
+        id,
+      };
       const payload = req.body;
 
-      const billingAddress = await models.Address.findOne({
-        where: {
-          id,
-          user_id,
-          address_type: "billing",
-        },
+      const billingAddress = await Model.findOne({
+        where,
         transaction,
-        lock: transaction.LOCK.UPDATE,
       });
 
       if (!billingAddress) {
-        await transaction.rollback();
-        return res.status(404).json({
-          success: false,
-          message: "Billing address not found",
-        });
+        throw new Error("Billing address not found");
       }
 
-      // Look up state ID from slug (for billing)
       let stateId = null;
       if (payload.state) {
         const state = await models.State.findOne({
@@ -371,13 +456,12 @@ class AddressService {
 
       // 2️⃣ Handle shipping
       if (payload.shipToDifferentAddress === true) {
-        let shippingAddress = await models.Address.findOne({
+        let shippingAddress = await Model.findOne({
           where: {
             parent_address_id: billingAddress.id,
             address_type: "shipping",
           },
           transaction,
-          lock: transaction.LOCK.UPDATE,
         });
 
         // Look up shipping state ID from slug
@@ -407,9 +491,9 @@ class AddressService {
         if (shippingAddress) {
           await shippingAddress.update(shippingPayload, { transaction });
         } else {
-          await models.Address.create(
+          await Model.create(
             {
-              user_id,
+              [field]: id,
               address_type: "shipping",
               parent_address_id: billingAddress.id,
               ...shippingPayload,
@@ -419,7 +503,7 @@ class AddressService {
         }
       } else {
         // 🚫 If user unticks "Ship to different address"
-        await models.Address.destroy({
+        await Model.destroy({
           where: {
             parent_address_id: billingAddress.id,
             address_type: "shipping",
@@ -430,16 +514,15 @@ class AddressService {
 
       await transaction.commit();
 
-      return sendSuccessResponse(res, billingAddress, "Address updated successfully");
+      return {
+        data: billingAddress,
+      };
     } catch (error) {
       if (!transaction.finished) {
         await transaction.rollback();
       }
       console.error("Error updating addresses:", error);
-      return res.status(500).json({
-        success: false,
-        message: `Error updating address: ${error.message}`,
-      });
+      throw error;
     }
   }
 

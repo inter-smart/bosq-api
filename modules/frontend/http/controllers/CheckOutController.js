@@ -29,6 +29,28 @@ class CheckOutController {
       return ErrorHandler.handleControllerError(error, res, "CheckOutController.getCartData");
     }
   }
+  static async getAddressForUsers(req, res) {
+    const cartOwner = req.cartOwner;
+
+    try {
+      if (!cartOwner) {
+        return ApiResponse.error(res, {
+          message: "User ID or Session ID is required",
+          status: HTTP_STATUS.BAD_REQUEST,
+        });
+      }
+
+      const address = await CheckOutService.getAllAddressByUser(cartOwner);
+
+      return ApiResponse.success(res, {
+        message: "Cart data retrieved successfully",
+        data: address,
+        status: HTTP_STATUS.OK,
+      });
+    } catch (error) {
+      return ErrorHandler.handleControllerError(error, res, "CheckOutController.getCartData");
+    }
+  }
 }
 
 module.exports = CheckOutController;

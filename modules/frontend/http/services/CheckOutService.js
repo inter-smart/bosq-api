@@ -2,6 +2,7 @@ const { models, sequelize } = require("../../../../database/models/index.js");
 const { ErrorHandler } = require("../traits/errorHandler.js");
 const { HTTP_STATUS, ERROR_CODES } = require("../traits/constants.js");
 const { generateImageUrl } = require("../../traits/imageUrlHelper.js");
+const { buildCheckoutFormPayload } = require("../traits/dataManipulations/address.js");
 
 class CheckOutService {
   /**
@@ -124,6 +125,71 @@ class CheckOutService {
       applied_coupon_code: cart.applied_coupon_code,
       item_count: itemCount,
     };
+  }
+
+  static async getAllAddressByUser(cartOwner) {
+    const modelsMap = {
+      user: {
+        model: models.Address,
+        field: "user_id",
+        aliasName: "shipping_address",
+      },
+      guest: {
+        model: models.CartAddress,
+        field: "session_id",
+        aliasName: "shipping_CartAddress",
+      },
+    };
+
+    const { type, id: userId } = cartOwner;
+
+    const config = modelsMap[type];
+
+    const { model: Model, field, aliasName: alias } = config;
+
+    const where = {
+      address_type: "billing",
+      [field]: userId,
+    };
+
+    const address = await Model.findAll({
+      where,
+      include: [
+        {
+          model: models.State,
+          as: "state",
+          attributes: ["id", "name", "slug"],
+          include: [
+            {
+              model: models.Country,
+              as: "country",
+              attributes: ["id", "name", "slug"],
+            },
+          ],
+        },
+        {
+          model: Model,
+          as: alias,
+          include: [
+            {
+              model: models.State,
+              as: "state",
+              attributes: ["id", "name", "slug"],
+              include: [
+                {
+                  model: models.Country,
+                  as: "country",
+                  attributes: ["id", "name", "slug"],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    const result = address?.map((item) => buildCheckoutFormPayload(item));
+    return result;
   }
 }
 

@@ -1,25 +1,19 @@
+const formatAddress = (item) => {
+  const parts = [item?.street_address, item?.apartment, item?.state?.name, item?.state?.country?.name].filter(Boolean);
+
+  return parts.join(", ");
+};
+
 function buildAddressSection(data) {
-  const formatAddress = (item) => {
-    const parts = [
-      item?.street_address,
-      item?.apartment,
-      item?.state?.name,
-      item?.state?.country?.name,
-    ].filter(Boolean);
-
-    return parts.join(", ");
-  };
-  
-
   return {
     address:
       data?.map((item) => ({
         id: item?.id,
-        name: item?.name,
+        fullName: item?.name,
         phone: `${item?.country_code} ${item?.phone}`,
-        address: formatAddress(item),
-        shipping_name: item?.shipping_address?.name,
-        shipping_address: formatAddress(item?.shipping_address),
+        streetAddress: formatAddress(item),
+        shippingFullName: item?.shipping_address?.name,
+        shippingStreetAddress: formatAddress(item?.shipping_address),
         is_default: item?.is_default,
       })) || [],
   };
@@ -39,6 +33,8 @@ function buildCheckoutFormPayload(data) {
     company_name: data?.company_name || "",
     email: data?.email || "",
     phone: data?.phone || "",
+    address: formatAddress(data),
+    is_default: data?.is_default,
 
     // frontend expects slug for Select component matching
     state: {
@@ -74,7 +70,7 @@ function buildCheckoutFormPayload(data) {
           country: {
             name: shipping?.state?.country?.name || "",
             slug: shipping?.state?.country?.slug || "",
-          }
+          },
         }
       : null,
   };

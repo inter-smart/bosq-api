@@ -7,5 +7,6 @@ const { cartContext } = require("../http/middleware/cartMiddleware.js");
 
 // Routes that work for both authenticated users and guests
 router.get("/cart-summary", optionalAuth(), cartContext, Controller.getCartData);
+router.get("/cart-addresss", optionalAuth(), cartContext, Controller.getAddressForUsers);
 
 module.exports = router;

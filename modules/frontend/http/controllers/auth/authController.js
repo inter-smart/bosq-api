@@ -1,7 +1,4 @@
-const {
-  sendErrorResponse,
-  sendSuccessResponse,
-} = require("../../../../admin/http/traits/responseHandler.js");
+const { sendErrorResponse, sendSuccessResponse } = require("../../../../admin/http/traits/responseHandler.js");
 const service = require("../../services/auth/authService.js");
 
 class UsersController {
@@ -43,13 +40,12 @@ class UsersController {
     try {
       const result = await service.login(req, res);
       if (result) {
-        return sendSuccessResponse(res, result.data, result.message, 200);
+        return sendSuccessResponse(res, result?.data, result?.message, 200);
       }
     } catch (error) {
       return sendErrorResponse(res, error, "Internal Server Error", 500);
     }
   }
-
 
   static async forgotPassword(req, res) {
     try {
@@ -62,7 +58,6 @@ class UsersController {
     }
   }
 
-
   static async verifyForgotPasswordOtp(req, res) {
     try {
       const result = await service.verifyForgotPasswordOtp(req, res);
@@ -74,7 +69,7 @@ class UsersController {
     }
   }
 
-    static async createNewPassword(req, res) {
+  static async createNewPassword(req, res) {
     try {
       const result = await service.createNewPassword(req, res);
       if (result) {
@@ -84,7 +79,6 @@ class UsersController {
       return sendErrorResponse(res, error, "Internal Server Error", 500);
     }
   }
-
 }
 
 module.exports = UsersController;

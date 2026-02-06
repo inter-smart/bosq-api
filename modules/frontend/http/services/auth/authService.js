@@ -1,12 +1,7 @@
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const { validationResult } = require("express-validator");
-const {
-  sendValidationError,
-  sendErrorResponse,
-  sendSuccessResponse,
-  sendCustomError,
-} = require("../../../../admin/http/traits/responseHandler.js");
+const { sendValidationError, sendErrorResponse, sendSuccessResponse, sendCustomError } = require("../../../../admin/http/traits/responseHandler.js");
 const {
   validateRegisterRequest,
   verifyOtpValidation,
@@ -14,14 +9,9 @@ const {
   loginRequest,
   forgotPasswordRequest,
 } = require("../../request/authRequest.js");
-const {
-  models,
-  sequelize,
-} = require("../../../../../database/models/index.js");
+const { models, sequelize } = require("../../../../../database/models/index.js");
 const EmailService = require("../../../../../services/EmailService.js");
-const {
-  generateSlugWithTimestamp,
-} = require("../../traits/mediaButtonHelper.js");
+const { generateSlugWithTimestamp } = require("../../traits/mediaButtonHelper.js");
 const { Op } = require("sequelize");
 
 const Users = models.Users;
@@ -92,12 +82,7 @@ class UsersService {
           await EmailService.sendOtp(email, otp);
         } catch (emailError) {
           console.error("Failed to send OTP email:", emailError);
-          return sendErrorResponse(
-            res,
-            "Failed to send OTP email. Please try again.",
-            null,
-            500,
-          );
+          return sendErrorResponse(res, "Failed to send OTP email. Please try again.", null, 500);
         }
 
         return res.status(200).json({
@@ -195,10 +180,7 @@ class UsersService {
       // Mark OTP as used (no delete)
       await otpRecord.update({ is_used: true }, { transaction });
 
-      await Users.update(
-        { email_verified: true },
-        { where: { email }, transaction },
-      );
+      await Users.update({ email_verified: true }, { where: { email }, transaction });
       // Generate temp jwt token
 
       const tempToken = jwt.sign(
@@ -218,20 +200,11 @@ class UsersService {
       }
 
       // Store temp token (5 min TTL)
-      await redisClient.setEx(
-        `register-temp-token:${email}`,
-        300,
-        JSON.stringify({ tempToken, email }),
-      );
+      await redisClient.setEx(`register-temp-token:${email}`, 300, JSON.stringify({ tempToken, email }));
 
       await transaction.commit();
 
-      return sendSuccessResponse(
-        res,
-        { tempToken },
-        "OTP verified successfully",
-        200,
-      );
+      return sendSuccessResponse(res, { tempToken }, "OTP verified successfully", 200);
     } catch (error) {
       await transaction.rollback();
       console.error("Verify OTP Error:", error);
@@ -268,12 +241,7 @@ class UsersService {
 
       if (!redisData) {
         await transaction.rollback();
-        return sendErrorResponse(
-          res,
-          "Token expired or already used",
-          null,
-          401,
-        );
+        return sendErrorResponse(res, "Token expired or already used", null, 401);
       }
 
       const { tempToken } = JSON.parse(redisData);
@@ -311,86 +279,74 @@ class UsersService {
 
       await transaction.commit();
 
-      return sendSuccessResponse(
-        res,
-        { userId: user.id },
-        "Account created successfully",
-        200,
-      );
+      return sendSuccessResponse(res, { userId: user.id }, "Account created successfully", 200);
     } catch (error) {
       console.error("Password creation failed:", error);
       return sendErrorResponse(res, error.message, null, 500);
     }
   }
 
-static async login(req, res) {
-  const transaction = await sequelize.transaction();
+  static async login(req, res) {
+    const transaction = await sequelize.transaction();
 
-  try {
-    await Promise.all(loginRequest.map((v) => v.run(req)));
-    const errors = validationResult(req);
+    try {
+      await Promise.all(loginRequest.map((v) => v.run(req)));
+      const errors = validationResult(req);
 
-    if (!errors.isEmpty()) {
+      if (!errors.isEmpty()) {
+        await transaction.rollback();
+        return sendValidationError(res, errors.array());
+      }
+
+      const { email, password } = req.body;
+      const user = await Users.findOne({
+        where: { email },
+        attributes: ["id", "email", "password", "name", "country_code", "mobile"],
+        transaction,
+      });
+
+      if (!user) {
+        await transaction.rollback();
+        return sendErrorResponse(res, "User not found", null, 404);
+      }
+
+      const isPasswordValid = await bcrypt.compare(password, user.password);
+
+      if (!isPasswordValid) {
+        await transaction.rollback();
+        return sendErrorResponse(res, "Invalid password", null, 401);
+      }
+
+      const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, {
+        expiresIn: process.env.JWT_EXPIRES_IN || "1d",
+        issuer: process.env.JWT_ISSUER || "BOSQ",
+      });
+
+      res.cookie("access_token", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 24 * 60 * 60 * 1000,
+      });
+
+      const mobileNumber = `${user.country_code} ${user.mobile}`;
+
+      await transaction.commit();
+
+      return {
+        success: true,
+        message: "Login successful",
+        data: { user: { id: user.id, name: user.name, phone: mobileNumber, email: user.email } },
+      };
+    } catch (error) {
       await transaction.rollback();
-      return sendValidationError(res, errors.array());
-    }
+      console.error("Login Error:", error);
 
-    const { email, password } = req.body;
-    const user = await Users.findOne({
-      where: { email },
-      attributes: ["id", "email", "password", "name", "country_code", "mobile"],
-      transaction,
-    });
-
-    if (!user) {
-      await transaction.rollback();
-      return sendErrorResponse(res, "User not found", null, 404);
-    }
-
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-
-    if (!isPasswordValid) {
-      await transaction.rollback();
-      return sendErrorResponse(res, "Invalid password", null, 401);
-    }
-
-    const token = jwt.sign(
-      { id: user.id, email: user.email },
-      process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN || "1d", issuer: process.env.JWT_ISSUER || "BOSQ" }
-    );
-
-    
-
-    res.cookie("access_token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 24 * 60 * 60 * 1000
-    });
-
-
-    const mobileNumber = `${user.country_code} ${user.mobile}`;
-
-    await transaction.commit();
-
-    return res.status(200).json({
-      success: true,
-      message: "Login successful",
-      data: { user: { id: user.id, name: user.name, phone: mobileNumber, email: user.email } },
-    });
-
-  } catch (error) {
-    await transaction.rollback();
-    console.error("Login Error:", error);
-
-    if (!res.headersSent) {
-      return sendErrorResponse(res, error.message, null, 500);
+      if (!res.headersSent) {
+        return sendErrorResponse(res, error.message, null, 500);
+      }
     }
   }
-}
-
- 
 
   // forgot password
   static async forgotPassword(req, res) {
@@ -429,12 +385,7 @@ static async login(req, res) {
 
       if (lastOtp) {
         await transaction.rollback();
-        return sendErrorResponse(
-          res,
-          "Please wait before requesting another OTP",
-          null,
-          429,
-        );
+        return sendErrorResponse(res, "Please wait before requesting another OTP", null, 429);
       }
 
       // invalidate old OTPs
@@ -474,9 +425,7 @@ static async login(req, res) {
       });
 
       // async email
-      EmailService.sendOtp(email, otp).catch((err) =>
-        console.error("OTP email failed:", err),
-      );
+      EmailService.sendOtp(email, otp).catch((err) => console.error("OTP email failed:", err));
     } catch (error) {
       if (!transaction.finished) {
         await transaction.rollback();
@@ -528,10 +477,7 @@ static async login(req, res) {
       // Mark OTP as used (no delete)
       await otpRecord.update({ is_used: true }, { transaction });
 
-      await Users.update(
-        { email_verified: true },
-        { where: { email }, transaction },
-      );
+      await Users.update({ email_verified: true }, { where: { email }, transaction });
       // Generate temp jwt token
 
       const resetToken = jwt.sign(
@@ -552,20 +498,11 @@ static async login(req, res) {
       }
 
       // Store temp token (5 min TTL)
-      await redisClient.setEx(
-        `forgot-password-temp-token:${email}`,
-        300,
-        JSON.stringify({ resetToken, email }),
-      );
+      await redisClient.setEx(`forgot-password-temp-token:${email}`, 300, JSON.stringify({ resetToken, email }));
 
       await transaction.commit();
 
-      return sendSuccessResponse(
-        res,
-        { resetToken },
-        "OTP verified successfully",
-        200,
-      );
+      return sendSuccessResponse(res, { resetToken }, "OTP verified successfully", 200);
     } catch (error) {
       await transaction.rollback();
       console.error("Verify OTP Error:", error);
@@ -602,12 +539,7 @@ static async login(req, res) {
 
       if (!redisData) {
         await transaction.rollback();
-        return sendErrorResponse(
-          res,
-          "Token expired or already used",
-          null,
-          401,
-        );
+        return sendErrorResponse(res, "Token expired or already used", null, 401);
       }
 
       const { resetToken } = JSON.parse(redisData);
@@ -639,12 +571,7 @@ static async login(req, res) {
 
       await transaction.commit();
 
-      return sendSuccessResponse(
-        res,
-        { userId: user.id },
-        "Password reset successfully",
-        200,
-      );
+      return sendSuccessResponse(res, { userId: user.id }, "Password reset successfully", 200);
     } catch (error) {
       console.error("Password creation failed:", error);
       return sendErrorResponse(res, error.message, null, 500);

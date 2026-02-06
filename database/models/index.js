@@ -107,6 +107,7 @@ const defineProductModels = require("./resources/productModels");
 // Cart
 const defineCart = require("./resources/cart/cart");
 const defineCartItems = require("./resources/cart/cartItems");
+const defineCartAddress = require("./resources/cart/cartAddress");
 
 // USER AUTH
 const defineUsers = require("./users/users");
@@ -238,6 +239,7 @@ const models = {
   // CART
   Cart: defineCart(sequelize),
   CartItems: defineCartItems(sequelize),
+  CartAddress: defineCartAddress(sequelize),
 
   // USER AUTH
   Users: defineUsers(sequelize),

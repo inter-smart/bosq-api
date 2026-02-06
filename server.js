@@ -32,7 +32,7 @@ app.use(
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"], // ⭐ Added Cookie header
+    allowedHeaders: ["Content-Type", "Authorization", "Cookie"], // ⭐ Added Cookie header
   }),
 );
 
@@ -57,7 +57,7 @@ const startServer = async () => {
     // Logger.info("✅ Database connected and synced");
 
     // homeCmsData();
-    //  await seedCountriesAndStates()
+    // await seedCountriesAndStates();
     // Add this to see which models are registered
     // console.log("Registered models:", Object.keys(sequelize.models));
 

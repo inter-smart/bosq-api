@@ -1,11 +1,36 @@
 const { validationResult } = require("express-validator");
+const crypto = require("crypto");
 const CartService = require("../services/cartService.js");
 const { ApiResponse } = require("../traits/response.js");
 const { ErrorHandler } = require("../traits/errorHandler.js");
 const { HTTP_STATUS, RESPONSE_MESSAGES } = require("../traits/constants.js");
 const { addToCartRequest, updateCartItemRequest, removeCartItemRequest } = require("../request/cartRequest.js");
 
+const GUEST_SESSION_COOKIE = "guest_cart_session";
+const COOKIE_MAX_AGE = 30 * 24 * 60 * 60 * 1000; // 30 days
+
 class CartController {
+  /**
+   * Get session ID from cookie
+   */
+  static getSessionId(req) {
+    return req.cookies?.[GUEST_SESSION_COOKIE] || null;
+  }
+
+  /**
+   * Generate a new session ID and set cookie
+   */
+  static generateAndSetSessionCookie(res) {
+    const sessionId = crypto.randomUUID();
+    res.cookie(GUEST_SESSION_COOKIE, sessionId, {
+      maxAge: COOKIE_MAX_AGE,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+    });
+    return sessionId;
+  }
+
   /**
    * Get cart contents
    * GET /api/frontend/cart
@@ -13,12 +38,20 @@ class CartController {
   static async getCart(req, res) {
     try {
       const userId = req.auth?.id || null;
-      const sessionId = req?.query?.session_id || req?.body?.session_id || null;
+      const sessionId = CartController.getSessionId(req);
 
       if (!userId && !sessionId) {
-        return ApiResponse.error(res, {
-          message: "User ID or Session ID is required",
-          status: HTTP_STATUS.BAD_REQUEST,
+        return ApiResponse.success(res, {
+          message: "Cart retrieved successfully",
+          data: {
+            items: [],
+            subtotal: "0.00",
+            discount_total: "0.00",
+            tax_total: "0.00",
+            grand_total: "0.00",
+            item_count: 0,
+          },
+          status: HTTP_STATUS.OK,
         });
       }
 
@@ -41,16 +74,20 @@ class CartController {
   static async addItem(req, res) {
     try {
       const userId = req.auth?.id || null;
-      const { variant_id, quantity = 1, session_id } = req.body;
+      const { variant_id, quantity = 1 } = req.body;
 
-      if (!userId && !session_id) {
-        return ApiResponse.error(res, {
-          message: "User must be logged in or provide a session ID",
-          status: HTTP_STATUS.BAD_REQUEST,
-        });
+      let sessionId = null;
+
+      // For guest users, use cookie-based session
+      if (!userId) {
+        sessionId = CartController.getSessionId(req);
+        // Generate new session if doesn't exist
+        if (!sessionId) {
+          sessionId = CartController.generateAndSetSessionCookie(res);
+        }
       }
 
-      const cart = await CartService.addItem(userId, session_id, variant_id, quantity);
+      const cart = await CartService.addItem(userId, sessionId, variant_id, quantity);
 
       return ApiResponse.success(res, {
         message: "Item added to cart successfully",
@@ -78,16 +115,17 @@ class CartController {
 
       const userId = req.auth?.id || null;
       const { itemId } = req.params;
-      const { quantity, variant_id, session_id } = req.body;
+      const { quantity, variant_id } = req.body;
+      const sessionId = CartController.getSessionId(req);
 
-      if (!userId && !session_id) {
+      if (!userId && !sessionId) {
         return ApiResponse.error(res, {
-          message: "User must be logged in or provide a session ID",
+          message: "User must be logged in or have an active cart session",
           status: HTTP_STATUS.BAD_REQUEST,
         });
       }
 
-      const cart = await CartService.updateItemQuantity(userId, session_id, parseInt(itemId), parseInt(variant_id), quantity);
+      const cart = await CartService.updateItemQuantity(userId, sessionId, parseInt(itemId), parseInt(variant_id), quantity);
 
       return ApiResponse.success(res, {
         message: "Cart item updated successfully",
@@ -115,11 +153,11 @@ class CartController {
 
       const userId = req.auth?.id || null;
       const { itemId } = req.params;
-      const sessionId = req.query?.session_id || req.body?.session_id || null;
+      const sessionId = CartController.getSessionId(req);
 
       if (!userId && !sessionId) {
         return ApiResponse.error(res, {
-          message: "User must be logged in or provide a session ID",
+          message: "User must be logged in or have an active cart session",
           status: HTTP_STATUS.BAD_REQUEST,
         });
       }
@@ -143,11 +181,11 @@ class CartController {
   static async clearCart(req, res) {
     try {
       const userId = req.auth?.id || null;
-      const sessionId = req.query.session_id || req.body.session_id || null;
+      const sessionId = CartController.getSessionId(req);
 
       if (!userId && !sessionId) {
         return ApiResponse.error(res, {
-          message: "User must be logged in or provide a session ID",
+          message: "User must be logged in or have an active cart session",
           status: HTTP_STATUS.BAD_REQUEST,
         });
       }
@@ -171,7 +209,7 @@ class CartController {
   static async mergeCart(req, res) {
     try {
       const userId = req.auth?.id;
-      const { session_id } = req.body;
+      const sessionId = req.cartOwner?.id;
 
       if (!userId) {
         return ApiResponse.error(res, {
@@ -180,14 +218,11 @@ class CartController {
         });
       }
 
-      if (!session_id) {
-        return ApiResponse.error(res, {
-          message: "Session ID is required to merge cart",
-          status: HTTP_STATUS.BAD_REQUEST,
-        });
+      if (sessionId) {
+        await CartService.mergeGuestCart(userId, sessionId);
+        res.clearCookie(GUEST_SESSION_COOKIE);
       }
 
-      await CartService.mergeGuestCart(userId, session_id);
       const cart = await CartService.getCart(userId, null);
 
       return ApiResponse.success(res, {

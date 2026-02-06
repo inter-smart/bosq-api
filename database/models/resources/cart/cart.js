@@ -77,6 +77,11 @@ module.exports = (sequelize) => {
       foreignKey: "cart_id",
       as: "items",
     });
+
+    Cart.hasMany(models.CartAddress, {
+      foreignKey: "cart_id",
+      as: "addresses",
+    });
   };
 
   return Cart;

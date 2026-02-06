@@ -9,9 +9,15 @@ module.exports = (sequelize) => {
         autoIncrement: true,
         primaryKey: true,
       },
-      session_id: {
-        type: DataTypes.STRING(255),
+
+      cart_id: {
+        type: DataTypes.INTEGER,
         allowNull: true,
+        references: {
+          model: "carts",
+          key: "id",
+        },
+        onDelete: "CASCADE",
       },
 
       address_type: {
@@ -101,19 +107,22 @@ module.exports = (sequelize) => {
   );
 
   CartAddress.associate = (models) => {
-    // One billing → one shipping
     CartAddress.hasOne(models.CartAddress, {
       foreignKey: "parent_address_id",
       as: "shipping_CartAddress",
     });
 
-    // Shipping belongs to billing
+    CartAddress.belongsTo(models.Cart, {
+      foreignKey: "cart_id",
+      as: "cart",
+      onDelete: "CASCADE",
+    });
+
     CartAddress.belongsTo(models.CartAddress, {
       foreignKey: "parent_address_id",
       as: "billing_CartAddress",
     });
 
-    // state and country
     CartAddress.belongsTo(models.State, {
       foreignKey: "state_id",
       as: "state",

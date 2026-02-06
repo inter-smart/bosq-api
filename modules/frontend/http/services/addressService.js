@@ -288,11 +288,6 @@ class AddressService {
 
       const { model: Model, field } = config;
 
-      const where = {
-        address_type: "billing",
-        [field]: id,
-      };
-
       const payload = req.body;
       const { shipToDifferentAddress } = payload;
 
@@ -321,17 +316,21 @@ class AddressService {
         street_address: payload.streetAddress,
         apartment: payload.apartment,
         order_notes: payload.orderNotes,
+        is_default: true,
         status: "active",
       };
 
-      // 2️⃣ Default logic (production-safe)
-      const existingAddresses = await Model.findAll({
-        where,
+      // 2️⃣ Default logic - check if this is the first billing address
+      const existingBillingAddresses = await Model.findAll({
+        where: {
+          address_type: "billing",
+          [field]: id,
+        },
         transaction,
       });
 
-      const shouldBeDefault = existingAddresses.length === 0;
-      billingData.is_default = shouldBeDefault;
+      const isBillingDefault = existingBillingAddresses.length === 0;
+      billingData.is_default = isBillingDefault;
 
       // 3️⃣ Create billing address
       const billingAddress = await Model.create(billingData, {
@@ -355,9 +354,20 @@ class AddressService {
           }
         }
 
+        // Check if this is the first shipping address
+        const existingShippingAddresses = await Model.findAll({
+          where: {
+            address_type: "shipping",
+            [field]: id,
+          },
+          transaction,
+        });
+
+        const isShippingDefault = existingShippingAddresses.length === 0;
+
         shippingAddress = await Model.create(
           {
-            field: id,
+            [field]: id,
             address_type: "shipping",
             parent_address_id: billingAddress.id,
             name: payload.shippingFullName,
@@ -367,6 +377,7 @@ class AddressService {
             state_id: shippingStateId,
             street_address: payload.shippingStreetAddress,
             apartment: payload.shippingApartment,
+            is_default: isShippingDefault,
             status: "active",
           },
           { transaction },
@@ -493,7 +504,7 @@ class AddressService {
         } else {
           await Model.create(
             {
-              [field]: id,
+              [field]: userId,
               address_type: "shipping",
               parent_address_id: billingAddress.id,
               ...shippingPayload,

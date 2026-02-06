@@ -147,49 +147,54 @@ class CheckOutService {
 
     const { model: Model, field, aliasName: alias } = config;
 
-    const where = {
-      address_type: "shipping",
-      [field]: userId,
+    const includeOptions = [
+      {
+        model: models.State,
+        as: "state",
+        attributes: ["id", "name", "slug"],
+        include: [
+          {
+            model: models.Country,
+            as: "country",
+            attributes: ["id", "name", "slug"],
+          },
+        ],
+      },
+      {
+        model: Model,
+        as: alias,
+        include: [
+          {
+            model: models.State,
+            as: "state",
+            attributes: ["id", "name", "slug"],
+            include: [
+              {
+                model: models.Country,
+                as: "country",
+                attributes: ["id", "name", "slug"],
+              },
+            ],
+          },
+        ],
+      },
+    ];
+
+    const [billingAddresses, shippingAddresses] = await Promise.all([
+      Model.findAll({
+        where: { [field]: userId, address_type: "billing" },
+        include: includeOptions,
+      }),
+      Model.findAll({
+        where: { [field]: userId, address_type: "shipping" },
+        include: includeOptions,
+      }),
+    ]);
+
+    return {
+      billing: billingAddresses?.map((item) => buildCheckoutFormPayload(item)) || [],
+      shipping: shippingAddresses?.map((item) => buildCheckoutFormPayload(item)) || [],
     };
-
-    const address = await Model.findAll({
-      where,
-      include: [
-        {
-          model: models.State,
-          as: "state",
-          attributes: ["id", "name", "slug"],
-          include: [
-            {
-              model: models.Country,
-              as: "country",
-              attributes: ["id", "name", "slug"],
-            },
-          ],
-        },
-        {
-          model: Model,
-          as: alias,
-          include: [
-            {
-              model: models.State,
-              as: "state",
-              attributes: ["id", "name", "slug"],
-              include: [
-                {
-                  model: models.Country,
-                  as: "country",
-                  attributes: ["id", "name", "slug"],
-                },
-              ],
-            },
-          ],
-        },
-      ],
-    });
-
-    const result = address?.map((item) => buildCheckoutFormPayload(item));
-    return result;
   }
 }
 

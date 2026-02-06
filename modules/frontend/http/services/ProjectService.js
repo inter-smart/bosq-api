@@ -85,50 +85,66 @@ class PrivacyPolicyService {
 
   static async getProjectBySlug(req, res) {
     try {
-      const { slug } = req.query;
+      const { slug, limit = 6 } = req.query;
 
-      let projects;
+      let queryOptions = {
+        where: {
+          status: true,
+        },
+        attributes: [
+          "id",
+          "slug",
+          "title",
+          "title_ar",
+          "thumbnail",
+          "section3_title",
+        ],
+        order: [["sort_order", "ASC"]],
+        limit: parseInt(limit),
+      };
 
-      if (slug === "all") {
-        projects = await models.Projects.findAll({
-          where: {
-            status: true,
-          },
-          attributes: ["slug", "title", "title_ar", "thumbnail"],
-          order: [["sort_order", "ASC"]],
-        });
-      } else {
-        projects = await models.Projects.findAll({
-          where: {
-            status: true,
-          },
-          attributes: ["slug", "title", "title_ar", "thumbnail"],
-          include: [
-            {
-              model: models.ProjectCategories,
-              as: "project_categories",
-              attributes: [], // 👈 exclude category data
-              required: true, // INNER JOIN
-              where: { status: true, slug }, // only active categories
-            },
-          ],
-          order: [["sort_order", "ASC"]],
-        });
+      let countOptions = {
+        where: {
+          status: true,
+        },
+      };
+      if (slug !== "all") {
+        const categoryFilter = {
+          model: models.ProjectCategories,
+          as: "project_categories",
+          attributes: [],
+          required: true,
+          where: { status: true, slug },
+        };
+
+        queryOptions.include = [categoryFilter];
+        countOptions.include = [categoryFilter];
       }
 
+      const [projects, totalCount] = await Promise.all([
+        models.Projects.findAll(queryOptions),
+        models.Projects.count(countOptions),
+      ]);
+
       if (!projects || projects.length === 0) {
-        sendErrorResponse(res, "Project not found", "Project not found", 404);
+        throw new Error("No project data found");
       }
 
       const projectData = buildProjectListSection(projects);
 
-      return {
-        data: projectData,
-        message: "project page data fetched",
-      };
+      return res.status(200).json({
+        success: true,
+        data: {
+          projects: projectData,
+          totalItems: totalCount,
+          currentLimit: parseInt(limit),
+          hasMore: parseInt(limit) < totalCount,
+        },
+        message: "Projects fetched successfully",
+      });
     } catch (error) {
       console.error("Error getting project PAGE data:", error);
-      throw new Error(`Error fetching project page data: ${error.message}`);
+      throw error;
     }
   }
 
@@ -165,19 +181,17 @@ class PrivacyPolicyService {
               model: models.SpecialisedAreas,
               as: "specialised_areas",
               where: { status: true },
+              required: false,
             },
             {
               model: models.ProjectImage,
               as: "project_images",
               where: { status: true },
+              required: false,
             },
           ],
         }),
       ]);
-
-      if (!projects || projects.length === 0) {
-        sendErrorResponse(res, "Project not found", "Project not found", 404);
-      }
 
       if (!cms || cms.length === 0) {
         sendErrorResponse(res, "Project not found", "Project not found", 404);
@@ -195,6 +209,7 @@ class PrivacyPolicyService {
         solutionData,
         specializedAreasData,
         enquiryData,
+        projects,
       };
 
       return {

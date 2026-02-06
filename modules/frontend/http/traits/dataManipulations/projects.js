@@ -46,7 +46,7 @@ function buildProjectListSection(data) {
       media_path: generateImageUrl(item.thumbnail),
       media_alt: item.title ?? "",
       media_alt_ar: item.title_ar ?? "",
-    }
+    },
   }));
 
   return section;
@@ -60,6 +60,7 @@ function buildProjectDetailsSection(data) {
     title: data?.title,
     title_ar: data?.title_ar,
     tags: Array.isArray(data?.tags) ? data.tags : [],
+    tags_ar: Array.isArray(data?.tags_ar) ? data.tags_ar : [],
     description: data?.description,
     description_ar: data?.description_ar,
     media: {
@@ -68,14 +69,27 @@ function buildProjectDetailsSection(data) {
       mobile_path: generateImageUrl(data?.section1_mobile_media_path) ?? null,
 
       media_alt: data?.section1_media_alt ?? "",
-      media_alt_ar: data?.section1_media_alt ?? "",
+      media_alt_ar: data?.section1_media_alt_ar ?? "",
     },
     features: data?.features.map((item) => ({
       label: item?.label ?? "",
       value: item?.value ?? "",
     })),
+    features_ar: data?.features_ar.map((item) => ({
+      label: item?.label ?? "",
+      value: item?.value ?? "",
+    })),
 
-    projectGallery: buildCmsSection(data, "section3")
+
+
+    projectGallery: data?.project_images.map((item) => ({
+      media: {
+        media_type: item?.media_type ?? null,
+        media_path: generateImageUrl(item?.media_path) ?? null,
+        media_alt: item?.media_alt ?? "",
+        media_alt_ar: item?.media_alt_ar ?? "",
+      }
+    }))
 
   }
 
@@ -102,7 +116,8 @@ function buildSpecialisedAreaSection(project) {
     : [];
 
   return {
-    title: "Specialized Areas",
+    title: project?.section4_title ?? "",
+    title_ar: project?.section4_title_ar ?? "",
     items: areas
       .filter(item => item.status)
       .sort((a, b) => a.sort_order - b.sort_order)

@@ -50,6 +50,10 @@ module.exports = (sequelize) => {
         type: DataTypes.STRING,
         allowNull: true,
       },
+      section1_media_alt_ar:{
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
       section3_title: {
         type: DataTypes.STRING,
         allowNull: true,

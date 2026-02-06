@@ -526,32 +526,36 @@ class AddressService {
     }
   }
 
-  static async destroy(req, res) {
+  static async destroy(cartOwner, id, addressType = "billing") {
     const transaction = await sequelize.transaction();
     try {
-      const { id: user_id } = req.auth;
-      const { id } = req.params;
+      const { type, id: userId } = cartOwner;
 
-      const address = await models.Address.findOne({
-        where: { id, user_id },
+      const config = modelsMap[type];
+
+      const { model: Model, field } = config;
+
+      const where = {
+        [field]: userId,
+        address_type: addressType,
+        id,
+      };
+
+      const address = await Model.findOne({
+        where,
         transaction,
-        lock: transaction.LOCK.UPDATE,
       });
 
       if (!address) {
-        await transaction.rollback();
-        return res.status(404).json({
-          success: false,
-          message: "Address not found",
-        });
+        throw new Error("Billing address not found");
       }
 
       const wasDefault = address.is_default;
-      const addressType = address.address_type;
+      const currentAddressType = address.address_type;
 
       // 1️⃣ If billing → delete linked shipping
-      if (addressType === "billing") {
-        await models.Address.destroy({
+      if (currentAddressType === "billing") {
+        await Model.destroy({
           where: {
             parent_address_id: address.id,
             address_type: "shipping",
@@ -564,16 +568,11 @@ class AddressService {
       await address.destroy({ transaction });
 
       // 3️⃣ Reassign default if needed
-      if (wasDefault && addressType === "billing") {
-        const nextDefault = await models.Address.findOne({
-          where: {
-            user_id,
-            address_type: "billing",
-            status: "active",
-          },
+      if (wasDefault && currentAddressType === "billing") {
+        const nextDefault = await Model.findOne({
+          where,
           order: [["created_at", "DESC"]],
           transaction,
-          lock: transaction.LOCK.UPDATE,
         });
 
         if (nextDefault) {
@@ -583,58 +582,55 @@ class AddressService {
 
       await transaction.commit();
 
-      return sendSuccessResponse(res, { deletedId: id }, "Address deleted successfully");
+      return id;
     } catch (error) {
       if (!transaction.finished) {
         await transaction.rollback();
       }
       console.error("Error deleting address:", error);
-      return res.status(500).json({
-        success: false,
-        message: `Error deleting address: ${error.message}`,
-      });
+      throw error;
     }
   }
 
-  static async setDefault(req, res) {
+  static async setDefault(cartOwner, id, addressType = "billing") {
     const transaction = await sequelize.transaction();
     try {
-      const { id: user_id } = req.auth;
-      const { id } = req.params;
+      const { type, id: userId } = cartOwner;
+
+      const config = modelsMap[type];
+
+      const { model: Model, field } = config;
+
+      const where = {
+        [field]: userId,
+        address_type: addressType,
+        id,
+        status: "active",
+      };
 
       // 1️⃣ Find billing address
-      const address = await models.Address.findOne({
-        where: {
-          id,
-          user_id,
-          status: "active",
-          address_type: "billing",
-        },
+      const address = await Model.findOne({
+        where,
         transaction,
-        lock: transaction.LOCK.UPDATE,
       });
 
       if (!address) {
-        await transaction.rollback();
-        return res.status(404).json({
-          success: false,
-          message: "Billing address not found",
-        });
+        throw new Error("Billing address not found");
       }
 
       // 2️⃣ No-op if already default
       if (address.is_default === true) {
         await transaction.commit();
-        return sendSuccessResponse(res, address, "Address is already default");
+        return address;
       }
 
       // 3️⃣ Unset default from other billing addresses
-      await models.Address.update(
+      await Model.update(
         { is_default: false },
         {
           where: {
-            user_id,
-            address_type: "billing",
+            [field]: userId,
+            address_type: addressType,
           },
           transaction,
         },
@@ -645,13 +641,13 @@ class AddressService {
 
       await transaction.commit();
 
-      return sendSuccessResponse(res, address, "Default address set successfully", 200);
+      return address;
     } catch (error) {
       if (!transaction.finished) {
         await transaction.rollback();
       }
       console.error("Error setting default address:", error);
-      sendErrorResponse(res, "Error setting default address", null, 500);
+      throw error;
     }
   }
 }

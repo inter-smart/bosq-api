@@ -148,7 +148,7 @@ class CheckOutService {
     const { model: Model, field, aliasName: alias } = config;
 
     const where = {
-      address_type: "billing",
+      address_type: "shipping",
       [field]: userId,
     };
 

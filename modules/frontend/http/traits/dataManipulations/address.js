@@ -22,13 +22,14 @@ function buildAddressSection(data) {
 function buildCheckoutFormPayload(data) {
   if (!data) return null;
 
-  const shipping = data?.shipping_address;
+  const shipping = data?.shipping_address || data?.shipping_CartAddress;
 
   return {
     /* ----------------------------------
        Billing
     ---------------------------------- */
     id: data?.id || null,
+    address_type: data?.address_type,
     name: data?.name || "",
     company_name: data?.company_name || "",
     email: data?.email || "",

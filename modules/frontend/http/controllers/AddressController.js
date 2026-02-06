@@ -57,8 +57,11 @@ class AddressController {
   }
 
   static async destroy(req, res) {
+    const { id } = req.params;
+    const { addressType } = req.body;
     try {
-      const data = await service.destroy(req, res);
+      const cartOwner = req.cartOwner;
+      const data = await service.destroy(cartOwner, id, addressType);
       return ApiResponse.success(res, {
         message: RESPONSE_MESSAGES.SUCCESS.DATA_DELETED,
         data,
@@ -70,8 +73,11 @@ class AddressController {
   }
 
   static async setDefault(req, res) {
+    const { id } = req.params;
+    const { addressType } = req.body;
     try {
-      const data = await service.setDefault(req);
+      const cartOwner = req.cartOwner;
+      const data = await service.setDefault(cartOwner, id, addressType);
       return ApiResponse.success(res, {
         message: RESPONSE_MESSAGES.SUCCESS.DATA_UPDATED,
         data,

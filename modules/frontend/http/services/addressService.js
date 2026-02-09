@@ -16,6 +16,7 @@ const modelsMap = {
     aliasName: "shipping_CartAddress",
   },
 };
+const { validateRecaptcha } = require("../../../../services/RecaptchaValidation.js");
 
 class AddressService {
   static async index(req, res) {
@@ -291,6 +292,24 @@ class AddressService {
       const payload = req.body;
       const { shipToDifferentAddress } = payload;
 
+      // ✅ Correct token key
+      const token = payload?.recaptcha_token;
+
+      if (!token) {
+        throw new Error("reCAPTCHA token missing");
+      }
+
+      const { success, score, action } = await validateRecaptcha(token);
+
+      console.log("reCAPTCHA result:", { success, score, action });
+
+      // ✅ v3 validation
+      if (!success || score < 0.5) {
+        const error = new Error("reCAPTCHA verification failed. Please try again.");
+        error.statusCode = 403;
+        throw error;
+      }
+
       // Look up state ID from slug
       let stateId = null;
       if (payload.state) {
@@ -428,6 +447,24 @@ class AddressService {
         id,
       };
       const payload = req.body;
+
+      // ✅ Correct token key
+      const token = payload?.recaptcha_token;
+
+      if (!token) {
+        throw new Error("reCAPTCHA token missing");
+      }
+
+      const { success, score, action } = await validateRecaptcha(token);
+
+      console.log("reCAPTCHA result:", { success, score, action });
+
+      // ✅ v3 validation
+      if (!success || score < 0.5) {
+        const error = new Error("reCAPTCHA verification failed. Please try again.");
+        error.statusCode = 403;
+        throw error;
+      }
 
       const billingAddress = await Model.findOne({
         where,

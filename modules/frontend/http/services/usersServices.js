@@ -14,6 +14,7 @@ const {
   buildProfieSection,
   buildProfileEditSection,
 } = require("../traits/dataManipulations/profileSections.js");
+const { validateRecaptcha } = require("../../../../services/RecaptchaValidation");
 
 class UsersServices {
   static async getProfileData(req, res) {
@@ -82,8 +83,8 @@ class UsersServices {
                     ],
                   },
                 ],
-              }
-            ]
+              },
+            ],
           },
         ],
       });
@@ -141,6 +142,7 @@ class UsersServices {
         return sendValidationError(res, errors.array());
       }
 
+    
       const { id } = req.auth;
       const {
         display_name,
@@ -149,7 +151,30 @@ class UsersServices {
         country_code,
         mobile,
         email,
+        recaptcha_token
       } = req.body || {};
+
+
+        // ✅ Correct token key
+      const token = recaptcha_token;
+
+      if (!token) {
+        throw new Error("reCAPTCHA token missing");
+      }
+
+      const { success, score, action } = await validateRecaptcha(token);
+
+      console.log("reCAPTCHA result:", { success, score, action });
+
+      // ✅ v3 validation
+      if (!success || score < 0.5) {
+        const error = new Error(
+          "reCAPTCHA verification failed. Please try again.",
+        );
+        error.statusCode = 403;
+        throw error;
+      }
+
 
       const user = await models.Users.findOne({
         where: { id },
@@ -226,8 +251,29 @@ class UsersServices {
         return sendValidationError(res, errors.array());
       }
 
+     
       const { id: userId } = req.auth;
-      const { currentPassword, newPassword } = req.body;
+      const { currentPassword, newPassword, recaptcha_token } = req.body;
+
+          // ✅ Correct token key
+      const token = recaptcha_token;
+
+      if (!token) {
+        throw new Error("reCAPTCHA token missing");
+      }
+
+      const { success, score, action } = await validateRecaptcha(token);
+
+      console.log("reCAPTCHA result:", { success, score, action });
+
+      // ✅ v3 validation
+      if (!success || score < 0.5) {
+        const error = new Error(
+          "reCAPTCHA verification failed. Please try again.",
+        );
+        error.statusCode = 403;
+        throw error;
+      }
 
       // 1. Fetch user with row lock
       const user = await models.Users.findOne({
@@ -256,7 +302,10 @@ class UsersServices {
       }
 
       // 3. Verify old password
-      const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+      const isPasswordValid = await bcrypt.compare(
+        currentPassword,
+        user.password,
+      );
 
       if (!isPasswordValid) {
         await transaction.rollback();
@@ -312,23 +361,21 @@ class UsersServices {
     }
   }
 
-   static async logout(req, res) {
-      try {
+  static async logout(req, res) {
+    try {
+      console.log(req.auth);
+      res.clearCookie("access_token", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+      });
 
-
-        console.log(req.auth)
-        res.clearCookie("access_token", {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: "lax",
-        });
-  
-        return sendSuccessResponse(res, null, "Logout successful", 200);
-      } catch (error) {
-        console.error("Logout Error:", error);
-        return sendErrorResponse(res, error.message, null, 500);
-      }
+      return sendSuccessResponse(res, null, "Logout successful", 200);
+    } catch (error) {
+      console.error("Logout Error:", error);
+      return sendErrorResponse(res, error.message, null, 500);
     }
+  }
 }
 
 module.exports = UsersServices;

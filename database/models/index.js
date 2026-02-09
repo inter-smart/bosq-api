@@ -74,6 +74,7 @@ const defineSocialMedia = require("./siteSettings/socialMedia");
 const defineProjectsCms = require("./projects/cms");
 const defineProjectCategories = require("./projects/projectCategories");
 const defineProjects = require("./projects/projects");
+const defineProjectImage = require("./projects/projectImage");
 const defineSpecialisedAreas = require("./projects/specialisedAreas");
 
 // ERGONOMIC
@@ -109,7 +110,6 @@ const defineCartItems = require("./resources/cart/cartItems");
 const defineCartAddress = require("./resources/cart/cartAddress");
 
 // USER AUTH
-
 const defineUsers = require("./users/users");
 const defineAuthSessions = require("./users/authSessions");
 const defineSocialAccounts = require("./users/socialAccounts");
@@ -123,6 +123,10 @@ const defineNewsLetter = require("./enquiries/newsletter");
 // STATE AND COUNTRY
 const defineState = require("./state");
 const defineCountry = require("./country");
+
+// COUPONS
+const defineCoupons = require("./coupons");
+const defineCouponUsage = require("./couponUsage");
 
 const models = {
   AdminUser: defineAdminUser(sequelize),
@@ -199,6 +203,7 @@ const models = {
   ProjectsCms: defineProjectsCms(sequelize),
   ProjectCategories: defineProjectCategories(sequelize),
   Projects: defineProjects(sequelize),
+  ProjectImage: defineProjectImage(sequelize),
   SpecialisedAreas: defineSpecialisedAreas(sequelize),
 
   // ERGONOMIC
@@ -245,6 +250,10 @@ const models = {
 
   Country: defineCountry(sequelize),
   State: defineState(sequelize),
+
+  // COUPONS
+  Coupons: defineCoupons(sequelize),
+  CouponUsage: defineCouponUsage(sequelize),
 };
 
 Object.keys(models).forEach((modelName) => {

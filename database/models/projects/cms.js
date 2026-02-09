@@ -33,6 +33,10 @@ module.exports = (sequelize) => {
         type: DataTypes.TEXT,
         allowNull: true,
       },
+      media_type: {
+        type: DataTypes.ENUM("image", "video"),
+        allowNull: true,
+      },
       media_desktop_path: {
         type: DataTypes.STRING,
         allowNull: true,
@@ -49,10 +53,7 @@ module.exports = (sequelize) => {
         type: DataTypes.STRING,
         allowNull: true,
       },
-      media_type: {
-        type: DataTypes.ENUM("image", "video"),
-        allowNull: true,
-      },
+
       form_title: {
         type: DataTypes.STRING,
         allowNull: true,
@@ -84,7 +85,7 @@ module.exports = (sequelize) => {
     },
     {
       tableName: "projects_cms",
-    }
+    },
   );
 
   return ProjectsCms;

@@ -8,7 +8,7 @@ const cacheKeys = {
   deliveryPolicy: "deliveryPolicy",
   faq: "faq",
   contact: "contact",
-  projects: "home",
+  projects: "projects",
   blog: "blog-list",
   blogDetail: (slug) => `blog-list:${slug}`,
   customization: "customization",
@@ -22,6 +22,7 @@ const cacheKeys = {
   productVariantRelatedModels: (product_base_id) => `productVariantRelatedModels:${product_base_id}`,
   state: "state",
   country: "country",
+  coupons: "coupons"
 };
 
 module.exports = cacheKeys;

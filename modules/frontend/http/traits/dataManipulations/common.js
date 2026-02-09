@@ -23,6 +23,9 @@ function buildTitleSection(cmsData, prefix) {
   return section;
 }
 
+
+
+
 function buildCmsSection(cmsData, prefix, options = {}) {
   const { defaultMediaType = "image", includeMedia = true } = options;
 
@@ -110,7 +113,6 @@ function buildOtherMetaData(data){
     meta_keywords_ar: data?.meta_keywords_ar ?? "N/A",
     other_meta: data?.other_meta ?? "N/A",
     other_meta_ar: data?.other_meta_ar ?? "N/A",
-
   };
 }
 

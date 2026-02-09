@@ -1,23 +1,30 @@
 const { DataTypes } = require("sequelize");
 
 module.exports = (sequelize) => {
-  const ProjectCategories = sequelize.define(
-    "ProjectCategories",
+  const ProjectImage = sequelize.define(
+    "ProjectImage",
     {
       id: {
         type: DataTypes.INTEGER,
         primaryKey: true,
         autoIncrement: true,
       },
-      name: {
+
+      media_path: {
         type: DataTypes.STRING,
         allowNull: true,
       },
-      name_ar: {
+      media_alt: {
         type: DataTypes.STRING,
         allowNull: true,
       },
-      slug:{
+      project_id: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        references: { model: "projects", key: "id" },
+      },
+
+      media_alt_ar: {
         type: DataTypes.STRING,
         allowNull: true,
       },
@@ -31,19 +38,19 @@ module.exports = (sequelize) => {
       },
     },
     {
-      tableName: "project_categories",
+      tableName: "Project_images",
       timestamps: true,
       paranoid: true,
-    }
+    },
   );
 
-  ProjectCategories.associate = (models) => {
-    ProjectCategories.hasMany(models.Projects, {
-      foreignKey: "category_id",
+  ProjectImage.associate = (models) => {
+    ProjectImage.belongsTo(models.Projects, {
+      foreignKey: "project_id",
       as: "projects",
       onDelete: "CASCADE",
     });
   };
 
-  return ProjectCategories;
+  return ProjectImage;
 };

@@ -16,7 +16,11 @@ const {
 const { paginate } = require("../../traits/datatablePaginationHelper.js");
 const { Op } = require("sequelize");
 
+const cacheKeys = require("../../../../redis/cacheKeys");
+const { invalidateCache } = require("../../../../redis/redisService");
+
 const DataModel = models.ProjectCategories;
+const cacheKey = cacheKeys.projects;
 
 class ProjectCategoriesController {
   static async index(req, res) {
@@ -43,7 +47,7 @@ class ProjectCategoriesController {
 
   static async store(req, res) {
     await Promise.all(
-      validationProjectCategories.map((validation) => validation.run(req))
+      validationProjectCategories.map((validation) => validation.run(req)),
     );
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -69,7 +73,7 @@ class ProjectCategoriesController {
 
       // Create data with transaction
       const data = await DataModel.create(req.body, { transaction });
-
+      await invalidateCache(cacheKey);
       // Commit the transaction
       await transaction.commit();
       sendSuccessResponse(res, data, "Data created successfully", 201);
@@ -106,7 +110,7 @@ class ProjectCategoriesController {
 
   static async update(req, res) {
     await Promise.all(
-      [...validateId, ...validationProjectCategories].map((v) => v.run(req))
+      [...validateId, ...validationProjectCategories].map((v) => v.run(req)),
     );
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -140,7 +144,7 @@ class ProjectCategoriesController {
       }
 
       await data.update(req.body, { transaction });
-
+      await invalidateCache(cacheKey);
       await transaction.commit();
 
       const updatedData = await DataModel.findByPk(data.id);
@@ -171,6 +175,7 @@ class ProjectCategoriesController {
 
       // Soft delete
       await data.destroy();
+      await invalidateCache(cacheKey);
 
       sendSuccessResponse(res, { id }, "Data deleted successfully");
     } catch (error) {

@@ -1,10 +1,15 @@
+const { Op } = require("sequelize");
 const { redisClient } = require("../../../../config/redis");
 const { models } = require("../../../../database/models");
 
 const cacheKeys = require("../../../redis/cacheKeys");
 const { getCache, setCache } = require("../../../redis/redisService");
 const { generateImageUrl } = require("../../traits/imageUrlHelper");
-const { buildCmsSection, buildTitleSection, buildOtherMetaData } = require("../traits/dataManipulations/common");
+const {
+  buildCmsSection,
+  buildTitleSection,
+  buildOtherMetaData,
+} = require("../traits/dataManipulations/common");
 const {
   buildHomeBannerSliders,
   buildProjectsSection,
@@ -12,6 +17,8 @@ const {
   buildFitsSection,
   buildBrandSection,
   buildFormSection,
+  buildFeaturedProductSection,
+  buildSmartSpaceCalculatorSection,
 } = require("../traits/dataManipulations/homeCms");
 const cacheKey = cacheKeys.home;
 
@@ -27,7 +34,16 @@ class HomeService {
       //   };
       // }
 
-      const [homeCms, banners, projects, brands, fits, otherMeta] = await Promise.all([
+      const [
+        homeCms,
+        banners,
+        productCategory,
+        projects,
+        SmartSpaceCalculator,
+        brands,
+        fits,
+        otherMeta,
+      ] = await Promise.all([
         models.HomeCms.findOne({}),
         models.HomeBanner.findAll({
           where: {
@@ -35,10 +51,27 @@ class HomeService {
           },
           order: [["sort_order", "ASC"]],
         }),
+
+        models.ProductCategory.findAll({
+          attributes: ["id", "name", "name_ar", "media_path", "slug"],
+          where: {
+            status: true,
+            parent_id: {
+              [Op.ne]: null,
+            },
+          },
+          order: [["sort_order", "ASC"]],
+        }),
         models.Projects.findAll({
           attributes: ["id", "title", "title_ar", "thumbnail", "slug"],
           where: {
             show_in_home: true,
+            status: true,
+          },
+          order: [["sort_order", "ASC"]],
+        }),
+        models.SmartSpaceCalculator.findAll({
+          where: {
             status: true,
           },
           order: [["sort_order", "ASC"]],
@@ -66,8 +99,12 @@ class HomeService {
       const sliders = buildHomeBannerSliders(banners);
       const aboutSection = buildCmsSection(homeCms, "about");
       const journeySection = buildJourneySection(homeCms, "journey");
-      const featuredSection = buildTitleSection(homeCms, "featured");
+      const featuredSection = buildFeaturedProductSection(
+        homeCms,
+        productCategory,
+      );
       const projectSection = buildProjectsSection(projects, homeCms);
+      const smartSpaceSection = buildSmartSpaceCalculatorSection(SmartSpaceCalculator);
       const fitsSection = buildFitsSection(homeCms, fits);
       const brandsSection = buildBrandSection(homeCms, brands);
       const formSection = buildCmsSection(homeCms, "form");
@@ -79,6 +116,7 @@ class HomeService {
         journeySection,
         featuredSection,
         projectSection,
+        smartSpaceSection,
         fitsSection,
         brandsSection,
         formSection,

@@ -14,32 +14,20 @@ exports.validateProjects = [
 
   body("description_ar").optional().isString().withMessage("Arabic description must be a string"),
 
-  /* ---------- IMAGES ---------- */
+  /* ---------- MEIDAS ---------- */
   body("thumbnail").optional().isString().withMessage("Thumbnail must be a string"),
 
-  body("section1_image").optional().isString().withMessage("Section 1 image must be a string"),
+  body("section1_meida").optional().isString().withMessage("Section 1 meida must be a string"),
 
-  body("section1_image_alt").optional().isString().withMessage("Section 1 image alt must be a string"),
+  body("section1_meida_alt").optional().isString().withMessage("Section 1 meida alt must be a string"),
 
-  body("section1_image_alt_ar").optional().isString().withMessage("Section 1 image alt (AR) must be a string"),
+  body("section1_media_alt_ar").optional().isString().withMessage("Section 1 meida alt (AR) must be a string"),
 
-  body("section2_first_image").optional().isString().withMessage("Section 2 first image must be a string"),
+  body("section3_meida").optional().isString().withMessage("Section 3 meida must be a string"),
 
-  body("section2_first_image_alt").optional().isString().withMessage("Section 2 first image alt must be a string"),
+  body("section3_meida_alt").optional().isString().withMessage("Section 3 meida alt must be a string"),
 
-  body("section2_first_image_alt_ar").optional().isString().withMessage("Section 2 first image alt (AR) must be a string"),
-
-  body("section2_second_image").optional().isString().withMessage("Section 2 second image must be a string"),
-
-  body("section2_second_alt").optional().isString().withMessage("Section 2 second image alt must be a string"),
-
-  body("section2_second_image_alt_ar").optional().isString().withMessage("Section 2 second image alt (AR) must be a string"),
-
-  body("section3_image").optional().isString().withMessage("Section 3 image must be a string"),
-
-  body("section3_image_alt").optional().isString().withMessage("Section 3 image alt must be a string"),
-
-  body("section3_image_alt_ar").optional().isString().withMessage("Section 3 image alt (AR) must be a string"),
+  body("section3_meida_alt_ar").optional().isString().withMessage("Section 3 meida alt (AR) must be a string"),
 
   /* ---------- SECTION 3 CONTENT ---------- */
   body("section3_title").optional().isString().withMessage("Section 3 title must be a string"),

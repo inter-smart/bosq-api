@@ -50,31 +50,7 @@ module.exports = (sequelize) => {
         type: DataTypes.STRING,
         allowNull: true,
       },
-      section1_media_alt_ar: {
-        type: DataTypes.STRING,
-        allowNull: true,
-      },
-      section2_first_media_path: {
-        type: DataTypes.STRING,
-        allowNull: true,
-      },
-      section2_first_media_alt: {
-        type: DataTypes.STRING,
-        allowNull: true,
-      },
-      section2_first_media_alt_ar: {
-        type: DataTypes.STRING,
-        allowNull: true,
-      },
-      section2_second_media_path: {
-        type: DataTypes.STRING,
-        allowNull: true,
-      },
-      section2_second_alt: {
-        type: DataTypes.STRING,
-        allowNull: true,
-      },
-      section2_second_media_alt_ar: {
+      section1_media_alt_ar:{
         type: DataTypes.STRING,
         allowNull: true,
       },
@@ -195,6 +171,14 @@ module.exports = (sequelize) => {
       as: "specialised_areas",
       onDelete: "CASCADE",
     });
+
+    // project image
+    Projects.hasMany(models.ProjectImage, {
+      foreignKey: "project_id",
+      as: "project_images",
+      onDelete: "CASCADE",
+    });
+
   };
 
   return Projects;

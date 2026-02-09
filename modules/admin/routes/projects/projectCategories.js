@@ -4,7 +4,7 @@ const Controller = require("../../http/controllers/projects/CategoriesController
 const { createUploadMiddleware } = require("../../http/middleware/multerMiddleware");
 const authMiddleware = require("../../http/middleware/authMiddleware");
 
-router.use(authMiddleware(["admin"]));
+// router.use(authMiddleware(["admin"]));
 
 router.get("/", Controller.index);
 

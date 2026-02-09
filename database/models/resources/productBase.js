@@ -134,8 +134,16 @@ module.exports = (sequelize) => {
       foreignKey: "product_id",
       as: "faqs",
     });
+
+    ProductBase.hasMany(models.Coupons, {
+      foreignKey: "scope_id",
+      as: "coupons",
+      constraints: false,
+      scope: {
+        scope_type: "product",
+      },
+    });
   };
-  
 
   return ProductBase;
 };

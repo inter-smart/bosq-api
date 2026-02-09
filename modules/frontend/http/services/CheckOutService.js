@@ -143,6 +143,8 @@ class CheckOutService {
 
     const { type, id: userId } = cartOwner;
 
+    console.log(cartOwner);
+
     const config = modelsMap[type];
 
     const { model: Model, field, aliasName: alias } = config;

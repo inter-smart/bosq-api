@@ -1,9 +1,11 @@
 export const cartContext = async (req, res, next) => {
   try {
-    if (req.user) {
+    console.log("req.User=====>", req.auth);
+
+    if (req.auth) {
       req.cartOwner = {
         type: "user",
-        id: req.user.id,
+        id: req?.auth?.id,
       };
       return next();
     }

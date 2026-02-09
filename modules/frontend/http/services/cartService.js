@@ -153,7 +153,7 @@ class CartService {
       }
 
       if (variant.stock < quantity) {
-        throw ErrorHandler.createError("Product variant out of stock", HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
+        throw ErrorHandler.createError("Out of stock limit", HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
       }
 
       let price = variant.price;
@@ -365,27 +365,35 @@ class CartService {
    * Merge guest cart into user cart after login
    */
   static async mergeGuestCart(userId, sessionId) {
-    if (!sessionId) return;
+    if (!sessionId) {
+      return;
+    }
 
     const transaction = await sequelize.transaction();
 
     try {
-      // Find guest cart
       const guestCart = await models.Cart.findOne({
-        where: { session_id: sessionId, status: "active", user_id: null },
+        where: {
+          session_id: sessionId,
+          status: "active",
+          user_id: null,
+        },
         include: [{ model: models.CartItems, as: "items" }],
         transaction,
       });
 
-      if (!guestCart || guestCart.items.length === 0) {
+      if (!guestCart) {
         await transaction.commit();
         return;
       }
 
-      // Get or create user cart
+      if (!guestCart.items || guestCart.items.length === 0) {
+        await transaction.commit();
+        return;
+      }
+
       const userCart = await this.getOrCreateCart(userId, null, transaction);
 
-      // Merge items
       for (const guestItem of guestCart.items) {
         const existingItem = await models.CartItems.findOne({
           where: {
@@ -397,7 +405,6 @@ class CartService {
         });
 
         if (existingItem) {
-          // Add quantities
           await existingItem.update(
             {
               quantity: existingItem.quantity + guestItem.quantity,
@@ -405,7 +412,6 @@ class CartService {
             { transaction },
           );
         } else {
-          // Move item to user cart
           await models.CartItems.create(
             {
               cart_id: userCart.id,
@@ -420,17 +426,17 @@ class CartService {
         }
       }
 
-      // Mark guest cart as abandoned
       await guestCart.destroy({ force: true, transaction });
 
-      // Recalculate user cart totals
       await this.recalculateCartTotals(userCart.id, transaction);
 
+      // 6️⃣ Commit
       await transaction.commit();
     } catch (error) {
       if (!transaction.finished) {
         await transaction.rollback();
       }
+
       throw error;
     }
   }

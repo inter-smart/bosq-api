@@ -1,8 +1,8 @@
 const { DataTypes } = require("sequelize");
 
 module.exports = (sequelize) => {
-  const CartAddress = sequelize.define(
-    "CartAddress",
+  const OrderAddress = sequelize.define(
+    "OrderAddress",
     {
       id: {
         type: DataTypes.BIGINT,
@@ -10,9 +10,14 @@ module.exports = (sequelize) => {
         primaryKey: true,
       },
 
-      session_id: {
-        type: DataTypes.STRING(255),
-        allowNull: false,
+      order_id: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        references: {
+          model: "orders",
+          key: "id",
+        },
+        onDelete: "CASCADE",
       },
 
       address_type: {
@@ -79,50 +84,30 @@ module.exports = (sequelize) => {
         defaultValue: false,
       },
 
-      parent_address_id: {
-        type: DataTypes.BIGINT,
-        allowNull: true,
-        references: {
-          model: "cart_address",
-          key: "id",
-        },
-        onDelete: "CASCADE",
-      },
-
       status: {
         type: DataTypes.ENUM("active", "inactive"),
         defaultValue: "active",
       },
     },
     {
-      tableName: "cart_address",
+      tableName: "order_address",
       timestamps: true,
       underscored: true,
     },
   );
 
-  CartAddress.associate = (models) => {
-    CartAddress.hasOne(models.CartAddress, {
-      foreignKey: "parent_address_id",
-      as: "shipping_CartAddress",
-    });
-
-    CartAddress.belongsTo(models.Cart, {
-      foreignKey: "cart_id",
-      as: "cart",
+  OrderAddress.associate = (models) => {
+    OrderAddress.belongsTo(models.Orders, {
+      foreignKey: "order_id",
+      as: "order",
       onDelete: "CASCADE",
     });
 
-    CartAddress.belongsTo(models.CartAddress, {
-      foreignKey: "parent_address_id",
-      as: "billing_CartAddress",
-    });
-
-    CartAddress.belongsTo(models.State, {
+    OrderAddress.belongsTo(models.State, {
       foreignKey: "state_id",
       as: "state",
     });
   };
 
-  return CartAddress;
+  return OrderAddress;
 };

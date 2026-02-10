@@ -1,7 +1,12 @@
 const { models } = require("../../../../database/models");
 const cacheKeys = require("../../../redis/cacheKeys");
 const { setCache, getCache } = require("../../../redis/redisService");
-const { buildHeaderSection, buildFooterSection, buildFooterIcons } = require("../traits/dataManipulations/siteSettings");
+const {
+  buildHeaderSection,
+  buildFooterSection,
+  buildFooterIcons,
+  buildNavigationData,
+} = require("../traits/dataManipulations/siteSettings");
 
 const cacheKey = cacheKeys.siteSettings;
 
@@ -21,31 +26,61 @@ class SiteSettingsService {
       // }
 
       //   3. If no cached data, fetch from database
-      const [siteSettings, socialLinks, paymentMethods] = await Promise.all([
-        await models.HeaderFooter.findOne(),
-        await models.SocialMedia.findAll({
-          where: {
-            status: true,
-          },
-          order: [["sort_order", "ASC"]],
-        }),
-        await models.PaymentMethods.findAll({
-          where: {
-            status: true,
-          },
-          order: [["sort_order", "ASC"]],
-        }),
-      ]);
+      const [siteSettings, socialLinks, paymentMethods, products, projects] =
+        await Promise.all([
+          await models.HeaderFooter.findOne(),
+          await models.SocialMedia.findAll({
+            where: {
+              status: true,
+            },
+            order: [["sort_order", "ASC"]],
+          }),
+          await models.PaymentMethods.findAll({
+            where: {
+              status: true,
+            },
+            order: [["sort_order", "ASC"]],
+          }),
+
+          await models.ProductCategory.findAll({
+            where: {
+              status: true,
+            },
+            attributes: ["name", "name_ar", "media_path", "slug"],
+            include: [
+              {
+                model: models.ProductCategory,
+                as: "children",
+                required: true, // INNER JOIN
+                attributes: ["name", "name_ar", "media_path", "slug"],
+                where: { status: true },
+              },
+            ],
+            order: [["sort_order", "ASC"]],
+          }),
+          await models.Projects.findAll({
+            where: {
+              status: true,
+            },
+            attributes: ["title", "title_ar", "thumbnail", "slug"],
+            order: [["sort_order", "ASC"]],
+          }),
+        ]);
 
       const headerData = buildHeaderSection(siteSettings);
       const footerData = buildFooterSection(siteSettings);
       const socialMedia = buildFooterIcons(socialLinks);
       const cards = buildFooterIcons(paymentMethods);
+      const navigationData = buildNavigationData(products, projects);
+
       const result = {
         headerData,
         footerData,
         socialMedia,
         cards,
+        products,
+        projects,
+        navigationData,
       };
 
       //   5. Store the result in cache for future requests

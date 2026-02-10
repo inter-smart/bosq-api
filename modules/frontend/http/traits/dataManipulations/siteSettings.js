@@ -1,3 +1,4 @@
+const { generateImageUrl } = require("../../../traits/imageUrlHelper");
 const { singleMediaWithoutType } = require("../mediaButtonHelper")
 
 function buildHeaderSection(cms){
@@ -55,8 +56,92 @@ function buildFooterIcons(links){
 
 
 
+function buildNavigationData(products, projects) {
+  let idCounter = 1;
+
+  const homeItem = {
+    id: idCounter++,
+    hasSubmenu: false,
+    name: "Home",
+    name_ar: "الرئيسية",
+    slug: "/",
+  };
+
+  const productItems = products.map((category) => {
+    const children = category.children || [];
+    const hasChildren = children.length > 0;
+
+    return {
+      id: category.id,
+      hasSubmenu: hasChildren,
+      name: category.name,
+      name_ar: category.name_ar,
+      slug: `/products?category=${category.slug}`,
+      image: generateImageUrl(category.media_path),
+      ...(hasChildren
+        ? {
+            items: children.map((child) => ({
+              id: child.id,
+              hasSubmenu: false,
+              name: child.name,
+              name_ar: child.name_ar,
+              slug: `/products?subcategory=${child.slug}`,
+              image: generateImageUrl(child.media_path),
+            })),
+          }
+        : {}),
+    };
+  });
+
+  const productsMenu = {
+    id: idCounter++,
+    hasSubmenu: true,
+    name: "Products",
+    name_ar: "المنتجات",
+    slug: "/products",
+    items: productItems,
+  };
+
+  const projectItems = projects.map((project) => ({
+    id: project.id,
+    hasSubmenu: false,
+    name: project.title,
+    name_ar: project.title_ar,
+    slug: `/projects?subcategory=${project.slug}`,
+    image: generateImageUrl(project.thumbnail),
+  }));
+
+  const projectsMenu = {
+    id: idCounter++,
+    hasSubmenu: projectItems.length > 0,
+    name: "Projects",
+    name_ar: "المشاريع",
+    slug: "/projects",
+    ...(projectItems.length > 0 ? { items: projectItems } : {}),
+  };
+
+  const aboutItem = {
+    id: idCounter++,
+    hasSubmenu: false,
+    name: "About Us",
+    name_ar: "من نحن",
+    slug: "/about",
+  };
+
+  const contactItem = {
+    id: idCounter++,
+    hasSubmenu: false,
+    name: "Contact Us",
+    name_ar: "اتصل بنا",
+    slug: "/contact",
+  };
+
+  return [homeItem, productsMenu, projectsMenu, aboutItem, contactItem];
+}
+
 module.exports = {
   buildHeaderSection,
   buildFooterSection,
-  buildFooterIcons
+  buildFooterIcons,
+  buildNavigationData,
 }

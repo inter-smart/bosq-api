@@ -41,19 +41,19 @@ class SiteSettingsService {
             },
             order: [["sort_order", "ASC"]],
           }),
-
           await models.ProductCategory.findAll({
             where: {
               status: true,
+              parent_id: null
             },
             attributes: ["name", "name_ar", "media_path", "slug"],
             include: [
               {
                 model: models.ProductCategory,
                 as: "children",
-                required: true, // INNER JOIN
                 attributes: ["name", "name_ar", "media_path", "slug"],
                 where: { status: true },
+                required: false
               },
             ],
             order: [["sort_order", "ASC"]],
@@ -78,9 +78,8 @@ class SiteSettingsService {
         footerData,
         socialMedia,
         cards,
-        products,
-        projects,
         navigationData,
+        products
       };
 
       //   5. Store the result in cache for future requests

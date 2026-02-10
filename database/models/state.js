@@ -118,6 +118,13 @@ module.exports = (sequelize) => {
       as: "addresses",
       onDelete: "CASCADE",
     });
+
+    // customizationfrom
+    State.hasMany(models.CustomizationEnquiry, {
+      foreignKey: "state_id",
+      as: "customization_form",
+      onDelete: "CASCADE",
+    });
   };
 
   return State;

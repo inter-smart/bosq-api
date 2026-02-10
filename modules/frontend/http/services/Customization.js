@@ -1,9 +1,22 @@
+const { Op } = require("sequelize");
 const { models } = require("../../../../database/models");
 const cacheKeys = require("../../../redis/cacheKeys");
 const { setCache, getCache } = require("../../../redis/redisService");
-const { buildTitleSection, buildCmsSection, buildBannerSection } = require("../traits/dataManipulations/common");
-const { buildFeaturesSection } = require("../traits/dataManipulations/customization");
-const { buildDeliveryData, buildDeliveryInfo, buildProcessSection, buildOptionsSection } = require("../traits/dataManipulations/deliveryPolicy");
+const {
+  buildTitleSection,
+  buildCmsSection,
+  buildBannerSection,
+} = require("../traits/dataManipulations/common");
+const {
+  buildFeaturesSection,
+} = require("../traits/dataManipulations/customization");
+const {
+  buildDeliveryData,
+  buildDeliveryInfo,
+  buildProcessSection,
+  buildOptionsSection,
+  buildOptionsValue,
+} = require("../traits/dataManipulations/deliveryPolicy");
 
 const cacheKey = cacheKeys.customization;
 
@@ -14,16 +27,23 @@ class CustomizationService {
       const cachedData = await getCache(cacheKey);
 
       // 2. If cached data exists, return it
-      if (cachedData) {
-        return {
-          data: cachedData,
-          fromCache: true,
-          message: "Customization page data fetched from cache",
-        };
-      }
+      // if (cachedData) {
+      //   return {
+      //     data: cachedData,
+      //     fromCache: true,
+      //     message: "Customization page data fetched from cache",
+      //   };
+      // }
 
       //   3. If no cached data, fetch from database
-      const [customizationCms, customizationFeatures, customizationProcess, customizationOptions] = await Promise.all([
+      const [
+        customizationCms,
+        customizationFeatures,
+        customizationProcess,
+        customizationOptions,
+        states,
+
+      ] = await Promise.all([
         models.CustomizationCms.findOne(),
         models.CustomizationFeatures.findAll({
           where: {
@@ -31,28 +51,52 @@ class CustomizationService {
           },
           order: [["sort_order", "ASC"]],
         }),
-          models.CustomizationProcess.findAll({
+        models.CustomizationProcess.findAll({
           where: {
             status: true,
           },
           order: [["sort_order", "ASC"]],
         }),
-           models.CustomizationOptions.findAll({
+        models.CustomizationOptions.findAll({
           where: {
             status: true,
           },
           order: [["sort_order", "ASC"]],
+        }),
+
+        models.State.findAll({
+          attributes: ["id", "name", "slug"],
+          include: [
+            {
+              model: models.Country,
+              as: "country",
+              attributes: [], // ❌ hide country data
+              where: {
+                slug: {
+                  [Op.in]: ["om", "ae"], // Only Oman and UAE
+                },
+              },
+              required: true,
+            },
+          ],
         }),
       ]);
 
-    
       //   4. Process and structure the data
       const heroData = buildTitleSection(customizationCms);
       const customizationData = buildBannerSection(customizationCms, "banner");
       const FeaturesSection = buildFeaturesSection(customizationFeatures);
-      const processSection = buildProcessSection(customizationCms, customizationProcess);
-      const optionsSection = buildOptionsSection(customizationCms, customizationOptions);
+      const processSection = buildProcessSection(
+        customizationCms,
+        customizationProcess,
+      );
+      const optionsSection = buildOptionsSection(
+        customizationCms,
+        customizationOptions,
+      );
       const requestCustomQuote = buildCmsSection(customizationCms, "form");
+
+      const options = buildOptionsValue(customizationOptions)
 
       const result = {
         heroData,
@@ -60,7 +104,9 @@ class CustomizationService {
         FeaturesSection,
         processSection,
         optionsSection,
-        requestCustomQuote
+        requestCustomQuote,
+        states,
+        options
       };
 
       //   5. Store the result in cache for future requests
@@ -74,7 +120,7 @@ class CustomizationService {
     } catch (error) {
       console.error("Error getting Customization PAGE data:", error);
       throw new Error(
-        `Error fetching Customization page data: ${error.message}`
+        `Error fetching Customization page data: ${error.message}`,
       );
     }
   }

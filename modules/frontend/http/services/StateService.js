@@ -19,16 +19,17 @@ class StateService {
       const key = `${cacheKeys.state}:${slug}`;
 
       const cachedData = await getCache(key);
-      if (cachedData) {
-        return {
-          data: cachedData,
-          fromCache: true,
-          message: "data fetched from cache",
-        };
-      }
+      // if (cachedData) {
+      //   return {
+      //     data: cachedData,
+      //     fromCache: true,
+      //     message: "data fetched from cache",
+      //   };
+      // }
 
       const data = await models.State.findAll({
-        attributes: ["name", "slug"],
+        attributes: ["id","name", "slug"],
+        
         include: [
           {
             model: models.Country,

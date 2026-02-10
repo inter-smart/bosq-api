@@ -3,8 +3,11 @@ const { sequelize, models } = require("../../../../../../database/models/index.j
 const { sendValidationError, sendSuccessResponse, sendErrorResponse, sendNotFoundError } = require("../../../traits/responseHandler.js");
 const { paginate } = require("../../../traits/datatablePaginationHelper.js");
 const { validateId, validationRequestPost } = require("../../../request/cms/customization/customizationProcessRequest.js");
+const {invalidateCache} = require("../../../../../redis/redisService.js");
+const cacheKeys = require("../../../../../redis/cacheKeys.js");
 
 const DataModel = models.CustomizationProcess;
+const cacheKey = cacheKeys.customization;
 
 class CustomizationProcessController {
   static async index(req, res) {

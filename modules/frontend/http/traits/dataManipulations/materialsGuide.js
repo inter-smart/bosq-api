@@ -41,6 +41,7 @@ function buildMaterialInfoSection(cmsData, materials = [], categories = []) {
                   type: "image",
                   path: generateImageUrl(material.icon_path),
                   alt: material?.title ?? "icon",
+                  alt_ar: material?.title_ar ?? "icon",
                 }
               : null,
           })),
@@ -75,6 +76,7 @@ function buildExtraMaterialsSection(materials = [], extraMaterials = []) {
             type: "image",
             path: generateImageUrl(material.icon_path),
             alt: material?.title ?? "icon",
+            alt_ar: material?.title_ar ?? "icon",
           }
         : null,
     })),

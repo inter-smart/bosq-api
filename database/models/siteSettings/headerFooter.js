@@ -95,16 +95,6 @@ module.exports = (sequelize) => {
         allowNull: true,
       },
 
-      news_letter_main_title: {
-        type: DataTypes.STRING,
-        allowNull: true,
-      },
-
-      news_letter_main_title_ar: {
-        type: DataTypes.STRING,
-        allowNull: true,
-      },
-
       news_letter_title: {
         type: DataTypes.STRING,
         allowNull: true,

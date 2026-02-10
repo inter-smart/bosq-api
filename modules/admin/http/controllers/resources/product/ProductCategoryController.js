@@ -12,6 +12,8 @@ const cacheKeys = require("../../../../../redis/cacheKeys");
 
 const DataModel = models.ProductCategory;
 const cacheKey = cacheKeys.listingDropdownFilters;
+const homeCachKey = cacheKeys.home;
+
 class ProductCategoryController {
   static async index(req, res) {
     try {
@@ -66,6 +68,7 @@ class ProductCategoryController {
 
       const productCategory = await DataModel.create(req.body, { transaction });
       await invalidateCache(cacheKey);
+      await invalidateCache(homeCachKey);
       await transaction.commit();
       const createdData = await DataModel.findByPk(productCategory.id);
 
@@ -154,6 +157,7 @@ class ProductCategoryController {
 
       await data.update(req.body, { transaction });
       await invalidateCache(cacheKey);
+      await invalidateCache(homeCachKey);
       await transaction.commit();
 
       const updatedData = await DataModel.findByPk(id);
@@ -178,6 +182,8 @@ class ProductCategoryController {
       if (!data) return sendNotFoundError(res, "Product Categories");
 
       await data.destroy();
+      await invalidateCache(cacheKey);
+      await invalidateCache(homeCachKey);
       sendSuccessResponse(res, { id }, "Product Categories deleted successfully");
     } catch (error) {
       console.error("Product Categories deletion error:", error);

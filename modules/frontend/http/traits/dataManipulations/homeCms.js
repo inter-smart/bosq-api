@@ -15,7 +15,7 @@ function buildHomeBannerSliders(banners) {
       description: banner?.description ?? "N/A",
       description_ar: banner?.description_ar ?? "N/A",
       media_type: banner?.media_type ?? "image",
-      media_alt: banner?.media_alt ?? null,
+      media_alt: banner?.media_alt ?? "null",
       media_alt_ar: banner?.media_alt_ar ?? null,
       media: {
         desktop: {

@@ -31,8 +31,6 @@ function buildFooterSection(cms) {
     },
 
     newsletter: {
-      main_title: cms?.news_letter_main_title,
-      main_title_ar: cms?.news_letter_main_title_ar,
       title: cms?.news_letter_title,
       title_ar: cms?.news_letter_title_ar,
     },

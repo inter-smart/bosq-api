@@ -9,4 +9,8 @@ const { cartContext } = require("../http/middleware/cartMiddleware.js");
 router.get("/cart-summary", optionalAuth(), cartContext, Controller.getCartData);
 router.get("/cart-addresss", optionalAuth(), cartContext, Controller.getAddressForUsers);
 
+// Coupon routes
+router.post("/apply-coupon", verifyToken(), Controller.applyCoupon);
+router.post("/remove-coupon", verifyToken(), Controller.removeCoupon);
+
 module.exports = router;

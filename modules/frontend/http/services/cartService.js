@@ -2,6 +2,7 @@ const { models, sequelize } = require("../../../../database/models/index.js");
 const { ErrorHandler } = require("../traits/errorHandler.js");
 const { HTTP_STATUS, ERROR_CODES } = require("../traits/constants.js");
 const { generateImageUrl } = require("../../traits/imageUrlHelper.js");
+const ProductServiceHelpers = require("../traits/products.js");
 
 class CartService {
   /**
@@ -36,103 +37,107 @@ class CartService {
   }
 
   /**
-   * Calculate and update cart totals
-   */
-  static async recalculateCartTotals(cartId, transaction = null) {
-    const cartItems = await models.CartItems.findAll({
-      where: { cart_id: cartId },
-      transaction,
-    });
-
-    let subtotal = 0;
-    let discountTotal = 0;
-
-    for (const item of cartItems) {
-      const itemTotal = parseFloat(item.price) * item.quantity;
-      const itemDiscount = parseFloat(item.discount_amount) * item.quantity;
-      subtotal += itemTotal;
-      discountTotal += itemDiscount;
-    }
-
-    const grandTotal = subtotal - discountTotal;
-
-    await models.Cart.update(
-      {
-        subtotal: subtotal.toFixed(2),
-        discount_total: discountTotal.toFixed(2),
-        grand_total: grandTotal.toFixed(2),
-      },
-      {
-        where: { id: cartId },
-        transaction,
-      },
-    );
-
-    return { subtotal, discountTotal, grandTotal };
-  }
-
-  /**
    * Get cart with items
    */
   static async getCart(userId, sessionId) {
-    const whereClause = userId ? { user_id: userId, status: "active" } : { session_id: sessionId, status: "active", user_id: null };
+    const transaction = await sequelize.transaction();
+    try {
+      const whereClause = userId ? { user_id: userId, status: "active" } : { session_id: sessionId, status: "active", user_id: null };
 
-    const cart = await models.Cart.findOne({
-      where: whereClause,
-      include: [
+      const cart = await models.Cart.findOne(
         {
-          model: models.CartItems,
-          as: "items",
+          where: whereClause,
           include: [
             {
-              model: models.ProductBase,
-              as: "product",
-              attributes: ["id", "title", "slug"],
-            },
-            {
-              model: models.ProductVariants,
-              as: "variant",
-              attributes: ["id", "sku", "price", "media_path"],
+              model: models.CartItems,
+              as: "items",
+              include: [
+                {
+                  model: models.ProductBase,
+                  as: "product",
+                  attributes: ["id", "title", "slug"],
+                },
+                {
+                  model: models.ProductVariants,
+                  as: "variant",
+                  attributes: ["id", "sku", "price", "media_path", "stock"],
+                },
+              ],
             },
           ],
         },
-      ],
-    });
+        { transaction },
+      );
 
-    if (!cart) {
+      if (!cart) {
+        await transaction.commit();
+        return {
+          items: [],
+          subtotal: "0.00",
+          discount_total: "0.00",
+          tax_total: "0.00",
+          grand_total: "0.00",
+          item_count: 0,
+        };
+      }
+
+      const priceChanged = await ProductServiceHelpers.syncCartItemPrices(cart, transaction);
+
+      // Reload cart with fresh data after price sync
+      if (priceChanged) {
+        await cart.reload({
+          include: [
+            {
+              model: models.CartItems,
+              as: "items",
+              include: [
+                {
+                  model: models.ProductBase,
+                  as: "product",
+                  attributes: ["id", "title", "slug"],
+                },
+                {
+                  model: models.ProductVariants,
+                  as: "variant",
+                  attributes: ["id", "sku", "price", "media_path", "stock"],
+                },
+              ],
+            },
+          ],
+          transaction,
+        });
+      }
+
+      const itemCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
+
+      await transaction.commit();
+
       return {
-        items: [],
-        subtotal: "0.00",
-        discount_total: "0.00",
-        tax_total: "0.00",
-        grand_total: "0.00",
-        item_count: 0,
+        id: cart.id,
+        items: cart.items.map((item) => ({
+          id: item.id,
+          product_id: item.product_id,
+          variant_id: item.variant_id,
+          media_path: generateImageUrl(item.variant.media_path),
+          quantity: item.quantity,
+          price: item.price,
+          discount_amount: item.discount_amount,
+          line_total: (parseFloat(item.price) * item.quantity).toFixed(2),
+          is_sold_out: item.variant ? item.variant.stock < item.quantity : false,
+          product: item.product,
+          variant: item.variant,
+        })),
+        subtotal: cart.subtotal,
+        discount_total: cart.discount_total,
+        tax_total: cart.tax_total,
+        grand_total: cart.grand_total,
+        applied_coupon_code: cart.applied_coupon_code,
+        item_count: itemCount,
       };
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
     }
-
-    const itemCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
-
-    return {
-      id: cart.id,
-      items: cart.items.map((item) => ({
-        id: item.id,
-        product_id: item.product_id,
-        variant_id: item.variant_id,
-        media_path: generateImageUrl(item.variant.media_path),
-        quantity: item.quantity,
-        price: item.price,
-        discount_amount: item.discount_amount,
-        line_total: (parseFloat(item.price) * item.quantity).toFixed(2),
-        product: item.product,
-        variant: item.variant,
-      })),
-      subtotal: cart.subtotal,
-      discount_total: cart.discount_total,
-      tax_total: cart.tax_total,
-      grand_total: cart.grand_total,
-      applied_coupon_code: cart.applied_coupon_code,
-      item_count: itemCount,
-    };
   }
 
   /**
@@ -188,6 +193,7 @@ class CartService {
             variant_id: variantId || null,
             quantity,
             price,
+            final_price: price,
             discount_amount: 0,
           },
           { transaction },
@@ -195,7 +201,7 @@ class CartService {
       }
 
       // Recalculate totals
-      await this.recalculateCartTotals(cart.id, transaction);
+      await ProductServiceHelpers.recalculateCartTotals(cart.id, transaction);
 
       await transaction.commit();
 
@@ -249,7 +255,7 @@ class CartService {
       await cartItem.update({ quantity }, { transaction });
 
       // Recalculate totals
-      await this.recalculateCartTotals(cart.id, transaction);
+      await ProductServiceHelpers.recalculateCartTotals(cart.id, transaction);
 
       await transaction.commit();
 
@@ -293,7 +299,7 @@ class CartService {
       await cartItem.destroy({ transaction });
 
       // Recalculate totals
-      await this.recalculateCartTotals(cart.id, transaction);
+      await ProductServiceHelpers.recalculateCartTotals(cart.id, transaction);
 
       await transaction.commit();
 
@@ -428,7 +434,7 @@ class CartService {
 
       await guestCart.destroy({ force: true, transaction });
 
-      await this.recalculateCartTotals(userCart.id, transaction);
+      await ProductServiceHelpers.recalculateCartTotals(userCart.id, transaction);
 
       // 6️⃣ Commit
       await transaction.commit();

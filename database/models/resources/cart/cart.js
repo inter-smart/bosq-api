@@ -59,6 +59,16 @@ module.exports = (sequelize) => {
         type: DataTypes.STRING(100),
         allowNull: true,
       },
+
+      coupon_id: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+      },
+
+      applied_coupon_scope: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
     },
     {
       tableName: "carts",

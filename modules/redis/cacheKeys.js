@@ -11,6 +11,9 @@ const cacheKeys = {
   projects: "projects",
   blog: "blog-list",
   blogDetail: (slug) => `blog-list:${slug}`,
+
+  news: "news-list",
+  newsDetail: (slug) => `news-list:${slug}`,
   customization: "customization",
   materialsGuide: "materialsGuide",
   sustainability: "sustainability",
@@ -23,7 +26,8 @@ const cacheKeys = {
   state: "state",
   country: "country",
   coupons: "coupons",
-  blogList: (page, limit) => `blog-list:page:${page}:limit:${limit}`
+  blogList: (page, limit) => `blog-list:page:${page}:limit:${limit}`,
+  newsList: (page, limit) => `news-list:page:${page}:limit:${limit}`
 };
 
 module.exports = cacheKeys;

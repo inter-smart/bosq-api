@@ -53,11 +53,7 @@ module.exports = (sequelize) => {
         type: DataTypes.TEXT,
         allowNull: true,
       },
-      section1_media_desktop_path: {
-        type: DataTypes.TEXT,
-        allowNull: true,
-      },
-      section1_media_mobile_path: {
+      section1_media_path: {
         type: DataTypes.TEXT,
         allowNull: true,
       },
@@ -67,10 +63,6 @@ module.exports = (sequelize) => {
       },
       section1_media_alt_ar: {
         type: DataTypes.STRING,
-        allowNull: true,
-      },
-      section1_media_type: {
-        type: DataTypes.ENUM("image", "video"),
         allowNull: true,
       },
     },

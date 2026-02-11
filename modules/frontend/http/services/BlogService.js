@@ -160,7 +160,6 @@ class BlogService {
 
                 limit: 5,
                 order: [["createdAt", "DESC"]],
-                limit: 5,
               })
             : Promise.resolve([]),
 
@@ -179,7 +178,6 @@ class BlogService {
             ],
             limit: 5,
             order: [["createdAt", "DESC"]],
-            limit: 5,
           }),
         ]);
 

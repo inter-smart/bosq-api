@@ -34,7 +34,7 @@ const cacheDependencies = {
 
   // Sustainability Module
   SustainabilityCms: [cacheKeys.sustainability],
-  Sustainability: [cacheKeys.sustainability],
+  TwoImage: [cacheKeys.sustainability],
 
   // Legal Pages
   PrivacyPolicyCms: [cacheKeys.privacyPolicy],

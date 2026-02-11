@@ -11,6 +11,15 @@ class BlogController {
     }
   }
 
+  static async getBlogs(req, res) {
+    try {
+      const { data, message } = await service.getBlogs(req);
+      return sendSuccessResponse(res, data, message, 200);
+    } catch (error) {
+      return sendErrorResponse(res, error, "Internal Server Error", 500);
+    }
+  }
+
   // slug page
   static async show(req, res) {
     try {

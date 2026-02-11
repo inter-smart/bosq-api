@@ -1,8 +1,10 @@
 const { sendErrorResponse, sendSuccessResponse } = require("../../../admin/http/traits/responseHandler");
-const service = require("../services/BlogService");
+const service = require("../services/NewsService");
 
-class BlogController {
-  static async index(req, res) {
+class NewsController {
+
+
+    static async index(req, res) {
     try {
       const { data, message } = await service.getData();
       return sendSuccessResponse(res, data, message, 200);
@@ -11,14 +13,15 @@ class BlogController {
     }
   }
 
-  static async getBlogs(req, res) {
+  static async getNews(req, res) {
     try {
-      const { data, message } = await service.getBlogs(req);
+      const { data, message } = await service.getNews(req);
       return sendSuccessResponse(res, data, message, 200);
     } catch (error) {
       return sendErrorResponse(res, error, "Internal Server Error", 500);
     }
   }
+
 
   // slug page
   static async show(req, res) {
@@ -31,4 +34,4 @@ class BlogController {
   }
 }
 
-module.exports = BlogController;
+module.exports = NewsController;

@@ -39,7 +39,7 @@ class SustainabilityCmsController {
 
     try {
       const existingData = await DataModel.findOne();
-      const fileFields = ["banner_media_desktop_path", "banner_media_mobile_path", "section1_media_desktop_path", "section1_media_mobile_path"];
+      const fileFields = ["banner_media_desktop_path", "banner_media_mobile_path", "section1_media_path"];
 
       let data;
 

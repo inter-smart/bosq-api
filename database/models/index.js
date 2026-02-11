@@ -59,7 +59,6 @@ const defineCustomizationCms = require("./cms/customization/customizationCms");
 const defineCustomizationFeatures = require("./cms/customization/customizationFeatures");
 const defineCustomizationProcess = require("./cms/customization/customizationProcess");
 const defineCustomizationOptions = require("./cms/customization/customizationOptions");
-
 //Sustainability
 const defineSustainabilityCms = require("./cms/sustainability/cms");
 const defineTwoImage = require("./cms/sustainability/twoImage");
@@ -124,6 +123,7 @@ const defineAddress = require("./users/address");
 // ENQUIRIES
 const defineContactEnquiry = require("./enquiries/contact");
 const defineNewsLetter = require("./enquiries/newsletter");
+const defineCustomizationEnquiry = require("./enquiries/customizationForm");
 
 // STATE AND COUNTRY
 const defineState = require("./state");
@@ -193,7 +193,6 @@ const models = {
   CustomizationFeatures: defineCustomizationFeatures(sequelize),
   CustomizationProcess: defineCustomizationProcess(sequelize),
   CustomizationOptions: defineCustomizationOptions(sequelize),
-
   //Sustainability
   SustainabilityCms: defineSustainabilityCms(sequelize),
   TwoImage: defineTwoImage(sequelize),
@@ -225,7 +224,9 @@ const models = {
 
   // ENQUIRIES
   ContactEnquiry: defineContactEnquiry(sequelize),
+  CustomizationEnquiry: defineCustomizationEnquiry(sequelize),
   NewsLetter: defineNewsLetter(sequelize),
+
   // Resources
   ProductCategory: defineProductCategory(sequelize),
   ProductAttribute: defineProductAttribute(sequelize),

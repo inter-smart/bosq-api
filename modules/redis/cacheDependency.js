@@ -1,3 +1,4 @@
+const productCategory = require("../../database/models/resources/productCategory");
 const cacheKeys = require("./cacheKeys");
 
 /**
@@ -12,6 +13,7 @@ const cacheDependencies = {
   // Home Module
   HomeBanner: [cacheKeys.home],
   HomeBrands: [cacheKeys.home],
+  SmartSpaceCalculator: [cacheKeys.home],
   HomeTestimonials: [cacheKeys.home],
   HomeServices: [cacheKeys.home],
   FindYourFits: [cacheKeys.home],
@@ -32,7 +34,7 @@ const cacheDependencies = {
 
   // Sustainability Module
   SustainabilityCms: [cacheKeys.sustainability],
-  Sustainability: [cacheKeys.sustainability],
+  TwoImage: [cacheKeys.sustainability],
 
   // Legal Pages
   PrivacyPolicyCms: [cacheKeys.privacyPolicy],
@@ -78,6 +80,12 @@ const cacheDependencies = {
   CustomizationFeatures: [cacheKeys.customization],
   CustomizationOptions: [cacheKeys.customization],
   CustomizationProcess: [cacheKeys.customization],
+
+  SocialMedia: [cacheKeys.contact],
+
+  ProductCategory: [cacheKeys.home, cacheKeys.listingDropdownFilters],
+  ErgonomicFeatures: [cacheKeys.ergonomichair],
+  ErgonomicCms: [cacheKeys.ergonomichair],
 };
 
 module.exports = cacheDependencies;

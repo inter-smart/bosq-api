@@ -27,13 +27,10 @@ exports.validateRequest = [
   body("section1_description_ar").optional().isString().withMessage("Section 1 Arabic description must be a string"),
 
   /* ---------- SECTION 1 MEDIA ---------- */
-  body("section1_media_desktop_path").optional().isString().withMessage("Section 1 desktop media path must be a string"),
-
-  body("section1_media_mobile_path").optional().isString().withMessage("Section 1 mobile media path must be a string"),
+  body("section1_media_path").optional().isString().withMessage("Section 1 media path must be a string"),
 
   body("section1_media_alt").optional().isString().withMessage("Section 1 media alt text must be a string"),
 
   body("section1_media_alt_ar").optional().isString().withMessage("Section 1 media Arabic alt text must be a string"),
 
-  body("section1_media_type").optional().isIn(["image", "video"]).withMessage("Section 1 media type must be either 'image' or 'video'"),
 ];

@@ -15,7 +15,7 @@ function buildSustainabilityData(data, list) {
     title_ar: data.section1_title_ar ?? "N/A",
     description: data.section1_description ?? "N/A",
     description_ar: data.section1_description_ar ?? "N/A",
-    section_media: singleMediaWithoutType(data, "section1_media_desktop_path", "section1_media_alt", "section1_media_alt_ar"),
+    section_media: singleMediaWithoutType(data, "section1_media_path", "section1_media_alt", "section1_media_alt_ar"),
     sections: list.map((item) => ({
       title: item?.title ?? "N/A",
       title_ar: item?.title_ar ?? "N/A",

@@ -8,8 +8,7 @@ const authMiddleware = require("../../../http/middleware/authMiddleware");
 const fields = [
   { name: "banner_media_desktop_path", maxCount: 1 },
   { name: "banner_media_mobile_path", maxCount: 1 },
-  { name: "section1_media_mobile_path", maxCount: 1 },
-  { name: "section1_media_desktop_path", maxCount: 1 },
+  { name: "section1_media_path", maxCount: 1 },
 ];
 
 // Create upload middleware with fields

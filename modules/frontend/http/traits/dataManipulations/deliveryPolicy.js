@@ -95,6 +95,18 @@ function buildOptionsSection(cmsData, options){
   return result
 }
 
+
+function buildOptionsValue(options){
+  const result = {
+     items: options?.map((item) => ({
+      id: item?.id,
+      title: item?.title ?? "N/A",
+    })),
+  }
+  return result
+}
+
+
 function buildrequestCustomQuoteSection(cmsData, options){
   const meta = buildTitleSection(cmsData, "options");
   const result = {
@@ -122,5 +134,7 @@ module.exports = {
   buildDeliveryInfo,
   buildProcessSection,
   buildOptionsSection,
-  buildrequestCustomQuoteSection
+  buildrequestCustomQuoteSection,
+buildOptionsValue
+
 };

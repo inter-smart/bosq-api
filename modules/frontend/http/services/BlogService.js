@@ -50,10 +50,8 @@ class BlogService {
 
       //   4. Process and structure the data
       const heroData = buildHeroData(blogCms);
-      const blogData = buildBlogData(blogs);
       const result = {
         heroData,
-        blogData,
       };
 
       //   5. Store the result in cache for future requests
@@ -67,6 +65,56 @@ class BlogService {
     } catch (error) {
       console.error("Error getting BLOG PAGE data:", error);
       throw new Error(`Error fetching blog page data: ${error.message}`);
+    }
+  }
+
+  static async getBlogs(req) {
+    try {
+      const { page = 1, limit = 6 } = req.query;
+      const parsedPage = parseInt(page, 10) || 1;
+      const parsedLimit = parseInt(limit, 10) || 6;
+      const offset = (parsedPage - 1) * parsedLimit;
+
+      const blogListCacheKey = cacheKeys.blogList(parsedPage, parsedLimit);
+      const cachedData = await getCache(blogListCacheKey);
+
+      if (cachedData) {
+        return {
+          data: cachedData,
+          fromCache: true,
+          message: "Blog list data fetched from cache",
+        };
+      }
+
+      const { count, rows } = await models.Blogs.findAndCountAll({
+        where: { status: true },
+        order: [["sort_order", "ASC"]],
+        limit: parsedLimit,
+        offset,
+      });
+
+      const blogData = buildBlogData(rows);
+      const totalPages = Math.ceil(count / parsedLimit);
+
+      const result = {
+        ...blogData,
+        pagination: {
+          totalCount: count,
+          totalPages,
+          currentPage: parsedPage,
+          limit: parsedLimit,
+        },
+      };
+
+      await setCache(blogListCacheKey, result);
+
+      return {
+        data: result,
+        message: "Blogs fetched successfully",
+      };
+    } catch (error) {
+      console.error("Error getting BLOG LIST data:", error);
+      throw new Error(`Error fetching blog list data: ${error.message}`);
     }
   }
 
@@ -160,7 +208,6 @@ class BlogService {
 
                 limit: 5,
                 order: [["createdAt", "DESC"]],
-                limit: 5,
               })
             : Promise.resolve([]),
 
@@ -179,7 +226,6 @@ class BlogService {
             ],
             limit: 5,
             order: [["createdAt", "DESC"]],
-            limit: 5,
           }),
         ]);
 

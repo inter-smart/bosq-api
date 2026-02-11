@@ -87,15 +87,6 @@ exports.validationRequestPost = [
 
   body("support_email").isEmail().withMessage("Support email must be valid"),
 
-  // NEWSLETTER
-  body("news_letter_main_title")
-    .isString()
-    .withMessage("Newsletter main title must be a string"),
-
-  body("news_letter_main_title_ar")
-    .isString()
-    .withMessage("Newsletter main title Arabic must be a string"),
-
   body("news_letter_title")
     .isString()
     .withMessage("Newsletter title must be a string"),

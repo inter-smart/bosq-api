@@ -61,12 +61,11 @@ class NewsController {
           res,
           "Title is required to generate slug",
           null,
-          400
+          400,
         );
 
+      let baseSlug = slugify(title.trim(), { lower: true, strict: true });
 
-        let baseSlug = req.body.slug;
-    
       const existing = await DataModel.findOne({
         where: { slug: baseSlug },
         paranoid: true,
@@ -78,7 +77,7 @@ class NewsController {
           res,
           `Slug "${baseSlug}" already exists`,
           { existing_id: existing.id },
-          409
+          409,
         );
       }
 
@@ -94,7 +93,7 @@ class NewsController {
 
       // ✅ Create news
       const news = await DataModel.create(req.body, { transaction });
-      await invalidateCache(cacheKeys.about)
+      await invalidateCache(cacheKeys.news);
       await transaction.commit();
 
       // Fetch with association
@@ -131,7 +130,7 @@ class NewsController {
   // ✅ Update news
   static async update(req, res) {
     await Promise.all(
-      [...validateId, ...validationRequestPost].map((v) => v.run(req))
+      [...validateId, ...validationRequestPost].map((v) => v.run(req)),
     );
     const errors = validationResult(req);
     if (!errors.isEmpty()) return sendValidationError(res, errors.array());
@@ -167,7 +166,7 @@ class NewsController {
             res,
             `Slug "${newSlug}" already exists`,
             { existing_id: existing.id },
-            409
+            409,
           );
         }
 
@@ -188,7 +187,7 @@ class NewsController {
       // ✅ Update database
       // -----------------------------------------
       await data.update(req.body, { transaction });
-      await invalidateCache(cacheKeys.about);
+      await invalidateCache(cacheKeys.news);
       await transaction.commit();
 
       const updatedData = await DataModel.findByPk(id);
@@ -214,7 +213,7 @@ class NewsController {
       if (!data) return sendNotFoundError(res, "News");
 
       await data.destroy();
-      await invalidateCache(cacheKeys.about);
+      await invalidateCache(cacheKeys.news);
       sendSuccessResponse(res, { id }, "News deleted successfully");
     } catch (error) {
       console.error("News deletion error:", error);

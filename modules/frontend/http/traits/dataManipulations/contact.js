@@ -60,8 +60,12 @@ function buildContactData(contactInfo, socialMedia) {
       embedUrl: contactInfo.url ?? "N/A",
     },
 
-    socialMedia:
-      socialMedia.map((item) => ({
+    socialMedia:{
+
+      title: contactInfo.social_media_title ?? "N/A",
+      title_ar: contactInfo.social_media_title_ar ?? "N/A",
+      
+      list: socialMedia.map((item) => ({
         url: item?.link ?? "",
         media:{
           icon:generateImageUrl(item?.icon_media_path),
@@ -69,6 +73,7 @@ function buildContactData(contactInfo, socialMedia) {
           label_ar: item?.icon_alt_ar ?? "",
         }
       })) || [],
+    }
   };
 }
 

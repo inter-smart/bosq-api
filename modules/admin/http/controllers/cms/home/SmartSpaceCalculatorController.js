@@ -4,9 +4,12 @@ const { sendValidationError, sendSuccessResponse, sendErrorResponse, sendNotFoun
 const { validationRequestPost, validateId } = require("../../../request/cms/home/SmartSpaceCalculatorRequest");
 const { handleFileUploadStore, handleFileUploadUpdate } = require('../../../middleware/multerMiddleware');
 const { paginate } = require('../../../traits/datatablePaginationHelper');
+const cacheKeys = require('../../../../../redis/cacheKeys');
+const { invalidateCache } = require('../../../../../redis/redisService');
 
 
 const DataModel = models.SmartSpaceCalculator;
+const cacheKey = cacheKeys.home;
 
 class SmartSpaceCalculatorController {
     static async index(req, res) {
@@ -45,6 +48,7 @@ class SmartSpaceCalculatorController {
             // Create data with transaction
             const data = await DataModel.create(req.body, { transaction });
 
+            await invalidateCache(cacheKey);
             // Commit the transaction
             await transaction.commit();
             sendSuccessResponse(res, data, 'Data created successfully', 201);
@@ -107,6 +111,7 @@ class SmartSpaceCalculatorController {
 
             await data.update(req.body, { transaction });
 
+            await invalidateCache(cacheKey);
             await transaction.commit();
 
             const updatedData = await DataModel.findByPk(data.id);
@@ -136,6 +141,8 @@ class SmartSpaceCalculatorController {
             if (!data) {
                 return sendNotFoundError(res, 'Data');
             }
+
+            await invalidateCache(cacheKey);
 
             // Soft delete
             await data.destroy();

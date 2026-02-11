@@ -22,16 +22,20 @@ module.exports = (sequelize) => {
         allowNull: true,
         unique: true,
       },
-
-      name:{
-        type: DataTypes.STRING,
-        allowNull: true,
-      },
-      name_ar:{
-        type: DataTypes.STRING,
-        allowNull: true,
+      isViewed: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
       },
       thumbnail: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      name: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      name_ar: {
         type: DataTypes.STRING,
         allowNull: true,
       },
@@ -78,7 +82,6 @@ module.exports = (sequelize) => {
         type: DataTypes.BIGINT,
         defaultValue: 0,
       },
-
       sort_order: {
         type: DataTypes.SMALLINT,
         allowNull: false,
@@ -119,10 +122,18 @@ module.exports = (sequelize) => {
         type: DataTypes.TEXT,
         allowNull: true,
       },
+      other_meta: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      other_meta_ar: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
     },
     {
       tableName: "news",
-    }
+    },
   );
 
   return News;

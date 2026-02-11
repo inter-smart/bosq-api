@@ -13,13 +13,13 @@ class FaqService {
     try {
       const cachedData = await getCache(cacheKey);
 
-      if (cachedData) {
-        return {
-          data: cachedData,
-          fromCache: true,
-          message: "FAQs fetched from cache",
-        };
-      }
+      // if (cachedData) {
+      //   return {
+      //     data: cachedData,
+      //     fromCache: true,
+      //     message: "FAQs fetched from cache",
+      //   };
+      // }
 
       const [faqCms, faqCategory] = await Promise.all([
         models.FaqCms.findOne(),
@@ -39,6 +39,7 @@ class FaqService {
               ],
               where: {
                 status: true, // ✅ only active FAQs
+                type: "general"
               },
               required: true, // ✅ only categories WITH active FAQs
             },
@@ -65,6 +66,7 @@ class FaqService {
         heroData,
         faqData,
         moreFaq,
+        faqCategory
       };
 
       await setCache(cacheKey, result);

@@ -40,7 +40,7 @@ module.exports = (sequelize) => {
 
   FaqCategory.associate = (models) => {
     FaqCategory.hasMany(models.FaqList, {
-      foreignKey: "category",
+      foreignKey: "faq_category_id",
       as: "faq_lists",
       onDelete: "CASCADE",
     });

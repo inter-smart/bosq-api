@@ -123,12 +123,12 @@ class ProductServiceHelpers {
 
     for (const item of cartItems) {
       const itemTotal = parseFloat(item.final_price) * item.quantity;
-      const itemDiscount = parseFloat(item.discount_amount) * item.quantity;
+      const itemDiscount = parseFloat(item.discount_amount);
       subtotal += itemTotal;
       discountTotal += itemDiscount;
     }
 
-    const grandTotal = subtotal - discountTotal;
+    const grandTotal = subtotal;
 
     await models.Cart.update(
       {

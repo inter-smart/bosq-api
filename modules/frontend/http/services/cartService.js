@@ -60,7 +60,7 @@ class CartService {
                 {
                   model: models.ProductVariants,
                   as: "variant",
-                  attributes: ["id", "sku", "price", "media_path", "stock"],
+                  attributes: ["id", "sku", "price", "media_path", "stock", "title", "title_ar"],
                 },
               ],
             },
@@ -99,7 +99,7 @@ class CartService {
                 {
                   model: models.ProductVariants,
                   as: "variant",
-                  attributes: ["id", "sku", "price", "media_path", "stock"],
+                  attributes: ["id", "sku", "price", "media_path", "stock", "title", "title_ar"],
                 },
               ],
             },
@@ -118,6 +118,7 @@ class CartService {
           id: item.id,
           product_id: item.product_id,
           variant_id: item.variant_id,
+          title: item.variant.title,
           media_path: generateImageUrl(item.variant.media_path),
           quantity: item.quantity,
           price: item.price,

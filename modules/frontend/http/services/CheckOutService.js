@@ -555,6 +555,8 @@ class CheckOutService {
         },
       );
 
+      await ProductServiceHelpers.recalculateCartTotals(cart.id, transaction);
+
       return { discountAmount, newDiscountTotal, newGrandTotal };
     }
   }

@@ -492,6 +492,8 @@ class CheckOutService {
       // Scoped coupon: discount applies only to matching items
       const matchingItems = this.getMatchingCartItems(coupon, cart.items);
 
+      console.log(JSON.stringify(matchingItems, null, 2));
+
       if (matchingItems.length === 0) {
         throw ErrorHandler.createError("This coupon is not applicable to the items in your cart", HTTP_STATUS.BAD_REQUEST);
       }
@@ -517,15 +519,12 @@ class CheckOutService {
 
       // Distribute discount proportionally across matching items
       for (const item of matchingItems) {
-        const itemTotal = parseFloat(item.price) * item.quantity;
-        const itemShare = eligibleSubtotal > 0 ? itemTotal / eligibleSubtotal : 0;
-        const itemDiscount = discountAmount * itemShare;
-        const perUnitDiscount = itemDiscount / item.quantity;
-        const finalPrice = parseFloat(item.price) - perUnitDiscount;
+        const itemDiscount = discountAmount;
+        const finalPrice = parseFloat(item.price) - itemDiscount;
 
         await models.CartItems.update(
           {
-            discount_amount: perUnitDiscount.toFixed(2),
+            discount_amount: itemDiscount.toFixed(2),
             final_price: Math.max(0, finalPrice).toFixed(2),
             coupon_id: coupon.id,
             applied_coupon_code: coupon.code,

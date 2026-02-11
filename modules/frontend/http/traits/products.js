@@ -111,6 +111,80 @@ class ProductServiceHelpers {
       fromCache: false,
     };
   }
+
+  static async recalculateCartTotals(cartId, transaction = null) {
+    const cartItems = await models.CartItems.findAll({
+      where: { cart_id: cartId },
+      transaction,
+    });
+
+    let subtotal = 0;
+    let discountTotal = 0;
+
+    for (const item of cartItems) {
+      const itemTotal = parseFloat(item.final_price) * item.quantity;
+      const itemDiscount = parseFloat(item.discount_amount) * item.quantity;
+      subtotal += itemTotal;
+      discountTotal += itemDiscount;
+    }
+
+    const grandTotal = subtotal - discountTotal;
+
+    await models.Cart.update(
+      {
+        subtotal: subtotal.toFixed(2),
+        discount_total: discountTotal.toFixed(2),
+        grand_total: grandTotal.toFixed(2),
+      },
+      {
+        where: { id: cartId },
+        returning: true,
+        transaction,
+      },
+    );
+
+    return { subtotal, discountTotal, grandTotal };
+  }
+
+  static async syncCartItemPrices(cart, transaction = null) {
+    let priceChanged = false;
+
+    for (const item of cart.items) {
+      if (!item.variant) continue;
+
+      const variantPrice = parseFloat(item.variant.price);
+      const cartItemPrice = parseFloat(item.price);
+
+      if (variantPrice !== cartItemPrice) {
+        await item.update(
+          {
+            price: variantPrice,
+            final_price: variantPrice,
+          },
+          { transaction },
+        );
+        priceChanged = true;
+      }
+    }
+
+    if (priceChanged) {
+      await this.recalculateCartTotals(cart.id, transaction);
+    }
+
+    return { priceChanged };
+  }
+
+  static checkInvalidProducts(cartItems) {
+    return cartItems.some((item) => {
+      const variant = item.variant;
+
+      if (!variant) return true;
+      if (variant.stock <= 0) return true;
+      if (variant.stock < item.quantity) return true;
+
+      return false;
+    });
+  }
 }
 
 module.exports = ProductServiceHelpers;

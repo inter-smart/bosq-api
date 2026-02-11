@@ -29,6 +29,30 @@ class CheckOutController {
       return ErrorHandler.handleControllerError(error, res, "CheckOutController.getCartData");
     }
   }
+
+  static async validateCheckout(req, res) {
+    try {
+      const cartOwner = req.cartOwner;
+
+      if (!cartOwner) {
+        return ApiResponse.error(res, {
+          message: "User ID or Session ID is required",
+          status: HTTP_STATUS.BAD_REQUEST,
+        });
+      }
+
+      const cart = await CheckOutService.validateCheckout(cartOwner);
+
+      return ApiResponse.success(res, {
+        message: "Cart data retrieved successfully",
+        data: cart,
+        status: HTTP_STATUS.OK,
+      });
+    } catch (error) {
+      return ErrorHandler.handleControllerError(error, res, "CheckOutController.validateCheckout");
+    }
+  }
+
   static async getAddressForUsers(req, res) {
     const cartOwner = req.cartOwner;
 
@@ -49,6 +73,61 @@ class CheckOutController {
       });
     } catch (error) {
       return ErrorHandler.handleControllerError(error, res, "CheckOutController.getCartData");
+    }
+  }
+  static async applyCoupon(req, res) {
+    try {
+      const coupon_code = req.body?.coupon_code;
+
+      const { id: userId } = req.auth;
+
+      if (!userId) {
+        return ApiResponse.error(res, {
+          message: "User ID or Session ID is required",
+          status: HTTP_STATUS.BAD_REQUEST,
+        });
+      }
+
+      if (!coupon_code) {
+        return ApiResponse.error(res, {
+          message: "Coupon code is required",
+          status: HTTP_STATUS.BAD_REQUEST,
+        });
+      }
+
+      const result = await CheckOutService.applyCoupon(userId, coupon_code.trim().toUpperCase());
+
+      return ApiResponse.success(res, {
+        message: "Coupon applied successfully",
+        data: result,
+        status: HTTP_STATUS.OK,
+      });
+    } catch (error) {
+      return ErrorHandler.handleControllerError(error, res, "CheckOutController.applyCoupon");
+    }
+  }
+
+  static async removeCoupon(req, res) {
+    try {
+      const userId = req.auth?.id;
+      const sessionId = req.cartOwner?.id;
+
+      if (!userId && !sessionId) {
+        return ApiResponse.error(res, {
+          message: "User ID or Session ID is required",
+          status: HTTP_STATUS.BAD_REQUEST,
+        });
+      }
+
+      const result = await CheckOutService.removeCoupon(userId, sessionId);
+
+      return ApiResponse.success(res, {
+        message: "Coupon removed successfully",
+        data: result,
+        status: HTTP_STATUS.OK,
+      });
+    } catch (error) {
+      return ErrorHandler.handleControllerError(error, res, "CheckOutController.removeCoupon");
     }
   }
 }

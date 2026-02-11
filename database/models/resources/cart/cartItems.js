@@ -36,10 +36,30 @@ module.exports = (sequelize) => {
         allowNull: false,
       },
 
+      coupon_id: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+      },
+
+      applied_coupon_code: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+
+      applied_coupon_scope: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+
       discount_amount: {
         type: DataTypes.DECIMAL(10, 2),
         allowNull: false,
         defaultValue: 0,
+      },
+
+      final_price: {
+        type: DataTypes.DECIMAL(10, 2),
+        allowNull: false,
       },
     },
     {

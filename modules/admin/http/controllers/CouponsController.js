@@ -1,23 +1,12 @@
 const { validationResult } = require("express-validator");
 const { sequelize, models } = require("../../../../database/models/index.js");
-const {
-  sendValidationError,
-  sendSuccessResponse,
-  sendErrorResponse,
-  sendNotFoundError,
-} = require("../traits/responseHandler.js");
+const { sendValidationError, sendSuccessResponse, sendErrorResponse, sendNotFoundError } = require("../traits/responseHandler.js");
 
 const { Op, where, fn, col } = require("sequelize");
 
-const {
-  validationRequestPost,
-  validateId,
-} = require("../request/CouponsRequest.js");
+const { validationRequestPost, validateId } = require("../request/CouponsRequest.js");
 const { paginate } = require("../traits/datatablePaginationHelper.js");
-const {
-  handleFileUploadStore,
-  handleFileUploadUpdate,
-} = require("../middleware/multerMiddleware.js");
+const { handleFileUploadStore, handleFileUploadUpdate } = require("../middleware/multerMiddleware.js");
 
 const DataModel = models.Coupons;
 
@@ -41,191 +30,188 @@ class CouponsController {
     }
   }
 
-static async show(req, res) {
-  // Run ID validation
-  await Promise.all(validateId.map((validation) => validation.run(req)));
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return sendValidationError(res, errors.array());
-  }
+  static async show(req, res) {
+    // Run ID validation
+    await Promise.all(validateId.map((validation) => validation.run(req)));
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return sendValidationError(res, errors.array());
+    }
 
-  try {
-    const { id, scope_type } = req.params;
-    let data;
+    try {
+      const { id, scope_type } = req.params;
+      let data;
       const scope = await DataModel.findByPk(id, {
         attributes: ["scope_type"],
-      })
+      });
 
-    if (scope?.scope_type === "variant") {
-      data = await DataModel.findByPk(id, {
-        include: [
-          {
-            // variants
-            model: models.ProductVariants,
-            as: "variant",
-            required: false,
-            attributes: ["id", "sku", "title"],
-            include: [
-              {
-                model: models.ProductModels,
-                as: "productModel",
-                required: false,
-                attributes: ["id", "title"],
-                include: [
-                  {
-                    model: models.ProductBase,
-                    as: "product",
-                    required: false,
-                    attributes: ["id", "slug", "title"],
-                    include: [
-                      {
-                        model: models.ProductCategory,
-                        as: "category",
-                        required: false,
-                        attributes: ["id", "slug", "name", "name_ar", "parent_id"],
-                        include: [
-                          {
-                            model: models.ProductCategory,
-                            as: "parent",
-                            required: false,
-                            attributes: ["id", "slug", "name", "name_ar", "parent_id"],
-                          },
-                          {
-                            model: models.ProductCategory,
-                            as: "children",
-                            required: false,
-                            attributes: ["id", "slug", "name", "name_ar", "parent_id"],
-                          },
-                        ],
-                      },
-                    ],
-                  },
-                ],
-              },
-            ],
-          },
-        ],
-      });
-    } else if (scope?.scope_type === "model") {
-      data = await DataModel.findByPk(id, {
-        include: [
-          {
-            model: models.ProductModels,
-            as: "productModel",
-            required: false,
-            attributes: ["id", "title"],
-            include: [
-              {
-                model: models.ProductBase,
-                as: "product",
-                required: false,
-                attributes: ["id", "slug", "title"],
-                include: [
-                  {
-                    model: models.ProductCategory,
-                    as: "category",
-                    required: false,
-                    attributes: ["id", "slug", "name", "name_ar", "parent_id"],
-                    include: [
-                      {
-                        model: models.ProductCategory,
-                        as: "parent",
-                        required: false,
-                        attributes: ["id", "slug", "name", "name_ar", "parent_id"],
-                      },
-                      {
-                        model: models.ProductCategory,
-                        as: "sub_category",
-                        required: false,
-                        attributes: ["id", "slug", "name", "name_ar", "parent_id"],
-                      },
-                    ],
-                  },
-                ],
-              },
-            ],
-          },
-        ],
-      });
-    } else if (scope?.scope_type === "product") {
-      data = await DataModel.findByPk(id, {
-        include: [
-          {
-            model: models.ProductBase,
-            as: "product",
-            required: false,
-            attributes: ["id", "slug", "title"],
-            include: [
-              {
-                model: models.ProductCategory,
-                as: "category",
-                required: false,
-                attributes: ["id", "slug", "name", "name_ar", "parent_id"],
-                include: [
-                  {
-                    model: models.ProductCategory,
-                    as: "parent",
-                    required: false,
-                    attributes: ["id", "slug", "name", "name_ar", "parent_id"],
-                  },
-                  {
-                    model: models.ProductCategory,
-                    as: "children",
-                    required: false,
-                    attributes: ["id", "slug", "name", "name_ar", "parent_id"],
-                  },
-                ],
-              },
-            ],
-          },
-        ],
-      });
-    } else if (scope?.scope_type === "category") {
-      data = await DataModel.findByPk(id, {
-        include: [
-          {
-            model: models.ProductCategory,
-            as: "category",
-            required: false,
-            attributes: ["id", "slug", "name", "name_ar", "parent_id"],
-            include: [
-              {
-                model: models.ProductCategory,
-                as: "parent",
-                required: false,
-                attributes: ["id", "slug", "name", "name_ar", "parent_id"],
-              },
-              {
-                model: models.ProductCategory,
-                as: "children",
-                required: false,
-                attributes: ["id", "slug", "name", "name_ar", "parent_id"],
-              },
-            ],
-          },
-        ],
-      });
-    }
-    else if(scope?.scope_type === "common"){
-      data = await DataModel.findByPk(id);
-    }
+      if (scope?.scope_type === "variant") {
+        data = await DataModel.findByPk(id, {
+          include: [
+            {
+              // variants
+              model: models.ProductVariants,
+              as: "variant",
+              required: false,
+              attributes: ["id", "sku", "title"],
+              include: [
+                {
+                  model: models.ProductModels,
+                  as: "model",
+                  required: false,
+                  attributes: ["id", "title"],
+                  include: [
+                    {
+                      model: models.ProductBase,
+                      as: "product",
+                      required: false,
+                      attributes: ["id", "slug", "title"],
+                      include: [
+                        {
+                          model: models.ProductCategory,
+                          as: "category",
+                          required: false,
+                          attributes: ["id", "slug", "name", "name_ar", "parent_id"],
+                          include: [
+                            {
+                              model: models.ProductCategory,
+                              as: "parent",
+                              required: false,
+                              attributes: ["id", "slug", "name", "name_ar", "parent_id"],
+                            },
+                            {
+                              model: models.ProductCategory,
+                              as: "children",
+                              required: false,
+                              attributes: ["id", "slug", "name", "name_ar", "parent_id"],
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        });
+      } else if (scope?.scope_type === "model") {
+        data = await DataModel.findByPk(id, {
+          include: [
+            {
+              model: models.ProductModels,
+              as: "model",
+              required: false,
+              attributes: ["id", "title"],
+              include: [
+                {
+                  model: models.ProductBase,
+                  as: "product",
+                  required: false,
+                  attributes: ["id", "slug", "title"],
+                  include: [
+                    {
+                      model: models.ProductCategory,
+                      as: "category",
+                      required: false,
+                      attributes: ["id", "slug", "name", "name_ar", "parent_id"],
+                      include: [
+                        {
+                          model: models.ProductCategory,
+                          as: "parent",
+                          required: false,
+                          attributes: ["id", "slug", "name", "name_ar", "parent_id"],
+                        },
+                        {
+                          model: models.ProductCategory,
+                          as: "sub_category",
+                          required: false,
+                          attributes: ["id", "slug", "name", "name_ar", "parent_id"],
+                        },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        });
+      } else if (scope?.scope_type === "product") {
+        data = await DataModel.findByPk(id, {
+          include: [
+            {
+              model: models.ProductBase,
+              as: "product",
+              required: false,
+              attributes: ["id", "slug", "title"],
+              include: [
+                {
+                  model: models.ProductCategory,
+                  as: "category",
+                  required: false,
+                  attributes: ["id", "slug", "name", "name_ar", "parent_id"],
+                  include: [
+                    {
+                      model: models.ProductCategory,
+                      as: "parent",
+                      required: false,
+                      attributes: ["id", "slug", "name", "name_ar", "parent_id"],
+                    },
+                    {
+                      model: models.ProductCategory,
+                      as: "children",
+                      required: false,
+                      attributes: ["id", "slug", "name", "name_ar", "parent_id"],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        });
+      } else if (scope?.scope_type === "category") {
+        data = await DataModel.findByPk(id, {
+          include: [
+            {
+              model: models.ProductCategory,
+              as: "category",
+              required: false,
+              attributes: ["id", "slug", "name", "name_ar", "parent_id"],
+              include: [
+                {
+                  model: models.ProductCategory,
+                  as: "parent",
+                  required: false,
+                  attributes: ["id", "slug", "name", "name_ar", "parent_id"],
+                },
+                {
+                  model: models.ProductCategory,
+                  as: "children",
+                  required: false,
+                  attributes: ["id", "slug", "name", "name_ar", "parent_id"],
+                },
+              ],
+            },
+          ],
+        });
+      } else if (scope?.scope_type === "common") {
+        data = await DataModel.findByPk(id);
+      }
 
-    if (!data) {
-      return sendNotFoundError(res, "Product");
-    }
+      if (!data) {
+        return sendNotFoundError(res, "Product");
+      }
 
-    sendSuccessResponse(res, data, "Data retrieved successfully");
-  } catch (error) {
-    console.error("Data show error:", error);
-    sendErrorResponse(res, error);
+      sendSuccessResponse(res, data, "Data retrieved successfully");
+    } catch (error) {
+      console.error("Data show error:", error);
+      sendErrorResponse(res, error);
+    }
   }
-}
 
   //   CREATE
   static async store(req, res) {
-    await Promise.all(
-      validationRequestPost.map((validation) => validation.run(req)),
-    );
+    await Promise.all(validationRequestPost.map((validation) => validation.run(req)));
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return sendValidationError(res, errors.array());

@@ -29,6 +29,30 @@ class CheckOutController {
       return ErrorHandler.handleControllerError(error, res, "CheckOutController.getCartData");
     }
   }
+
+  static async validateCheckout(req, res) {
+    try {
+      const cartOwner = req.cartOwner;
+
+      if (!cartOwner) {
+        return ApiResponse.error(res, {
+          message: "User ID or Session ID is required",
+          status: HTTP_STATUS.BAD_REQUEST,
+        });
+      }
+
+      const cart = await CheckOutService.validateCheckout(cartOwner);
+
+      return ApiResponse.success(res, {
+        message: "Cart data retrieved successfully",
+        data: cart,
+        status: HTTP_STATUS.OK,
+      });
+    } catch (error) {
+      return ErrorHandler.handleControllerError(error, res, "CheckOutController.validateCheckout");
+    }
+  }
+
   static async getAddressForUsers(req, res) {
     const cartOwner = req.cartOwner;
 

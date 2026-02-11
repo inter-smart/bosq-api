@@ -118,24 +118,6 @@ class ProductServiceHelpers {
       transaction,
     });
 
-    const cart = await models.Cart.findOne({
-      where: { id: cartId },
-      transaction,
-      include: [
-        {
-          model: models.CartItems,
-          as: "items",
-          include: [
-            {
-              model: models.ProductVariants,
-              as: "variant",
-              attributes: ["id", "sku", "price", "media_path", "title"],
-            },
-          ],
-        },
-      ],
-    });
-
     let subtotal = 0;
     let discountTotal = 0;
 
@@ -189,7 +171,19 @@ class ProductServiceHelpers {
       await this.recalculateCartTotals(cart.id, transaction);
     }
 
-    return priceChanged;
+    return { priceChanged };
+  }
+
+  static checkInvalidProducts(cartItems) {
+    return cartItems.some((item) => {
+      const variant = item.variant;
+
+      if (!variant) return true;
+      if (variant.stock <= 0) return true;
+      if (variant.stock < item.quantity) return true;
+
+      return false;
+    });
   }
 }
 

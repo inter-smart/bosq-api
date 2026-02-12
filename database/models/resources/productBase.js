@@ -32,6 +32,16 @@ module.exports = (sequelize) => {
         unique: true,
       },
 
+      enhance_title: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
+      },
+
+      enhance_title_ar: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
+      },
+
       description: {
         type: DataTypes.STRING(255),
         allowNull: false,

@@ -41,7 +41,22 @@ module.exports = (sequelize) => {
         allowNull: true,
       },
 
+      design_title: {
+        type: DataTypes.STRING(200),
+        allowNull: true,
+      },
+
+      design_title_ar: {
+        type: DataTypes.STRING(200),
+        allowNull: true,
+      },
+
       media_path: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
+      },
+
+      hover_media_path: {
         type: DataTypes.STRING(255),
         allowNull: true,
       },

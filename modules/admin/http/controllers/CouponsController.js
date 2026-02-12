@@ -124,7 +124,7 @@ class CouponsController {
                         },
                         {
                           model: models.ProductCategory,
-                          as: "sub_category",
+                          as: "children",
                           required: false,
                           attributes: ["id", "slug", "name", "name_ar", "parent_id"],
                         },

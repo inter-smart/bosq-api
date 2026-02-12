@@ -10,8 +10,6 @@ export const optionalAuth = () => {
     try {
       const token = req.cookies?.access_token;
 
-      console.log("ISNIDE OP", req.cookies.access_token);
-
       if (!token) {
         return next(); // guest request
       }

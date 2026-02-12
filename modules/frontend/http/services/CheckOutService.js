@@ -19,7 +19,6 @@ class CheckOutService {
     });
 
     if (!cart) {
-      console.log("OPERATION ====> NEW CART CREATED");
       cart = await models.Cart.create(
         {
           user_id: userId || null,
@@ -377,8 +376,6 @@ class CheckOutService {
 
     const { type, id: userId } = cartOwner;
 
-    console.log(cartOwner);
-
     const config = modelsMap[type];
 
     const { model: Model, field, aliasName: alias } = config;
@@ -491,8 +488,6 @@ class CheckOutService {
     } else {
       // Scoped coupon: discount applies only to matching items
       const matchingItems = this.getMatchingCartItems(coupon, cart.items);
-
-      console.log(JSON.stringify(matchingItems, null, 2));
 
       if (matchingItems.length === 0) {
         throw ErrorHandler.createError("This coupon is not applicable to the items in your cart", HTTP_STATUS.BAD_REQUEST);

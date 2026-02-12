@@ -1,13 +1,8 @@
 const { models } = require("../../../../database/models");
-const {
-  sendErrorResponse,
-} = require("../../../admin/http/traits/responseHandler.js");
+const { sendErrorResponse } = require("../../../admin/http/traits/responseHandler.js");
 const cacheKeys = require("../../../redis/cacheKeys");
 const { setCache, getCache } = require("../../../redis/redisService");
-const {
-  buildTitleSection,
-  buildCmsSection,
-} = require("../traits/dataManipulations/common");
+const { buildTitleSection, buildCmsSection } = require("../traits/dataManipulations/common");
 const {
   buildProjectCategorySection,
   buildProjectBannerSection,
@@ -91,14 +86,7 @@ class PrivacyPolicyService {
         where: {
           status: true,
         },
-        attributes: [
-          "id",
-          "slug",
-          "title",
-          "title_ar",
-          "thumbnail",
-          "section3_title",
-        ],
+        attributes: ["id", "slug", "title", "title_ar", "thumbnail", "section3_title"],
         order: [["sort_order", "ASC"]],
         limit: parseInt(limit),
       };
@@ -121,10 +109,7 @@ class PrivacyPolicyService {
         countOptions.include = [categoryFilter];
       }
 
-      const [projects, totalCount] = await Promise.all([
-        models.Projects.findAll(queryOptions),
-        models.Projects.count(countOptions),
-      ]);
+      const [projects, totalCount] = await Promise.all([models.Projects.findAll(queryOptions), models.Projects.count(countOptions)]);
 
       if (!projects || projects.length === 0) {
         throw new Error("No project data found");
@@ -151,8 +136,6 @@ class PrivacyPolicyService {
   static async show(req, res) {
     try {
       const { slug } = req.query;
-
-      console.log(req.query);
 
       if (!slug) {
         sendErrorResponse(res, "Project not found", "Project not found", 404);

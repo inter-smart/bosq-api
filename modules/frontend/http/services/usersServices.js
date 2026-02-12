@@ -1,19 +1,9 @@
 const { models, sequelize } = require("../../../../database/models/index.js");
 const bcrypt = require("bcrypt");
-const {
-  changePasswordRequestPost,
-  personalInfoRequestPost,
-} = require("../request/profileRequest.js");
+const { changePasswordRequestPost, personalInfoRequestPost } = require("../request/profileRequest.js");
 const { validationResult } = require("express-validator");
-const {
-  sendValidationError,
-  sendErrorResponse,
-  sendSuccessResponse,
-} = require("../../../admin/http/traits/responseHandler.js");
-const {
-  buildProfieSection,
-  buildProfileEditSection,
-} = require("../traits/dataManipulations/profileSections.js");
+const { sendValidationError, sendErrorResponse, sendSuccessResponse } = require("../../../admin/http/traits/responseHandler.js");
+const { buildProfieSection, buildProfileEditSection } = require("../traits/dataManipulations/profileSections.js");
 const { validateRecaptcha } = require("../../../../services/RecaptchaValidation");
 
 class UsersServices {
@@ -22,15 +12,7 @@ class UsersServices {
       const { id } = req.auth;
       const data = await models.Users.findOne({
         where: { id },
-        attributes: [
-          "name",
-          "first_name",
-          "last_name",
-          "profile_image",
-          "country_code",
-          "mobile",
-          "email",
-        ],
+        attributes: ["name", "first_name", "last_name", "profile_image", "country_code", "mobile", "email"],
         include: [
           {
             model: models.Address,
@@ -106,14 +88,7 @@ class UsersServices {
       // Fetch the user profile data
       const user = await models.Users.findOne({
         where: { id },
-        attributes: [
-          "name",
-          "first_name",
-          "last_name",
-          "country_code",
-          "mobile",
-          "email",
-        ],
+        attributes: ["name", "first_name", "last_name", "country_code", "mobile", "email"],
       });
 
       if (!user) {
@@ -134,28 +109,16 @@ class UsersServices {
   static async editProfile(req, res) {
     const transaction = await sequelize.transaction();
     try {
-      await Promise.all(
-        personalInfoRequestPost.map((validation) => validation.run(req)),
-      );
+      await Promise.all(personalInfoRequestPost.map((validation) => validation.run(req)));
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
         return sendValidationError(res, errors.array());
       }
 
-    
       const { id } = req.auth;
-      const {
-        display_name,
-        first_name,
-        last_name,
-        country_code,
-        mobile,
-        email,
-        recaptcha_token
-      } = req.body || {};
+      const { display_name, first_name, last_name, country_code, mobile, email, recaptcha_token } = req.body || {};
 
-
-        // ✅ Correct token key
+      // ✅ Correct token key
       const token = recaptcha_token;
 
       if (!token) {
@@ -168,13 +131,10 @@ class UsersServices {
 
       // ✅ v3 validation
       if (!success || score < 0.5) {
-        const error = new Error(
-          "reCAPTCHA verification failed. Please try again.",
-        );
+        const error = new Error("reCAPTCHA verification failed. Please try again.");
         error.statusCode = 403;
         throw error;
       }
-
 
       const user = await models.Users.findOne({
         where: { id },
@@ -190,12 +150,7 @@ class UsersServices {
 
         if (isEmailTaken) {
           await transaction.rollback();
-          return sendErrorResponse(
-            res,
-            "Email already in use by another account",
-            null,
-            400,
-          );
+          return sendErrorResponse(res, "Email already in use by another account", null, 400);
         }
       }
 
@@ -213,22 +168,10 @@ class UsersServices {
 
       const responseUser = await models.Users.findOne({
         where: { id },
-        attributes: [
-          "name",
-          "first_name",
-          "last_name",
-          "country_code",
-          "mobile",
-          "email",
-        ],
+        attributes: ["name", "first_name", "last_name", "country_code", "mobile", "email"],
       });
 
-      return sendSuccessResponse(
-        res,
-        responseUser,
-        "Profile updated successfully",
-        200,
-      );
+      return sendSuccessResponse(res, responseUser, "Profile updated successfully", 200);
     } catch (error) {
       await transaction.rollback(); // Added rollback on error
       console.error("Error updating profile data:", error);
@@ -243,19 +186,16 @@ class UsersServices {
     const transaction = await sequelize.transaction();
 
     try {
-      await Promise.all(
-        changePasswordRequestPost.map((validation) => validation.run(req)),
-      );
+      await Promise.all(changePasswordRequestPost.map((validation) => validation.run(req)));
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
         return sendValidationError(res, errors.array());
       }
 
-     
       const { id: userId } = req.auth;
       const { currentPassword, newPassword, recaptcha_token } = req.body;
 
-          // ✅ Correct token key
+      // ✅ Correct token key
       const token = recaptcha_token;
 
       if (!token) {
@@ -268,9 +208,7 @@ class UsersServices {
 
       // ✅ v3 validation
       if (!success || score < 0.5) {
-        const error = new Error(
-          "reCAPTCHA verification failed. Please try again.",
-        );
+        const error = new Error("reCAPTCHA verification failed. Please try again.");
         error.statusCode = 403;
         throw error;
       }
@@ -293,28 +231,15 @@ class UsersServices {
       // 2. Handle users without password (social login)
       if (!user.password) {
         await transaction.rollback();
-        return sendErrorResponse(
-          res,
-          "User does not have a password",
-          null,
-          401,
-        );
+        return sendErrorResponse(res, "User does not have a password", null, 401);
       }
 
       // 3. Verify old password
-      const isPasswordValid = await bcrypt.compare(
-        currentPassword,
-        user.password,
-      );
+      const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
 
       if (!isPasswordValid) {
         await transaction.rollback();
-        return sendErrorResponse(
-          res,
-          "Current password is incorrect",
-          null,
-          401,
-        );
+        return sendErrorResponse(res, "Current password is incorrect", null, 401);
       }
 
       // 4. Prevent reusing same password
@@ -348,12 +273,7 @@ class UsersServices {
       // 8. Commit transaction
       await transaction.commit();
 
-      return sendSuccessResponse(
-        res,
-        null,
-        "Password changed successfully. Please login later.",
-        200,
-      );
+      return sendSuccessResponse(res, null, "Password changed successfully. Please login later.", 200);
     } catch (error) {
       await transaction.rollback();
       console.error("Change password error:", error);
@@ -363,7 +283,6 @@ class UsersServices {
 
   static async logout(req, res) {
     try {
-      console.log(req.auth);
       res.clearCookie("access_token", {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",

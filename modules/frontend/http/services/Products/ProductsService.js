@@ -23,10 +23,6 @@ class ProductsService {
       }, {});
     const filterEntries = Object.entries(filters);
 
-    console.log(filters);
-    console.log(variantSku);
-    console.log(model);
-
     const isModelAndFilters = model && filterEntries.length > 0;
 
     try {
@@ -637,8 +633,6 @@ class ProductsService {
     try {
       const { category, page = 1, limit = 12 } = params;
 
-      console.log(category);
-
       const pageNum = Math.max(1, parseInt(page, 10));
       const limitNum = Math.max(1, parseInt(limit, 10));
       const offset = (pageNum - 1) * limitNum;
@@ -653,8 +647,6 @@ class ProductsService {
           where: { id: categoryId, status: true },
           attributes: ["id", "parent_id"],
         });
-
-        console.log(categoryData);
 
         if (categoryData) {
           categoryIds.push(categoryId);
@@ -678,8 +670,6 @@ class ProductsService {
       if (categoryIds.length > 0) {
         productBaseWhere.category_id = { [Op.in]: categoryIds };
       }
-
-      console.log(productBaseWhere);
 
       // First approach: Search in variants and their related products
       const { rows: products, count: totalCount } = await models.ProductVariants.findAndCountAll({

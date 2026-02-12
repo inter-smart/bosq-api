@@ -1,4 +1,4 @@
-export const validateRecaptcha = async (recaptchaToken) => {
+const validateRecaptcha = async (recaptchaToken) => {
   const secretKey = process.env.RECAPTCHA_SECRET_KEY;
 
   if (!secretKey) {
@@ -23,3 +23,5 @@ export const validateRecaptcha = async (recaptchaToken) => {
 
   return data; // ✅ MUST return full object
 };
+
+module.exports = { validateRecaptcha };

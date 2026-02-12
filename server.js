@@ -25,7 +25,8 @@ const allowedOrigins = [
   "http://localhost:8080",
   "http://localhost:8081",
   "https://bosq-admin-staging.netlify.app",
-  "https://bosq-staging.netlify.app",
+  // "https://bosq-staging.netlify.app",
+  "https://dev-bosq.netlify.app",
 ];
 
 app.use(

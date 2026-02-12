@@ -52,6 +52,17 @@ const defaultMetaTags = [
     meta_keywords: "ergonomic tips, posture health, office chair guide",
     meta_keywords_ar: "نصائح ergonomics, صحة الجلوس, دليل كراسي المكتب",
   },
+   {
+    page: "news",
+    meta_title: "Seating Comfort & Ergonomic Tips | ErgoSeat Blog",
+    meta_title_ar: "راحة الجلوس ونصائح ergonomics | مدونة إيرغوسيت",
+    meta_description:
+      "Read expert tips, guides, and insights on ergonomic seating, posture health, and workplace comfort.",
+    meta_description_ar:
+      "اقرأ نصائح وإرشادات الخبراء حول الجلوس المريح وصحة وضعية الجلوس وراحة مكان العمل.",
+    meta_keywords: "ergonomic tips, posture health, office chair guide",
+    meta_keywords_ar: "نصائح ergonomics, صحة الجلوس, دليل كراسي المكتب",
+  },
   {
     page: "contact",
     meta_title: "Contact Us | ErgoSeat",

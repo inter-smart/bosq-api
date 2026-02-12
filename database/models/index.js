@@ -133,6 +133,9 @@ const defineCountry = require("./country");
 const defineCoupons = require("./coupons");
 const defineCouponUsage = require("./couponUsage");
 
+// Landing page
+const defineLandingPage = require("./landingPage/landingPage");
+const defineProductTypes = require("./landingPage/productTypes");
 const models = {
   AdminUser: defineAdminUser(sequelize),
 
@@ -265,6 +268,12 @@ const models = {
   // COUPONS
   Coupons: defineCoupons(sequelize),
   CouponUsage: defineCouponUsage(sequelize),
+
+  // Landing Page
+  LandingPage: defineLandingPage(sequelize),
+  ProductTypes: defineProductTypes(sequelize),
+
+  
 };
 
 Object.keys(models).forEach((modelName) => {

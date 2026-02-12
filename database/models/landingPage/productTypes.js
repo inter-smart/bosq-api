@@ -57,8 +57,8 @@ module.exports = (sequelize) => {
       },
 
       product_variants: {
-        type: DataTypes.JSONB,
-        allowNull: true,
+        type: DataTypes.ARRAY(DataTypes.INTEGER),
+        allowNull: false,
         defaultValue: [],
       },
 
@@ -80,15 +80,11 @@ module.exports = (sequelize) => {
   );
 
   ProductTypes.associate = (models) => {
-    ProductTypes.hasMany(models.ProductVariants, {
-      foreignKey: "product_type_id",
-    });
-
     ProductTypes.belongsTo(models.LandingPage, {
       foreignKey: "landing_page_id",
       as: "landingPage",
     });
-  }
+  };
 
   return ProductTypes;
 };

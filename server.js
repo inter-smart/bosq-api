@@ -20,7 +20,13 @@ dotenv.config();
 const app = express();
 app.use(cookieParser());
 
-const allowedOrigins = ["http://localhost:3000", "http://localhost:8080", "http://localhost:8081", "https://bosq-admin-staging.netlify.app"];
+const allowedOrigins = [
+  "http://localhost:3000",
+  "http://localhost:8080",
+  "http://localhost:8081",
+  "https://bosq-admin-staging.netlify.app",
+  "https://bosq-staging.netlify.app",
+];
 
 app.use(
   cors({

@@ -134,6 +134,13 @@ module.exports = (sequelize) => {
         scope_type: "variant",
       },
     });
+
+    // wishlists
+    ProductVariants.hasMany(models.Wishlist, {
+      foreignKey: "product_variant_id",
+      as: "wishlists",
+      onDelete: "CASCADE",
+    });
   };
 
   return ProductVariants;

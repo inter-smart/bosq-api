@@ -6,7 +6,7 @@ const {
   createUploadMiddleware,
 } = require("../../http/middleware/multerMiddleware");
 
-router.use(authMiddleware(["admin"]));
+// router.use(authMiddleware(["admin"]));
 
 // Define upload fields
 const fields = [

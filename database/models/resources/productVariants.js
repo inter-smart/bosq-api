@@ -119,6 +119,12 @@ module.exports = (sequelize) => {
         scope_type: "variant",
       },
     });
+
+    // prodicttypes
+    ProductVariants.belongsTo(models.ProductTypes, {
+      foreignKey: "product_type_id",
+      as: "productType",
+    });
   };
 
   return ProductVariants;

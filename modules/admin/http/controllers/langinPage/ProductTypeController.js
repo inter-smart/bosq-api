@@ -18,8 +18,6 @@ const {
   validateId,
   validationRequestPost,
 } = require("../../request/langinPage/productTypeRequest.js");
-const cacheKeys = require("../../../../redis/cacheKeys.js");
-const { invalidateCache } = require("../../../../redis/redisService.js");
 const { default: slugify } = require("slugify");
 const { Op } = require("sequelize");
 
@@ -248,7 +246,6 @@ class ProductTypeController {
       await data.update(req.body, { transaction });
 
       const updatedData = await DataModel.findByPk(data.id);
-      // await invalidateCache(cacheKey);
       await transaction.commit();
 
       return sendSuccessResponse(res, updatedData, "Data updated successfully");
@@ -355,7 +352,6 @@ class ProductTypeController {
       // Soft delete
       await data.destroy();
 
-      // await invalidateCache(cacheKey);
 
       sendSuccessResponse(res, { id }, "Data deleted successfully");
     } catch (error) {

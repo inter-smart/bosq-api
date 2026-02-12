@@ -18,13 +18,10 @@ const {
   validateId,
   validationRequestPost,
 } = require("../../request/langinPage/landingPageRequest.js");
-const cacheKeys = require("../../../../redis/cacheKeys.js");
-const { invalidateCache } = require("../../../../redis/redisService.js");
 const { default: slugify } = require("slugify");
 const { Op } = require("sequelize");
 
 const DataModel = models.LandingPage;
-// const cacheKey = cacheKeys.ergonomichair;
 
 class LandingPageController {
   static async index(req, res) {
@@ -71,8 +68,6 @@ class LandingPageController {
 
       // Create data with transaction
       const data = await DataModel.create(req.body, { transaction });
-
-      // await invalidateCache(cacheKey);
 
       // Commit the transaction
       await transaction.commit();
@@ -122,8 +117,7 @@ class LandingPageController {
     try {
       const { id } = req.params;
 
-
-      const {title} = req.body;
+      const { title } = req.body;
       const slug = slugify(title.trim(), { lower: true, strict: true });
       req.body.slug = slug;
 
@@ -148,10 +142,8 @@ class LandingPageController {
       await handleFileUploadUpdate(req, data, fileFields);
 
       await data.update(req.body, { transaction });
-
       const updatedData = await DataModel.findByPk(data.id);
-      // await invalidateCache(cacheKey);
-      await transaction.commit();
+        await transaction.commit();
 
       return sendSuccessResponse(res, updatedData, "Data updated successfully");
     } catch (error) {
@@ -180,7 +172,6 @@ class LandingPageController {
       // Soft delete
       await data.destroy();
 
-      // await invalidateCache(cacheKey);
 
       sendSuccessResponse(res, { id }, "Data deleted successfully");
     } catch (error) {

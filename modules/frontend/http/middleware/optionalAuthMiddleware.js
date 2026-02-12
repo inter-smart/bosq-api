@@ -1,11 +1,11 @@
-import jwt from "jsonwebtoken";
+const jwt = require("jsonwebtoken");
 
 /**
  * Optional authentication middleware
  * Attaches user info to req.auth if valid token is provided
  * Does NOT reject requests without token - allows guest access
  */
-export const optionalAuth = () => {
+const optionalAuth = () => {
   return async (req, res, next) => {
     try {
       const token = req.cookies?.access_token;
@@ -24,3 +24,5 @@ export const optionalAuth = () => {
     }
   };
 };
+
+module.exports = { optionalAuth };

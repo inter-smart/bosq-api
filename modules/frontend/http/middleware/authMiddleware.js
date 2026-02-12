@@ -1,7 +1,7 @@
-import jwt from "jsonwebtoken";
-import { sendErrorResponse, sendUnauthorizedError } from "../../../admin/http/traits/responseHandler.js";
+const jwt = require("jsonwebtoken");
+const { sendErrorResponse, sendUnauthorizedError } = require("../../../admin/http/traits/responseHandler");
 
-export const verifyTempToken = (req, res, next) => {
+const verifyTempToken = (req, res, next) => {
   const token = req.body.token || req.headers.authorization?.split(" ")[1];
 
   if (!token) {
@@ -25,7 +25,7 @@ export const verifyTempToken = (req, res, next) => {
   }
 };
 
-export const verifyToken = () => {
+const verifyToken = () => {
   return async (req, res, next) => {
     // Skip processing during module loading (no valid req/res)
     if (!req || !res || typeof res.status !== "function") {
@@ -54,3 +54,5 @@ export const verifyToken = () => {
     }
   };
 };
+
+module.exports = { verifyTempToken, verifyToken };

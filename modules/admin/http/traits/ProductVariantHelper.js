@@ -1,7 +1,7 @@
-import { Op } from "sequelize";
-import { models, sequelize } from "../../../../database/models/index.js";
+const { Op } = require("sequelize");
+const { models, sequelize } = require("../../../../database/models");
 
-export const createOrUpdateVariantAttributes = async (transaction, attributes, product_model_id, operation, variantId = null, meta = {}) => {
+const createOrUpdateVariantAttributes = async (transaction, attributes, product_model_id, operation, variantId = null, meta = {}) => {
   // Validate required parameters
   if (!transaction) {
     throw new Error("Transaction is required");
@@ -139,7 +139,7 @@ export const createOrUpdateVariantAttributes = async (transaction, attributes, p
   return createdVariants;
 };
 
-export const updateVariantsPrices = async (transaction, product_model_id, base_price) => {
+const updateVariantsPrices = async (transaction, product_model_id, base_price) => {
   try {
     // 1. Get variant IDs
     const productVariants = await models.ProductVariants.findAll({
@@ -186,7 +186,7 @@ export const updateVariantsPrices = async (transaction, product_model_id, base_p
   }
 };
 
-export const createProductVariants = (attributes = [], baseSku = "EC") => {
+const createProductVariants = (attributes = [], baseSku = "EC") => {
   if (!Array.isArray(attributes) || attributes.length === 0) {
     return [];
   }
@@ -235,4 +235,10 @@ export const createProductVariants = (attributes = [], baseSku = "EC") => {
       additional_price,
     };
   });
+};
+
+module.exports = {
+  createProductVariants,
+  updateVariantsPrices,
+  createOrUpdateVariantAttributes,
 };

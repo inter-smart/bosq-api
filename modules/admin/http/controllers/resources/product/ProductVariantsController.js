@@ -4,8 +4,8 @@ const { paginate } = require("../../../traits/datatablePaginationHelper");
 const { sendSuccessResponse, sendErrorResponse, sendValidationError, sendNotFoundError } = require("../../../traits/responseHandler");
 const { validationResult } = require("express-validator");
 const { Op } = require("sequelize");
-const { createProductVariants, createOrUpdateVariantAttributes } = require("../../../traits/ProductVariantHelper");
 const { handleFileUploadStore } = require("../../../middleware/multerMiddleware");
+const { createOrUpdateVariantAttributes } = require("../../../traits/ProductVariantHelper");
 
 const DataModel = models.ProductVariants;
 

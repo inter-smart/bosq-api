@@ -209,7 +209,7 @@ class CartController {
   static async mergeCart(req, res) {
     try {
       const userId = req.auth?.id;
-      const sessionId = req.cartOwner?.id;
+      const sessionId = req.cookies?.guest_cart_session;
 
       if (!userId) {
         return ApiResponse.error(res, {

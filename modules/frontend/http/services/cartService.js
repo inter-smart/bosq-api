@@ -17,7 +17,6 @@ class CartService {
     });
 
     if (!cart) {
-      console.log("OPERATION ====> NEW CART CREATED");
       cart = await models.Cart.create(
         {
           user_id: userId || null,
@@ -178,7 +177,6 @@ class CartService {
 
       if (existingItem) {
         // Update quantity
-        console.log("OPERATION ====> UPDTE QTY");
         await existingItem.update(
           {
             quantity: existingItem.quantity + quantity,
@@ -187,7 +185,6 @@ class CartService {
         );
       } else {
         // Create new cart item
-        console.log("OPERATION ====> ITEM ADDED");
         await models.CartItems.create(
           {
             cart_id: cart.id,
@@ -426,6 +423,7 @@ class CartService {
               variant_id: guestItem.variant_id,
               quantity: guestItem.quantity,
               price: guestItem.price,
+              final_price: guestItem.final_price,
               discount_amount: guestItem.discount_amount,
             },
             { transaction },

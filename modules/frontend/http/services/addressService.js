@@ -166,8 +166,6 @@ class AddressService {
 
       const result = buildCheckoutFormPayload(address);
 
-      console.log(result);
-
       return sendSuccessResponse(res, result, "Address fetched successfully", 200);
     } catch (error) {
       console.error("Error fetching address:", error);

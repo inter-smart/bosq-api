@@ -31,7 +31,7 @@ app.use(
       return callback(new Error(`CORS policy does not allow access from: ${origin}`), false);
     },
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "Cookie"], // ⭐ Added Cookie header
   }),
 );
@@ -52,17 +52,17 @@ const PORT = process.env.PORT || 3002;
 
 const startServer = async () => {
   try {
-    // await sequelize.authenticate();
-    await sequelize.sync({ alter: true });
+    await sequelize.authenticate();
+    // await sequelize.sync({ alter: true });
     // Logger.info("✅ Database connected and synced");
 
     homeCmsData();
-    await seedCountriesAndStates();
+    // await seedCountriesAndStates();
     // Add this to see which models are registered
     // console.log("Registered models:", Object.keys(sequelize.models));
 
-    await createAdminUser();
-    await seedMetaTags();
+    // await createAdminUser();
+    // await seedMetaTags();
 
     await connectRedis();
     app.set("redisClient", redisClient);

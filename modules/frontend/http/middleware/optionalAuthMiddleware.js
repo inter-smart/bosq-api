@@ -9,6 +9,7 @@ const optionalAuth = () => {
   return async (req, res, next) => {
     try {
       const token = req.cookies?.access_token;
+      console.log("TOKEN =========>", req.cookies);
 
       if (!token) {
         return next(); // guest request

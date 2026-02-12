@@ -25,8 +25,8 @@ class CartController {
     res.cookie(GUEST_SESSION_COOKIE, sessionId, {
       maxAge: COOKIE_MAX_AGE,
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      secure: true,
+      sameSite: "none",
       path: "/",
     });
     return sessionId;

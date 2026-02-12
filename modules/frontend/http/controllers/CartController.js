@@ -26,7 +26,8 @@ class CartController {
       maxAge: COOKIE_MAX_AGE,
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "none",
+      sameSite: "lax",
+      path: "/",
     });
     return sessionId;
   }

@@ -1,17 +1,17 @@
 // database/seeders/stateCountry.js
-import slugify from "slugify";
-import { Country as CSCCountry, State as CSCState } from "country-state-city";
-import { sequelize, models } from "../models/index.js";
 
+const slugify = require("slugify");
+const { Country: CSCCountry, State: CSCState } = require("country-state-city");
+const { sequelize, models } = require("../models");
 
-const Country = models.Country
-const State = models.State
-export async function seedCountriesAndStates() {
+const Country = models.Country;
+const State = models.State;
 
+const seedCountriesAndStates = async () => {
   // Debug: Check if models are loaded
   if (!Country || !State) {
     console.error("❌ Models not loaded properly!");
-    console.log("Available models:", Object.keys(db));
+    console.log("Available models:", Object.keys(models));
     process.exit(1);
   }
 
@@ -83,10 +83,10 @@ export async function seedCountriesAndStates() {
     console.error("❌ Seeding failed:", error);
     throw error;
   }
-}
+};
 
 // Run directly if this file is executed
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (require.main === module) {
   seedCountriesAndStates()
     .then(() => {
       console.log("🎉 Seeding script finished");
@@ -97,3 +97,5 @@ if (import.meta.url === `file://${process.argv[1]}`) {
       process.exit(1);
     });
 }
+
+module.exports = seedCountriesAndStates;

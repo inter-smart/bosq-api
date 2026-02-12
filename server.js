@@ -14,7 +14,7 @@ const { seedMetaTags } = require("./database/seeders/metaTags");
 const { redisClient, connectRedis } = require("./config/redis");
 const { homeCmsData } = require("./database/seeders/HomeCms");
 const users = require("./database/models/users/users");
-const { seedCountriesAndStates } = require("./database/seeders/stateCountry");
+const seedCountriesAndStates = require("./database/seeders/stateCountry");
 
 dotenv.config();
 const app = express();

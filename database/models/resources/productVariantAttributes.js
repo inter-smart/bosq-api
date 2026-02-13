@@ -13,28 +13,16 @@ module.exports = (sequelize) => {
       product_variant_id: {
         type: DataTypes.INTEGER,
         allowNull: false,
-        references: {
-          model: "product_variants",
-          key: "id",
-        },
       },
 
       attribute_id: {
         type: DataTypes.INTEGER,
         allowNull: false,
-        references: {
-          model: "product_attributes",
-          key: "id",
-        },
       },
 
       attribute_value_id: {
         type: DataTypes.INTEGER,
         allowNull: false,
-        references: {
-          model: "attribute_values",
-          key: "id",
-        },
       },
 
       price: {
@@ -45,16 +33,19 @@ module.exports = (sequelize) => {
     {
       tableName: "product_variant_attributes",
       timestamps: true,
-    },
+      paranoid: true, // ✅ enable soft delete
+    }
   );
 
   ProductVariantAttributes.associate = (models) => {
     ProductVariantAttributes.belongsTo(models.ProductVariants, {
       foreignKey: "product_variant_id",
     });
+
     ProductVariantAttributes.belongsTo(models.ProductAttribute, {
       foreignKey: "attribute_id",
     });
+
     ProductVariantAttributes.belongsTo(models.AttributeValues, {
       foreignKey: "attribute_value_id",
     });

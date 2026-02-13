@@ -28,7 +28,6 @@ module.exports = (sequelize) => {
       sku: {
         type: DataTypes.STRING(200),
         allowNull: true,
-        unique: true,
       },
 
       title: {

@@ -10,6 +10,41 @@ const { handleFileUploadStore, handleFileUploadUpdate } = require("../../../midd
 const DataModel = models.AttributeValues;
 
 class AttributeValuesController {
+  static async generateUniqueSlug(name, ignoreId = null) {
+    const baseSlug = slugify(name.trim(), { lower: true, strict: true });
+
+    // Check for any slugs starting with the baseSlug
+    const whereClause = {
+      slug: { [Op.like]: `${baseSlug}%` },
+    };
+
+    // Exclude current record if updating
+    if (ignoreId) {
+      whereClause.id = { [Op.ne]: ignoreId };
+    }
+
+    const duplicates = await DataModel.findAll({
+      where: whereClause,
+      attributes: ["slug"],
+      paranoid: true,
+    });
+
+    if (duplicates.length === 0) return baseSlug;
+
+    const slugSet = new Set(duplicates.map((d) => d.slug));
+
+    // If exact baseSlug not taken, use it
+    if (!slugSet.has(baseSlug)) return baseSlug;
+
+    // Otherwise find next available counter
+    let counter = 1;
+    while (slugSet.has(`${baseSlug}-${counter}`)) {
+      counter++;
+    }
+
+    return `${baseSlug}-${counter}`;
+  }
+
   static async index(req, res) {
     try {
       const { attribute_id } = req.query;
@@ -66,24 +101,20 @@ class AttributeValuesController {
         return sendNotFoundError(res, "Product Attribute");
       }
 
-      const newSlug = slugify(value.trim(), { lower: true, strict: true });
+      const newSlug = await AttributeValuesController.generateUniqueSlug(value);
+      req.body.slug = newSlug;
 
       const existing = await DataModel.findOne({
         where: {
-          [Op.or]: [{ slug: newSlug }, { value: value.trim() }],
+          [Op.or]: [{ value: value.trim() }],
         },
-        paranoid: false,
+        paranoid: true,
       });
 
       if (existing) {
         await transaction.rollback();
-        if (existing.slug === newSlug) {
-          return sendErrorResponse(res, `Slug "${newSlug}" already exists`, { existing_id: existing.id }, 409);
-        }
         return sendErrorResponse(res, `Value "${value}" already exists`, { existing_id: existing.id }, 409);
       }
-
-      req.body.slug = newSlug;
 
       const fileFields = ["media_path"];
       handleFileUploadStore(req, fileFields);
@@ -163,21 +194,7 @@ class AttributeValuesController {
       }
 
       if (value && value.trim() !== data.value) {
-        const newSlug = slugify(value.trim(), { lower: true, strict: true });
-
-        const existingSlug = await DataModel.findOne({
-          where: {
-            slug: newSlug,
-            id: { [Op.ne]: id },
-          },
-          paranoid: false,
-        });
-
-        if (existingSlug) {
-          await transaction.rollback();
-          return sendErrorResponse(res, `Slug "${newSlug}" already exists`, { existing_id: existingSlug.id }, 409);
-        }
-
+        const newSlug = await AttributeValuesController.generateUniqueSlug(value, id);
         req.body.slug = newSlug;
       }
 

@@ -4,7 +4,7 @@ const { validationRequestPost, validateId } = require("../../../request/resource
 const { paginate } = require("../../../traits/datatablePaginationHelper");
 const { sendSuccessResponse, sendErrorResponse, sendValidationError, sendNotFoundError } = require("../../../traits/responseHandler");
 const { validationResult } = require("express-validator");
-const { handleFileUploadStore, handleFileUploadUpdate } = require("../../../middleware/multerMiddleware");
+const { deleteOldFile } = require("../../../middleware/multerMiddleware");
 const { Op } = require("sequelize");
 const { invalidateCache } = require("../../../../../redis/redisService");
 const cacheKeys = require("../../../../../redis/cacheKeys");
@@ -87,14 +87,18 @@ class ProductCategoryController {
 
       if (!name || name.trim() === "") return sendErrorResponse(res, "Title is required to generate slug", null, 400);
 
+      // Handle parent_id clearing (FormData sends empty string for null)
+      if (req.body.parent_id === "" || req.body.parent_id === "null" || req.body.parent_id === "undefined") {
+        req.body.parent_id = null;
+      }
 
       const newSlug = await ProductCategoryController.generateUniqueSlug(name);
-
-
       req.body.slug = newSlug;
 
-      const fileFields = ["media_path"];
-      handleFileUploadStore(req, fileFields);
+      // Remove undefined file fields so Sequelize doesn't set them to null
+      if (req.body.media_path === undefined || req.body.media_path === "") {
+        delete req.body.media_path;
+      }
 
       const productCategory = await DataModel.create(req.body, { transaction });
       await invalidateCache(cacheKey);
@@ -154,39 +158,30 @@ class ProductCategoryController {
       const { id } = req.params;
       const { name } = req.body;
 
-      // Handle parent_id clearing
+      // Handle parent_id clearing (FormData sends empty string for null)
       if (req.body.parent_id === "" || req.body.parent_id === "null" || req.body.parent_id === "undefined") {
         req.body.parent_id = null;
       }
+
       const data = await DataModel.findByPk(id, { transaction });
       if (!data) {
         await transaction.rollback();
         return sendNotFoundError(res, "Product Categories");
       }
 
-      // ✅ Slug validation + prevent duplicates
+      // Generate unique slug if name changed
       if (name && name.trim() !== data.name) {
-        const newSlug = slugify(name.trim(), { lower: true, strict: true });
-
-        // Check if slug exists for OTHER news
-        const existing = await DataModel.findOne({
-          where: {
-            slug: { [Op.iLike]: newSlug },
-            id: { [Op.ne]: id },
-          },
-          paranoid: true,
-        });
-
-        if (existing) {
-          await transaction.rollback();
-          return sendErrorResponse(res, `Slug "${newSlug}" already exists`, { existing_id: existing.id }, 409);
-        }
-
-        req.body.slug = newSlug;
+        req.body.slug = await ProductCategoryController.generateUniqueSlug(name, id);
       }
 
-      const fileFields = ["media_path"];
-      await handleFileUploadUpdate(req, data, fileFields);
+      // Handle media_path: delete old file if new one uploaded, preserve existing if unchanged
+      if (req.body.media_path && req.body.media_path !== undefined && data.media_path && req.body.media_path !== data.media_path) {
+        // New file uploaded — delete the old one
+        await deleteOldFile(data.media_path);
+      } else if (req.body.media_path === undefined || req.body.media_path === "") {
+        // No new file sent — preserve existing media_path
+        delete req.body.media_path;
+      }
 
       await data.update(req.body, { transaction });
       await invalidateCache(cacheKey);

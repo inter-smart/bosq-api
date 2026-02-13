@@ -519,7 +519,7 @@ class ProductsService {
       throw new Error(`Error fetching PRODUCT MODEL data for ${slug}: ${error.message}`);
     }
   }
-
+  
   static async getInitialProductList(page = 1, limit = 12) {
     try {
       const pageNum = Math.max(1, parseInt(page, 10));

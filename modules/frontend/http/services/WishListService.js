@@ -7,13 +7,10 @@ const {
 const DataModel = models.Wishlist;
 
 class WishListService {
-  static async addToWishlist(req, res) {
+  static async toggleWishlist(req) {
     try {
       const userId = req.auth.id;
-      const { variantId } = req.query;
-
-      console.log(userId);
-      console.log(variantId);
+      const { variantId } = req.body;
 
       if (!variantId) {
         throw new Error("variantId is required");
@@ -31,17 +28,25 @@ class WishListService {
         throw new Error("variant not found");
       }
 
+      const existing = await DataModel.findOne({
+        where: {
+          user_id: userId,
+          product_variant_id: variantId,
+        },
+      });
+
+      if (existing) {
+        await existing.destroy();
+        return { action: "removed" };
+      }
+
       const wishlist = await DataModel.create({
         user_id: userId,
         product_variant_id: variantId,
       });
 
-      return wishlist;
+      return { action: "added", wishlist };
     } catch (error) {
-      if (error.name === "SequelizeUniqueConstraintError") {
-        throw new Error("Already in wishlist");
-      }
-
       throw new Error(error.message);
     }
   }
@@ -201,60 +206,6 @@ class WishListService {
       };
     } catch (error) {
       throw new Error(error.message);
-    }
-  }
-
-  // At the top of your controller file - import the model
-
-  static async removeFromWishlist(req, res) {
-    try {
-      const userId = req.auth.id;
-      const { id: variantId } = req.params;
-
-      if (!userId) {
-        return res.status(400).json({
-          success: false,
-          message: "userId is required"
-        });
-      }
-
-      if (!variantId) {
-        return res.status(400).json({
-          success: false,
-          message: "variantId is required"
-        });
-      }
-
-      // Use UsersWishList model instead of DataModel
-      const deletedCount = await models.Wishlist.destroy({
-        where: {
-          user_id: userId,
-          product_variant_id: variantId,
-        },
-      });
-
-      // Check if anything was actually deleted
-      if (deletedCount === 0) {
-        return res.status(404).json({
-          success: false,
-          message: "Wishlist item not found"
-        });
-      }
-
-      // Send success response
-      return res.status(200).json({
-        success: true,
-        message: "Item removed from wishlist successfully",
-        deletedCount
-      });
-
-    } catch (error) {
-      console.error('Error removing from wishlist:', error);
-      return res.status(500).json({
-        success: false,
-        message: "Failed to remove item from wishlist",
-        error: error.message
-      });
     }
   }
 }

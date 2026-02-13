@@ -5,16 +5,16 @@ const { ErrorHandler } = require("../traits/errorHandler");
 const service = require("../services/WishListService.js");
 class WishListController {
 
-    static async addToWishlist(req, res) {
+    static async toggleWishlist(req, res) {
         try {
-            const data = await service.addToWishlist(req,res);
+            const data = await service.toggleWishlist(req);
             return ApiResponse.success(res, {
                 message: RESPONSE_MESSAGES.SUCCESS.DATA_RETRIEVED,
                 data,
                 status: HTTP_STATUS.OK,
             });
         } catch (error) {
-            return ErrorHandler.handleControllerError(error, res, "WishListController.addToWishlist");
+            return ErrorHandler.handleControllerError(error, res, "WishListController.toggleWishlist");
         }
     }
 
@@ -29,20 +29,6 @@ class WishListController {
             });
         } catch (error) {
             return ErrorHandler.handleControllerError(error, res, "WishListController.getWishlist");
-        }
-    }
-
-
-     static async removeFromWishlist(req, res) {
-        try {
-            const data = await service.removeFromWishlist(req,res);
-            return ApiResponse.success(res, {
-                message: RESPONSE_MESSAGES.SUCCESS.DATA_RETRIEVED,
-                data,
-                status: HTTP_STATUS.OK,
-            });
-        } catch (error) {
-            return ErrorHandler.handleControllerError(error, res, "WishListController.removeFromWishlist");
         }
     }
 }

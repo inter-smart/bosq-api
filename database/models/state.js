@@ -24,11 +24,6 @@ module.exports = (sequelize) => {
       country_id: {
         type: DataTypes.INTEGER,
         allowNull: false,
-        references: {
-          model: "countries",
-          key: "id",
-        },
-        onDelete: "CASCADE",
       },
 
       status: {

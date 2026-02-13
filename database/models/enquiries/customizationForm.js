@@ -31,20 +31,12 @@ module.exports = (sequelize) => {
         allowNull: true,
       },
       options_id: {
-        references: {
-          model: "customization_options",
-          key: "id",
-        },
         type: DataTypes.INTEGER,
         allowNull: false,
       },
-      state_id:{
+      state_id: {
         type: DataTypes.INTEGER,
         allowNull: true,
-        references:{
-          model:"states",
-          key:"id"
-        }
       },
       message: {
         type: DataTypes.TEXT,

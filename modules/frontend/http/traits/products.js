@@ -174,6 +174,10 @@ class ProductServiceHelpers {
     return { priceChanged };
   }
 
+  static async validateCoupon(cart) {
+    const isCouponApplied = cart.coupon_code;
+  }
+
   static checkInvalidProducts(cartItems) {
     return cartItems.some((item) => {
       const variant = item.variant;

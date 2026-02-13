@@ -18,18 +18,15 @@ module.exports = (sequelize) => {
       name: {
         type: DataTypes.STRING(255),
         allowNull: false,
-        unique: true,
       },
       name_ar: {
         type: DataTypes.STRING(255),
         allowNull: true,
-        unique: true,
       },
 
       slug: {
         type: DataTypes.STRING(255),
         allowNull: false,
-        unique: true,
       },
 
       media_path: {
@@ -50,7 +47,20 @@ module.exports = (sequelize) => {
     {
       tableName: "product_categories",
       timestamps: true,
+      paranoid: true,
+
+      indexes: [
+        {
+          unique: true,
+          fields: ["slug"],
+          where: {
+            deletedAt: null,
+          },
+          name: "product_category_unique_slug_not_deleted",
+        },
+      ],
     },
+
   );
 
   ProductCategory.associate = (models) => {

@@ -23,30 +23,25 @@ module.exports = (sequelize) => {
       title: {
         type: DataTypes.STRING(255),
         allowNull: false,
-        unique: true,
       },
 
       title_ar: {
         type: DataTypes.STRING(255),
         allowNull: false,
-        unique: true,
       },
 
       description: {
         type: DataTypes.STRING(255),
         allowNull: false,
-        unique: true,
       },
       description_ar: {
         type: DataTypes.STRING(255),
         allowNull: false,
-        unique: true,
       },
 
       slug: {
         type: DataTypes.STRING(255),
         allowNull: false,
-        unique: true,
       },
 
       details: {
@@ -97,6 +92,16 @@ module.exports = (sequelize) => {
       tableName: "product_base",
       timestamps: true,
       paranoid: true,
+      indexes: [
+        {
+          unique: true,
+          fields: ["slug"],
+          where: {
+            deletedAt: null,
+          },
+          name: "product_base_unique_slug_not_deleted",
+        },
+      ],
     },
   );
 

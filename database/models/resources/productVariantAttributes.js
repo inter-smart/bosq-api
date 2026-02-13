@@ -45,14 +45,6 @@ module.exports = (sequelize) => {
     {
       tableName: "product_variant_attributes",
       timestamps: true,
-      indexes: [
-        {
-          name: "uq_product_variant_attribute",
-
-          unique: true,
-          fields: ["product_variant_id", "attribute_id", "attribute_value_id"],
-        },
-      ],
     },
   );
 

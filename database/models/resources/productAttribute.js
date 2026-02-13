@@ -13,25 +13,21 @@ module.exports = (sequelize) => {
       name: {
         type: DataTypes.STRING(255),
         allowNull: false,
-        unique: true,
       },
 
       name_ar: {
         type: DataTypes.STRING(255),
         allowNull: true,
-        unique: true,
       },
 
       code: {
         type: DataTypes.STRING(255),
         allowNull: false,
-        unique: true,
       },
 
       slug: {
         type: DataTypes.STRING(255),
         allowNull: false,
-        unique: true,
       },
 
       sort_order: {
@@ -48,7 +44,29 @@ module.exports = (sequelize) => {
       tableName: "product_attributes",
       timestamps: true,
       paranoid: true,
+
+      indexes: [
+        {
+          unique: true,
+          fields: ["slug"],
+          where: {
+            deletedAt: null,
+          },
+          name: "product_attribute_unique_slug_not_deleted",
+        },
+        {
+          unique: true,
+          fields: ["code"],
+          where: {
+            deletedAt: null,
+          },
+          name: "product_attribute_unique_code_not_deleted",
+        },
+      ],
     },
+
+
+
   );
 
   ProductAttribute.associate = (models) => {

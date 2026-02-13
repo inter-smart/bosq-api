@@ -15,6 +15,44 @@ const cacheKey = cacheKeys.listingDropdownFilters;
 const homeCachKey = cacheKeys.home;
 
 class ProductCategoryController {
+
+  static async generateUniqueSlug(name, ignoreId = null) {
+    const baseSlug = slugify(name.trim(), { lower: true, strict: true });
+
+    // Check for any slugs starting with the baseSlug
+    const whereClause = {
+      slug: { [Op.like]: `${baseSlug}%` }
+    };
+
+    // Exclude current record if updating
+    if (ignoreId) {
+      whereClause.id = { [Op.ne]: ignoreId };
+    }
+
+
+    const duplicates = await DataModel.findAll({
+      where: whereClause,
+      attributes: ['slug'],
+      paranoid: true
+    });
+
+
+    if (duplicates.length === 0) return baseSlug;
+
+    const slugSet = new Set(duplicates.map(d => d.slug));
+
+    // If exact baseSlug not taken, use it
+    if (!slugSet.has(baseSlug)) return baseSlug;
+
+    // Otherwise find next available counter
+    let counter = 1;
+    while (slugSet.has(`${baseSlug}-${counter}`)) {
+      counter++;
+    }
+
+    return `${baseSlug}-${counter}`;
+  }
+
   static async index(req, res) {
     try {
       const result = await paginate(DataModel, req, {
@@ -49,17 +87,9 @@ class ProductCategoryController {
 
       if (!name || name.trim() === "") return sendErrorResponse(res, "Title is required to generate slug", null, 400);
 
-      const newSlug = slugify(name.trim(), { lower: true, strict: true });
 
-      const existing = await DataModel.findOne({
-        where: { slug: newSlug },
-        paranoid: true,
-      });
+      const newSlug = await ProductCategoryController.generateUniqueSlug(name);
 
-      if (existing) {
-        await transaction.rollback();
-        return sendErrorResponse(res, `Slug "${newSlug}" already exists`, { existing_id: existing.id }, 409);
-      }
 
       req.body.slug = newSlug;
 
@@ -124,7 +154,10 @@ class ProductCategoryController {
       const { id } = req.params;
       const { name } = req.body;
 
-      console.log("titlw", name)
+      // Handle parent_id clearing
+      if (req.body.parent_id === "" || req.body.parent_id === "null" || req.body.parent_id === "undefined") {
+        req.body.parent_id = null;
+      }
       const data = await DataModel.findByPk(id, { transaction });
       if (!data) {
         await transaction.rollback();

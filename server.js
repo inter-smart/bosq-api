@@ -59,17 +59,16 @@ const PORT = process.env.PORT || 3002;
 
 const startServer = async () => {
   try {
-    // await sequelize.authenticate();
-    await sequelize.sync({ alter: true });
-    // Logger.info("✅ Database connected and synced");
+    await sequelize.authenticate();
 
-    homeCmsData();
-    // await seedCountriesAndStates();
+
+    // await homeCmsData();
+    await seedCountriesAndStates();
     // Add this to see which models are registered
     // console.log("Registered models:", Object.keys(sequelize.models));
 
-    // await createAdminUser();
-    // await seedMetaTags();
+    await createAdminUser();
+    await seedMetaTags();
 
     await connectRedis();
     app.set("redisClient", redisClient);

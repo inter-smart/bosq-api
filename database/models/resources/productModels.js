@@ -23,25 +23,21 @@ module.exports = (sequelize) => {
       title: {
         type: DataTypes.STRING(255),
         allowNull: false,
-        unique: true,
       },
 
       title_ar: {
         type: DataTypes.STRING(255),
         allowNull: false,
-        unique: true,
       },
 
       slug: {
         type: DataTypes.STRING(255),
         allowNull: true,
-        unique: true,
       },
 
       code: {
         type: DataTypes.STRING(100),
         allowNull: true,
-        unique: true,
       },
 
       media_path: {
@@ -68,6 +64,24 @@ module.exports = (sequelize) => {
       tableName: "product_models",
       timestamps: true,
       paranoid: true,
+      indexes: [
+        {
+          unique: true,
+          fields: ["slug"],
+          where: {
+            deletedAt: null,
+          },
+          name: "product_model_unique_slug_not_deleted",
+        },
+        {
+          unique: true,
+          fields: ["code"],
+          where: {
+            deletedAt: null,
+          },
+          name: "product_model_unique_code_not_deleted",
+        },
+      ],
     },
   );
 
@@ -82,14 +96,14 @@ module.exports = (sequelize) => {
       as: "product",
     });
 
-ProductModels.hasMany(models.Coupons, {
-  foreignKey: "scope_id",
-  as: "coupons",
-  constraints: false,
-  scope: {
-    scope_type: "model",
-  },
-});
+    ProductModels.hasMany(models.Coupons, {
+      foreignKey: "scope_id",
+      as: "coupons",
+      constraints: false,
+      scope: {
+        scope_type: "model",
+      },
+    });
 
   };
 

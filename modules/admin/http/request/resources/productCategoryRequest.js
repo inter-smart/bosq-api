@@ -2,12 +2,13 @@ const { body, param } = require("express-validator");
 
 exports.validationRequestPost = [
   /* ---------- PARENT ---------- */
-  body("parent_id").optional({ nullable: true }).isInt({ min: 1 }).withMessage("Parent ID must be a positive integer"),
+  /* ---------- PARENT ---------- */
+  body("parent_id").optional({ checkFalsy: true, nullable: true }).isInt({ min: 1 }).withMessage("Parent ID must be a positive integer"),
 
   /* ---------- NAME ---------- */
   body("name").notEmpty().withMessage("Name is required").isString().withMessage("Name must be a string"),
   body("name_ar").notEmpty().withMessage("Arabic name is required").isString().withMessage("Arabic name must be a string"),
-  
+
   /* ---------- SLUG (AUTO-GENERATED) ---------- */
   body("slug").optional().isString().withMessage("Slug must be a string"),
 

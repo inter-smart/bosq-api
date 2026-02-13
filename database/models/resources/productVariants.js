@@ -76,6 +76,24 @@ module.exports = (sequelize) => {
       tableName: "product_variants",
       timestamps: true,
       paranoid: true,
+      indexes: [
+        {
+          unique: true,
+          fields: ["sku"],
+          where: {
+            deletedAt: null,
+          },
+          name: "product_variant_unique_sku_not_deleted",
+        },
+        {
+          unique: true,
+          fields: ["product_code"],
+          where: {
+            deletedAt: null,
+          },
+          name: "product_variant_unique_product_code_not_deleted",
+        },
+      ],
     },
   );
 

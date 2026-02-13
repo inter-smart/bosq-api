@@ -158,6 +158,7 @@ class PrivacyPolicyService {
             status: true,
             slug,
           },
+          limit: 5,
           order: [["sort_order", "ASC"]],
           include: [
             {

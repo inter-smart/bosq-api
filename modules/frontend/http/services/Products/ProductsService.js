@@ -10,6 +10,8 @@ const { generateImageUrl } = require("../../../traits/imageUrlHelper");
 const { setCache, getCache } = require("../../../../redis/redisService");
 const ProductServiceHelpers = require("../../traits/products");
 
+const { singleMediaWithoutType } = require("../../traits/mediaButtonHelper");
+
 class ProductsService {
   static async getProductBySlug(params) {
     const { slug, variantSku = null, model = null } = params;
@@ -29,7 +31,10 @@ class ProductsService {
       const baseProduct = await ProductServiceHelpers?.getProductBaseData(slug);
       const { data: baseData, fromCache } = baseProduct;
 
-      const relatedModels = await ProductServiceHelpers?.getProductVariantRelatedModels(baseData?.id);
+      const relatedModels =
+        await ProductServiceHelpers?.getProductVariantRelatedModels(
+          baseData?.id,
+        );
 
       const { data: modelsData, fromCache: modelsFromCache } = relatedModels;
 
@@ -38,18 +43,55 @@ class ProductsService {
       if (variantSku) {
         const variantData = await models.ProductVariants.findOne({
           where: { sku: variantSku, status: true },
-          attributes: ["id", "sku", "title", "title_ar", "price", "stock", "media_path"],
+          attributes: [
+            "id",
+            "sku",
+            "title",
+            "title_ar",
+            "price",
+            "stock",
+            "media_path",
+          ],
           include: [
-            { association: "variant_images", attributes: ["id", "media_path", "media_type", "is_primary", "sort_order", "thumbnail_path"] },
+            {
+              association: "variant_images",
+              attributes: [
+                "id",
+                "media_path",
+                "media_type",
+                "is_primary",
+                "sort_order",
+                "thumbnail_path",
+              ],
+            },
             {
               association: "attribute_values",
-              attributes: ["id", "attribute_id", "value", "value_ar", "slug", "media_path"],
+              attributes: [
+                "id",
+                "attribute_id",
+                "value",
+                "value_ar",
+                "slug",
+                "media_path",
+              ],
               through: { attributes: [] },
-              include: [{ association: "attribute", attributes: ["id", "name", "name_ar", "code", "slug"] }],
+              include: [
+                {
+                  association: "attribute",
+                  attributes: ["id", "name", "name_ar", "code", "slug"],
+                },
+              ],
             },
             {
               association: "productModel",
-              attributes: ["id", "code", "title", "base_price", "slug", "media_path"],
+              attributes: [
+                "id",
+                "code",
+                "title",
+                "base_price",
+                "slug",
+                "media_path",
+              ],
             },
           ],
         });
@@ -65,15 +107,44 @@ class ProductsService {
             include: [
               {
                 association: "variants",
-                attributes: ["id", "sku", "title", "title_ar", "price", "stock", "media_path"],
+                attributes: [
+                  "id",
+                  "sku",
+                  "title",
+                  "title_ar",
+                  "price",
+                  "stock",
+                  "media_path",
+                ],
                 required: true,
                 include: [
-                  { association: "variant_images", attributes: ["id", "media_path", "media_type", "is_primary", "sort_order"] },
+                  {
+                    association: "variant_images",
+                    attributes: [
+                      "id",
+                      "media_path",
+                      "media_type",
+                      "is_primary",
+                      "sort_order",
+                    ],
+                  },
                   {
                     association: "attribute_values",
-                    attributes: ["id", "attribute_id", "value", "value_ar", "slug", "media_path"],
+                    attributes: [
+                      "id",
+                      "attribute_id",
+                      "value",
+                      "value_ar",
+                      "slug",
+                      "media_path",
+                    ],
                     through: { attributes: [] },
-                    include: [{ association: "attribute", attributes: ["id", "name", "name_ar", "code", "slug"] }],
+                    include: [
+                      {
+                        association: "attribute",
+                        attributes: ["id", "name", "name_ar", "code", "slug"],
+                      },
+                    ],
                   },
                 ],
               },
@@ -119,9 +190,27 @@ class ProductsService {
           // Find variant matching the filters using variant_attributes (hasMany)
           const variantData = await models.ProductVariants.findOne({
             where: { status: true },
-            attributes: ["id", "sku", "title", "title_ar", "price", "stock", "media_path"],
+            attributes: [
+              "id",
+              "sku",
+              "title",
+              "title_ar",
+              "price",
+              "stock",
+              "media_path",
+            ],
             include: [
-              { association: "variant_images", attributes: ["id", "media_path", "media_type", "is_primary", "sort_order", "thumbnail_path"] },
+              {
+                association: "variant_images",
+                attributes: [
+                  "id",
+                  "media_path",
+                  "media_type",
+                  "is_primary",
+                  "sort_order",
+                  "thumbnail_path",
+                ],
+              },
               {
                 association: "variant_attributes",
                 required: variantAttributeWhere ? true : false,
@@ -130,13 +219,32 @@ class ProductsService {
               },
               {
                 association: "attribute_values",
-                attributes: ["id", "attribute_id", "value", "value_ar", "slug", "media_path"],
+                attributes: [
+                  "id",
+                  "attribute_id",
+                  "value",
+                  "value_ar",
+                  "slug",
+                  "media_path",
+                ],
                 through: { attributes: [] },
-                include: [{ association: "attribute", attributes: ["id", "name", "name_ar", "code", "slug"] }],
+                include: [
+                  {
+                    association: "attribute",
+                    attributes: ["id", "name", "name_ar", "code", "slug"],
+                  },
+                ],
               },
               {
                 association: "productModel",
-                attributes: ["id", "code", "title", "base_price", "slug", "media_path"],
+                attributes: [
+                  "id",
+                  "code",
+                  "title",
+                  "base_price",
+                  "slug",
+                  "media_path",
+                ],
                 where: isModelAndFilters ? { slug: model } : undefined,
               },
             ],
@@ -162,7 +270,9 @@ class ProductsService {
       };
     } catch (error) {
       console.error(`Error getting PRODUCT data for ${slug}:`, error);
-      throw new Error(`Error fetching PRODUCT data for ${slug}: ${error.message}`);
+      throw new Error(
+        `Error fetching PRODUCT data for ${slug}: ${error.message}`,
+      );
     }
   }
 
@@ -308,7 +418,9 @@ class ProductsService {
           model: models.ProductVariantAttributes,
           as: "variant_attributes",
           attributes: ["id", "attribute_id", "attribute_value_id"],
-          ...(variantAttributeWhere ? { where: variantAttributeWhere, required: true } : {}),
+          ...(variantAttributeWhere
+            ? { where: variantAttributeWhere, required: true }
+            : {}),
           include: [
             {
               model: models.ProductAttribute,
@@ -342,14 +454,14 @@ class ProductsService {
                 },
                 ...(needsSectorFilter
                   ? [
-                      {
-                        association: "sectors",
-                        attributes: ["id", "name", "name_ar", "slug"],
-                        through: { attributes: [] },
-                        where: sectorCondition,
-                        required: true,
-                      },
-                    ]
+                    {
+                      association: "sectors",
+                      attributes: ["id", "name", "name_ar", "slug"],
+                      through: { attributes: [] },
+                      where: sectorCondition,
+                      required: true,
+                    },
+                  ]
                   : []),
               ],
             },
@@ -357,25 +469,41 @@ class ProductsService {
         },
       ];
 
-      const { rows: products, count: totalCount } = await models.ProductVariants.findAndCountAll({
-        attributes: ["id", "title", "title_ar", "media_path", "price", "stock", "product_code", "sku", "product_model_id"],
-        where: whereClause,
-        limit: limitNum,
-        offset,
-        order: orderClause,
-        include: includeArray,
-        distinct: true,
-        subQuery: false,
-      });
+      const { rows: products, count: totalCount } =
+        await models.ProductVariants.findAndCountAll({
+          attributes: [
+            "id",
+            "title",
+            "title_ar",
+            "media_path",
+            "price",
+            "stock",
+            "product_code",
+            "sku",
+            "product_model_id",
+          ],
+          where: whereClause,
+          limit: limitNum,
+          offset,
+          order: orderClause,
+          include: includeArray,
+          distinct: true,
+          subQuery: false,
+        });
 
       // Get all unique product_model_ids from fetched products
-      const productModelIds = [...new Set(products.map((p) => p.product_model_id).filter(Boolean))];
+      const productModelIds = [
+        ...new Set(products.map((p) => p.product_model_id).filter(Boolean)),
+      ];
 
       // Get variant counts per model to determine hasMoreVariants
       let variantCountsMap = {};
       if (productModelIds.length > 0) {
         const variantCounts = await models.ProductVariants.findAll({
-          attributes: ["product_model_id", [literal("COUNT(id)"), "variant_count"]],
+          attributes: [
+            "product_model_id",
+            [literal("COUNT(id)"), "variant_count"],
+          ],
           where: {
             product_model_id: { [Op.in]: productModelIds },
             status: true,
@@ -394,11 +522,18 @@ class ProductsService {
         const modelVariantCount = variantCountsMap[json?.product_model_id] || 0;
 
         // Format attributes for query params generation
-        const formattedAttributes = (json?.variant_attributes || []).map((va) => ({
-          code: va?.ProductAttribute?.code,
-          slug: va?.ProductAttribute?.slug,
-          values: [{ slug: va?.AttributeValue?.slug, value: va?.AttributeValue?.value }],
-        }));
+        const formattedAttributes = (json?.variant_attributes || []).map(
+          (va) => ({
+            code: va?.ProductAttribute?.code,
+            slug: va?.ProductAttribute?.slug,
+            values: [
+              {
+                slug: va?.AttributeValue?.slug,
+                value: va?.AttributeValue?.value,
+              },
+            ],
+          }),
+        );
 
         const baseSlug = json?.productModel?.product?.slug;
         const modelSlug = json?.productModel?.slug;
@@ -420,7 +555,11 @@ class ProductsService {
           category_name: json?.productModel?.product?.category?.name || null,
           category_ar: json?.productModel?.product?.category?.name_ar || null,
           variant_attributes: json?.variant_attributes,
-          query_params: generateQueryParams(variantSku, modelSlug, formattedAttributes),
+          query_params: generateQueryParams(
+            variantSku,
+            modelSlug,
+            formattedAttributes,
+          ),
         };
       });
 
@@ -492,15 +631,44 @@ class ProductsService {
         include: [
           {
             association: "variants",
-            attributes: ["id", "sku", "title", "title_ar", "price", "stock", "media_path"],
+            attributes: [
+              "id",
+              "sku",
+              "title",
+              "title_ar",
+              "price",
+              "stock",
+              "media_path",
+            ],
             required: true,
             include: [
-              { association: "variant_images", attributes: ["id", "media_path", "media_type", "is_primary", "sort_order"] },
+              {
+                association: "variant_images",
+                attributes: [
+                  "id",
+                  "media_path",
+                  "media_type",
+                  "is_primary",
+                  "sort_order",
+                ],
+              },
               {
                 association: "attribute_values",
-                attributes: ["id", "attribute_id", "value", "value_ar", "slug", "media_path"],
+                attributes: [
+                  "id",
+                  "attribute_id",
+                  "value",
+                  "value_ar",
+                  "slug",
+                  "media_path",
+                ],
                 through: { attributes: [] },
-                include: [{ association: "attribute", attributes: ["id", "name", "name_ar", "code", "slug"] }],
+                include: [
+                  {
+                    association: "attribute",
+                    attributes: ["id", "name", "name_ar", "code", "slug"],
+                  },
+                ],
               },
             ],
           },
@@ -516,52 +684,69 @@ class ProductsService {
       };
     } catch (error) {
       console.error(`Error getting PRODUCT MODEL data for ${slug}:`, error);
-      throw new Error(`Error fetching PRODUCT MODEL data for ${slug}: ${error.message}`);
+      throw new Error(
+        `Error fetching PRODUCT MODEL data for ${slug}: ${error.message}`,
+      );
     }
   }
-  
+
   static async getInitialProductList(page = 1, limit = 12) {
     try {
       const pageNum = Math.max(1, parseInt(page, 10));
       const limitNum = Math.max(1, parseInt(limit, 10));
       const offset = (pageNum - 1) * limitNum;
 
-      const { rows: products, count: totalCount } = await models.ProductVariants.findAndCountAll({
-        attributes: ["id", "title", "title_ar", "media_path", "price", "stock", "sku", "product_model_id"],
-        where: { status: true },
-        limit: limitNum,
-        offset,
-        include: [
-          {
-            attributes: ["id", "slug"],
-            model: models.ProductModels,
-            as: "productModel",
-            include: [
-              {
-                attributes: ["id", "category_id", "slug"],
-                model: models.ProductBase,
-                as: "product",
-                include: [
-                  {
-                    attributes: ["id", "name_ar", "name"],
-                    model: models.ProductCategory,
-                    as: "category",
-                  },
-                ],
-              },
-            ],
-          },
-        ],
-      });
+      const { rows: products, count: totalCount } =
+        await models.ProductVariants.findAndCountAll({
+          attributes: [
+            "id",
+            "title",
+            "title_ar",
+            "media_path",
+            "price",
+            "stock",
+            "sku",
+            "product_model_id",
+          ],
+          where: { status: true },
+          limit: limitNum,
+          offset,
+          include: [
+            {
+              attributes: ["id", "slug"],
+              model: models.ProductModels,
+              as: "productModel",
+              include: [
+                {
+                  attributes: ["id", "category_id", "slug"],
+                  model: models.ProductBase,
+                  as: "product",
+                  include: [
+                    {
+                      attributes: ["id", "name_ar", "name"],
+                      model: models.ProductCategory,
+                      as: "category",
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        });
 
       // Get all unique product_model_ids from fetched products
-      const productModelIds = [...new Set(products.map((p) => p.product_model_id).filter(Boolean))];
+      const productModelIds = [
+        ...new Set(products.map((p) => p.product_model_id).filter(Boolean)),
+      ];
 
       // Get variant counts per model to determine hasMoreVariants
       let variantCountsMap = {};
       if (productModelIds.length > 0) {
         const variantCounts = await models.ProductVariants.findAll({
-          attributes: ["product_model_id", [literal("COUNT(id)"), "variant_count"]],
+          attributes: [
+            "product_model_id",
+            [literal("COUNT(id)"), "variant_count"],
+          ],
           where: {
             product_model_id: { [Op.in]: productModelIds },
             status: true,
@@ -578,11 +763,18 @@ class ProductsService {
         const json = item.toJSON();
         const modelVariantCount = variantCountsMap[json?.product_model_id] || 0;
 
-        const formattedAttributes = (json?.variant_attributes || []).map((va) => ({
-          code: va?.ProductAttribute?.code,
-          slug: va?.ProductAttribute?.slug,
-          values: [{ slug: va?.AttributeValue?.slug, value: va?.AttributeValue?.value }],
-        }));
+        const formattedAttributes = (json?.variant_attributes || []).map(
+          (va) => ({
+            code: va?.ProductAttribute?.code,
+            slug: va?.ProductAttribute?.slug,
+            values: [
+              {
+                slug: va?.AttributeValue?.slug,
+                value: va?.AttributeValue?.value,
+              },
+            ],
+          }),
+        );
 
         const baseSlug = json?.productModel?.product?.slug;
         const modelSlug = json?.productModel?.slug;
@@ -604,7 +796,11 @@ class ProductsService {
           category_name: json?.productModel?.product?.category?.name || null,
           category_ar: json?.productModel?.product?.category?.name_ar || null,
           variant_attributes: json?.variant_attributes,
-          query_params: generateQueryParams(variantSlug, modelSlug, formattedAttributes),
+          query_params: generateQueryParams(
+            variantSlug,
+            modelSlug,
+            formattedAttributes,
+          ),
         };
       });
 
@@ -672,59 +868,84 @@ class ProductsService {
       }
 
       // First approach: Search in variants and their related products
-      const { rows: products, count: totalCount } = await models.ProductVariants.findAndCountAll({
-        attributes: ["id", "title", "title_ar", "media_path", "price", "stock", "product_code", "sku"],
-        where: {
-          ...variantWhere,
-        },
-        limit: limitNum,
-        offset,
-        include: [
-          {
-            model: models.ProductModels,
-            as: "productModel",
-            attributes: ["id", "slug", "title", "title_ar"],
-            required: true,
-            where: { status: true },
-            include: [
-              {
-                model: models.ProductBase,
-                as: "product",
-                attributes: ["id", "title", "title_ar", "slug", "category_id"],
-                required: true,
-                where: categoryIds.length > 0 ? productBaseWhere : { status: true },
-                include: [
-                  {
-                    model: models.ProductCategory,
-                    as: "category",
-                    attributes: ["id", "name", "name_ar", "slug", "parent_id"],
-                  },
-                ],
-              },
-            ],
+      const { rows: products, count: totalCount } =
+        await models.ProductVariants.findAndCountAll({
+          attributes: [
+            "id",
+            "title",
+            "title_ar",
+            "media_path",
+            "price",
+            "stock",
+            "product_code",
+            "sku",
+          ],
+          where: {
+            ...variantWhere,
           },
-          {
-            model: models.ProductVariantAttributes,
-            as: "variant_attributes",
-            attributes: ["id", "attribute_id", "attribute_value_id"],
-            include: [
-              {
-                model: models.ProductAttribute,
-                as: "ProductAttribute",
-                attributes: ["id", "name", "name_ar", "code", "slug"],
-              },
-              {
-                model: models.AttributeValues,
-                as: "AttributeValue",
-                attributes: ["id", "value", "value_ar", "slug", "media_path"],
-              },
-            ],
-          },
-        ],
-        distinct: true,
-        subQuery: false,
-        order: [["createdAt", "DESC"]],
-      });
+          limit: limitNum,
+          offset,
+          include: [
+            {
+              model: models.ProductModels,
+              as: "productModel",
+              attributes: ["id", "slug", "title", "title_ar"],
+              required: true,
+              where: { status: true },
+              include: [
+                {
+                  model: models.ProductBase,
+                  as: "product",
+                  attributes: [
+                    "id",
+                    "title",
+                    "title_ar",
+                    "slug",
+                    "category_id",
+                  ],
+                  required: true,
+                  where:
+                    categoryIds.length > 0
+                      ? productBaseWhere
+                      : { status: true },
+                  include: [
+                    {
+                      model: models.ProductCategory,
+                      as: "category",
+                      attributes: [
+                        "id",
+                        "name",
+                        "name_ar",
+                        "slug",
+                        "parent_id",
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+            {
+              model: models.ProductVariantAttributes,
+              as: "variant_attributes",
+              attributes: ["id", "attribute_id", "attribute_value_id"],
+              include: [
+                {
+                  model: models.ProductAttribute,
+                  as: "ProductAttribute",
+                  attributes: ["id", "name", "name_ar", "code", "slug"],
+                },
+                {
+                  model: models.AttributeValues,
+                  as: "AttributeValue",
+                  attributes: ["id", "value", "value_ar", "slug", "media_path"],
+                },
+              ],
+            },
+          ],
+          distinct: true,
+          subQuery: false,
+          order: [["createdAt", "DESC"]],
+        });
 
       const transformedData = products.map((item) => {
         const json = item.toJSON();
@@ -790,6 +1011,87 @@ class ProductsService {
     } catch (error) {
       console.error(`Error in product search:`, error);
       throw new Error(`Error in product search: ${error.message}`);
+    }
+  }
+
+
+  static async productSearchListByKeywords(req, res, params) {
+    try {
+      const { keywords } = params;
+
+
+      let whereClause = {};
+      if (keywords?.trim()) {
+        whereClause.title = {
+          [Op.iLike]: `%${keywords.trim()}%`,
+        };
+      }
+
+      const products = await models.ProductVariants.findAll({
+        where: whereClause,
+        include: [
+          {
+            model: models.ProductModels,
+            as: "productModel",
+            attributes: ["id", "slug", "title", "title_ar"],
+            required: true,
+            where: { status: true },
+            include: [
+              {
+                model: models.ProductBase,
+                as: "product",
+                attributes: ["id", "title", "slug"],
+                required: true,
+                where: { status: true },
+                include: [
+                  {
+                    model: models.ProductCategory,
+                    as: "category",
+                    attributes: ["id", "name", "name_ar", "slug", "parent_id"],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+        distinct: true,
+        subQuery: false,
+        order: [["createdAt", "DESC"]],
+      });
+
+
+
+
+
+      const transformedData = products.map((item) => {
+        const json = item.toJSON();
+        return {
+          id: json?.id,
+          title: json?.title,
+          title_ar: json?.title_ar,
+          media: singleMediaWithoutType(json, "media_path", "title", "title_ar"),
+          hoverMedia: singleMediaWithoutType(json, "hover_media_path", "title", "title_ar"),
+          slug: json?.sku,
+          stock: json?.stock,
+          baseSlug: json?.productModel?.product?.slug,
+          category: {
+            id: json?.productModel?.product?.category?.id,
+            name: json?.productModel?.product?.category?.name,
+            name_ar: json?.productModel?.product?.category?.name_ar,
+            slug: json?.productModel?.product?.category?.slug,
+            parent_id: json?.productModel?.product?.category?.parent_id,
+          },
+
+        };
+      });
+
+
+      return {
+        data: transformedData,
+      };
+    } catch (error) {
+      console.error(`Error in product search by keywords:`, error);
+      throw new Error(`Error in product search by keywords: ${error.message}`);
     }
   }
 }

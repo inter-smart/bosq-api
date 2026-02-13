@@ -9,6 +9,8 @@ const { addToCartRequest, updateCartItemRequest, removeCartItemRequest } = requi
 const GUEST_SESSION_COOKIE = "guest_cart_session";
 const COOKIE_MAX_AGE = 30 * 24 * 60 * 60 * 1000; // 30 days
 
+const isProduction = process.env.NODE_ENV === "production";
+
 class CartController {
   /**
    * Get session ID from cookie
@@ -25,8 +27,8 @@ class CartController {
     res.cookie(GUEST_SESSION_COOKIE, sessionId, {
       maxAge: COOKIE_MAX_AGE,
       httpOnly: true,
-      secure: true,
-      sameSite: "none",
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
       path: "/",
     });
     return sessionId;

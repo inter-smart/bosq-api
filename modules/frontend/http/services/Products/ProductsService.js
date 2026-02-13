@@ -1020,7 +1020,9 @@ class ProductsService {
       const { keywords } = params;
 
 
-      let whereClause = {};
+      let whereClause = {
+        status: true
+      };
       if (keywords?.trim()) {
         whereClause.title = {
           [Op.iLike]: `%${keywords.trim()}%`,

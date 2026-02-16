@@ -1,8 +1,8 @@
 const { DataTypes } = require("sequelize");
 
 module.exports = (sequelize) => {
-  const HomeCms = sequelize.define(
-    "HomeCms",
+  const HomeBanner = sequelize.define(
+    "HomeBanner",
     {
       id: {
         type: DataTypes.INTEGER,
@@ -72,5 +72,5 @@ module.exports = (sequelize) => {
     }
   );
 
-  return HomeCms;
+  return HomeBanner;
 };

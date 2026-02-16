@@ -103,7 +103,7 @@ class ProductVariantsController {
       const { id } = req.params;
 
       const data = await DataModel.findByPk(id, {
-        attributes: ["id", "status", "product_model_id", "sku", "product_code", "price", "status", "stock", "title", "title_ar", "media_path"],
+        attributes: ["id", "status", "product_model_id", "sku", "product_code", "price", "status", "stock", "title", "title_ar", "media_path", "design_title", "design_title_ar", "hover_media_path"],
         include: [
           {
             model: models.ProductVariantAttributes,
@@ -133,7 +133,7 @@ class ProductVariantsController {
       const { id } = req.params;
       const { product_model_id, attributes } = req.body;
 
-      const fileFields = ["media_path"];
+      const fileFields = ["media_path", "hover_media_path"];
       handleFileUploadStore(req, fileFields);
 
       const meta = req.body;

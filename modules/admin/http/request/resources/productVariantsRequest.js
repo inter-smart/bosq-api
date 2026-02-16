@@ -13,6 +13,15 @@ exports.validationRequestPost = [
   /* ---------- STOCK ---------- */
   body("stock").optional({ nullable: true }).isInt().withMessage("Stock must be an integer"),
 
+  /* ---------- DESIGN TITLE ---------- */
+  // body("design_title").notEmpty().withMessage("Design title is required").isString().withMessage("Design title must be a string"),
+
+  /* ---------- DESIGN TITLE (ARABIC) ---------- */
+  // body("design_title_ar").notEmpty().withMessage("Design title (Arabic) is required").isString().withMessage("Design title (Arabic) must be a string"),
+
+  /* ---------- HOVER MEDIA PATH ---------- */
+  // body("hover_media_path").optional({ nullable: true }).isString().withMessage("Hover media path must be a string"),
+
   /* ---------- PRODUCT CODE ---------- */
   body("product_code").optional({ nullable: true }).isString().withMessage("Product code must be a string"),
 

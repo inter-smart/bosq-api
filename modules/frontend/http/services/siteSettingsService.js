@@ -26,7 +26,7 @@ class SiteSettingsService {
       // }
 
       //   3. If no cached data, fetch from database
-      const [siteSettings, socialLinks, paymentMethods, products, projects] =
+      const [siteSettings, socialLinks, paymentMethods, products, projects, landingPage] =
         await Promise.all([
           await models.HeaderFooter.findOne(),
           await models.SocialMedia.findAll({
@@ -65,6 +65,14 @@ class SiteSettingsService {
             attributes: ["title", "title_ar", "thumbnail", "slug"],
             order: [["sort_order", "ASC"]],
           }),
+
+          await models.LandingPage.findAll({
+            where: {
+              status: true,
+            },
+            attributes: ["title", "title_ar","slug"],
+            order: [["sort_order", "ASC"]],
+          }),
         ]);
 
       const headerData = buildHeaderSection(siteSettings);
@@ -79,7 +87,8 @@ class SiteSettingsService {
         socialMedia,
         cards,
         navigationData,
-        products
+        products,
+        landingPage
       };
 
       //   5. Store the result in cache for future requests

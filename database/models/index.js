@@ -119,6 +119,7 @@ const defineAuthSessions = require("./users/authSessions");
 const defineSocialAccounts = require("./users/socialAccounts");
 const defineOtps = require("./users/otps");
 const defineAddress = require("./users/address");
+const defineWishlist = require("./users/usersWishList");
 
 // ENQUIRIES
 const defineContactEnquiry = require("./enquiries/contact");
@@ -132,7 +133,6 @@ const defineCountry = require("./country");
 // COUPONS
 const defineCoupons = require("./coupons");
 const defineCouponUsage = require("./couponUsage");
-
 // Landing page
 const defineLandingPage = require("./landingPage/landingPage");
 const defineProductTypes = require("./landingPage/productTypes");
@@ -261,6 +261,7 @@ const models = {
   socialAccounts: defineSocialAccounts(sequelize),
   Otps: defineOtps(sequelize),
   Address: defineAddress(sequelize),
+  Wishlist: defineWishlist(sequelize),
 
   Country: defineCountry(sequelize),
   State: defineState(sequelize),

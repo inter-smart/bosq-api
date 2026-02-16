@@ -104,6 +104,12 @@ module.exports = (sequelize) => {
       onDelete: "CASCADE",
     })
 
+    Users.hasMany(models.Wishlist, {
+      foreignKey: "user_id",
+      as: "wishlists",
+      onDelete: "CASCADE",
+    })
+
   };
 
 

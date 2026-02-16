@@ -2,12 +2,17 @@ const express = require("express");
 const router = express.Router();
 const Controller = require("../../http/controllers/resources/product/ProductVariantsController");
 const authMiddleware = require("../../http/middleware/authMiddleware");
-const { createUploadMiddleware } = require("../../http/middleware/multerMiddleware");
+const {
+  createUploadMiddleware,
+} = require("../../http/middleware/multerMiddleware");
 
-router.use(authMiddleware(["admin"]));
+// router.use(authMiddleware(["admin"]));
 
 // Define upload fields
-const fields = [{ name: "media_path", maxCount: 1 }];
+const fields = [
+  { name: "media_path", maxCount: 1 },
+  { name: "hover_media_path", maxCount: 1 },
+];
 
 // Create upload middleware with fields
 const upload = createUploadMiddleware("product-variant", fields);

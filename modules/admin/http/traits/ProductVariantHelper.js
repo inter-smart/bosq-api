@@ -89,7 +89,7 @@ const createOrUpdateVariantAttributes = async (transaction, attributes, product_
         throw new Error("Product Variant not found for update");
       }
 
-      const { sort_order, status, stock, media_path, title, title_ar } = meta;
+      const { sort_order, status, stock, media_path, design_title, design_title_ar, hover_media_path, title, title_ar } = meta;
 
       // Delete existing variant attributes
       await models.ProductVariantAttributes.destroy({
@@ -111,6 +111,9 @@ const createOrUpdateVariantAttributes = async (transaction, attributes, product_
           status: status ?? currentVariant.status,
           sort_order: sort_order ?? currentVariant.sort_order,
           media_path: media_path ?? currentVariant.media_path,
+          design_title: design_title ?? currentVariant.design_title,
+          design_title_ar: design_title_ar ?? currentVariant.design_title_ar,
+          hover_media_path: hover_media_path ?? currentVariant.hover_media_path
         },
         { transaction },
       );

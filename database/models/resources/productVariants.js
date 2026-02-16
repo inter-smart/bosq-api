@@ -40,7 +40,22 @@ module.exports = (sequelize) => {
         allowNull: true,
       },
 
+      design_title: {
+        type: DataTypes.STRING(200),
+        allowNull: true,
+      },
+
+      design_title_ar: {
+        type: DataTypes.STRING(200),
+        allowNull: true,
+      },
+
       media_path: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
+      },
+
+      hover_media_path: {
         type: DataTypes.STRING(255),
         allowNull: true,
       },
@@ -137,10 +152,11 @@ module.exports = (sequelize) => {
       },
     });
 
-    // prodicttypes
-    ProductVariants.belongsTo(models.ProductTypes, {
-      foreignKey: "product_type_id",
-      as: "productType",
+    // wishlists
+    ProductVariants.hasMany(models.Wishlist, {
+      foreignKey: "product_variant_id",
+      as: "wishlists",
+      onDelete: "CASCADE",
     });
   };
 

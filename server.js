@@ -61,7 +61,6 @@ const startServer = async () => {
   try {
     await sequelize.authenticate();
 
-
     // await homeCmsData();
     await seedCountriesAndStates();
     // Add this to see which models are registered

@@ -46,8 +46,8 @@ class ProductsService {
 
       if (variantSku) {
         const variantData = await models.ProductVariants.findOne({
-          where: { sku: variantSku, status: true },
-          attributes: ["id", "sku", "title", "title_ar", "price", "stock", "media_path"],
+          where: { product_id: baseData.id, sku: variantSku, status: true },
+          attributes: ["id", "product_model_id", "sku", "title", "title_ar", "price", "stock", "media_path"],
           include: [
             {
               association: "variant_images",
@@ -76,13 +76,13 @@ class ProductsService {
       } else {
         if (model && !isModelAndFilters) {
           const productModelData = await models.ProductModels.findOne({
-            where: { slug: model, status: true },
+            where: { product_id: baseData.id, slug: model, status: true },
             attributes: ["id", "code", "title", "slug", "media_path"],
             required: true,
             include: [
               {
                 association: "variants",
-                attributes: ["id", "sku", "title", "title_ar", "price", "stock", "media_path"],
+                attributes: ["id", "product_model_id", "sku", "title", "title_ar", "price", "stock", "media_path"],
                 required: true,
                 include: [
                   {
@@ -134,7 +134,7 @@ class ProductsService {
           }
 
           // Build where clause for ProductVariants with strict attribute matching
-          const whereClause = { status: true };
+          const whereClause = { product_id: baseData.id, status: true };
 
           if (attributeFilterConditions.length > 0) {
             whereClause[Op.and] = attributeFilterConditions.map((cond) => {
@@ -151,7 +151,7 @@ class ProductsService {
           // Find variant matching all filters
           const variantData = await models.ProductVariants.findOne({
             where: whereClause,
-            attributes: ["id", "sku", "title", "title_ar", "price", "stock", "media_path"],
+            attributes: ["id", "product_model_id", "sku", "title", "title_ar", "price", "stock", "media_path"],
             include: [
               {
                 association: "variant_images",

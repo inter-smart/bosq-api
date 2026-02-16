@@ -11,11 +11,12 @@ const { updateVariantsPrices } = require("../../../traits/ProductVariantHelper")
 const DataModel = models.ProductModels;
 
 class ProductModelsController {
-  static async generateUniqueSlug(title, ignoreId = null) {
+  static async generateUniqueSlug(title, productId, ignoreId = null) {
     const baseSlug = slugify(title.trim(), { lower: true, strict: true });
 
     // Check for any slugs starting with the baseSlug
     const whereClause = {
+      product_id: productId,
       slug: { [Op.like]: `${baseSlug}%` },
     };
 
@@ -103,30 +104,38 @@ class ProductModelsController {
 
       if (!title || title.trim() === "") return sendErrorResponse(res, "Title is required to generate slug", null, 400);
 
-      // Check for existing title
+      // Check for existing title within the same product
+      console.log(`Checking uniqueness for ProductID: ${product_id}, Title: ${title.trim()}`);
       const existingTitle = await DataModel.findOne({
-        where: { title: title.trim() },
+        where: {
+          product_id: product_id,
+          title: title.trim()
+        },
         paranoid: true,
       });
 
       if (existingTitle) {
+        console.log(`Found existing title for ProductID: ${existingTitle.product_id}, ID: ${existingTitle.id}`);
         await transaction.rollback();
-        return sendErrorResponse(res, `Title "${title}" already exists`, { existing_id: existingTitle.id }, 409);
+        return sendErrorResponse(res, `Title "${title}" already exists for this product`, { existing_id: existingTitle.id }, 409);
       }
 
-      // Check for existing code if provided
+      // Check for existing code if provided within the same product
       if (code && code.trim() !== "") {
         const existingCode = await DataModel.findOne({
-          where: { code: code.trim() },
+          where: {
+            product_id: product_id,
+            code: code.trim()
+          },
           paranoid: true,
         });
         if (existingCode) {
           await transaction.rollback();
-          return sendErrorResponse(res, `Code "${code}" already exists`, { existing_id: existingCode.id }, 409);
+          return sendErrorResponse(res, `Code "${code}" already exists for this product`, { existing_id: existingCode.id }, 409);
         }
       }
 
-      const newSlug = await ProductModelsController.generateUniqueSlug(title);
+      const newSlug = await ProductModelsController.generateUniqueSlug(title, product_id);
       req.body.slug = newSlug;
 
       const fileFields = ["media_path"];
@@ -203,6 +212,7 @@ class ProductModelsController {
       if (code && code.trim() !== data.code) {
         const existingCode = await DataModel.findOne({
           where: {
+            product_id: data.product_id,
             code: code.trim(),
             id: { [Op.ne]: id },
           },
@@ -210,14 +220,16 @@ class ProductModelsController {
         });
         if (existingCode) {
           await transaction.rollback();
-          return sendErrorResponse(res, `Code "${code}" already exists`, { existing_id: existingCode.id }, 409);
+          return sendErrorResponse(res, `Code "${code}" already exists for this product`, { existing_id: existingCode.id }, 409);
         }
       }
 
       // Check for title uniqueness and regenerate slug if changed
       if (title && title.trim() !== data.title) {
+        console.log(`Checking uniqueness for ProductID: ${data.product_id}, Title (Update): ${title.trim()}`);
         const existingTitle = await DataModel.findOne({
           where: {
+            product_id: data.product_id,
             title: title.trim(),
             id: { [Op.ne]: id },
           },
@@ -225,11 +237,12 @@ class ProductModelsController {
         });
 
         if (existingTitle) {
+          console.log(`Found existing title during update for ProductID: ${existingTitle.product_id}, ID: ${existingTitle.id}`);
           await transaction.rollback();
-          return sendErrorResponse(res, `Title "${title}" already exists`, { existing_id: existingTitle.id }, 409);
+          return sendErrorResponse(res, `Title "${title}" already exists for this product`, { existing_id: existingTitle.id }, 409);
         }
 
-        const newSlug = await ProductModelsController.generateUniqueSlug(title, id);
+        const newSlug = await ProductModelsController.generateUniqueSlug(title, data.product_id, id);
         req.body.slug = newSlug;
       }
 

@@ -67,19 +67,27 @@ module.exports = (sequelize) => {
       indexes: [
         {
           unique: true,
-          fields: ["slug"],
+          fields: ["product_id", "slug"],
           where: {
             deletedAt: null,
           },
-          name: "product_model_unique_slug_not_deleted",
+          name: "product_model_unique_product_slug_not_deleted",
         },
         {
           unique: true,
-          fields: ["code"],
+          fields: ["product_id", "code"],
           where: {
             deletedAt: null,
           },
-          name: "product_model_unique_code_not_deleted",
+          name: "product_model_unique_product_code_not_deleted",
+        },
+        {
+          unique: true,
+          fields: ["product_id", "title"],
+          where: {
+            deletedAt: null,
+          },
+          name: "product_model_unique_product_title_not_deleted",
         },
       ],
     },

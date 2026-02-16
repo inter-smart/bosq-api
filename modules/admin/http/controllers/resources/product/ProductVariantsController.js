@@ -12,11 +12,16 @@ const DataModel = models.ProductVariants;
 class ProductVariantsController {
   static async index(req, res) {
     try {
-      const { product_id } = req.query;
+      const { product_id, product_model_id } = req.query;
 
       const whereClause = {};
+      if (product_model_id) {
+        whereClause.product_model_id = product_model_id;
+      }
+
       if (product_id) {
-        whereClause.product_model_id = product_id;
+        // Filter by base product ID via the productModel association
+        whereClause["$productModel.product_id$"] = product_id;
       }
 
       const result = await paginate(DataModel, req, {
@@ -26,7 +31,19 @@ class ProductVariantsController {
           ["createdAt", "DESC"],
         ],
         searchFields: ["sku", "product_code"],
-        include: [{ association: "productModel", attributes: ["id", "title"] }],
+        include: [
+          {
+            association: "productModel",
+            attributes: ["id", "title", "product_id"],
+            include: [
+              {
+                model: models.ProductBase,
+                as: "product",
+                attributes: ["id", "title"],
+              },
+            ],
+          },
+        ],
       });
 
       const response = {

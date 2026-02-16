@@ -50,15 +50,17 @@ class ProductModelsController {
   static async index(req, res) {
     try {
       const { product_id } = req.query;
+      const whereClause = {};
+      if (product_id) {
+        whereClause.product_id = product_id;
+      }
 
       const result = await paginate(DataModel, req, {
         order: [
           ["sort_order", "ASC"],
           ["createdAt", "DESC"],
         ],
-        where: {
-          product_id,
-        },
+        where: whereClause,
         searchFields: ["title", "title_ar"],
         include: [
           {

@@ -91,9 +91,10 @@ const createOrUpdateVariantAttributes = async (transaction, attributes, product_
 
       const { sort_order, status, stock, media_path, design_title, design_title_ar, hover_media_path, title, title_ar } = meta;
 
-      // Delete existing variant attributes
+      // Delete existing variant attributes (hard delete to avoid unique constraint issues)
       await models.ProductVariantAttributes.destroy({
         where: { product_variant_id: variantId },
+        force: true, // Hard delete instead of soft delete
         transaction,
       });
 

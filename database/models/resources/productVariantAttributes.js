@@ -34,6 +34,24 @@ module.exports = (sequelize) => {
       tableName: "product_variant_attributes",
       timestamps: true,
       paranoid: true, // ✅ enable soft delete
+      indexes: [
+        {
+          unique: true,
+          fields: ["product_variant_id", "attribute_id"],
+          where: {
+            deletedAt: null,
+          },
+          name: "product_variant_attributes_unique_variant_attribute",
+        },
+        {
+          unique: true,
+          fields: ["product_variant_id", "attribute_value_id"],
+          where: {
+            deletedAt: null,
+          },
+          name: "product_variant_attributes_unique_variant_value",
+        },
+      ],
     }
   );
 

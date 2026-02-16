@@ -185,11 +185,33 @@ class ProductsService {
         }
       }
 
+      const similarProducts = modelsData
+        ?.filter((m) => String(m.id) !== String(initialVariant?.model_id))
+        ?.map((m) => {
+          const firstVariant = m.variants?.[0];
+          return {
+            id: m.id,
+            title: m.title,
+            title_ar: m.title_ar,
+            base_slug: baseData.slug,
+            category_name: baseData.category_name,
+            price: firstVariant?.price || m.base_price,
+            media_path: firstVariant?.media_path || m.media_path,
+            hoverMedia: firstVariant?.hover_media_path ? { path: firstVariant.hover_media_path } : null,
+            query_params: `?model=${m.slug}`,
+            hasMoreVariants: m.variants?.length > 1,
+          };
+        });
+
       return {
         data: {
           product: baseData,
           initialVariant,
           models: modelsData,
+          similarProducts: {
+            title: "Similar products",
+            product: similarProducts,
+          },
         },
         fromCache: false,
         message: "Data fetched",

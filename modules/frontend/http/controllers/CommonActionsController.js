@@ -39,7 +39,7 @@ class CommonActionsController {
               model: models.AttributeValues,
               as: "values",
               where: { status: true },
-              required: false, // don't drop attributes without values
+              required: true, // only show attributes that have values
               attributes: ["id", "attribute_id", "value", "value_ar", "media_path", "slug"],
             },
           ],

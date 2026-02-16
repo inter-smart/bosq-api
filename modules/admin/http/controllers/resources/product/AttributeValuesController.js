@@ -10,11 +10,12 @@ const { handleFileUploadStore, handleFileUploadUpdate } = require("../../../midd
 const DataModel = models.AttributeValues;
 
 class AttributeValuesController {
-  static async generateUniqueSlug(name, ignoreId = null) {
+  static async generateUniqueSlug(name, attributeId, ignoreId = null) {
     const baseSlug = slugify(name.trim(), { lower: true, strict: true });
 
-    // Check for any slugs starting with the baseSlug
+    // Check for any slugs starting with the baseSlug within the same attribute
     const whereClause = {
+      attribute_id: attributeId,
       slug: { [Op.like]: `${baseSlug}%` },
     };
 
@@ -101,19 +102,21 @@ class AttributeValuesController {
         return sendNotFoundError(res, "Product Attribute");
       }
 
-      const newSlug = await AttributeValuesController.generateUniqueSlug(value);
+      const newSlug = await AttributeValuesController.generateUniqueSlug(value, attribute_id);
       req.body.slug = newSlug;
 
+      // Check for duplicate value within the same attribute
       const existing = await DataModel.findOne({
         where: {
-          [Op.or]: [{ value: value.trim() }],
+          attribute_id: attribute_id,
+          value: value.trim(),
         },
         paranoid: true,
       });
 
       if (existing) {
         await transaction.rollback();
-        return sendErrorResponse(res, `Value "${value}" already exists`, { existing_id: existing.id }, 409);
+        return sendErrorResponse(res, `Value "${value}" already exists for this attribute`, { existing_id: existing.id }, 409);
       }
 
       const fileFields = ["media_path"];
@@ -194,8 +197,23 @@ class AttributeValuesController {
       }
 
       if (value && value.trim() !== data.value) {
-        const newSlug = await AttributeValuesController.generateUniqueSlug(value, id);
+        const newSlug = await AttributeValuesController.generateUniqueSlug(value, attribute_id || data.attribute_id, id);
         req.body.slug = newSlug;
+
+        // Check for duplicate value within the same attribute
+        const existing = await DataModel.findOne({
+          where: {
+            attribute_id: attribute_id || data.attribute_id,
+            value: value.trim(),
+            id: { [Op.ne]: id },
+          },
+          paranoid: true,
+        });
+
+        if (existing) {
+          await transaction.rollback();
+          return sendErrorResponse(res, `Value "${value}" already exists for this attribute`, { existing_id: existing.id }, 409);
+        }
       }
 
       const fileFields = ["media_path"];

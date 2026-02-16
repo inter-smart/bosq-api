@@ -57,11 +57,19 @@ module.exports = (sequelize) => {
       indexes: [
         {
           unique: true,
-          fields: ["slug"],
+          fields: ["attribute_id", "slug"],
           where: {
             deletedAt: null,
           },
-          name: "attribute_values_unique_slug_not_deleted",
+          name: "attribute_values_unique_attribute_slug_not_deleted",
+        },
+        {
+          unique: true,
+          fields: ["attribute_id", "value"],
+          where: {
+            deletedAt: null,
+          },
+          name: "attribute_values_unique_attribute_value_not_deleted",
         },
       ],
     },

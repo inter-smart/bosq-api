@@ -371,14 +371,14 @@ class ProductsService {
                 },
                 ...(needsSectorFilter
                   ? [
-                      {
-                        association: "sectors",
-                        attributes: ["id", "name", "name_ar", "slug"],
-                        through: { attributes: [] },
-                        where: sectorCondition,
-                        required: true,
-                      },
-                    ]
+                    {
+                      association: "sectors",
+                      attributes: ["id", "name", "name_ar", "slug"],
+                      through: { attributes: [] },
+                      where: sectorCondition,
+                      required: true,
+                    },
+                  ]
                   : []),
               ],
             },
@@ -478,6 +478,8 @@ class ProductsService {
       throw new Error(`Error fetching PRODUCT listing: ${error.message}`);
     }
   }
+
+
   static async getProductModelData(params) {
     const { slug, attributes: allAttributes } = params;
 

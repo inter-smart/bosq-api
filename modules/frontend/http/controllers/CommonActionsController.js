@@ -139,14 +139,18 @@ class CommonActionsController {
       const modelsWithAttributes =
         baseProduct.models?.map((model) => {
           const attributesMap = new Map();
+          const variantsList = [];
 
-          // Extract unique attributes with their values from this model's variants
+          // Extract unique attributes and build variant lookup list
           model.variants?.forEach((variant) => {
+            const variantAttrMapping = {};
+
             variant.variant_attributes?.forEach((va) => {
               const attr = va.ProductAttribute;
               const attrValue = va.AttributeValue;
 
               if (attr && attrValue) {
+                // Populate attributes filter data
                 if (!attributesMap.has(attr.id)) {
                   attributesMap.set(attr.id, {
                     id: attr.id,
@@ -169,7 +173,16 @@ class CommonActionsController {
                     slug: attrValue.slug,
                   });
                 }
+
+                // Populate variant mapping
+                variantAttrMapping[attr.slug] = attrValue.slug;
               }
+            });
+
+            variantsList.push({
+              id: variant.id,
+              sku: variant.sku,
+              attributes: variantAttrMapping,
             });
           });
 
@@ -191,6 +204,7 @@ class CommonActionsController {
             slug: model.slug,
             media_path: generateImageUrl(model.media_path),
             attributes,
+            variant_lookups: variantsList,
           };
         }) || [];
 

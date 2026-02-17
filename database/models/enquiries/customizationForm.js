@@ -30,9 +30,14 @@ module.exports = (sequelize) => {
         type: DataTypes.STRING,
         allowNull: true,
       },
-      options_id: {
+      dropdown_id: {
         type: DataTypes.INTEGER,
         allowNull: false,
+        reference:{
+          model: "enquiry_dropdown",
+          key: "id",
+          onDelete: "CASCADE",
+        }
       },
       state_id: {
         type: DataTypes.INTEGER,
@@ -51,9 +56,9 @@ module.exports = (sequelize) => {
 
 
   CustomizationEnquiry.associate = (models) => {
-    CustomizationEnquiry.belongsTo(models.CustomizationOptions, {
-      foreignKey: "options_id",
-      as: "options",
+    CustomizationEnquiry.belongsTo(models.EnquiryDropdown, {
+      foreignKey: "dropdown_id",
+      as: "dropdown",
       onDelete: "CASCADE",
     });
 

@@ -28,16 +28,19 @@ class ContactEnquiryService {
         throw error;
       }
 
-      const { options_id } = data;
+      const { dropdown_id } = data;
 
-      const isExist = await models.CustomizationOptions.findOne({
-        where: { id: options_id },
-      });
-
-      if (!isExist) {
-        throw new Error("Invalid customization option");
+      // Sanitize state_id — convert falsy values to null (column is nullable)
+      if (!data.state_id) {
+        data.state_id = null;
+      } else {
+        const isExist = await models.EnquiryDropdown.findOne({
+          where: { id: dropdown_id },
+        });
+        if (!isExist) {
+          throw new Error("Invalid customization option");
+        }
       }
-
       // Sanitize state_id — convert falsy values to null (column is nullable)
       if (!data.state_id) {
         data.state_id = null;
@@ -50,8 +53,8 @@ class ContactEnquiryService {
         }
       }
 
-      const option = await models.CustomizationOptions.findOne({
-        where: { id: data.options_id },
+      const option = await models.EnquiryDropdown.findOne({
+        where: { id: data.dropdown_id },
       });
       const state = data.state_id
         ? await models.State.findOne({ where: { id: data.state_id } })

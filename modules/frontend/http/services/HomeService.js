@@ -37,12 +37,14 @@ class HomeService {
       const [
         homeCms,
         banners,
-        productCategory,
+        productCategories,
         projects,
         SmartSpaceCalculator,
         brands,
         fits,
         otherMeta,
+        state,
+        enquiryDropdowns
       ] = await Promise.all([
         models.HomeCms.findOne({}),
         models.HomeBanner.findAll({
@@ -56,9 +58,6 @@ class HomeService {
           attributes: ["id", "name", "name_ar", "media_path", "slug"],
           where: {
             status: true,
-            parent_id: {
-              [Op.ne]: null,
-            },
           },
           order: [["sort_order", "ASC"]],
         }),
@@ -94,6 +93,29 @@ class HomeService {
           },
           attributes: ["other_meta_ar", "other_meta"],
         }),
+       models.State.findAll({
+          attributes: ["id", "name", "slug"],
+          include: [
+            {
+              model: models.Country,
+              as: "country",
+              attributes: [], // ❌ hide country data
+              where: {
+                slug: {
+                  [Op.in]: ["om", "ae"], // Only Oman and UAE
+                },
+              },
+              required: true,
+            },
+          ],
+        }),
+           models.EnquiryDropdown.findAll({
+                  where: {
+                    status: true,
+                  },
+                  attributes:["id", "title", "title_ar"],
+                  order: [["sort_order", "ASC"]],
+                }),
       ]);
 
       const sliders = buildHomeBannerSliders(banners);
@@ -101,10 +123,11 @@ class HomeService {
       const journeySection = buildJourneySection(homeCms, "journey");
       const featuredSection = buildFeaturedProductSection(
         homeCms,
-        productCategory,
+        productCategories,
       );
       const projectSection = buildProjectsSection(projects, homeCms);
-      const smartSpaceSection = buildSmartSpaceCalculatorSection(SmartSpaceCalculator);
+      const smartSpaceSection =
+        buildSmartSpaceCalculatorSection(SmartSpaceCalculator);
       const fitsSection = buildFitsSection(homeCms, fits);
       const brandsSection = buildBrandSection(homeCms, brands);
       const formSection = buildCmsSection(homeCms, "form");
@@ -121,6 +144,8 @@ class HomeService {
         brandsSection,
         formSection,
         otherMetaTags,
+        state,
+        enquiryDropdowns
       };
       await setCache(cacheKey, result);
 

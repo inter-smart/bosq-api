@@ -1,3 +1,4 @@
+const enquiryDropdown = require("../../database/models/master/enquiryDropdown");
 const productCategory = require("../../database/models/resources/productCategory");
 const cacheKeys = require("./cacheKeys");
 
@@ -86,6 +87,8 @@ const cacheDependencies = {
   ProductCategory: [cacheKeys.home, cacheKeys.listingDropdownFilters],
   ErgonomicFeatures: [cacheKeys.ergonomichair],
   ErgonomicCms: [cacheKeys.ergonomichair],
+
+  enquiryDropdown: [cacheKeys.home, cacheKeys.customization]
 };
 
 module.exports = cacheDependencies;

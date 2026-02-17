@@ -28,15 +28,14 @@ class ContactEnquiryController {
         ],
         include: [
           {
-            model: models.CustomizationOptions,
-            as: "options",
-            attributes: ["id","title"],
+            model: models.EnquiryDropdown,
+            as: "dropdown",
           },
-            {
+          {
             // state
             model: models.State,
             as: "state",
-            attributes: ["id","name", "slug"],
+            attributes: ["id", "name", "slug"],
           }
         ],
         searchFields: ["first_name", "last_name", "email"],
@@ -69,15 +68,14 @@ class ContactEnquiryController {
       const data = await DataModel.findByPk(id, {
         include: [
           {
-            model: models.CustomizationOptions,
-            as: "options",
-            attributes: ["id","title"],
+            model: models.EnquiryDropdown,
+            as: "dropdown",
           },
           {
             // state
             model: models.State,
             as: "state",
-            attributes: ["id","name", "slug"],
+            attributes: ["id", "name", "slug"],
           }
         ],
       });
@@ -112,7 +110,7 @@ class ContactEnquiryController {
 
       // Soft delete
       await data.destroy();
-            sendSuccessResponse(res, { id }, "Data deleted successfully");
+      sendSuccessResponse(res, { id }, "Data deleted successfully");
     } catch (error) {
       console.error("Data deletion error:", error);
       sendErrorResponse(res, error);

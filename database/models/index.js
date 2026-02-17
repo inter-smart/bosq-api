@@ -130,6 +130,9 @@ const defineProductEnquiry = require("./enquiries/productEnquiry");
 const defineState = require("./state");
 const defineCountry = require("./country");
 
+// MASTER
+const defineEnquiryDropdown = require("./master/enquiryDropdown");
+
 // COUPONS
 const defineCoupons = require("./coupons");
 const defineCouponUsage = require("./couponUsage");
@@ -275,7 +278,10 @@ const models = {
   LandingPage: defineLandingPage(sequelize),
   ProductTypes: defineProductTypes(sequelize),
 
-  
+  // MASTER
+  EnquiryDropdown: defineEnquiryDropdown(sequelize),
+
+
 };
 
 Object.keys(models).forEach((modelName) => {

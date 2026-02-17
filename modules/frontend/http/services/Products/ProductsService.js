@@ -46,7 +46,7 @@ class ProductsService {
 
       if (variantSku) {
         const variantData = await models.ProductVariants.findOne({
-          where: { product_id: baseData.id, sku: variantSku, status: true },
+          where: { sku: variantSku, status: true },
           attributes: ["id", "product_model_id", "sku", "title", "title_ar", "price", "stock", "media_path"],
           include: [
             {

@@ -101,6 +101,8 @@ class CheckOutService {
       };
     }
 
+    // await ProductServiceHelpers.validateCoupon(cart);
+
     const priceChanged = await ProductServiceHelpers.syncCartItemPrices(cart);
 
     if (priceChanged) {
@@ -219,8 +221,9 @@ class CheckOutService {
 
       // 4. Check minimum order amount
       const subtotal = parseFloat(cart.subtotal);
-      if (subtotal < parseFloat(coupon.min_order_amount)) {
-        throw ErrorHandler.createError(`Minimum order amount of ${coupon.min_order_amount} AED is required for this coupon`, HTTP_STATUS.BAD_REQUEST);
+      // 5. Check minimum order amount if it exists
+      if (coupon.min_product_amount && subtotal < parseFloat(coupon.min_product_amount)) {
+        throw ErrorHandler.createError(`Minimum order amount of ${coupon.min_product_amount} AED is required for this coupon`, HTTP_STATUS.BAD_REQUEST);
       }
 
       // 5. Check total usage limit
@@ -257,6 +260,13 @@ class CheckOutService {
       // 8. Calculate discount amount
 
       await this.couponWiseUpdates(coupon, cart, transaction);
+
+      const cartnEW = await models.Cart.findOne({
+        where: { id: cart.id },
+        transaction,
+      });
+
+      console.log("CART NEW", JSON.stringify(cartnEW, null, 2));
 
       await transaction.commit();
 
@@ -489,6 +499,8 @@ class CheckOutService {
       // Scoped coupon: discount applies only to matching items
       const matchingItems = this.getMatchingCartItems(coupon, cart.items);
 
+      console.log("MATCHING ITEMS", matchingItems);
+
       if (matchingItems.length === 0) {
         throw ErrorHandler.createError("This coupon is not applicable to the items in your cart", HTTP_STATUS.BAD_REQUEST);
       }
@@ -497,6 +509,11 @@ class CheckOutService {
       const eligibleSubtotal = matchingItems.reduce((sum, item) => {
         return sum + parseFloat(item.price) * item.quantity;
       }, 0);
+
+      // Validate against min_product_amount
+      if (coupon.min_product_amount && eligibleSubtotal < parseFloat(coupon.min_product_amount)) {
+        throw ErrorHandler.createError(`The total of eligible products must be at least ${coupon.min_product_amount} to use this coupon`, HTTP_STATUS.BAD_REQUEST);
+      }
 
       // Calculate discount based on eligible subtotal
       let discountAmount = 0;
@@ -512,10 +529,15 @@ class CheckOutService {
         }
       }
 
+      console.log("DISCOUNT AMOUNT", discountAmount);
+
+
+
       // Distribute discount proportionally across matching items
       for (const item of matchingItems) {
         const itemDiscount = discountAmount;
-        const finalPrice = parseFloat(item.price) - itemDiscount;
+        const totalItems = item?.quantity
+        const finalPrice = (parseFloat(item.price) * totalItems) - itemDiscount;
 
         await models.CartItems.update(
           {
@@ -532,9 +554,14 @@ class CheckOutService {
         );
       }
 
+
+
       // Update cart totals
       const newDiscountTotal = parseFloat(cart.discount_total) + discountAmount;
       const newGrandTotal = subtotal - newDiscountTotal;
+
+      console.log("NEW DISCOUNT TOTAL", newDiscountTotal);
+      console.log("NEW GRAND TOTAL", newGrandTotal);
 
       await models.Cart.update(
         {

@@ -50,7 +50,13 @@ module.exports = (sequelize) => {
 
       min_order_amount: {
         type: DataTypes.DECIMAL(10, 2),
-        allowNull: false,
+        allowNull: true,
+      },
+
+
+      min_product_amount: {
+        type: DataTypes.DECIMAL(10, 2),
+        allowNull: true,
       },
 
       max_discount_amount: {

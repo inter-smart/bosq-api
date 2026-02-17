@@ -80,7 +80,10 @@ class CartService {
         };
       }
 
+      // await ProductServiceHelpers.validateCoupon(cart);
+
       const priceChanged = await ProductServiceHelpers.syncCartItemPrices(cart, transaction);
+
 
       // Reload cart with fresh data after price sync
       if (priceChanged) {
@@ -106,6 +109,8 @@ class CartService {
           transaction,
         });
       }
+
+      console.log("CART FROM GET", JSON.stringify(cart, null, 2));
 
       const itemCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -191,7 +196,7 @@ class CartService {
             variant_id: variantId || null,
             quantity,
             price,
-            final_price: price,
+            final_price: quantity * price,
             discount_amount: 0,
           },
           { transaction },

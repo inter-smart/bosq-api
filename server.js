@@ -14,13 +14,20 @@ const { seedMetaTags } = require("./database/seeders/metaTags");
 const { redisClient, connectRedis } = require("./config/redis");
 const { homeCmsData } = require("./database/seeders/HomeCms");
 const users = require("./database/models/users/users");
-const { seedCountriesAndStates } = require("./database/seeders/stateCountry");
+const seedCountriesAndStates = require("./database/seeders/stateCountry");
 
 dotenv.config();
 const app = express();
 app.use(cookieParser());
 
-const allowedOrigins = ["http://localhost:3000", "http://localhost:8080", "http://localhost:8081", "https://bosq-admin-staging.netlify.app"];
+const allowedOrigins = [
+  "http://localhost:3000",
+  "http://localhost:8080",
+  "http://localhost:8081",
+  "https://bosq-admin-staging.netlify.app",
+  "https://bosq-staging.netlify.app",
+  "https://dev-bosq.netlify.app",
+];
 
 app.use(
   cors({
@@ -31,7 +38,7 @@ app.use(
       return callback(new Error(`CORS policy does not allow access from: ${origin}`), false);
     },
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "Cookie"], // ⭐ Added Cookie header
   }),
 );
@@ -53,11 +60,9 @@ const PORT = process.env.PORT || 3002;
 const startServer = async () => {
   try {
     await sequelize.authenticate();
-    // await sequelize.sync({ alter: true });
-    // Logger.info("✅ Database connected and synced");
 
-    // homeCmsData();
-    // await seedCountriesAndStates();
+    // await homeCmsData();
+    await seedCountriesAndStates();
     // Add this to see which models are registered
     // console.log("Registered models:", Object.keys(sequelize.models));
 

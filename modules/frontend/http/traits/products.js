@@ -56,23 +56,20 @@ class ProductServiceHelpers {
   static async getProductVariantRelatedModels(product_base_id) {
     const cacheKey = cacheKeys?.productVariantRelatedModels(product_base_id);
     const baseDataFromCache = await getCache(cacheKey);
-    // if (baseDataFromCache) {
-    //   return {
-    //     data: baseDataFromCache,
-    //     fromCache: true,
-    //   };
-    // }
 
     const productmodels = await models?.ProductModels?.findAll({
       where: { product_id: product_base_id, status: true },
-      attributes: ["id", "code", "title", "title_ar", "slug", "media_path"],
+      attributes: ["id", "code", "title", "title_ar", "slug", "media_path", "base_price"],
       include: [
         {
           association: "variants",
-          as: "allVariants",
-          attributes: ["id", "sku"],
+          attributes: ["id", "sku", "title", "title_ar", "price", "stock", "media_path"],
           required: false,
           include: [
+            {
+              association: "variant_images",
+              attributes: ["id", "media_path", "media_type", "is_primary", "sort_order"],
+            },
             {
               association: "attribute_values",
               attributes: ["id"],
@@ -81,12 +78,6 @@ class ProductServiceHelpers {
                 {
                   association: "attribute",
                   attributes: ["id", "name", "code", "slug"],
-                  include: [
-                    {
-                      association: "values",
-                      attributes: ["id", "attribute_id", "value", "slug"],
-                    },
-                  ],
                 },
               ],
             },
@@ -102,7 +93,19 @@ class ProductServiceHelpers {
         title: model.title,
         title_ar: model.title_ar,
         slug: model.slug,
+        base_price: model.base_price,
         media_path: generateImageUrl(model.media_path),
+        variants:
+          model.variants?.map((v) => ({
+            id: v.id,
+            sku: v.sku,
+            title: v.title,
+            title_ar: v.title_ar,
+            price: v.price,
+            stock: v.stock,
+            media_path: generateImageUrl(v.media_path),
+            hover_media_path: generateImageUrl(v.variant_images?.find((img) => !img.is_primary)?.media_path),
+          })) || [],
         attributes: buildAttributesFromVariants(model.variants || []),
       })) || [];
     await setCache(cacheKey, data);
@@ -172,6 +175,10 @@ class ProductServiceHelpers {
     }
 
     return { priceChanged };
+  }
+
+  static async validateCoupon(cart) {
+    const isCouponApplied = cart.coupon_code;
   }
 
   static checkInvalidProducts(cartItems) {

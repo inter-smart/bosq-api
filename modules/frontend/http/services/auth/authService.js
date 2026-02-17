@@ -14,6 +14,8 @@ const EmailService = require("../../../../../services/EmailService.js");
 const { generateSlugWithTimestamp } = require("../../traits/mediaButtonHelper.js");
 const { Op } = require("sequelize");
 
+const isProduction = process.env.NODE_ENV === "production";
+
 const Users = models.Users;
 const Otps = models.Otps;
 
@@ -324,8 +326,9 @@ class UsersService {
 
       res.cookie("access_token", token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
+        secure: isProduction,
+        sameSite: isProduction ? "none" : "lax",
+        path: "/",
         maxAge: 24 * 60 * 60 * 1000,
       });
 

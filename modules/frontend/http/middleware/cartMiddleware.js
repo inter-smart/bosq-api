@@ -1,4 +1,4 @@
-export const cartContext = async (req, res, next) => {
+const cartContext = async (req, res, next) => {
   try {
     if (req.auth) {
       req.cartOwner = {
@@ -25,3 +25,5 @@ export const cartContext = async (req, res, next) => {
     next();
   }
 };
+
+module.exports = { cartContext };

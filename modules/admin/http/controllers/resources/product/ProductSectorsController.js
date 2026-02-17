@@ -10,6 +10,41 @@ const { handleFileUploadStore, handleFileUploadUpdate } = require("../../../midd
 const DataModel = models.ProductSectors;
 
 class ProductSectorsController {
+  static async generateUniqueSlug(name, ignoreId = null) {
+    const baseSlug = slugify(name.trim(), { lower: true, strict: true });
+
+    // Check for any slugs starting with the baseSlug
+    const whereClause = {
+      slug: { [Op.like]: `${baseSlug}%` },
+    };
+
+    // Exclude current record if updating
+    if (ignoreId) {
+      whereClause.id = { [Op.ne]: ignoreId };
+    }
+
+    const duplicates = await DataModel.findAll({
+      where: whereClause,
+      attributes: ["slug"],
+      paranoid: false,
+    });
+
+    if (duplicates.length === 0) return baseSlug;
+
+    const slugSet = new Set(duplicates.map((d) => d.slug));
+
+    // If exact baseSlug not taken, use it
+    if (!slugSet.has(baseSlug)) return baseSlug;
+
+    // Otherwise find next available counter
+    let counter = 1;
+    while (slugSet.has(`${baseSlug}-${counter}`)) {
+      counter++;
+    }
+
+    return `${baseSlug}-${counter}`;
+  }
+
   static async index(req, res) {
     try {
       const result = await paginate(DataModel, req, {
@@ -44,20 +79,16 @@ class ProductSectorsController {
 
       if (!name || name.trim() === "") return sendErrorResponse(res, "Name is required to generate slug", null, 400);
 
-      const newSlug = slugify(name.trim(), { lower: true, strict: true });
-
+      // Check for existing name or code
       const existing = await DataModel.findOne({
         where: {
-          [Op.or]: [{ slug: newSlug }, { name: name.trim() }, { code: code.trim() }],
+          [Op.or]: [{ name: name.trim() }, { code: code.trim() }],
         },
-        paranoid: false,
+        paranoid: true,
       });
 
       if (existing) {
         await transaction.rollback();
-        if (existing.slug === newSlug) {
-          return sendErrorResponse(res, `Slug "${newSlug}" already exists`, { existing_id: existing.id }, 409);
-        }
         if (existing.name === name.trim()) {
           return sendErrorResponse(res, `Name "${name}" already exists`, { existing_id: existing.id }, 409);
         }
@@ -66,6 +97,7 @@ class ProductSectorsController {
         }
       }
 
+      const newSlug = await ProductSectorsController.generateUniqueSlug(name);
       req.body.slug = newSlug;
 
       const fileFields = ["media_path"];
@@ -121,21 +153,20 @@ class ProductSectorsController {
       }
 
       if (name && name.trim() !== data.name) {
-        const newSlug = slugify(name.trim(), { lower: true, strict: true });
-
-        const existingSlug = await DataModel.findOne({
+        const existingName = await DataModel.findOne({
           where: {
-            slug: newSlug,
+            name: name.trim(),
             id: { [Op.ne]: id },
           },
           paranoid: false,
         });
 
-        if (existingSlug) {
+        if (existingName) {
           await transaction.rollback();
-          return sendErrorResponse(res, `Slug "${newSlug}" already exists`, { existing_id: existingSlug.id }, 409);
+          return sendErrorResponse(res, `Name "${name}" already exists`, { existing_id: existingName.id }, 409);
         }
 
+        const newSlug = await ProductSectorsController.generateUniqueSlug(name, id);
         req.body.slug = newSlug;
       }
 

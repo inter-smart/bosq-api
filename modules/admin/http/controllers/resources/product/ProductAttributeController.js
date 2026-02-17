@@ -9,6 +9,43 @@ const { Op } = require("sequelize");
 const DataModel = models.ProductAttribute;
 
 class ProductAttributeController {
+  // Helper to generate unique slug
+  static async generateUniqueSlug(name, ignoreId = null) {
+    const baseSlug = slugify(name.trim(), { lower: true, strict: true });
+
+    // Check for any slugs starting with the baseSlug
+    const whereClause = {
+      slug: { [Op.like]: `${baseSlug}%` }
+    };
+
+    // Exclude current record if updating
+    if (ignoreId) {
+      whereClause.id = { [Op.ne]: ignoreId };
+    }
+
+
+    const duplicates = await DataModel.findAll({
+      where: whereClause,
+      attributes: ['slug'],
+      paranoid: true
+    });
+
+    if (duplicates.length === 0) return baseSlug;
+
+    const slugSet = new Set(duplicates.map(d => d.slug));
+
+    // If exact baseSlug not taken, use it
+    if (!slugSet.has(baseSlug)) return baseSlug;
+
+    // Otherwise find next available counter
+    let counter = 1;
+    while (slugSet.has(`${baseSlug}-${counter}`)) {
+      counter++;
+    }
+
+    return `${baseSlug}-${counter}`;
+  }
+
   static async index(req, res) {
     try {
       const result = await paginate(DataModel, req, {
@@ -50,23 +87,19 @@ class ProductAttributeController {
 
       if (!name || name.trim() === "") return sendErrorResponse(res, "Name is required to generate slug", null, 400);
 
-      const newSlug = slugify(name.trim(), { lower: true, strict: true });
-
-      const existing = await DataModel.findOne({
-        where: {
-          [Op.or]: [{ slug: newSlug }, { code: code }],
-        },
-        paranoid: false,
+      // Check for existing Code (Strict uniqueness)
+      const existingCode = await DataModel.findOne({
+        where: { code: code },
+        paranoid: true,
       });
 
-      if (existing) {
+      if (existingCode) {
         await transaction.rollback();
-        if (existing.slug === newSlug) {
-          return sendErrorResponse(res, `Slug "${newSlug}" already exists`, { existing_id: existing.id }, 409);
-        }
-        return sendErrorResponse(res, `Code "${code}" already exists`, { existing_id: existing.id }, 409);
+        return sendErrorResponse(res, `Code "${code}" already exists`, { existing_id: existingCode.id }, 409);
       }
 
+      // Generate Unique Slug
+      const newSlug = await ProductAttributeController.generateUniqueSlug(name);
       req.body.slug = newSlug;
 
       const productAttribute = await DataModel.create(req.body, { transaction });
@@ -126,38 +159,26 @@ class ProductAttributeController {
         return sendNotFoundError(res, "Product Attribute");
       }
 
-      if (name && name.trim() !== data.name) {
-        const newSlug = slugify(name.trim(), { lower: true, strict: true });
-
-        const existingSlug = await DataModel.findOne({
-          where: {
-            slug: newSlug,
-            id: { [Op.ne]: id },
-          },
-          paranoid: false,
-        });
-
-        if (existingSlug) {
-          await transaction.rollback();
-          return sendErrorResponse(res, `Slug "${newSlug}" already exists`, { existing_id: existingSlug.id }, 409);
-        }
-
-        req.body.slug = newSlug;
-      }
-
+      // Check Code Uniqueness if changed
       if (code && code !== data.code) {
         const existingCode = await DataModel.findOne({
           where: {
             code: code,
             id: { [Op.ne]: id },
           },
-          paranoid: false,
+          paranoid: true, // Ignore soft deleted
         });
 
         if (existingCode) {
           await transaction.rollback();
           return sendErrorResponse(res, `Code "${code}" already exists`, { existing_id: existingCode.id }, 409);
         }
+      }
+
+      // Update Slug if Name changed
+      if (name && name.trim() !== data.name) {
+        const newSlug = await ProductAttributeController.generateUniqueSlug(name, id);
+        req.body.slug = newSlug;
       }
 
       await data.update(req.body, { transaction });

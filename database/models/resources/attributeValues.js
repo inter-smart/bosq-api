@@ -23,7 +23,6 @@ module.exports = (sequelize) => {
       value: {
         type: DataTypes.STRING(255),
         allowNull: false,
-        unique: true,
       },
 
       media_path: {
@@ -34,13 +33,11 @@ module.exports = (sequelize) => {
       value_ar: {
         type: DataTypes.STRING(255),
         allowNull: true,
-        unique: true,
       },
 
       slug: {
         type: DataTypes.STRING(255),
         allowNull: false,
-        unique: true,
       },
 
       sort_order: {
@@ -57,6 +54,24 @@ module.exports = (sequelize) => {
       tableName: "attribute_values",
       timestamps: true,
       paranoid: true,
+      indexes: [
+        {
+          unique: true,
+          fields: ["attribute_id", "slug"],
+          where: {
+            deletedAt: null,
+          },
+          name: "attribute_values_unique_attribute_slug_not_deleted",
+        },
+        {
+          unique: true,
+          fields: ["attribute_id", "value"],
+          where: {
+            deletedAt: null,
+          },
+          name: "attribute_values_unique_attribute_value_not_deleted",
+        },
+      ],
     },
   );
 

@@ -13,18 +13,15 @@ module.exports = (sequelize) => {
       name: {
         type: DataTypes.STRING(255),
         allowNull: false,
-        unique: true,
       },
       name_ar: {
         type: DataTypes.STRING(255),
         allowNull: false,
-        unique: true,
       },
 
       slug: {
         type: DataTypes.STRING(255),
         allowNull: false,
-        unique: true,
       },
 
       media_path: {
@@ -46,6 +43,16 @@ module.exports = (sequelize) => {
       tableName: "product_selling_points",
       timestamps: true,
       paranoid: true,
+      indexes: [
+        {
+          unique: true,
+          fields: ["slug"],
+          where: {
+            deletedAt: null,
+          },
+          name: "product_selling_point_unique_slug_not_deleted",
+        },
+      ],
     }
   );
 

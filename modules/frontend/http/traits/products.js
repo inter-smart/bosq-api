@@ -126,11 +126,12 @@ class ProductServiceHelpers {
     let discountTotal = 0;
 
     for (const item of cartItems) {
-      const itemTotal = parseFloat(item.final_price) * item.quantity;
+      const itemTotal = parseFloat(item.final_price);
       const itemDiscount = parseFloat(item.discount_amount);
 
       console.log("itemTotal", itemTotal);
       console.log("itemDiscount", itemDiscount);
+
 
       subtotal += itemTotal;
       discountTotal += itemDiscount;
@@ -138,6 +139,7 @@ class ProductServiceHelpers {
 
     console.log("subtotal", subtotal);
     console.log("discountTotal", discountTotal);
+
 
     const grandTotal = subtotal;
 
@@ -165,12 +167,13 @@ class ProductServiceHelpers {
 
       const variantPrice = parseFloat(item.variant.price);
       const cartItemPrice = parseFloat(item.price);
+      const cartQuantity = item.quantity;
 
       if (variantPrice !== cartItemPrice) {
         await item.update(
           {
             price: variantPrice,
-            final_price: variantPrice,
+            final_price: variantPrice * cartQuantity,
           },
           { transaction },
         );

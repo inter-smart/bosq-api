@@ -222,8 +222,8 @@ class CheckOutService {
       // 4. Check minimum order amount
       const subtotal = parseFloat(cart.subtotal);
       // 5. Check minimum order amount if it exists
-      if (coupon.min_product_amount && subtotal < parseFloat(coupon.min_product_amount)) {
-        throw ErrorHandler.createError(`Minimum order amount of ${coupon.min_product_amount} AED is required for this coupon`, HTTP_STATUS.BAD_REQUEST);
+      if (coupon.min_order_amount && subtotal < parseFloat(coupon.min_order_amount)) {
+        throw ErrorHandler.createError(`Minimum order amount of ${coupon.min_order_amount} AED is required for this coupon`, HTTP_STATUS.BAD_REQUEST);
       }
 
       // 5. Check total usage limit
@@ -266,7 +266,6 @@ class CheckOutService {
         transaction,
       });
 
-      console.log("CART NEW", JSON.stringify(cartnEW, null, 2));
 
       await transaction.commit();
 
@@ -327,20 +326,33 @@ class CheckOutService {
         throw ErrorHandler.createError("No coupon is applied to this cart", HTTP_STATUS.BAD_REQUEST);
       }
 
+
+      const applliedCoupon = await models.Coupons.findOne({
+        attributes: ["id", "scope_type", "scope_id"],
+        where: {
+          code: cart.applied_coupon_code,
+        },
+        transaction,
+      });
+
+      if (!applliedCoupon) {
+        throw ErrorHandler.createError("Invalid or expired coupon code", HTTP_STATUS.BAD_REQUEST);
+      }
+
       // Reset item-level coupon fields for scoped coupons
-      await models.CartItems.update(
-        {
-          discount_amount: 0,
-          final_price: sequelize.col("price"),
-          coupon_id: null,
-          applied_coupon_code: null,
-          applied_coupon_scope: null,
-        },
-        {
-          where: { cart_id: cart.id },
-          transaction,
-        },
-      );
+      // await models.CartItems.update(
+      //   {
+      //     discount_amount: 0,
+      //     final_price: sequelize.literal("price * quantity"),
+      //     coupon_id: null,
+      //     applied_coupon_code: null,
+      //     applied_coupon_scope: null,
+      //   },
+      //   {
+      //     where: { cart_id: cart.id },
+      //     transaction,
+      //   },
+      // );
 
       // Recalculate totals without coupon discount
       await ProductServiceHelpers.recalculateCartTotals(cart.id, transaction);
@@ -442,6 +454,7 @@ class CheckOutService {
 
   static getMatchingCartItems(coupon, cartItems) {
     const scopeId = parseInt(coupon.scope_id);
+    const minimumProductAmount = parseFloat(coupon.min_product_amount);
     return cartItems.filter((item) => {
       switch (coupon.scope_type) {
         case "variant":
@@ -451,7 +464,7 @@ class CheckOutService {
         case "product":
           return item.product_id === scopeId;
         case "category":
-          return item.variant?.productModel?.product?.category_id === scopeId;
+          return item.variant?.productModel?.product?.category_id === scopeId && item.final_price >= minimumProductAmount;
         default:
           return false;
       }
@@ -499,7 +512,7 @@ class CheckOutService {
       // Scoped coupon: discount applies only to matching items
       const matchingItems = this.getMatchingCartItems(coupon, cart.items);
 
-      console.log("MATCHING ITEMS", matchingItems);
+      console.log("MATCHING ITEMS", JSON.stringify(matchingItems, null, 2));
 
       if (matchingItems.length === 0) {
         throw ErrorHandler.createError("This coupon is not applicable to the items in your cart", HTTP_STATUS.BAD_REQUEST);
@@ -509,6 +522,9 @@ class CheckOutService {
       const eligibleSubtotal = matchingItems.reduce((sum, item) => {
         return sum + parseFloat(item.price) * item.quantity;
       }, 0);
+
+      console.log("ELIGIBLE SUBTOTAL", eligibleSubtotal);
+
 
       // Validate against min_product_amount
       if (coupon.min_product_amount && eligibleSubtotal < parseFloat(coupon.min_product_amount)) {
@@ -528,16 +544,33 @@ class CheckOutService {
           discountAmount = eligibleSubtotal;
         }
       }
+      let finalDiscountAmount = 0.00;
+      const totalMatchingItems = matchingItems.length;
 
-      console.log("DISCOUNT AMOUNT", discountAmount);
+      console.log("eligibleSubtotal", eligibleSubtotal);
+      console.log("discountAmount", discountAmount);
 
+      for (let i = 0; i < totalMatchingItems; i++) {
+        const item = matchingItems[i];
+        const itemTotalPrice = parseFloat(item.price) * item.quantity;
 
+        let itemDiscount = 0;
 
-      // Distribute discount proportionally across matching items
-      for (const item of matchingItems) {
-        const itemDiscount = discountAmount;
-        const totalItems = item?.quantity
-        const finalPrice = (parseFloat(item.price) * totalItems) - itemDiscount;
+        // If it's the last item, give it the remainder to avoid rounding issues
+        if (i === totalMatchingItems - 1) {
+          itemDiscount = discountAmount - finalDiscountAmount;
+        } else {
+          // Proportional share
+          const proportion = itemTotalPrice / eligibleSubtotal;
+          itemDiscount = Math.round((discountAmount * proportion) * 100) / 100;
+        }
+
+        // Safety check: discount cannot exceed item total
+        itemDiscount = Math.min(itemDiscount, itemTotalPrice);
+
+        const finalPrice = itemTotalPrice - itemDiscount;
+
+        console.log(`updated item - ${item.variant?.productModel?.product?.title || 'item'} - Discount: ${itemDiscount.toFixed(2)}, Final Price: ${finalPrice.toFixed(2)}`);
 
         await models.CartItems.update(
           {
@@ -550,18 +583,20 @@ class CheckOutService {
           {
             where: { id: item.id },
             transaction,
-          },
+          }
         );
+
+        finalDiscountAmount += itemDiscount;
       }
 
 
-
       // Update cart totals
-      const newDiscountTotal = parseFloat(cart.discount_total) + discountAmount;
+      const newDiscountTotal = parseFloat(cart.discount_total) + finalDiscountAmount;
       const newGrandTotal = subtotal - newDiscountTotal;
 
       console.log("NEW DISCOUNT TOTAL", newDiscountTotal);
       console.log("NEW GRAND TOTAL", newGrandTotal);
+
 
       await models.Cart.update(
         {

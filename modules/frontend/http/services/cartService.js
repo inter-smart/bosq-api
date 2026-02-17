@@ -110,7 +110,6 @@ class CartService {
         });
       }
 
-      console.log("CART FROM GET", JSON.stringify(cart, null, 2));
 
       const itemCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -185,6 +184,7 @@ class CartService {
         await existingItem.update(
           {
             quantity: existingItem.quantity + quantity,
+            final_price: (existingItem.quantity + quantity) * price,
           },
           { transaction },
         );
@@ -255,7 +255,10 @@ class CartService {
         throw ErrorHandler.createError("Product variant out of stock", HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
       }
 
-      await cartItem.update({ quantity }, { transaction });
+      const currentPrice = cartItem.price;
+      const finalPrice = currentPrice * quantity;
+
+      await cartItem.update({ quantity, final_price: finalPrice }, { transaction });
 
       // Recalculate totals
       await ProductServiceHelpers.recalculateCartTotals(cart.id, transaction);

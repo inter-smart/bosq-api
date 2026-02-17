@@ -1,0 +1,60 @@
+const { models } = require("../../../../database/models");
+const {
+  validateRecaptcha,
+} = require("../../../../services/RecaptchaValidation");
+const { handleFileUploadStore } = require("../../../admin/http/middleware/multerMiddleware");
+
+class ProductEnquiryService {
+  static async store(req,res) {
+    try {
+      const data = req.body;
+      const token = data?.recaptcha_token;
+
+      console.log(data?.media_path);
+
+      if (!token) {
+        throw new Error("reCAPTCHA token missing");
+      }
+
+      const { success, score, action } = await validateRecaptcha(token);
+
+      if (!success || score < 0.5) {
+        const error = new Error(
+          "reCAPTCHA verification failed. Please try again.",
+        );
+        error.statusCode = 403;
+        throw error;
+      }
+
+      const { product_id } = data;
+
+      const productExists = await models.ProductVariants.findOne({
+        where: { id: product_id },
+      });
+
+      if (!productExists) {
+        throw new Error("Invalid product");
+      }
+
+      const fileFields = ["media_path"];
+      handleFileUploadStore(req, fileFields);
+
+      const enquiry = await models.ProductEnquiry.create({
+        product_id: data.product_id,
+        name: data.name,
+        email: data.email,
+        phone: data.phone || null,
+        city: data.city || null,
+        media_path: data.media_path || null,
+        message: data.message,
+      });
+
+      return enquiry;
+    } catch (error) {
+      console.error("Error creating product enquiry:", error.message);
+      throw error;
+    }
+  }
+}
+
+module.exports = ProductEnquiryService;

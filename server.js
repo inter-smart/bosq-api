@@ -62,7 +62,7 @@ const startServer = async () => {
     // console.log("Registered models:", Object.keys(sequelize.models));
 
     // await createAdminUser();
-    await seedMetaTags();
+    // await seedMetaTags();
 
     await connectRedis();
     app.set("redisClient", redisClient);

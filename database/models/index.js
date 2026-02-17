@@ -125,7 +125,7 @@ const defineWishlist = require("./users/usersWishList");
 const defineContactEnquiry = require("./enquiries/contact");
 const defineNewsLetter = require("./enquiries/newsletter");
 const defineCustomizationEnquiry = require("./enquiries/customizationForm");
-
+const defineProductEnquiry = require("./enquiries/productEnquiry");
 // STATE AND COUNTRY
 const defineState = require("./state");
 const defineCountry = require("./country");
@@ -229,6 +229,7 @@ const models = {
   ContactEnquiry: defineContactEnquiry(sequelize),
   CustomizationEnquiry: defineCustomizationEnquiry(sequelize),
   NewsLetter: defineNewsLetter(sequelize),
+  ProductEnquiry: defineProductEnquiry(sequelize),
 
   // Resources
   ProductCategory: defineProductCategory(sequelize),

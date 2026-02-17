@@ -181,9 +181,7 @@ class ProductServiceHelpers {
       }
     }
 
-    if (priceChanged) {
-      await this.recalculateCartTotals(cart.id, transaction);
-    }
+    await this.recalculateCartTotals(cart.id, transaction);
 
     return { priceChanged };
   }
@@ -199,6 +197,7 @@ class ProductServiceHelpers {
 
 
 
+
     if (!coupon) {
       await this.removeCouponFromCart(cart, transaction);
       return;
@@ -207,24 +206,8 @@ class ProductServiceHelpers {
     const now = new Date();
     const isExpired = coupon.end_at < now || coupon.start_at > now;
     const isInactive = !coupon.status;
+    const isBelowMin = coupon.min_order_amount && parseFloat(cart.subtotal) < parseFloat(coupon.min_order_amount)
 
-    let isBelowMin = false;
-    if (coupon.scope_type === "common") {
-      // If there was a min_order_amount before, it seems to have been removed or should be handled here.
-      // For now, if it's common and we don't have a min_order_amount field, we skip this check.
-      if (coupon.min_order_amount && parseFloat(cart.subtotal) < parseFloat(coupon.min_order_amount)) {
-        isBelowMin = true;
-      }
-    } else {
-      // For scoped coupons, we check against min_product_amount
-      const CheckOutService = require("../services/CheckOutService.js");
-      const matchingItems = CheckOutService.getMatchingCartItems(coupon, cart.items || []);
-      const eligibleSubtotal = matchingItems.reduce((sum, item) => sum + parseFloat(item.price) * item.quantity, 0);
-
-      if (coupon.min_product_amount && eligibleSubtotal < parseFloat(coupon.min_product_amount)) {
-        isBelowMin = true;
-      }
-    }
 
     console.log("IS EXPIRED", isExpired);
     console.log("IS INACTIVE", isInactive);
@@ -232,11 +215,14 @@ class ProductServiceHelpers {
 
     if (isExpired || isInactive || isBelowMin) {
       await this.removeCouponFromCart(cart, transaction);
-      console.log("COUPON REMOVED");
-      return;
     }
 
-    return
+
+    const priceChanged = await this.syncCartItemPrices(cart, transaction);
+    console.log("priceChanged", priceChanged);
+
+    return { priceChanged };
+
 
   }
 
@@ -245,7 +231,7 @@ class ProductServiceHelpers {
     await models.CartItems.update(
       {
         discount_amount: 0,
-        final_price: sequelize.col("price"),
+        final_price: sequelize.literal("ROUND(price * quantity, 2)"),
         coupon_id: null,
         applied_coupon_code: null,
         applied_coupon_scope: null,
@@ -260,10 +246,8 @@ class ProductServiceHelpers {
     await cart.update(
       {
         applied_coupon_code: null,
-        applied_coupon_scope: null,
         coupon_id: null,
-        discount_total: 0,
-        grand_total: cart.subtotal,
+        applied_coupon_scope: null,
       },
       { transaction },
     );

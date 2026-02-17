@@ -101,32 +101,28 @@ class CheckOutService {
       };
     }
 
-    // await ProductServiceHelpers.validateCoupon(cart);
+    await ProductServiceHelpers.validateCoupon(cart);
 
-    const priceChanged = await ProductServiceHelpers.syncCartItemPrices(cart);
-
-    if (priceChanged) {
-      await cart.reload({
-        include: [
-          {
-            model: models.CartItems,
-            as: "items",
-            include: [
-              {
-                model: models.ProductBase,
-                as: "product",
-                attributes: ["id", "title", "slug"],
-              },
-              {
-                model: models.ProductVariants,
-                as: "variant",
-                attributes: ["id", "sku", "price", "media_path", "stock", "title", "title_ar"],
-              },
-            ],
-          },
-        ],
-      });
-    }
+    await cart.reload({
+      include: [
+        {
+          model: models.CartItems,
+          as: "items",
+          include: [
+            {
+              model: models.ProductBase,
+              as: "product",
+              attributes: ["id", "title", "slug"],
+            },
+            {
+              model: models.ProductVariants,
+              as: "variant",
+              attributes: ["id", "sku", "price", "media_path", "stock", "title", "title_ar"],
+            },
+          ],
+        },
+      ],
+    });
 
     const itemCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -296,7 +292,7 @@ class CheckOutService {
           if (item.product_id === scopeId) return true;
           break;
         case "category":
-          if (item.variant?.productModel?.product?.category_id === scopeId) return true;
+          if (item.variant?.productModel?.product?.category_id == scopeId) return true;
           break;
       }
     }
@@ -460,7 +456,7 @@ class CheckOutService {
         case "variant":
           return item.variant_id === scopeId;
         case "model":
-          return item.variant?.product_model_id === scopeId;
+          return item.variant?.product_model_id === scopeId && item.final_price >= minimumProductAmount;
         case "product":
           return item.product_id === scopeId;
         case "category":
@@ -559,8 +555,7 @@ class CheckOutService {
             (itemTotalPrice * discountAmount) / 100
           );
         } else {
-          const proportion = itemTotalPrice / eligibleSubtotal;
-          intendedDiscount = round2(discountAmount * proportion);
+          intendedDiscount = round2(discountAmount);
         }
 
         // Apply only remaining max pool

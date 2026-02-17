@@ -80,35 +80,30 @@ class CartService {
         };
       }
 
-      // await ProductServiceHelpers.validateCoupon(cart);
-
-      const priceChanged = await ProductServiceHelpers.syncCartItemPrices(cart, transaction);
-
+      await ProductServiceHelpers.validateCoupon(cart);
 
       // Reload cart with fresh data after price sync
-      if (priceChanged) {
-        await cart.reload({
-          include: [
-            {
-              model: models.CartItems,
-              as: "items",
-              include: [
-                {
-                  model: models.ProductBase,
-                  as: "product",
-                  attributes: ["id", "title", "slug"],
-                },
-                {
-                  model: models.ProductVariants,
-                  as: "variant",
-                  attributes: ["id", "sku", "price", "media_path", "stock", "title", "title_ar"],
-                },
-              ],
-            },
-          ],
-          transaction,
-        });
-      }
+      await cart.reload({
+        include: [
+          {
+            model: models.CartItems,
+            as: "items",
+            include: [
+              {
+                model: models.ProductBase,
+                as: "product",
+                attributes: ["id", "title", "slug"],
+              },
+              {
+                model: models.ProductVariants,
+                as: "variant",
+                attributes: ["id", "sku", "price", "media_path", "stock", "title", "title_ar"],
+              },
+            ],
+          },
+        ],
+        transaction,
+      });
 
 
       const itemCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);

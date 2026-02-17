@@ -3,6 +3,7 @@ const { models } = require("../../../../database/models");
 const {
   validateRecaptcha,
 } = require("../../../../services/RecaptchaValidation");
+const EmailService = require("../../../../services/EmailService");
 
 const dataModel = models.CustomizationEnquiry;
 
@@ -49,16 +50,32 @@ class ContactEnquiryService {
         }
       }
 
+      const option = await models.CustomizationOptions.findOne({
+        where: { id: data.options_id },
+      });
+      const state = data.state_id
+        ? await models.State.findOne({ where: { id: data.state_id } })
+        : null;
+
+      const emailData = {
+        ...data,
+        option_label: option?.title || null,
+        state_label: state?.name || null,
+      };
       const enquiry = await dataModel.create(data);
 
+      await Promise.all([
+        EmailService.sendCustomizationEnquiry(emailData),
+        EmailService.sendCustomizationEnquiryAdmin(emailData),
+      ]).catch((error) => {
+        console.error("Failed to send emails:", error);
+      });
       return enquiry;
     } catch (error) {
       console.error("Error creating contact enquiry:", error.message);
       throw error;
     }
   }
-
-  
 }
 
 module.exports = ContactEnquiryService;

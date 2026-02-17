@@ -339,20 +339,20 @@ class CheckOutService {
         throw ErrorHandler.createError("Invalid or expired coupon code", HTTP_STATUS.BAD_REQUEST);
       }
 
-      // Reset item-level coupon fields for scoped coupons
-      // await models.CartItems.update(
-      //   {
-      //     discount_amount: 0,
-      //     final_price: sequelize.literal("price * quantity"),
-      //     coupon_id: null,
-      //     applied_coupon_code: null,
-      //     applied_coupon_scope: null,
-      //   },
-      //   {
-      //     where: { cart_id: cart.id },
-      //     transaction,
-      //   },
-      // );
+      await models.CartItems.update(
+        {
+          discount_amount: 0,
+          final_price: sequelize.literal("ROUND(price * quantity, 2)"),
+          coupon_id: null,
+          applied_coupon_code: null,
+          applied_coupon_scope: null,
+        },
+        {
+          where: { cart_id: cart.id },
+          transaction,
+        }
+      );
+
 
       // Recalculate totals without coupon discount
       await ProductServiceHelpers.recalculateCartTotals(cart.id, transaction);
@@ -531,46 +531,49 @@ class CheckOutService {
         throw ErrorHandler.createError(`The total of eligible products must be at least ${coupon.min_product_amount} to use this coupon`, HTTP_STATUS.BAD_REQUEST);
       }
 
-      // Calculate discount based on eligible subtotal
-      let discountAmount = 0;
-      if (coupon.discount_type === "percentage") {
-        discountAmount = (eligibleSubtotal * parseFloat(coupon.discount_value)) / 100;
-        if (coupon.max_discount_amount && discountAmount > parseFloat(coupon.max_discount_amount)) {
-          discountAmount = parseFloat(coupon.max_discount_amount);
-        }
-      } else {
-        discountAmount = parseFloat(coupon.discount_value);
-        if (discountAmount > eligibleSubtotal) {
-          discountAmount = eligibleSubtotal;
-        }
+
+      const round2 = (num) => Math.round((num + Number.EPSILON) * 100) / 100;
+
+      let remainingMaxDiscount = round2(parseFloat(coupon.max_discount_amount || 0));
+      let finalDiscountAmount = 0.0;
+
+      const isPercentage = coupon.discount_type === "percentage";
+      let discountAmount = round2(parseFloat(coupon.discount_value));
+
+      // Cap fixed discount to eligible subtotal
+      if (!isPercentage && discountAmount > eligibleSubtotal) {
+        discountAmount = round2(eligibleSubtotal);
       }
-      let finalDiscountAmount = 0.00;
-      const totalMatchingItems = matchingItems.length;
 
-      console.log("eligibleSubtotal", eligibleSubtotal);
-      console.log("discountAmount", discountAmount);
+      for (const item of matchingItems) {
+        if (remainingMaxDiscount <= 0) break;
 
-      for (let i = 0; i < totalMatchingItems; i++) {
-        const item = matchingItems[i];
-        const itemTotalPrice = parseFloat(item.price) * item.quantity;
+        const totalItems = item.quantity;
+        const itemPrice = round2(parseFloat(item.price));
+        const itemTotalPrice = round2(itemPrice * totalItems);
 
-        let itemDiscount = 0;
+        let intendedDiscount = 0;
 
-        // If it's the last item, give it the remainder to avoid rounding issues
-        if (i === totalMatchingItems - 1) {
-          itemDiscount = discountAmount - finalDiscountAmount;
+        if (isPercentage) {
+          intendedDiscount = round2(
+            (itemTotalPrice * discountAmount) / 100
+          );
         } else {
-          // Proportional share
           const proportion = itemTotalPrice / eligibleSubtotal;
-          itemDiscount = Math.round((discountAmount * proportion) * 100) / 100;
+          intendedDiscount = round2(discountAmount * proportion);
         }
 
-        // Safety check: discount cannot exceed item total
-        itemDiscount = Math.min(itemDiscount, itemTotalPrice);
+        // Apply only remaining max pool
+        const itemDiscount = round2(
+          Math.min(intendedDiscount, remainingMaxDiscount)
+        );
 
-        const finalPrice = itemTotalPrice - itemDiscount;
+        const finalPrice = round2(itemTotalPrice - itemDiscount);
 
-        console.log(`updated item - ${item.variant?.productModel?.product?.title || 'item'} - Discount: ${itemDiscount.toFixed(2)}, Final Price: ${finalPrice.toFixed(2)}`);
+        console.log(
+          `updated item - ${item.title} - ${itemDiscount}, ${finalPrice}`
+        );
+
 
         await models.CartItems.update(
           {
@@ -586,13 +589,17 @@ class CheckOutService {
           }
         );
 
-        finalDiscountAmount += itemDiscount;
+
+        remainingMaxDiscount = round2(remainingMaxDiscount - itemDiscount);
+        finalDiscountAmount = round2(finalDiscountAmount + itemDiscount);
       }
 
-
       // Update cart totals
-      const newDiscountTotal = parseFloat(cart.discount_total) + finalDiscountAmount;
-      const newGrandTotal = subtotal - newDiscountTotal;
+      const newDiscountTotal = round2(
+        parseFloat(cart.discount_total) + finalDiscountAmount
+      );
+
+      const newGrandTotal = round2(subtotal - newDiscountTotal);
 
       console.log("NEW DISCOUNT TOTAL", newDiscountTotal);
       console.log("NEW GRAND TOTAL", newGrandTotal);
@@ -609,8 +616,10 @@ class CheckOutService {
         {
           where: { id: cart.id },
           transaction,
-        },
+        }
       );
+
+
 
       await ProductServiceHelpers.recalculateCartTotals(cart.id, transaction);
 

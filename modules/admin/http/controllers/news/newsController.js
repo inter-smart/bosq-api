@@ -17,7 +17,7 @@ const {
 const { paginate } = require("../../traits/datatablePaginationHelper");
 const slugify = require("slugify");
 const { Op } = require("sequelize");
-const { invalidateCache } = require("../../../../redis/redisService");
+const { invalidateCache, invalidateCacheByPattern } = require("../../../../redis/redisService");
 const cacheKeys = require("../../../../redis/cacheKeys");
 
 const DataModel = models.News;
@@ -94,6 +94,7 @@ class NewsController {
       // ✅ Create news
       const news = await DataModel.create(req.body, { transaction });
       await invalidateCache(cacheKeys.news);
+      await invalidateCacheByPattern("news-list:page:*");
       await transaction.commit();
 
       // Fetch with association
@@ -188,6 +189,7 @@ class NewsController {
       // -----------------------------------------
       await data.update(req.body, { transaction });
       await invalidateCache(cacheKeys.news);
+      await invalidateCacheByPattern("news-list:page:*");
       await transaction.commit();
 
       const updatedData = await DataModel.findByPk(id);
@@ -214,6 +216,7 @@ class NewsController {
 
       await data.destroy();
       await invalidateCache(cacheKeys.news);
+      await invalidateCacheByPattern("news-list:page:*");
       sendSuccessResponse(res, { id }, "News deleted successfully");
     } catch (error) {
       console.error("News deletion error:", error);

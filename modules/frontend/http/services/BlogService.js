@@ -78,13 +78,13 @@ class BlogService {
       const blogListCacheKey = cacheKeys.blogList(parsedPage, parsedLimit);
       const cachedData = await getCache(blogListCacheKey);
 
-      if (cachedData) {
-        return {
-          data: cachedData,
-          fromCache: true,
-          message: "Blog list data fetched from cache",
-        };
-      }
+      // if (cachedData) {
+      //   return {
+      //     data: cachedData,
+      //     fromCache: true,
+      //     message: "Blog list data fetched from cache",
+      //   };
+      // }
 
       const { count, rows } = await models.Blogs.findAndCountAll({
         where: { status: true },

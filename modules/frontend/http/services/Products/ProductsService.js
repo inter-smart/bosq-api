@@ -1,4 +1,4 @@
-const { Op, literal } = require("sequelize");
+const { Op, literal, where } = require("sequelize");
 const { models } = require("../../../../../database/models/index");
 const {
   transformProductData,
@@ -26,10 +26,6 @@ class ProductsService {
     const filterEntries = Object.entries(filters);
 
     const isModelAndFilters = model && filterEntries.length > 0;
-
-
-
-
 
     try {
       const baseProduct = await ProductServiceHelpers?.getProductBaseData(slug);
@@ -185,10 +181,7 @@ class ProductsService {
       const currentVariantId = initialVariant?.id;
       const currentModelId = initialVariant?.model_id;
 
-      const similarVariants = currentModelId
-        ? await ProductServiceHelpers.getSimiliarProducts(currentModelId, currentVariantId)
-        : [];
-
+      const similarVariants = currentModelId ? await ProductServiceHelpers.getSimiliarProducts(currentModelId, currentVariantId) : [];
 
       return {
         data: {
@@ -385,14 +378,14 @@ class ProductsService {
                 },
                 ...(needsSectorFilter
                   ? [
-                    {
-                      association: "sectors",
-                      attributes: ["id", "name", "name_ar", "slug"],
-                      through: { attributes: [] },
-                      where: sectorCondition,
-                      required: true,
-                    },
-                  ]
+                      {
+                        association: "sectors",
+                        attributes: ["id", "name", "name_ar", "slug"],
+                        through: { attributes: [] },
+                        where: sectorCondition,
+                        required: true,
+                      },
+                    ]
                   : []),
               ],
             },
@@ -431,6 +424,15 @@ class ProductsService {
           return acc;
         }, {});
       }
+
+      // const wishListItems = await models?.Wishlist.findAll({
+      //   where: {
+      //     user_id: userId,
+      //   },
+      //   raw: true,
+      // });
+
+      // console.log("WISH", wishListItems);
 
       const transformedData = products.map((item) => {
         const json = item.toJSON();
@@ -471,7 +473,6 @@ class ProductsService {
           query_params: generateQueryParams(variantSku, modelSlug, formattedAttributes),
         };
       });
-
 
       return {
         data: {

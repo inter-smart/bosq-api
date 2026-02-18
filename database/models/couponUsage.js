@@ -46,12 +46,8 @@ module.exports = (sequelize) => {
       tableName: "coupon_usages",
       timestamps: true,
       updatedAt: false,
-      indexes: [
-        { fields: ["coupon_id"] },
-        { fields: ["user_id"] },
-        { fields: ["order_id"] },
-      ],
-    }
+      indexes: [{ fields: ["coupon_id"] }, { fields: ["user_id"] }, { fields: ["order_id"] }],
+    },
   );
 
   CouponUsage.associate = (models) => {
@@ -66,10 +62,10 @@ module.exports = (sequelize) => {
       as: "user",
     });
 
-    // CouponUsage.belongsTo(models.Order, {
-    //   foreignKey: "order_id",
-    //   as: "order",
-    // });
+    CouponUsage.belongsTo(models.Orders, {
+      foreignKey: "order_id",
+      as: "order",
+    });
   };
 
   return CouponUsage;

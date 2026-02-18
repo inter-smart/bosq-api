@@ -58,10 +58,9 @@ class AddressController {
 
   static async destroy(req, res) {
     const { id } = req.params;
-    const { addressType } = req.body;
     try {
       const cartOwner = req.cartOwner;
-      const data = await service.destroy(cartOwner, id, addressType);
+      const data = await service.destroy(cartOwner, id);
       return ApiResponse.success(res, {
         message: RESPONSE_MESSAGES.SUCCESS.DATA_DELETED,
         data,

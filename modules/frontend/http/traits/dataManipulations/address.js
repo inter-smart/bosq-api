@@ -12,8 +12,8 @@ function buildAddressSection(data) {
         fullName: item?.name,
         phone: `${item?.country_code} ${item?.phone}`,
         streetAddress: formatAddress(item),
-        shippingFullName: item?.shipping_address?.name,
-        shippingStreetAddress: formatAddress(item?.shipping_address),
+        // shippingFullName: item?.shipping_address?.name,
+        shipping_address: formatAddress(item?.shipping_address),
         is_default: item?.is_default,
       })) || [],
   };

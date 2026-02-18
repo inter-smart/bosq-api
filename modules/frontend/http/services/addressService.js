@@ -10,11 +10,11 @@ const modelsMap = {
     field: "user_id",
     aliasName: "shipping_address",
   },
-  guest: {
-    model: models.CartAddress,
-    field: "session_id",
-    aliasName: "shipping_CartAddress",
-  },
+  // guest: {
+  //   model: models.CartAddress,
+  //   field: "session_id",
+  //   aliasName: "shipping_CartAddress",
+  // },
 };
 const { validateRecaptcha } = require("../../../../services/RecaptchaValidation.js");
 
@@ -24,6 +24,7 @@ class AddressService {
       if (!req.cartOwner) {
         throw new Error("Cart owner not found");
       }
+
 
       const { type, id } = req.cartOwner;
 
@@ -113,7 +114,9 @@ class AddressService {
         });
       }
 
-      const { model: Model, field } = config;
+      console.log("Cart owner:", config);
+
+      const { model: Model, field, aliasName: alias } = config;
 
       const where = {
         id,

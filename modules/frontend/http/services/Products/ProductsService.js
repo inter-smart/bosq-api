@@ -1,11 +1,6 @@
 const { Op, literal, where } = require("sequelize");
 const { models } = require("../../../../../database/models/index");
-const {
-  transformProductData,
-  transformModelData,
-  buildAttributesFromVariants,
-  generateQueryParams,
-} = require("../../traits/dataManipulations/product/product");
+const { transformProductData, transformModelData, generateQueryParams, isItemWishListed } = require("../../traits/dataManipulations/product/product");
 const { generateImageUrl } = require("../../../traits/imageUrlHelper");
 const { setCache, getCache } = require("../../../../redis/redisService");
 const ProductServiceHelpers = require("../../traits/products");
@@ -199,7 +194,7 @@ class ProductsService {
     }
   }
 
-  static async getProductListing(params) {
+  static async getProductListing(params, type, userId) {
     try {
       const {
         category,
@@ -213,6 +208,8 @@ class ProductsService {
         page = 1,
         limit = 12,
       } = params;
+
+      const isLoggedInUser = type == "user";
 
       // Parse array parameters (handle both string and array inputs)
       const parseArrayParam = (param) => {
@@ -425,14 +422,19 @@ class ProductsService {
         }, {});
       }
 
-      // const wishListItems = await models?.Wishlist.findAll({
-      //   where: {
-      //     user_id: userId,
-      //   },
-      //   raw: true,
-      // });
+      let wishlistedItems = [];
 
-      // console.log("WISH", wishListItems);
+      if (isLoggedInUser) {
+        wishlistedItems = await models.Wishlist.findAll({
+          where: {
+            user_id: userId,
+          },
+          attributes: ["product_variant_id"],
+          raw: true,
+        });
+      }
+
+      console.log("WISHLIST", wishlistedItems);
 
       const transformedData = products.map((item) => {
         const json = item.toJSON();
@@ -465,6 +467,7 @@ class ProductsService {
           product_code: json?.product_code,
           variants_available: json?.has_more_items,
           hasMoreVariants: modelVariantCount > 1,
+          wishlisted: isItemWishListed(json?.id, wishlistedItems),
           price: json?.price,
           stock: json?.stock,
           category_name: json?.productModel?.product?.category?.name || null,
@@ -494,6 +497,7 @@ class ProductsService {
       throw new Error(`Error fetching PRODUCT listing: ${error.message}`);
     }
   }
+
   static async getProductModelData(params) {
     const { slug, attributes: allAttributes } = params;
 

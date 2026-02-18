@@ -5,6 +5,7 @@ const { HTTP_STATUS, ERROR_CODES } = require("../traits/constants.js");
 const { generateImageUrl } = require("../../traits/imageUrlHelper.js");
 const { buildCheckoutFormPayload } = require("../traits/dataManipulations/address.js");
 const ProductServiceHelpers = require("../traits/products.js");
+const { checkInvalidProducts } = require("../traits/dataManipulations/product/product.js");
 
 class CheckOutService {
   /**
@@ -63,7 +64,7 @@ class CheckOutService {
       throw ErrorHandler.createError("Cart is empty", HTTP_STATUS.BAD_REQUEST, ERROR_CODES.BAD_REQUEST_ERROR);
     }
 
-    if (ProductServiceHelpers.checkInvalidProducts(cart.items)) {
+    if (checkInvalidProducts(cart.items)) {
       throw new Error("Some items are out of stock, please update your cart");
     }
 
@@ -262,7 +263,6 @@ class CheckOutService {
         transaction,
       });
 
-
       await transaction.commit();
 
       const cartData = await this.getCartData(userId, null);
@@ -322,7 +322,6 @@ class CheckOutService {
         throw ErrorHandler.createError("No coupon is applied to this cart", HTTP_STATUS.BAD_REQUEST);
       }
 
-
       const applliedCoupon = await models.Coupons.findOne({
         attributes: ["id", "scope_type", "scope_id"],
         where: {
@@ -346,9 +345,8 @@ class CheckOutService {
         {
           where: { cart_id: cart.id },
           transaction,
-        }
+        },
       );
-
 
       // Recalculate totals without coupon discount
       await ProductServiceHelpers.recalculateCartTotals(cart.id, transaction);
@@ -521,12 +519,13 @@ class CheckOutService {
 
       console.log("ELIGIBLE SUBTOTAL", eligibleSubtotal);
 
-
       // Validate against min_product_amount
       if (coupon.min_product_amount && eligibleSubtotal < parseFloat(coupon.min_product_amount)) {
-        throw ErrorHandler.createError(`The total of eligible products must be at least ${coupon.min_product_amount} to use this coupon`, HTTP_STATUS.BAD_REQUEST);
+        throw ErrorHandler.createError(
+          `The total of eligible products must be at least ${coupon.min_product_amount} to use this coupon`,
+          HTTP_STATUS.BAD_REQUEST,
+        );
       }
-
 
       const round2 = (num) => Math.round((num + Number.EPSILON) * 100) / 100;
 
@@ -551,24 +550,17 @@ class CheckOutService {
         let intendedDiscount = 0;
 
         if (isPercentage) {
-          intendedDiscount = round2(
-            (itemTotalPrice * discountAmount) / 100
-          );
+          intendedDiscount = round2((itemTotalPrice * discountAmount) / 100);
         } else {
           intendedDiscount = round2(discountAmount);
         }
 
         // Apply only remaining max pool
-        const itemDiscount = round2(
-          Math.min(intendedDiscount, remainingMaxDiscount)
-        );
+        const itemDiscount = round2(Math.min(intendedDiscount, remainingMaxDiscount));
 
         const finalPrice = round2(itemTotalPrice - itemDiscount);
 
-        console.log(
-          `updated item - ${item.title} - ${itemDiscount}, ${finalPrice}`
-        );
-
+        console.log(`updated item - ${item.title} - ${itemDiscount}, ${finalPrice}`);
 
         await models.CartItems.update(
           {
@@ -581,24 +573,20 @@ class CheckOutService {
           {
             where: { id: item.id },
             transaction,
-          }
+          },
         );
-
 
         remainingMaxDiscount = round2(remainingMaxDiscount - itemDiscount);
         finalDiscountAmount = round2(finalDiscountAmount + itemDiscount);
       }
 
       // Update cart totals
-      const newDiscountTotal = round2(
-        parseFloat(cart.discount_total) + finalDiscountAmount
-      );
+      const newDiscountTotal = round2(parseFloat(cart.discount_total) + finalDiscountAmount);
 
       const newGrandTotal = round2(subtotal - newDiscountTotal);
 
       console.log("NEW DISCOUNT TOTAL", newDiscountTotal);
       console.log("NEW GRAND TOTAL", newGrandTotal);
-
 
       await models.Cart.update(
         {
@@ -611,10 +599,8 @@ class CheckOutService {
         {
           where: { id: cart.id },
           transaction,
-        }
+        },
       );
-
-
 
       await ProductServiceHelpers.recalculateCartTotals(cart.id, transaction);
 

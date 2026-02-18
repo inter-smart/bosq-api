@@ -6,6 +6,7 @@ const { optionalAuth } = require("../http/middleware/optionalAuthMiddleware.js")
 const { cartContext } = require("../http/middleware/cartMiddleware.js");
 
 // Routes that work for both authenticated users and guests
+router.get("/similar-products", optionalAuth(), cartContext, CartController.getSimilarFromCart);
 router.get("/", optionalAuth(), cartContext, CartController.getCart);
 router.post("/add", optionalAuth(), cartContext, CartController.addItem);
 router.put("/item/:itemId", optionalAuth(), cartContext, CartController.updateItem);

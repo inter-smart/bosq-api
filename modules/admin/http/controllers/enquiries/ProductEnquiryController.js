@@ -10,16 +10,15 @@ const {
 const { Op, where, fn, col } = require("sequelize");
 
 const {
-  validationRequestPost,
   validateId,
-} = require("../../request/enquiry/contactEnquiriesRequest.js");
+} = require("../../request/enquiry/productEnquiriesRequest.js");
 const {
   paginate,
 } = require("../../traits/datatablePaginationHelper.js");
 
-const DataModel = models.CustomizationEnquiry;
+const DataModel = models.ProductEnquiry;
 
-class ContactEnquiryController {
+class ProductEnquiryController {
   static async index(req, res) {
     try {
       const result = await paginate(DataModel, req, {
@@ -28,17 +27,12 @@ class ContactEnquiryController {
         ],
         include: [
           {
-            model: models.EnquiryDropdown,
-            as: "dropdown",
+            model: models.ProductVariants,
+            as: "product",
+            attributes: ["id", "title"],
           },
-          {
-            // state
-            model: models.State,
-            as: "state",
-            attributes: ["id", "name", "slug"],
-          }
         ],
-        searchFields: ["first_name", "last_name", "email"],
+        searchFields: ["name", "email"],
       });
 
       const response = {
@@ -53,9 +47,7 @@ class ContactEnquiryController {
     }
   }
 
-
   static async show(req, res) {
-    // Run ID validation
     await Promise.all(validateId.map((validation) => validation.run(req)));
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -68,15 +60,10 @@ class ContactEnquiryController {
       const data = await DataModel.findByPk(id, {
         include: [
           {
-            model: models.EnquiryDropdown,
-            as: "dropdown",
+            model: models.ProductVariants,
+            as: "product",
+            attributes: ["id", "title"],
           },
-          {
-            // state
-            model: models.State,
-            as: "state",
-            attributes: ["id", "name", "slug"],
-          }
         ],
       });
 
@@ -91,9 +78,7 @@ class ContactEnquiryController {
     }
   }
 
-
   static async destroy(req, res) {
-    // Run ID validation
     await Promise.all(validateId.map((validation) => validation.run(req)));
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -108,7 +93,6 @@ class ContactEnquiryController {
         return sendNotFoundError(res, "Data");
       }
 
-      // Soft delete
       await data.destroy();
       sendSuccessResponse(res, { id }, "Data deleted successfully");
     } catch (error) {
@@ -118,4 +102,4 @@ class ContactEnquiryController {
   }
 }
 
-module.exports = ContactEnquiryController;
+module.exports = ProductEnquiryController;

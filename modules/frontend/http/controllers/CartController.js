@@ -206,6 +206,27 @@ class CartController {
   }
 
   /**
+   * Get similar products based on the dominant model in the cart
+   * GET /api/frontend/cart/similar-products
+   */
+  static async getSimilarFromCart(req, res) {
+    try {
+      const userId = req.auth?.id || null;
+      const sessionId = CartController.getSessionId(req);
+
+      const data = await CartService.getSimilarFromCart(userId, sessionId);
+
+      return ApiResponse.success(res, {
+        message: "Similar products fetched successfully",
+        data,
+        status: HTTP_STATUS.OK,
+      });
+    } catch (error) {
+      return ErrorHandler.handleControllerError(error, res, "CartController.getSimilarFromCart");
+    }
+  }
+
+  /**
    * Merge guest cart into user cart (call after login)
    * POST /api/frontend/cart/merge
    */

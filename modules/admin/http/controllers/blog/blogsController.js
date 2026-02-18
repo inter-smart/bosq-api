@@ -18,7 +18,7 @@ const { paginate } = require("../../../http/traits/datatablePaginationHelper");
 const slugify = require("slugify");
 const { Op } = require("sequelize");
 const cacheKeys = require("../../../../redis/cacheKeys");
-const { invalidateCache } = require("../../../../redis/redisService");
+const { invalidateCache, invalidateCacheByPattern } = require("../../../../redis/redisService");
 
 const DataModel = models.Blogs;
 const cacheKey = cacheKeys.blog;
@@ -96,6 +96,7 @@ class BlogController {
       // ✅ Create blog
       const blog = await DataModel.create(req.body, { transaction });
       await invalidateCache(cacheKey);
+      await invalidateCacheByPattern("blog-list:page:*");
       await invalidateCache(`blog:detail:${baseSlug}`);
 
       await transaction.commit();
@@ -205,6 +206,7 @@ class BlogController {
         await invalidateCache(`blog:detail:${newSlug}`);
       }
       await invalidateCache(cacheKey);
+      await invalidateCacheByPattern("blog-list:page:*");
 
       sendSuccessResponse(res, updatedData, "Blog updated successfully");
     } catch (error) {
@@ -231,6 +233,7 @@ class BlogController {
       await data.destroy();
 
       await invalidateCache(cacheKey);
+      await invalidateCacheByPattern("blog-list:page:*");
 
       if (slug) {
         await invalidateCache(`blog:detail:${slug}`);

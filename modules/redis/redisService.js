@@ -144,9 +144,26 @@ const invalidateCacheByModel = async (redisClient, modelName, cacheDependencies,
   }
 };
 
+const invalidateCacheByPattern = async (pattern) => {
+  try {
+    const keys = await redisClient.keys(pattern);
+    if (keys.length > 0) {
+      const result = await redisClient.del(keys);
+      console.log(`🗑️  Cache invalidated by pattern ${pattern}: ${result} key(s)`);
+      return result > 0;
+    }
+    console.log(`ℹ️  No cache keys found for pattern: ${pattern}`);
+    return false;
+  } catch (error) {
+    console.error(`Failed to invalidate cache by pattern ${pattern}:`, error);
+    return false;
+  }
+};
+
 module.exports = {
   setCache,
   invalidateCache,
   getCache,
-  invalidateCacheByModel
+  invalidateCacheByModel,
+  invalidateCacheByPattern
 };

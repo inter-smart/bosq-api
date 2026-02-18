@@ -1,18 +1,8 @@
 const { validationResult } = require("express-validator");
 const { sequelize, models } = require("../../../../../../database/models");
-const {
-  sendValidationError,
-  sendSuccessResponse,
-  sendErrorResponse,
-  sendNotFoundError,
-} = require("../../../traits/responseHandler");
-const {
-  validationRequestPost,
-  validateId,
-} = require("../../../request/cms/faq/faqCategoryRequest");
-const {
-  paginate,
-} = require("../../../../http/traits/datatablePaginationHelper");
+const { sendValidationError, sendSuccessResponse, sendErrorResponse, sendNotFoundError } = require("../../../traits/responseHandler");
+const { validationRequestPost, validateId } = require("../../../request/cms/faq/faqCategoryRequest");
+const { paginate } = require("../../../../http/traits/datatablePaginationHelper");
 const { Op } = require("sequelize");
 
 const DataModel = models.FaqCategory;
@@ -41,11 +31,7 @@ class FaqCategoryController {
   }
 
   static async store(req, res) {
-    console.log(req.body);
-
-    await Promise.all(
-      validationRequestPost.map((validation) => validation.run(req))
-    );
+    await Promise.all(validationRequestPost.map((validation) => validation.run(req)));
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return sendValidationError(res, errors.array());
@@ -105,9 +91,7 @@ class FaqCategoryController {
   }
 
   static async update(req, res) {
-    await Promise.all(
-      [...validateId, ...validationRequestPost].map((v) => v.run(req))
-    );
+    await Promise.all([...validateId, ...validationRequestPost].map((v) => v.run(req)));
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return sendValidationError(res, errors.array());

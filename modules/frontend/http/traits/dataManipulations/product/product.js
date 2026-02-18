@@ -350,9 +350,6 @@ const generateProductBasedata = (productData) => {
 };
 
 const isItemWishListed = (variantId, wishlistItems) => {
-  console.log(variantId);
-  console.log(wishlistItems);
-
   return wishlistItems.some((item) => {
     return item.product_variant_id == variantId;
   });

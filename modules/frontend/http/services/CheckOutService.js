@@ -284,8 +284,6 @@ class CheckOutService {
           if (item.variant_id === scopeId) return true;
           break;
         case "model":
-          console.log(item.variant?.product_model_id);
-          console.log(scopeId);
           if (item.variant?.product_model_id === scopeId) return true;
           break;
         case "product":
@@ -483,15 +481,9 @@ class CheckOutService {
         }
       }
 
-      console.log("DISCOUNT AMOUNT", discountAmount);
-
       const currentDiscount = parseFloat(cart.discount_total);
       const newDiscountTotal = currentDiscount + discountAmount;
       const newGrandTotal = subtotal - newDiscountTotal;
-
-      console.log("NEW DISCOUNT TOTAL", currentDiscount);
-      console.log("NEW DISCOUNT TOTAL", newDiscountTotal);
-      console.log("NEW GRAND TOTAL", newGrandTotal);
 
       await models.Cart.update(
         {

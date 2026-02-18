@@ -1,18 +1,8 @@
 const { validationResult } = require("express-validator");
 const { sequelize, models } = require("../../../../../../database/models/index.js");
-const {
-  sendValidationError,
-  sendSuccessResponse,
-  sendErrorResponse,
-  sendNotFoundError,
-} = require("../../../traits/responseHandler.js");
-const {
-  validationRequestPost,
-  validateId,
-} = require("../../../request/cms/about/aboutTestimonialsRequest.js");
-const {
-  paginate,
-} = require("../../../traits/datatablePaginationHelper.js");
+const { sendValidationError, sendSuccessResponse, sendErrorResponse, sendNotFoundError } = require("../../../traits/responseHandler.js");
+const { validationRequestPost, validateId } = require("../../../request/cms/about/aboutTestimonialsRequest.js");
+const { paginate } = require("../../../traits/datatablePaginationHelper.js");
 const cacheKeys = require("../../../../../redis/cacheKeys.js");
 const { invalidateCache } = require("../../../../../redis/redisService.js");
 
@@ -43,11 +33,7 @@ class AboutTestimonialsController {
   }
 
   static async store(req, res) {
-    console.log(req.body);
-
-    await Promise.all(
-      validationRequestPost.map((validation) => validation.run(req))
-    );
+    await Promise.all(validationRequestPost.map((validation) => validation.run(req)));
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return sendValidationError(res, errors.array());
@@ -56,7 +42,6 @@ class AboutTestimonialsController {
     const transaction = await sequelize.transaction();
 
     try {
-     
       // Create data with transaction
       const data = await DataModel.create(req.body, { transaction });
       await invalidateCache(cacheKey);
@@ -95,9 +80,7 @@ class AboutTestimonialsController {
   }
 
   static async update(req, res) {
-    await Promise.all(
-      [...validateId, ...validationRequestPost].map((v) => v.run(req))
-    );
+    await Promise.all([...validateId, ...validationRequestPost].map((v) => v.run(req)));
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return sendValidationError(res, errors.array());
@@ -107,7 +90,6 @@ class AboutTestimonialsController {
 
     try {
       const { id } = req.params;
-
 
       const data = await DataModel.findByPk(id, { transaction });
       if (!data) {

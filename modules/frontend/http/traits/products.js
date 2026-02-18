@@ -239,19 +239,14 @@ class ProductServiceHelpers {
         transaction,
       });
 
-      console.log(coupon);
-
       if (coupon) {
-        console.log("PCT DISCOUNT", coupon.discount_type);
         if (coupon.discount_type === "percentage") {
           // Percentage discount must be recalculated against the NEW subtotal
           let pctDiscount = (subtotal * parseFloat(coupon.discount_value)) / 100;
-          console.log("PCT DISCOUNT", pctDiscount);
           if (coupon.max_discount_amount && pctDiscount > parseFloat(coupon.max_discount_amount)) {
             pctDiscount = parseFloat(coupon.max_discount_amount);
           }
 
-          console.log("PCT DISCOUNT", pctDiscount);
           discountTotal = pctDiscount;
           // Keep cart.discount_total in sync
           await models.Cart.update({ discount_total: pctDiscount.toFixed(2) }, { where: { id: cartId }, transaction });
@@ -261,9 +256,6 @@ class ProductServiceHelpers {
         }
       }
     }
-
-    console.log("SUBTOTAL =========>", subtotal);
-    console.log("DISCOUNT TOTAL =========>", discountTotal);
 
     const grandTotal = Math.max(0, subtotal - discountTotal);
 
@@ -292,10 +284,6 @@ class ProductServiceHelpers {
       const variantPrice = parseFloat(item.variant.price);
       const cartItemPrice = parseFloat(item.price);
       const cartQuantity = item.quantity;
-
-      console.log("VARIANT PRICE", variantPrice);
-      console.log("CART ITEM PRICE", cartItemPrice);
-      console.log("CART QUANTITY", cartQuantity);
 
       if (variantPrice !== cartItemPrice) {
         // Preserve any existing coupon discount when the price changes
@@ -334,10 +322,6 @@ class ProductServiceHelpers {
     const isExpired = coupon.end_at < now || coupon.start_at > now;
     const isInactive = !coupon.status;
     const isBelowMin = coupon.min_order_amount && parseFloat(cart.subtotal) < parseFloat(coupon.min_order_amount);
-
-    console.log("IS EXPIRED", isExpired);
-    console.log("IS INACTIVE", isInactive);
-    console.log("IS BELOW MIN", isBelowMin);
 
     if (isExpired || isInactive || isBelowMin) {
       await this.removeCouponFromCart(cart, transaction);

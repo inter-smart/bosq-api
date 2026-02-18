@@ -434,8 +434,6 @@ class ProductsService {
         });
       }
 
-      console.log("WISHLIST", wishlistedItems);
-
       const transformedData = products.map((item) => {
         const json = item.toJSON();
         const modelVariantCount = variantCountsMap[json?.product_model_id] || 0;

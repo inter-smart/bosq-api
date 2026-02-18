@@ -1,11 +1,6 @@
 const { Op, literal } = require("sequelize");
 const { models } = require("../../../../../database/models/index");
-const {
-  transformProductData,
-  transformModelData,
-  buildAttributesFromVariants,
-  generateQueryParams,
-} = require("../../traits/dataManipulations/product/product");
+const { transformProductData, transformModelData, generateQueryParams, isItemWishListed } = require("../../traits/dataManipulations/product/product");
 const { generateImageUrl } = require("../../../traits/imageUrlHelper");
 const { setCache, getCache } = require("../../../../redis/redisService");
 const ProductServiceHelpers = require("../../traits/products");
@@ -26,10 +21,6 @@ class ProductsService {
     const filterEntries = Object.entries(filters);
 
     const isModelAndFilters = model && filterEntries.length > 0;
-
-
-
-
 
     try {
       const baseProduct = await ProductServiceHelpers?.getProductBaseData(slug);
@@ -185,10 +176,7 @@ class ProductsService {
       const currentVariantId = initialVariant?.id;
       const currentModelId = initialVariant?.model_id;
 
-      const similarVariants = currentModelId
-        ? await ProductServiceHelpers.getSimiliarProducts(currentModelId, currentVariantId)
-        : [];
-
+      const similarVariants = currentModelId ? await ProductServiceHelpers.getSimiliarProducts(currentModelId, currentVariantId) : [];
 
       return {
         data: {
@@ -206,7 +194,7 @@ class ProductsService {
     }
   }
 
-  static async getProductListing(params) {
+  static async getProductListing(params, type, userId) {
     try {
       const {
         category,
@@ -220,6 +208,8 @@ class ProductsService {
         page = 1,
         limit = 12,
       } = params;
+
+      const isLoggedInUser = type == "user";
 
       // Parse array parameters (handle both string and array inputs)
       const parseArrayParam = (param) => {
@@ -385,14 +375,14 @@ class ProductsService {
                 },
                 ...(needsSectorFilter
                   ? [
-                    {
-                      association: "sectors",
-                      attributes: ["id", "name", "name_ar", "slug"],
-                      through: { attributes: [] },
-                      where: sectorCondition,
-                      required: true,
-                    },
-                  ]
+                      {
+                        association: "sectors",
+                        attributes: ["id", "name", "name_ar", "slug"],
+                        through: { attributes: [] },
+                        where: sectorCondition,
+                        required: true,
+                      },
+                    ]
                   : []),
               ],
             },
@@ -432,6 +422,20 @@ class ProductsService {
         }, {});
       }
 
+      let wishlistedItems = [];
+
+      if (isLoggedInUser) {
+        wishlistedItems = await models.Wishlist.findAll({
+          where: {
+            user_id: userId,
+          },
+          attributes: ["product_variant_id"],
+          raw: true,
+        });
+      }
+
+      console.log("WISHLIST", wishlistedItems);
+
       const transformedData = products.map((item) => {
         const json = item.toJSON();
         const modelVariantCount = variantCountsMap[json?.product_model_id] || 0;
@@ -463,6 +467,7 @@ class ProductsService {
           product_code: json?.product_code,
           variants_available: json?.has_more_items,
           hasMoreVariants: modelVariantCount > 1,
+          wishlisted: isItemWishListed(json?.id, wishlistedItems),
           price: json?.price,
           stock: json?.stock,
           category_name: json?.productModel?.product?.category?.name || null,
@@ -471,7 +476,6 @@ class ProductsService {
           query_params: generateQueryParams(variantSku, modelSlug, formattedAttributes),
         };
       });
-
 
       return {
         data: {
@@ -493,7 +497,6 @@ class ProductsService {
       throw new Error(`Error fetching PRODUCT listing: ${error.message}`);
     }
   }
-
 
   static async getProductModelData(params) {
     const { slug, attributes: allAttributes } = params;

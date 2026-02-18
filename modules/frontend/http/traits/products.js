@@ -224,14 +224,12 @@ class ProductServiceHelpers {
       console.log("itemTotal", itemTotal);
       console.log("itemDiscount", itemDiscount);
 
-
       subtotal += itemTotal;
       discountTotal += itemDiscount;
     }
 
     console.log("subtotal", subtotal);
     console.log("discountTotal", discountTotal);
-
 
     const grandTotal = subtotal;
 
@@ -287,9 +285,6 @@ class ProductServiceHelpers {
       transaction,
     });
 
-
-
-
     if (!coupon) {
       await this.removeCouponFromCart(cart, transaction);
       return;
@@ -298,8 +293,7 @@ class ProductServiceHelpers {
     const now = new Date();
     const isExpired = coupon.end_at < now || coupon.start_at > now;
     const isInactive = !coupon.status;
-    const isBelowMin = coupon.min_order_amount && parseFloat(cart.subtotal) < parseFloat(coupon.min_order_amount)
-
+    const isBelowMin = coupon.min_order_amount && parseFloat(cart.subtotal) < parseFloat(coupon.min_order_amount);
 
     console.log("IS EXPIRED", isExpired);
     console.log("IS INACTIVE", isInactive);
@@ -309,13 +303,10 @@ class ProductServiceHelpers {
       await this.removeCouponFromCart(cart, transaction);
     }
 
-
     const priceChanged = await this.syncCartItemPrices(cart, transaction);
     console.log("priceChanged", priceChanged);
 
     return { priceChanged };
-
-
   }
 
   static async removeCouponFromCart(cart, transaction = null) {
@@ -343,19 +334,6 @@ class ProductServiceHelpers {
       },
       { transaction },
     );
-  }
-
-
-  static checkInvalidProducts(cartItems) {
-    return cartItems.some((item) => {
-      const variant = item.variant;
-
-      if (!variant) return true;
-      if (variant.stock <= 0) return true;
-      if (variant.stock < item.quantity) return true;
-
-      return false;
-    });
   }
 }
 

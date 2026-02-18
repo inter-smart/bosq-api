@@ -30,7 +30,7 @@ class ContactEnquiryService {
       });
 
       if (isExist) {
-        throw new Error(`You already have a ${data.type} enquiry with this email`);
+        throw new Error(`You already have a ${data?.type === "contact"?  data.type: ""} enquiry with this email`);
       }
 
       const enquiry = await models.ContactEnquiry.create({

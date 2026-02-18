@@ -209,29 +209,63 @@ class ProductServiceHelpers {
   }
 
   static async recalculateCartTotals(cartId, transaction = null) {
-    const cartItems = await models.CartItems.findAll({
-      where: { cart_id: cartId },
-      transaction,
-    });
+    const [cart, cartItems] = await Promise.all([
+      models.Cart.findOne({
+        where: { id: cartId },
+        attributes: ["id", "applied_coupon_scope", "discount_total", "applied_coupon_code"],
+        transaction,
+      }),
+      models.CartItems.findAll({
+        where: { cart_id: cartId },
+        transaction,
+      }),
+    ]);
 
     let subtotal = 0;
     let discountTotal = 0;
 
     for (const item of cartItems) {
-      const itemTotal = parseFloat(item.final_price);
-      const itemDiscount = parseFloat(item.discount_amount);
-
-      console.log("itemTotal", itemTotal);
-      console.log("itemDiscount", itemDiscount);
-
-      subtotal += itemTotal;
-      discountTotal += itemDiscount;
+      // Always sum the pre-discount line price so subtotal reflects original prices
+      subtotal += parseFloat(item.price) * item.quantity;
+      discountTotal += parseFloat(item.discount_amount || 0);
     }
 
-    console.log("subtotal", subtotal);
-    console.log("discountTotal", discountTotal);
+    // Common scope coupons store the discount at cart level only — CartItems have no
+    // discount_amount — so we must derive the correct discount from the coupon itself.
+    if (cart?.applied_coupon_scope === "common" && cart?.applied_coupon_code) {
+      const coupon = await models.Coupons.findOne({
+        where: { code: cart.applied_coupon_code },
+        attributes: ["discount_type", "discount_value", "max_discount_amount"],
+        transaction,
+      });
 
-    const grandTotal = subtotal;
+      console.log(coupon);
+
+      if (coupon) {
+        console.log("PCT DISCOUNT", coupon.discount_type);
+        if (coupon.discount_type === "percentage") {
+          // Percentage discount must be recalculated against the NEW subtotal
+          let pctDiscount = (subtotal * parseFloat(coupon.discount_value)) / 100;
+          console.log("PCT DISCOUNT", pctDiscount);
+          if (coupon.max_discount_amount && pctDiscount > parseFloat(coupon.max_discount_amount)) {
+            pctDiscount = parseFloat(coupon.max_discount_amount);
+          }
+
+          console.log("PCT DISCOUNT", pctDiscount);
+          discountTotal = pctDiscount;
+          // Keep cart.discount_total in sync
+          await models.Cart.update({ discount_total: pctDiscount.toFixed(2) }, { where: { id: cartId }, transaction });
+        } else {
+          // Fixed discount: the amount doesn't change with subtotal
+          discountTotal = Math.min(parseFloat(cart.discount_total || 0), subtotal);
+        }
+      }
+    }
+
+    console.log("SUBTOTAL =========>", subtotal);
+    console.log("DISCOUNT TOTAL =========>", discountTotal);
+
+    const grandTotal = Math.max(0, subtotal - discountTotal);
 
     await models.Cart.update(
       {
@@ -259,11 +293,18 @@ class ProductServiceHelpers {
       const cartItemPrice = parseFloat(item.price);
       const cartQuantity = item.quantity;
 
+      console.log("VARIANT PRICE", variantPrice);
+      console.log("CART ITEM PRICE", cartItemPrice);
+      console.log("CART QUANTITY", cartQuantity);
+
       if (variantPrice !== cartItemPrice) {
+        // Preserve any existing coupon discount when the price changes
+        const existingDiscount = parseFloat(item.discount_amount || 0);
+        const newFinalPrice = Math.max(0, variantPrice * cartQuantity - existingDiscount);
         await item.update(
           {
             price: variantPrice,
-            final_price: variantPrice * cartQuantity,
+            final_price: newFinalPrice.toFixed(2),
           },
           { transaction },
         );
@@ -278,7 +319,6 @@ class ProductServiceHelpers {
 
   static async validateCoupon(cart, transaction = null) {
     const couponCode = cart.applied_coupon_code;
-    if (!couponCode) return;
 
     const coupon = await models.Coupons.findOne({
       where: { code: couponCode },
@@ -286,8 +326,8 @@ class ProductServiceHelpers {
     });
 
     if (!coupon) {
-      await this.removeCouponFromCart(cart, transaction);
-      return;
+      const priceChanged = await this.syncCartItemPrices(cart, transaction);
+      return { priceChanged };
     }
 
     const now = new Date();
@@ -304,7 +344,6 @@ class ProductServiceHelpers {
     }
 
     const priceChanged = await this.syncCartItemPrices(cart, transaction);
-    console.log("priceChanged", priceChanged);
 
     return { priceChanged };
   }

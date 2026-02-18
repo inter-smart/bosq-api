@@ -83,6 +83,8 @@ class CartService {
 
       await ProductServiceHelpers.validateCoupon(cart);
 
+      console.log("here");
+
       // Reload cart with fresh data after price sync
       await cart.reload({
         include: [
@@ -105,7 +107,6 @@ class CartService {
         ],
         transaction,
       });
-
 
       const itemCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -223,10 +224,30 @@ class CartService {
     try {
       const whereClause = userId ? { user_id: userId, status: "active" } : { session_id: sessionId, status: "active", user_id: null };
 
-      const cart = await models.Cart.findOne({
-        where: whereClause,
-        transaction,
-      });
+      const cart = await models.Cart.findOne(
+        {
+          where: whereClause,
+          include: [
+            {
+              model: models.CartItems,
+              as: "items",
+              include: [
+                {
+                  model: models.ProductBase,
+                  as: "product",
+                  attributes: ["id", "title", "slug"],
+                },
+                {
+                  model: models.ProductVariants,
+                  as: "variant",
+                  attributes: ["id", "sku", "price", "media_path", "stock", "title", "title_ar"],
+                },
+              ],
+            },
+          ],
+        },
+        { transaction },
+      );
 
       if (!cart) {
         throw ErrorHandler.createError("Cart not found", HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
@@ -252,11 +273,13 @@ class CartService {
       }
 
       const currentPrice = cartItem.price;
-      const finalPrice = currentPrice * quantity;
+      // Preserve any existing item-level coupon discount when quantity changes
+      const existingDiscount = parseFloat(cartItem.discount_amount || 0);
+      const finalPrice = Math.max(0, currentPrice * quantity - existingDiscount);
 
-      await cartItem.update({ quantity, final_price: finalPrice }, { transaction });
+      await cartItem.update({ quantity, final_price: finalPrice.toFixed(2) }, { transaction });
 
-      // Recalculate totals
+      // Recalculate totals inside the transaction so committed data is consistent
       await ProductServiceHelpers.recalculateCartTotals(cart.id, transaction);
 
       await transaction.commit();
@@ -299,6 +322,22 @@ class CartService {
       }
 
       await cartItem.destroy({ transaction });
+
+      // For scoped coupons: if no remaining items carry a discount, the coupon no
+      // longer applies to anything — clear it so the badge doesn't stay showing.
+      if (cart.applied_coupon_code && cart.applied_coupon_scope !== "common") {
+        const remainingDiscountedItems = await models.CartItems.count({
+          where: { cart_id: cart.id, discount_amount: { [require("sequelize").Op.gt]: 0 } },
+          transaction,
+        });
+
+        if (remainingDiscountedItems === 0) {
+          await models.Cart.update(
+            { applied_coupon_code: null, coupon_id: null, applied_coupon_scope: null },
+            { where: { id: cart.id }, transaction },
+          );
+        }
+      }
 
       // Recalculate totals
       await ProductServiceHelpers.recalculateCartTotals(cart.id, transaction);
@@ -456,9 +495,7 @@ class CartService {
    */
   static async getSimilarFromCart(userId, sessionId) {
     // 1. Find the active cart
-    const whereClause = userId
-      ? { user_id: userId, status: "active" }
-      : { session_id: sessionId, status: "active", user_id: null };
+    const whereClause = userId ? { user_id: userId, status: "active" } : { session_id: sessionId, status: "active", user_id: null };
 
     const cart = await models.Cart.findOne({
       where: whereClause,

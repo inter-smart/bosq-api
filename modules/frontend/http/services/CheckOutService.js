@@ -102,28 +102,31 @@ class CheckOutService {
       };
     }
 
-    await ProductServiceHelpers.validateCoupon(cart);
+    const appliedCouponScope = cart.applied_coupon_scope;
 
-    await cart.reload({
-      include: [
-        {
-          model: models.CartItems,
-          as: "items",
-          include: [
-            {
-              model: models.ProductBase,
-              as: "product",
-              attributes: ["id", "title", "slug"],
-            },
-            {
-              model: models.ProductVariants,
-              as: "variant",
-              attributes: ["id", "sku", "price", "media_path", "stock", "title", "title_ar"],
-            },
-          ],
-        },
-      ],
-    });
+    appliedCouponScope !== "common" && (await ProductServiceHelpers.validateCoupon(cart));
+
+    appliedCouponScope !== "common" &&
+      (await cart.reload({
+        include: [
+          {
+            model: models.CartItems,
+            as: "items",
+            include: [
+              {
+                model: models.ProductBase,
+                as: "product",
+                attributes: ["id", "title", "slug"],
+              },
+              {
+                model: models.ProductVariants,
+                as: "variant",
+                attributes: ["id", "sku", "price", "media_path", "stock", "title", "title_ar"],
+              },
+            ],
+          },
+        ],
+      }));
 
     const itemCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -258,11 +261,6 @@ class CheckOutService {
 
       await this.couponWiseUpdates(coupon, cart, transaction);
 
-      const cartnEW = await models.Cart.findOne({
-        where: { id: cart.id },
-        transaction,
-      });
-
       await transaction.commit();
 
       const cartData = await this.getCartData(userId, null);
@@ -286,6 +284,8 @@ class CheckOutService {
           if (item.variant_id === scopeId) return true;
           break;
         case "model":
+          console.log(item.variant?.product_model_id);
+          console.log(scopeId);
           if (item.variant?.product_model_id === scopeId) return true;
           break;
         case "product":
@@ -483,9 +483,15 @@ class CheckOutService {
         }
       }
 
+      console.log("DISCOUNT AMOUNT", discountAmount);
+
       const currentDiscount = parseFloat(cart.discount_total);
       const newDiscountTotal = currentDiscount + discountAmount;
       const newGrandTotal = subtotal - newDiscountTotal;
+
+      console.log("NEW DISCOUNT TOTAL", currentDiscount);
+      console.log("NEW DISCOUNT TOTAL", newDiscountTotal);
+      console.log("NEW GRAND TOTAL", newGrandTotal);
 
       await models.Cart.update(
         {
@@ -506,8 +512,6 @@ class CheckOutService {
       // Scoped coupon: discount applies only to matching items
       const matchingItems = this.getMatchingCartItems(coupon, cart.items);
 
-      console.log("MATCHING ITEMS", JSON.stringify(matchingItems, null, 2));
-
       if (matchingItems.length === 0) {
         throw ErrorHandler.createError("This coupon is not applicable to the items in your cart", HTTP_STATUS.BAD_REQUEST);
       }
@@ -516,8 +520,6 @@ class CheckOutService {
       const eligibleSubtotal = matchingItems.reduce((sum, item) => {
         return sum + parseFloat(item.price) * item.quantity;
       }, 0);
-
-      console.log("ELIGIBLE SUBTOTAL", eligibleSubtotal);
 
       // Validate against min_product_amount
       if (coupon.min_product_amount && eligibleSubtotal < parseFloat(coupon.min_product_amount)) {
@@ -560,8 +562,6 @@ class CheckOutService {
 
         const finalPrice = round2(itemTotalPrice - itemDiscount);
 
-        console.log(`updated item - ${item.title} - ${itemDiscount}, ${finalPrice}`);
-
         await models.CartItems.update(
           {
             discount_amount: itemDiscount.toFixed(2),
@@ -584,9 +584,6 @@ class CheckOutService {
       const newDiscountTotal = round2(parseFloat(cart.discount_total) + finalDiscountAmount);
 
       const newGrandTotal = round2(subtotal - newDiscountTotal);
-
-      console.log("NEW DISCOUNT TOTAL", newDiscountTotal);
-      console.log("NEW GRAND TOTAL", newGrandTotal);
 
       await models.Cart.update(
         {

@@ -3,7 +3,7 @@ const { Op } = require("sequelize");
 const cacheKeys = require("../../../redis/cacheKeys");
 const { getCache, setCache } = require("../../../redis/redisService");
 const { generateImageUrl } = require("../../traits/imageUrlHelper");
-const { generateProductBasedata, buildAttributesFromVariants } = require("./dataManipulations/product/product");
+const { generateProductBasedata, buildAttributesFromVariants, generateQueryParams } = require("./dataManipulations/product/product");
 
 const productAttributes = [
   "id",
@@ -95,6 +95,7 @@ class ProductServiceHelpers {
         title_ar: model.title_ar,
         slug: model.slug,
         base_price: model.base_price,
+        stock: model.variants?.[0]?.stock,
         media_path: generateImageUrl(model.media_path),
         variants:
           model.variants?.map((v) => ({
@@ -114,6 +115,97 @@ class ProductServiceHelpers {
       data,
       fromCache: false,
     };
+  }
+
+  static async getSimiliarProducts(modelId, variantId) {
+    const variants = await models.ProductVariants.findAll({
+      where: {
+        product_model_id: modelId,
+        id: { [Op.ne]: variantId },
+        status: true,
+      },
+      limit: 6,
+      include: [
+        {
+          model: models.ProductModels,
+          as: "productModel",
+          attributes: ["id", "slug", "title"],
+          include: [
+            {
+              model: models.ProductBase,
+              as: "product",
+              attributes: ["id", "slug"],
+              include: [
+                {
+                  model: models.ProductCategory,
+                  as: "category",
+                  attributes: ["id", "name", "name_ar"],
+                },
+              ],
+            },
+          ],
+        },
+        {
+          model: models.ProductVariantAttributes,
+          as: "variant_attributes",
+          attributes: ["id", "attribute_id", "attribute_value_id"],
+          include: [
+            {
+              model: models.ProductAttribute,
+              as: "ProductAttribute",
+              attributes: ["id", "name", "name_ar", "code", "slug"],
+            },
+            {
+              model: models.AttributeValues,
+              as: "AttributeValue",
+              attributes: ["id", "value", "value_ar", "slug"],
+            },
+          ],
+        },
+      ],
+    });
+
+    const modelVariantCount = await models.ProductVariants.count({
+      where: { product_model_id: modelId, status: true },
+    });
+
+    return variants.map((item) => {
+      const json = item.toJSON();
+
+      const formattedAttributes = (json?.variant_attributes || []).map((va) => ({
+        code: va?.ProductAttribute?.code,
+        slug: va?.ProductAttribute?.slug,
+        values: [
+          {
+            slug: va?.AttributeValue?.slug,
+            value: va?.AttributeValue?.value,
+          },
+        ],
+      }));
+
+      const baseSlug = json?.productModel?.product?.slug;
+      const modelSlug = json?.productModel?.slug;
+      const variantSku = json?.sku;
+
+      return {
+        id: json?.id,
+        title: json?.title,
+        title_ar: json?.title_ar,
+        media_path: generateImageUrl(json?.media_path),
+        slug: json?.sku,
+        base_slug: baseSlug,
+        model_slug: modelSlug,
+        product_code: json?.product_code,
+        variants_available: json?.has_more_items,
+        hasMoreVariants: modelVariantCount > 1,
+        price: json?.price,
+        stock: json?.stock,
+        category_name: json?.productModel?.product?.category?.name || null,
+        category_ar: json?.productModel?.product?.category?.name_ar || null,
+        variant_attributes: json?.variant_attributes,
+        query_params: generateQueryParams(variantSku, modelSlug, formattedAttributes),
+      };
+    });
   }
 
   static async recalculateCartTotals(cartId, transaction = null) {

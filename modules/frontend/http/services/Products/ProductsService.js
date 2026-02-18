@@ -27,10 +27,7 @@ class ProductsService {
 
     const isModelAndFilters = model && filterEntries.length > 0;
 
-    console.log("FILLTERS", isModelAndFilters);
-    console.log("FILLTERS", filterEntries);
-    console.log("FILLTERS", variantSku);
-    console.log("FILLTERS", model);
+
 
 
 
@@ -185,33 +182,20 @@ class ProductsService {
         }
       }
 
-      const similarProducts = modelsData
-        ?.filter((m) => String(m.id) !== String(initialVariant?.model_id))
-        ?.map((m) => {
-          const firstVariant = m.variants?.[0];
-          return {
-            id: m.id,
-            title: m.title,
-            title_ar: m.title_ar,
-            base_slug: baseData.slug,
-            category_name: baseData.category_name,
-            price: firstVariant?.price || m.base_price,
-            media_path: firstVariant?.media_path || m.media_path,
-            hoverMedia: firstVariant?.hover_media_path ? { path: firstVariant.hover_media_path } : null,
-            query_params: `?model=${m.slug}`,
-            hasMoreVariants: m.variants?.length > 1,
-          };
-        });
+      const currentVariantId = initialVariant?.id;
+      const currentModelId = initialVariant?.model_id;
+
+      const similarVariants = currentModelId
+        ? await ProductServiceHelpers.getSimiliarProducts(currentModelId, currentVariantId)
+        : [];
+
 
       return {
         data: {
           product: baseData,
           initialVariant,
           models: modelsData,
-          similarProducts: {
-            title: "Similar products",
-            product: similarProducts,
-          },
+          similarVariants,
         },
         fromCache: false,
         message: "Data fetched",
@@ -487,6 +471,7 @@ class ProductsService {
           query_params: generateQueryParams(variantSku, modelSlug, formattedAttributes),
         };
       });
+
 
       return {
         data: {

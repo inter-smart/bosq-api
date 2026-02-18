@@ -49,11 +49,11 @@ function buildProfileEditSection(data) {
 
   const userData = data.toJSON ? data.toJSON() : data;
   return {
-    displayName: userData.name ?? "N/A",
-    firstName: userData.first_name ?? "N/A",
-    lastName: userData.last_name ?? "N/A",
-    phone: `${userData?.country_code} ${userData.mobile}` ?? "N/A",
-    email: userData.email ?? "N/A",
+    displayName: userData.name ?? null,
+    firstName: userData.first_name ?? null,
+    lastName: userData.last_name ?? null,
+    phone: `${userData?.country_code} ${userData.mobile}` ?? null,
+    email: userData.email ?? null,
   };
 }
 

@@ -101,30 +101,28 @@ class CheckOutService {
       };
     }
 
-    const priceChanged = await ProductServiceHelpers.syncCartItemPrices(cart);
+    await ProductServiceHelpers.validateCoupon(cart);
 
-    if (priceChanged) {
-      await cart.reload({
-        include: [
-          {
-            model: models.CartItems,
-            as: "items",
-            include: [
-              {
-                model: models.ProductBase,
-                as: "product",
-                attributes: ["id", "title", "slug"],
-              },
-              {
-                model: models.ProductVariants,
-                as: "variant",
-                attributes: ["id", "sku", "price", "media_path", "stock", "title", "title_ar"],
-              },
-            ],
-          },
-        ],
-      });
-    }
+    await cart.reload({
+      include: [
+        {
+          model: models.CartItems,
+          as: "items",
+          include: [
+            {
+              model: models.ProductBase,
+              as: "product",
+              attributes: ["id", "title", "slug"],
+            },
+            {
+              model: models.ProductVariants,
+              as: "variant",
+              attributes: ["id", "sku", "price", "media_path", "stock", "title", "title_ar"],
+            },
+          ],
+        },
+      ],
+    });
 
     const itemCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -219,7 +217,8 @@ class CheckOutService {
 
       // 4. Check minimum order amount
       const subtotal = parseFloat(cart.subtotal);
-      if (subtotal < parseFloat(coupon.min_order_amount)) {
+      // 5. Check minimum order amount if it exists
+      if (coupon.min_order_amount && subtotal < parseFloat(coupon.min_order_amount)) {
         throw ErrorHandler.createError(`Minimum order amount of ${coupon.min_order_amount} AED is required for this coupon`, HTTP_STATUS.BAD_REQUEST);
       }
 
@@ -258,6 +257,12 @@ class CheckOutService {
 
       await this.couponWiseUpdates(coupon, cart, transaction);
 
+      const cartnEW = await models.Cart.findOne({
+        where: { id: cart.id },
+        transaction,
+      });
+
+
       await transaction.commit();
 
       const cartData = await this.getCartData(userId, null);
@@ -287,7 +292,7 @@ class CheckOutService {
           if (item.product_id === scopeId) return true;
           break;
         case "category":
-          if (item.variant?.productModel?.product?.category_id === scopeId) return true;
+          if (item.variant?.productModel?.product?.category_id == scopeId) return true;
           break;
       }
     }
@@ -317,11 +322,23 @@ class CheckOutService {
         throw ErrorHandler.createError("No coupon is applied to this cart", HTTP_STATUS.BAD_REQUEST);
       }
 
-      // Reset item-level coupon fields for scoped coupons
+
+      const applliedCoupon = await models.Coupons.findOne({
+        attributes: ["id", "scope_type", "scope_id"],
+        where: {
+          code: cart.applied_coupon_code,
+        },
+        transaction,
+      });
+
+      if (!applliedCoupon) {
+        throw ErrorHandler.createError("Invalid or expired coupon code", HTTP_STATUS.BAD_REQUEST);
+      }
+
       await models.CartItems.update(
         {
           discount_amount: 0,
-          final_price: sequelize.col("price"),
+          final_price: sequelize.literal("ROUND(price * quantity, 2)"),
           coupon_id: null,
           applied_coupon_code: null,
           applied_coupon_scope: null,
@@ -329,8 +346,9 @@ class CheckOutService {
         {
           where: { cart_id: cart.id },
           transaction,
-        },
+        }
       );
+
 
       // Recalculate totals without coupon discount
       await ProductServiceHelpers.recalculateCartTotals(cart.id, transaction);
@@ -432,16 +450,17 @@ class CheckOutService {
 
   static getMatchingCartItems(coupon, cartItems) {
     const scopeId = parseInt(coupon.scope_id);
+    const minimumProductAmount = parseFloat(coupon.min_product_amount);
     return cartItems.filter((item) => {
       switch (coupon.scope_type) {
         case "variant":
           return item.variant_id === scopeId;
         case "model":
-          return item.variant?.product_model_id === scopeId;
+          return item.variant?.product_model_id === scopeId && item.final_price >= minimumProductAmount;
         case "product":
           return item.product_id === scopeId;
         case "category":
-          return item.variant?.productModel?.product?.category_id === scopeId;
+          return item.variant?.productModel?.product?.category_id === scopeId && item.final_price >= minimumProductAmount;
         default:
           return false;
       }
@@ -489,6 +508,8 @@ class CheckOutService {
       // Scoped coupon: discount applies only to matching items
       const matchingItems = this.getMatchingCartItems(coupon, cart.items);
 
+      console.log("MATCHING ITEMS", JSON.stringify(matchingItems, null, 2));
+
       if (matchingItems.length === 0) {
         throw ErrorHandler.createError("This coupon is not applicable to the items in your cart", HTTP_STATUS.BAD_REQUEST);
       }
@@ -498,24 +519,56 @@ class CheckOutService {
         return sum + parseFloat(item.price) * item.quantity;
       }, 0);
 
-      // Calculate discount based on eligible subtotal
-      let discountAmount = 0;
-      if (coupon.discount_type === "percentage") {
-        discountAmount = (eligibleSubtotal * parseFloat(coupon.discount_value)) / 100;
-        if (coupon.max_discount_amount && discountAmount > parseFloat(coupon.max_discount_amount)) {
-          discountAmount = parseFloat(coupon.max_discount_amount);
-        }
-      } else {
-        discountAmount = parseFloat(coupon.discount_value);
-        if (discountAmount > eligibleSubtotal) {
-          discountAmount = eligibleSubtotal;
-        }
+      console.log("ELIGIBLE SUBTOTAL", eligibleSubtotal);
+
+
+      // Validate against min_product_amount
+      if (coupon.min_product_amount && eligibleSubtotal < parseFloat(coupon.min_product_amount)) {
+        throw ErrorHandler.createError(`The total of eligible products must be at least ${coupon.min_product_amount} to use this coupon`, HTTP_STATUS.BAD_REQUEST);
       }
 
-      // Distribute discount proportionally across matching items
+
+      const round2 = (num) => Math.round((num + Number.EPSILON) * 100) / 100;
+
+      let remainingMaxDiscount = round2(parseFloat(coupon.max_discount_amount || 0));
+      let finalDiscountAmount = 0.0;
+
+      const isPercentage = coupon.discount_type === "percentage";
+      let discountAmount = round2(parseFloat(coupon.discount_value));
+
+      // Cap fixed discount to eligible subtotal
+      if (!isPercentage && discountAmount > eligibleSubtotal) {
+        discountAmount = round2(eligibleSubtotal);
+      }
+
       for (const item of matchingItems) {
-        const itemDiscount = discountAmount;
-        const finalPrice = parseFloat(item.price) - itemDiscount;
+        if (remainingMaxDiscount <= 0) break;
+
+        const totalItems = item.quantity;
+        const itemPrice = round2(parseFloat(item.price));
+        const itemTotalPrice = round2(itemPrice * totalItems);
+
+        let intendedDiscount = 0;
+
+        if (isPercentage) {
+          intendedDiscount = round2(
+            (itemTotalPrice * discountAmount) / 100
+          );
+        } else {
+          intendedDiscount = round2(discountAmount);
+        }
+
+        // Apply only remaining max pool
+        const itemDiscount = round2(
+          Math.min(intendedDiscount, remainingMaxDiscount)
+        );
+
+        const finalPrice = round2(itemTotalPrice - itemDiscount);
+
+        console.log(
+          `updated item - ${item.title} - ${itemDiscount}, ${finalPrice}`
+        );
+
 
         await models.CartItems.update(
           {
@@ -528,13 +581,24 @@ class CheckOutService {
           {
             where: { id: item.id },
             transaction,
-          },
+          }
         );
+
+
+        remainingMaxDiscount = round2(remainingMaxDiscount - itemDiscount);
+        finalDiscountAmount = round2(finalDiscountAmount + itemDiscount);
       }
 
       // Update cart totals
-      const newDiscountTotal = parseFloat(cart.discount_total) + discountAmount;
-      const newGrandTotal = subtotal - newDiscountTotal;
+      const newDiscountTotal = round2(
+        parseFloat(cart.discount_total) + finalDiscountAmount
+      );
+
+      const newGrandTotal = round2(subtotal - newDiscountTotal);
+
+      console.log("NEW DISCOUNT TOTAL", newDiscountTotal);
+      console.log("NEW GRAND TOTAL", newGrandTotal);
+
 
       await models.Cart.update(
         {
@@ -547,8 +611,10 @@ class CheckOutService {
         {
           where: { id: cart.id },
           transaction,
-        },
+        }
       );
+
+
 
       await ProductServiceHelpers.recalculateCartTotals(cart.id, transaction);
 

@@ -2,8 +2,8 @@ const { mediaWithoutType } = require("../mediaButtonHelper");
 
 function buildFaqData(faqCms, categories) {
   return {
-    title: faqCms.title,
-    title_ar: faqCms.title_ar,
+    title: faqCms.banner_title,
+    title_ar: faqCms.banner_title_ar,
     media: mediaWithoutType(faqCms, "banner_media_desktop_path", "banner_media_mobile_path", "banner_media_alt", "banner_media_alt_ar"),
     list: categories.map((cat) => ({
       id: cat.id,

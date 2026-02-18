@@ -15,7 +15,7 @@ class ContactEnquiryController {
         status: HTTP_STATUS.CREATED,
       });
     } catch (error) {
-      return sendErrorResponse(res, error, "Internal Server Error", 500);
+      return ApiResponse.error(res, error, "Internal Server Error", 500);
     }
   }
 }

@@ -57,7 +57,7 @@ class CouponsController {
               include: [
                 {
                   model: models.ProductModels,
-                  as: "model",
+                  as: "productModel",
                   required: false,
                   attributes: ["id", "title"],
                   include: [

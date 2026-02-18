@@ -27,8 +27,9 @@ class ProductsService {
 
     const isModelAndFilters = model && filterEntries.length > 0;
 
-    console.log(isModelAndFilters);
-    console.log(filterEntries);
+
+
+
 
     try {
       const baseProduct = await ProductServiceHelpers?.getProductBaseData(slug);
@@ -43,7 +44,7 @@ class ProductsService {
       if (variantSku) {
         const variantData = await models.ProductVariants.findOne({
           where: { sku: variantSku, status: true },
-          attributes: ["id", "sku", "title", "title_ar", "price", "stock", "media_path"],
+          attributes: ["id", "product_model_id", "sku", "title", "title_ar", "price", "stock", "media_path"],
           include: [
             {
               association: "variant_images",
@@ -72,13 +73,13 @@ class ProductsService {
       } else {
         if (model && !isModelAndFilters) {
           const productModelData = await models.ProductModels.findOne({
-            where: { slug: model, status: true },
+            where: { product_id: baseData.id, slug: model, status: true },
             attributes: ["id", "code", "title", "slug", "media_path"],
             required: true,
             include: [
               {
                 association: "variants",
-                attributes: ["id", "sku", "title", "title_ar", "price", "stock", "media_path"],
+                attributes: ["id", "product_model_id", "sku", "title", "title_ar", "price", "stock", "media_path"],
                 required: true,
                 include: [
                   {
@@ -129,28 +130,29 @@ class ProductsService {
             }
           }
 
-          // Build where clause for variant_attributes
-          let variantAttributeWhere = null;
+          // Build where clause for ProductVariants with strict attribute matching
+          const whereClause = { product_id: baseData.id, status: true };
+
           if (attributeFilterConditions.length > 0) {
-            variantAttributeWhere = {
-              [Op.or]: attributeFilterConditions,
-            };
+            whereClause[Op.and] = attributeFilterConditions.map((cond) => {
+              return literal(`EXISTS (
+                SELECT 1 FROM "product_variant_attributes" 
+                WHERE "product_variant_attributes"."product_variant_id" = "ProductVariants"."id" 
+                AND "product_variant_attributes"."attribute_id" = ${cond.attribute_id} 
+                AND "product_variant_attributes"."attribute_value_id" = ${cond.attribute_value_id}
+                AND "product_variant_attributes"."deletedAt" IS NULL
+              )`);
+            });
           }
 
-          // Find variant matching the filters using variant_attributes (hasMany)
+          // Find variant matching all filters
           const variantData = await models.ProductVariants.findOne({
-            where: { status: true },
-            attributes: ["id", "sku", "title", "title_ar", "price", "stock", "media_path"],
+            where: whereClause,
+            attributes: ["id", "product_model_id", "sku", "title", "title_ar", "price", "stock", "media_path"],
             include: [
               {
                 association: "variant_images",
                 attributes: ["id", "media_path", "media_type", "is_primary", "sort_order", "thumbnail_path"],
-              },
-              {
-                association: "variant_attributes",
-                required: variantAttributeWhere ? true : false,
-                where: variantAttributeWhere || undefined,
-                attributes: ["id", "attribute_id", "attribute_value_id"],
               },
               {
                 association: "attribute_values",
@@ -180,11 +182,20 @@ class ProductsService {
         }
       }
 
+      const currentVariantId = initialVariant?.id;
+      const currentModelId = initialVariant?.model_id;
+
+      const similarVariants = currentModelId
+        ? await ProductServiceHelpers.getSimiliarProducts(currentModelId, currentVariantId)
+        : [];
+
+
       return {
         data: {
           product: baseData,
           initialVariant,
           models: modelsData,
+          similarVariants,
         },
         fromCache: false,
         message: "Data fetched",
@@ -293,18 +304,21 @@ class ProductsService {
         const attributeConditions = [];
         Object.entries(attributes).forEach(([attributeId, valueIds]) => {
           if (valueIds && Array.isArray(valueIds) && valueIds.length > 0) {
-            attributeConditions.push({
-              attribute_id: parseInt(attributeId),
-              attribute_value_id: {
-                [Op.in]: valueIds.map((id) => parseInt(id)),
-              },
-            });
+            const valuesList = valueIds.map((id) => parseInt(id)).join(",");
+            attributeConditions.push(
+              literal(`EXISTS (
+                SELECT 1 FROM "product_variant_attributes" 
+                WHERE "product_variant_attributes"."product_variant_id" = "ProductVariants"."id" 
+                AND "product_variant_attributes"."attribute_id" = ${parseInt(attributeId)} 
+                AND "product_variant_attributes"."attribute_value_id" IN (${valuesList})
+                AND "product_variant_attributes"."deletedAt" IS NULL
+              )`),
+            );
           }
         });
+
         if (attributeConditions.length > 0) {
-          variantAttributeWhere = {
-            [Op.or]: attributeConditions,
-          };
+          whereClause[Op.and] = attributeConditions;
         }
       }
 
@@ -458,6 +472,7 @@ class ProductsService {
         };
       });
 
+
       return {
         data: {
           products: transformedData,
@@ -500,23 +515,25 @@ class ProductsService {
 
     const attributes = parseAttributesFromParams(params);
 
-    let variantAttributeWhere = null;
+    const whereClauseForModel = { status: true };
     if (attributes && Object.keys(attributes).length > 0) {
       const attributeConditions = [];
       Object.entries(attributes).forEach(([attributeId, valueIds]) => {
         if (valueIds && Array.isArray(valueIds) && valueIds.length > 0) {
-          attributeConditions.push({
-            attribute_id: parseInt(attributeId),
-            attribute_value_id: {
-              [Op.in]: valueIds.map((id) => parseInt(id)),
-            },
-          });
+          const valuesList = valueIds.map((id) => parseInt(id)).join(",");
+          attributeConditions.push(
+            literal(`EXISTS (
+              SELECT 1 FROM "product_variant_attributes" 
+              WHERE "product_variant_attributes"."product_variant_id" = "variants"."id" 
+              AND "product_variant_attributes"."attribute_id" = ${parseInt(attributeId)} 
+              AND "product_variant_attributes"."attribute_value_id" IN (${valuesList})
+              AND "product_variant_attributes"."deletedAt" IS NULL
+            )`),
+          );
         }
       });
       if (attributeConditions.length > 0) {
-        variantAttributeWhere = {
-          [Op.or]: attributeConditions,
-        };
+        whereClauseForModel[Op.and] = attributeConditions;
       }
     }
 
@@ -530,6 +547,7 @@ class ProductsService {
             association: "variants",
             attributes: ["id", "sku", "title", "title_ar", "price", "stock", "media_path"],
             required: true,
+            where: whereClauseForModel,
             include: [
               {
                 association: "variant_images",

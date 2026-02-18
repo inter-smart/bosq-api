@@ -80,32 +80,31 @@ class CartService {
         };
       }
 
-      const priceChanged = await ProductServiceHelpers.syncCartItemPrices(cart, transaction);
+      await ProductServiceHelpers.validateCoupon(cart);
 
       // Reload cart with fresh data after price sync
-      if (priceChanged) {
-        await cart.reload({
-          include: [
-            {
-              model: models.CartItems,
-              as: "items",
-              include: [
-                {
-                  model: models.ProductBase,
-                  as: "product",
-                  attributes: ["id", "title", "slug"],
-                },
-                {
-                  model: models.ProductVariants,
-                  as: "variant",
-                  attributes: ["id", "sku", "price", "media_path", "stock", "title", "title_ar"],
-                },
-              ],
-            },
-          ],
-          transaction,
-        });
-      }
+      await cart.reload({
+        include: [
+          {
+            model: models.CartItems,
+            as: "items",
+            include: [
+              {
+                model: models.ProductBase,
+                as: "product",
+                attributes: ["id", "title", "slug"],
+              },
+              {
+                model: models.ProductVariants,
+                as: "variant",
+                attributes: ["id", "sku", "price", "media_path", "stock", "title", "title_ar"],
+              },
+            ],
+          },
+        ],
+        transaction,
+      });
+
 
       const itemCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -180,6 +179,7 @@ class CartService {
         await existingItem.update(
           {
             quantity: existingItem.quantity + quantity,
+            final_price: (existingItem.quantity + quantity) * price,
           },
           { transaction },
         );
@@ -191,7 +191,7 @@ class CartService {
             variant_id: variantId || null,
             quantity,
             price,
-            final_price: price,
+            final_price: quantity * price,
             discount_amount: 0,
           },
           { transaction },
@@ -250,7 +250,10 @@ class CartService {
         throw ErrorHandler.createError("Product variant out of stock", HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
       }
 
-      await cartItem.update({ quantity }, { transaction });
+      const currentPrice = cartItem.price;
+      const finalPrice = currentPrice * quantity;
+
+      await cartItem.update({ quantity, final_price: finalPrice }, { transaction });
 
       // Recalculate totals
       await ProductServiceHelpers.recalculateCartTotals(cart.id, transaction);

@@ -42,6 +42,7 @@ class CustomizationService {
         customizationProcess,
         customizationOptions,
         states,
+        enquiryDropdowns
 
       ] = await Promise.all([
         models.CustomizationCms.findOne(),
@@ -80,6 +81,14 @@ class CustomizationService {
             },
           ],
         }),
+
+        models.EnquiryDropdown.findAll({
+          where: {
+            status: true,
+          },
+          attributes:["id", "title", "title_ar"],
+          order: [["sort_order", "ASC"]],
+        }),
       ]);
 
       //   4. Process and structure the data
@@ -96,7 +105,6 @@ class CustomizationService {
       );
       const requestCustomQuote = buildCmsSection(customizationCms, "form");
 
-      const options = buildOptionsValue(customizationOptions)
 
       const result = {
         heroData,
@@ -106,7 +114,7 @@ class CustomizationService {
         optionsSection,
         requestCustomQuote,
         states,
-        options
+        enquiryDropdowns
       };
 
       //   5. Store the result in cache for future requests

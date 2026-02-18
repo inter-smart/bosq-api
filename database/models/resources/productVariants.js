@@ -158,6 +158,13 @@ module.exports = (sequelize) => {
       as: "wishlists",
       onDelete: "CASCADE",
     });
+
+    // Product Enquiries
+    ProductVariants.hasMany(models.ProductEnquiry, {
+      foreignKey: "product_id",
+      as: "enquiries",
+      onDelete: "CASCADE",
+    });
   };
 
   return ProductVariants;

@@ -56,13 +56,5 @@ module.exports = (sequelize) => {
     }
   );
 
-
-  CustomizationOptions.associate = (models) => {
-    CustomizationOptions.hasMany(models.CustomizationEnquiry, {
-      foreignKey: "options_id",
-      as: "customization_form",
-    });
-  };
-
   return CustomizationOptions;
 };

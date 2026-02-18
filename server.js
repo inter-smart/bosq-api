@@ -62,12 +62,12 @@ const startServer = async () => {
     await sequelize.authenticate();
 
     // await homeCmsData();
-    await seedCountriesAndStates();
+    // await seedCountriesAndStates();
     // Add this to see which models are registered
     // console.log("Registered models:", Object.keys(sequelize.models));
 
-    await createAdminUser();
-    await seedMetaTags();
+    // await createAdminUser();
+    // await seedMetaTags();
 
     await connectRedis();
     app.set("redisClient", redisClient);

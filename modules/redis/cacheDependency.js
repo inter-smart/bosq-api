@@ -1,3 +1,4 @@
+const enquiryDropdown = require("../../database/models/master/enquiryDropdown");
 const productCategory = require("../../database/models/resources/productCategory");
 const cacheKeys = require("./cacheKeys");
 
@@ -64,13 +65,18 @@ const cacheDependencies = {
   ServicesCms: [cacheKeys.services],
 
   // News/Blog Module
-  News: [cacheKeys.news, cacheKeys.about],
+  News: [
+    cacheKeys.news, // static list cache
+    "news-list:page:*", // paginated news list cache
+    cacheKeys.about,
+  ],
   NewsCms: [cacheKeys.news],
   NewsCategories: [cacheKeys.news],
 
   Blogs: [
     cacheKeys.blog, // static list cache
-    (row) => cacheKeys.blogDetail(row.slug), // dynamic individual blog cache
+    "blog-list:page:*", // paginated blog list cache
+    (row) => cacheKeys.blogDetail(row.slug), // dynamic individual blog cache,
   ],
   BlogCms: [cacheKeys.blog],
   BlogCategories: [cacheKeys.blog],
@@ -86,6 +92,8 @@ const cacheDependencies = {
   ProductCategory: [cacheKeys.home, cacheKeys.listingDropdownFilters],
   ErgonomicFeatures: [cacheKeys.ergonomichair],
   ErgonomicCms: [cacheKeys.ergonomichair],
+
+  enquiryDropdown: [cacheKeys.home, cacheKeys.customization]
 };
 
 module.exports = cacheDependencies;

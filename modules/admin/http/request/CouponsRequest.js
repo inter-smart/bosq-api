@@ -23,7 +23,7 @@ exports.validationRequestPost = [
     .isString()
     .withMessage("Description must be a string"),
 
-     // TITLE (OPTIONAL)
+  // TITLE (OPTIONAL)
   body("title_ar")
     .optional()
     .isString()
@@ -37,7 +37,7 @@ exports.validationRequestPost = [
     .isString()
     .withMessage("Description AR must be a string"),
 
-    // MEDIA PATH
+  // MEDIA PATH
   body("media_path")
     .optional()
     .isString()
@@ -63,12 +63,17 @@ exports.validationRequestPost = [
       return true;
     }),
 
-  // MIN ORDER AMOUNT
-  body("min_order_amount")
-    .notEmpty()
-    .withMessage("Minimum order amount is required")
+  // MIN PRODUCT AMOUNT
+  body("min_product_amount")
+    .optional({ nullable: true })
     .isDecimal({ decimal_digits: "0,2" })
-    .withMessage("Minimum order amount must be a valid decimal"),
+    .withMessage("Minimum product amount must be a valid decimal")
+    .custom((value, { req }) => {
+      if (req.body.discount_type === "flat" && value && Number(value) <= Number(req.body.discount_value)) {
+        throw new Error("Minimum product amount must be greater than discount value for flat discounts");
+      }
+      return true;
+    }),
 
   // MAX DISCOUNT AMOUNT
   body("max_discount_amount")
@@ -77,8 +82,8 @@ exports.validationRequestPost = [
     .isDecimal({ decimal_digits: "0,2" })
     .withMessage("Maximum discount amount must be a valid decimal")
     .custom((value, { req }) => {
-      if (Number(value) < Number(req.body.discount_value)) {
-        throw new Error("Maximum discount must be greater than discount value");
+      if (req.body.discount_type === "flat" && Number(value) < Number(req.body.discount_value)) {
+        throw new Error("Maximum discount must be greater than or equal to discount value for flat discounts");
       }
       return true;
     }),
@@ -87,13 +92,13 @@ exports.validationRequestPost = [
   body("scope_type")
     .notEmpty()
     .withMessage("Scope type is required")
-    .isIn(["common", "category", "product", "variant"])
+    .isIn(["common", "category", "product", "variant", "model"])
     .withMessage("Invalid scope type"),
 
   // SCOPE ID (CONDITIONAL)
-  body("scope_id")  .optional({ nullable: true })
-  .isInt({ min: 1 })
-  .withMessage("Scope ID must be a valid integer"),
+  body("scope_id").optional({ nullable: true })
+    .isInt({ min: 1 })
+    .withMessage("Scope ID must be a valid integer"),
 
   // USAGE LIMIT TOTAL
   body("usage_limit_total")

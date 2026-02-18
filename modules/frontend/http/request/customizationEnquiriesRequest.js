@@ -47,7 +47,7 @@ const validationRequestPost = [
     .withMessage("Please provide a valid phone number"),
 
   // Options ID
-  body("options_id")
+  body("dropdown_id")
     .notEmpty()
     .withMessage("Customization option is requiredss")
     .isInt({ min: 1 })

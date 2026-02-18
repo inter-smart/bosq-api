@@ -1,8 +1,9 @@
-const { models } = require("../../../../database/models/index");
+const { models, sequelize } = require("../../../../database/models/index");
+const { Op } = require("sequelize");
 const cacheKeys = require("../../../redis/cacheKeys");
 const { getCache, setCache } = require("../../../redis/redisService");
 const { generateImageUrl } = require("../../traits/imageUrlHelper");
-const { generateProductBasedata, buildAttributesFromVariants } = require("./dataManipulations/product/product");
+const { generateProductBasedata, buildAttributesFromVariants, generateQueryParams } = require("./dataManipulations/product/product");
 
 const productAttributes = [
   "id",
@@ -56,23 +57,20 @@ class ProductServiceHelpers {
   static async getProductVariantRelatedModels(product_base_id) {
     const cacheKey = cacheKeys?.productVariantRelatedModels(product_base_id);
     const baseDataFromCache = await getCache(cacheKey);
-    // if (baseDataFromCache) {
-    //   return {
-    //     data: baseDataFromCache,
-    //     fromCache: true,
-    //   };
-    // }
 
     const productmodels = await models?.ProductModels?.findAll({
       where: { product_id: product_base_id, status: true },
-      attributes: ["id", "code", "title", "title_ar", "slug", "media_path"],
+      attributes: ["id", "code", "title", "title_ar", "slug", "media_path", "base_price"],
       include: [
         {
           association: "variants",
-          as: "allVariants",
-          attributes: ["id", "sku"],
+          attributes: ["id", "sku", "title", "title_ar", "price", "stock", "media_path"],
           required: false,
           include: [
+            {
+              association: "variant_images",
+              attributes: ["id", "media_path", "media_type", "is_primary", "sort_order"],
+            },
             {
               association: "attribute_values",
               attributes: ["id"],
@@ -81,12 +79,6 @@ class ProductServiceHelpers {
                 {
                   association: "attribute",
                   attributes: ["id", "name", "code", "slug"],
-                  include: [
-                    {
-                      association: "values",
-                      attributes: ["id", "attribute_id", "value", "slug"],
-                    },
-                  ],
                 },
               ],
             },
@@ -102,7 +94,20 @@ class ProductServiceHelpers {
         title: model.title,
         title_ar: model.title_ar,
         slug: model.slug,
+        base_price: model.base_price,
+        stock: model.variants?.[0]?.stock,
         media_path: generateImageUrl(model.media_path),
+        variants:
+          model.variants?.map((v) => ({
+            id: v.id,
+            sku: v.sku,
+            title: v.title,
+            title_ar: v.title_ar,
+            price: v.price,
+            stock: v.stock,
+            media_path: generateImageUrl(v.media_path),
+            hover_media_path: generateImageUrl(v.variant_images?.find((img) => !img.is_primary)?.media_path),
+          })) || [],
         attributes: buildAttributesFromVariants(model.variants || []),
       })) || [];
     await setCache(cacheKey, data);
@@ -110,6 +115,97 @@ class ProductServiceHelpers {
       data,
       fromCache: false,
     };
+  }
+
+  static async getSimiliarProducts(modelId, variantId) {
+    const variants = await models.ProductVariants.findAll({
+      where: {
+        product_model_id: modelId,
+        id: { [Op.ne]: variantId },
+        status: true,
+      },
+      limit: 6,
+      include: [
+        {
+          model: models.ProductModels,
+          as: "productModel",
+          attributes: ["id", "slug", "title"],
+          include: [
+            {
+              model: models.ProductBase,
+              as: "product",
+              attributes: ["id", "slug"],
+              include: [
+                {
+                  model: models.ProductCategory,
+                  as: "category",
+                  attributes: ["id", "name", "name_ar"],
+                },
+              ],
+            },
+          ],
+        },
+        {
+          model: models.ProductVariantAttributes,
+          as: "variant_attributes",
+          attributes: ["id", "attribute_id", "attribute_value_id"],
+          include: [
+            {
+              model: models.ProductAttribute,
+              as: "ProductAttribute",
+              attributes: ["id", "name", "name_ar", "code", "slug"],
+            },
+            {
+              model: models.AttributeValues,
+              as: "AttributeValue",
+              attributes: ["id", "value", "value_ar", "slug"],
+            },
+          ],
+        },
+      ],
+    });
+
+    const modelVariantCount = await models.ProductVariants.count({
+      where: { product_model_id: modelId, status: true },
+    });
+
+    return variants.map((item) => {
+      const json = item.toJSON();
+
+      const formattedAttributes = (json?.variant_attributes || []).map((va) => ({
+        code: va?.ProductAttribute?.code,
+        slug: va?.ProductAttribute?.slug,
+        values: [
+          {
+            slug: va?.AttributeValue?.slug,
+            value: va?.AttributeValue?.value,
+          },
+        ],
+      }));
+
+      const baseSlug = json?.productModel?.product?.slug;
+      const modelSlug = json?.productModel?.slug;
+      const variantSku = json?.sku;
+
+      return {
+        id: json?.id,
+        title: json?.title,
+        title_ar: json?.title_ar,
+        media_path: generateImageUrl(json?.media_path),
+        slug: json?.sku,
+        base_slug: baseSlug,
+        model_slug: modelSlug,
+        product_code: json?.product_code,
+        variants_available: json?.has_more_items,
+        hasMoreVariants: modelVariantCount > 1,
+        price: json?.price,
+        stock: json?.stock,
+        category_name: json?.productModel?.product?.category?.name || null,
+        category_ar: json?.productModel?.product?.category?.name_ar || null,
+        variant_attributes: json?.variant_attributes,
+        query_params: generateQueryParams(variantSku, modelSlug, formattedAttributes),
+      };
+    });
   }
 
   static async recalculateCartTotals(cartId, transaction = null) {
@@ -122,11 +218,20 @@ class ProductServiceHelpers {
     let discountTotal = 0;
 
     for (const item of cartItems) {
-      const itemTotal = parseFloat(item.final_price) * item.quantity;
+      const itemTotal = parseFloat(item.final_price);
       const itemDiscount = parseFloat(item.discount_amount);
+
+      console.log("itemTotal", itemTotal);
+      console.log("itemDiscount", itemDiscount);
+
+
       subtotal += itemTotal;
       discountTotal += itemDiscount;
     }
+
+    console.log("subtotal", subtotal);
+    console.log("discountTotal", discountTotal);
+
 
     const grandTotal = subtotal;
 
@@ -154,12 +259,13 @@ class ProductServiceHelpers {
 
       const variantPrice = parseFloat(item.variant.price);
       const cartItemPrice = parseFloat(item.price);
+      const cartQuantity = item.quantity;
 
       if (variantPrice !== cartItemPrice) {
         await item.update(
           {
             price: variantPrice,
-            final_price: variantPrice,
+            final_price: variantPrice * cartQuantity,
           },
           { transaction },
         );
@@ -167,16 +273,78 @@ class ProductServiceHelpers {
       }
     }
 
-    if (priceChanged) {
-      await this.recalculateCartTotals(cart.id, transaction);
-    }
+    await this.recalculateCartTotals(cart.id, transaction);
 
     return { priceChanged };
   }
 
-  static async validateCoupon(cart) {
-    const isCouponApplied = cart.coupon_code;
+  static async validateCoupon(cart, transaction = null) {
+    const couponCode = cart.applied_coupon_code;
+    if (!couponCode) return;
+
+    const coupon = await models.Coupons.findOne({
+      where: { code: couponCode },
+      transaction,
+    });
+
+
+
+
+    if (!coupon) {
+      await this.removeCouponFromCart(cart, transaction);
+      return;
+    }
+
+    const now = new Date();
+    const isExpired = coupon.end_at < now || coupon.start_at > now;
+    const isInactive = !coupon.status;
+    const isBelowMin = coupon.min_order_amount && parseFloat(cart.subtotal) < parseFloat(coupon.min_order_amount)
+
+
+    console.log("IS EXPIRED", isExpired);
+    console.log("IS INACTIVE", isInactive);
+    console.log("IS BELOW MIN", isBelowMin);
+
+    if (isExpired || isInactive || isBelowMin) {
+      await this.removeCouponFromCart(cart, transaction);
+    }
+
+
+    const priceChanged = await this.syncCartItemPrices(cart, transaction);
+    console.log("priceChanged", priceChanged);
+
+    return { priceChanged };
+
+
   }
+
+  static async removeCouponFromCart(cart, transaction = null) {
+    // Reset item-level coupon fields
+    await models.CartItems.update(
+      {
+        discount_amount: 0,
+        final_price: sequelize.literal("ROUND(price * quantity, 2)"),
+        coupon_id: null,
+        applied_coupon_code: null,
+        applied_coupon_scope: null,
+      },
+      {
+        where: { cart_id: cart.id },
+        transaction,
+      },
+    );
+
+    // Clear cart-level coupon fields
+    await cart.update(
+      {
+        applied_coupon_code: null,
+        coupon_id: null,
+        applied_coupon_scope: null,
+      },
+      { transaction },
+    );
+  }
+
 
   static checkInvalidProducts(cartItems) {
     return cartItems.some((item) => {

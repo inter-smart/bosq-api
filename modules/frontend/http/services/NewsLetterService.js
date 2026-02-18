@@ -1,4 +1,5 @@
 const { models } = require("../../../../database/models");
+const EmailService = require("../../../../services/EmailService");
 const {
   validateRecaptcha,
 } = require("../../../../services/RecaptchaValidation");
@@ -32,13 +33,22 @@ class NewsLetterService {
       });
 
       if (existingEntry) {
-        const error = new Error("You already have a career enquiry with this email");
+        const error = new Error(
+          "You already have a newsletter subscription with this email",
+        );
         error.statusCode = 409; // Conflict
         throw error;
       }
 
       const enquiry = await models.NewsLetter.create({
         email: data.email,
+      });
+
+      await Promise.all([
+        EmailService.sendNewsletterConfirmation(data.email),
+        EmailService.sendNewsletterAdmin(data.email),
+      ]).catch((error) => {
+        console.error("Failed to send newsletter emails:", error);
       });
 
       return {

@@ -15,6 +15,7 @@ const {
 } = require("../../traits/responseHandler.js");
 const { paginate } = require("../../traits/datatablePaginationHelper.js");
 const { Op } = require("sequelize");
+const slugify = require("slugify");
 
 const cacheKeys = require("../../../../redis/cacheKeys");
 const { invalidateCache } = require("../../../../redis/redisService");
@@ -30,7 +31,7 @@ class ProjectCategoriesController {
           ["sort_order", "ASC"],
           ["createdAt", "DESC"],
         ],
-        searchFields: ["name", "name_ar"],
+        searchFields: ["name", "name_ar", "slug"],
       });
 
       const response = {
@@ -59,21 +60,39 @@ class ProjectCategoriesController {
     try {
       const { name } = req.body;
 
-      const isExist = await DataModel.findOne({
-        where: {
-          name: {
-            [Op.iLike]: req.body.name,
-          },
-        },
+      if (!name || name.trim() === "")
+        return sendErrorResponse(
+          res,
+          "Name is required to generate slug",
+          null,
+          400
+        );
+
+      // Generate slug
+      const baseSlug = slugify(name.trim(), { lower: true, strict: true });
+
+      const existing = await DataModel.findOne({
+        where: { slug: baseSlug },
+        paranoid: true,
       });
 
-      if (isExist) {
-        return sendErrorResponse(res, `${name} already exists`);
+      if (existing) {
+        await transaction.rollback();
+        return sendErrorResponse(
+          res,
+          `Slug "${baseSlug}" already exists`,
+          { existing_id: existing.id },
+          409
+        );
       }
+
+      req.body.slug = baseSlug;
 
       // Create data with transaction
       const data = await DataModel.create(req.body, { transaction });
       await invalidateCache(cacheKey);
+      await invalidateCache(`project:category:detail:${baseSlug}`);
+
       // Commit the transaction
       await transaction.commit();
       sendSuccessResponse(res, data, "Data created successfully", 201);
@@ -123,31 +142,54 @@ class ProjectCategoriesController {
       const { id } = req.params;
       const { name } = req.body;
 
-      const isExist = await DataModel.findOne({
-        where: {
-          name: {
-            [Op.iLike]: req.body.name,
-          },
-          id: { [sequelize.Sequelize.Op.ne]: id },
-        },
-      });
-
-      if (isExist) {
-        await transaction.rollback();
-        return sendErrorResponse(res, `${name} already exists`);
-      }
-
       const data = await DataModel.findByPk(id, { transaction });
       if (!data) {
         await transaction.rollback();
         return sendNotFoundError(res, "Data");
       }
 
+      const oldSlug = data.slug;
+
+      // ✅ Slug validation + prevent duplicates
+      if (name && name.trim() !== data.name) {
+        const categorySlug = slugify(name.trim(), { lower: true, strict: true });
+
+        // Check if slug exists for OTHER categories
+        const existing = await DataModel.findOne({
+          where: {
+            slug: { [Op.iLike]: categorySlug },
+            id: { [Op.ne]: id },
+          },
+          paranoid: true,
+        });
+
+        if (existing) {
+          await transaction.rollback();
+          return sendErrorResponse(
+            res,
+            `Slug "${categorySlug}" already exists`,
+            { existing_id: existing.id },
+            409
+          );
+        }
+
+        req.body.slug = categorySlug;
+      }
+
       await data.update(req.body, { transaction });
-      await invalidateCache(cacheKey);
       await transaction.commit();
 
-      const updatedData = await DataModel.findByPk(data.id);
+      const updatedData = await DataModel.findByPk(id);
+      const newSlug = updatedData.slug;
+      if (oldSlug) {
+        await invalidateCache(`project:category:detail:${oldSlug}`);
+      }
+
+      // Invalidate NEW detail cache (if changed)
+      if (newSlug && newSlug !== oldSlug) {
+        await invalidateCache(`project:category:detail:${newSlug}`);
+      }
+      await invalidateCache(cacheKey);
 
       return sendSuccessResponse(res, updatedData, "Data updated successfully");
     } catch (error) {
@@ -173,9 +215,16 @@ class ProjectCategoriesController {
         return sendNotFoundError(res, "Data");
       }
 
+      const slug = data.slug;
+
       // Soft delete
       await data.destroy();
+
       await invalidateCache(cacheKey);
+
+      if (slug) {
+        await invalidateCache(`project:category:detail:${slug}`);
+      }
 
       sendSuccessResponse(res, { id }, "Data deleted successfully");
     } catch (error) {

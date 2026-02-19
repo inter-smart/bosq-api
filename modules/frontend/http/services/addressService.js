@@ -10,11 +10,11 @@ const modelsMap = {
     field: "user_id",
     aliasName: "shipping_address",
   },
-  // guest: {
-  //   model: models.CartAddress,
-  //   field: "session_id",
-  //   aliasName: "shipping_CartAddress",
-  // },
+  guest: {
+    model: models.CartAddress,
+    field: "session_id",
+    aliasName: "shipping_CartAddress",
+  },
 };
 const { validateRecaptcha } = require("../../../../services/RecaptchaValidation.js");
 

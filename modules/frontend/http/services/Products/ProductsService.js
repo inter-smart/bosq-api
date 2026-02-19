@@ -211,6 +211,8 @@ class ProductsService {
 
       const isLoggedInUser = type == "user";
 
+      console.log("params", params);
+
       // Parse array parameters (handle both string and array inputs)
       const parseArrayParam = (param) => {
         if (!param) return [];
@@ -284,6 +286,7 @@ class ProductsService {
           id: {
             [Op.in]: sectors,
           },
+          status: true,
         };
       }
 
@@ -377,7 +380,7 @@ class ProductsService {
                   ? [
                       {
                         association: "sectors",
-                        attributes: ["id", "name", "name_ar", "slug"],
+                        attributes: ["id", "name", "name_ar", "slug", "status"],
                         through: { attributes: [] },
                         where: sectorCondition,
                         required: true,

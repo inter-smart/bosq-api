@@ -26,7 +26,7 @@ class CommonActionsController {
 
         models.ProductSectors.findAll({
           where: { status: true },
-          attributes: ["id", "name", "name_ar", "media_path", "slug"],
+          attributes: ["id", "name", "name_ar", "media_path", "slug", "status"],
           order: [["sort_order", "ASC"]],
           raw: true,
         }),
@@ -47,7 +47,7 @@ class CommonActionsController {
         }),
       ]);
 
-      const response = { categories, sectors, attributes };
+      const response = { categories: categories.length > 0 ? categories : null, sectors: sectors.length > 0 ? sectors : null, attributes };
 
       // 3️⃣ Cache final response
       await setCache(cacheKey, response);

@@ -52,7 +52,7 @@ class ProductSectorsController {
           ["sort_order", "ASC"],
           ["createdAt", "DESC"],
         ],
-        searchFields: ["name", "slug", "code"],
+        searchFields: ["name", "slug"],
       });
 
       const response = {
@@ -75,14 +75,14 @@ class ProductSectorsController {
     const transaction = await sequelize.transaction();
 
     try {
-      const { name, code } = req.body;
+      const { name } = req.body;
 
       if (!name || name.trim() === "") return sendErrorResponse(res, "Name is required to generate slug", null, 400);
 
-      // Check for existing name or code
+      // Check for existing name 
       const existing = await DataModel.findOne({
         where: {
-          [Op.or]: [{ name: name.trim() }, { code: code.trim() }],
+          [Op.or]: [{ name: name.trim() }],
         },
         paranoid: true,
       });
@@ -92,9 +92,7 @@ class ProductSectorsController {
         if (existing.name === name.trim()) {
           return sendErrorResponse(res, `Name "${name}" already exists`, { existing_id: existing.id }, 409);
         }
-        if (existing.code === code.trim()) {
-          return sendErrorResponse(res, `Code "${code}" already exists`, { existing_id: existing.id }, 409);
-        }
+        
       }
 
       const newSlug = await ProductSectorsController.generateUniqueSlug(name);
@@ -144,7 +142,7 @@ class ProductSectorsController {
 
     try {
       const { id } = req.params;
-      const { name, code } = req.body;
+      const { name } = req.body;
 
       const data = await DataModel.findByPk(id, { transaction });
       if (!data) {
@@ -170,18 +168,18 @@ class ProductSectorsController {
         req.body.slug = newSlug;
       }
 
-      if (code && code.trim() !== data.code) {
-        const existingCode = await DataModel.findOne({
+      if (name  && name.trim() !== data.name) {
+        const existingName = await DataModel.findOne({
           where: {
-            code: code.trim(),
+            name: name.trim(),
             id: { [Op.ne]: id },
           },
           paranoid: false,
         });
 
-        if (existingCode) {
+        if (existingName) {
           await transaction.rollback();
-          return sendErrorResponse(res, `Code "${code}" already exists`, { existing_id: existingCode.id }, 409);
+          return sendErrorResponse(res, `Name "${name}" already exists`, { existing_id: existingName.id }, 409);
         }
       }
 

@@ -5,46 +5,34 @@ const { Sequelize } = require("sequelize");
 const createSearchCondition = (field, searchValue, Model) => {
   // Handle array of fields (concatenated search like ['first_name', 'last_name'])
   if (Array.isArray(field)) {
-    return Sequelize.where(
-      Sequelize.fn('CONCAT_WS', ' ', ...field.map(f => Sequelize.col(f))),
-      { [Op.iLike]: `%${searchValue}%` }
-    );
+    return Sequelize.where(Sequelize.fn("CONCAT_WS", " ", ...field.map((f) => Sequelize.col(f))), { [Op.iLike]: `%${searchValue}%` });
   }
 
   // Handle association fields (e.g., 'state.name' or '$state.name$')
-  if (field.includes('.') || (field.startsWith('$') && field.endsWith('$'))) {
-    const formattedField = field.startsWith('$') ? field : `$${field}$`;
+  if (field.includes(".") || (field.startsWith("$") && field.endsWith("$"))) {
+    const formattedField = field.startsWith("$") ? field : `$${field}$`;
     return { [formattedField]: { [Op.iLike]: `%${searchValue}%` } };
   }
 
   const attribute = Model.rawAttributes[field];
-  
+
   if (!attribute) {
     console.warn(`Field ${field} not found in model ${Model.name}`);
     return null;
   }
 
   // Check if field is numeric type
-  const isNumeric = [
-    'INTEGER', 'BIGINT', 'DECIMAL', 'FLOAT', 
-    'DOUBLE', 'REAL', 'NUMERIC'
-  ].includes(attribute.type.key);
+  const isNumeric = ["INTEGER", "BIGINT", "DECIMAL", "FLOAT", "DOUBLE", "REAL", "NUMERIC"].includes(attribute.type.key);
 
   // Check if field is date/time type
-  const isDate = ['DATE', 'DATEONLY', 'TIME'].includes(attribute.type.key);
+  const isDate = ["DATE", "DATEONLY", "TIME"].includes(attribute.type.key);
 
   if (isNumeric) {
     // For numeric fields, cast to text for searching
-    return Sequelize.where(
-      Sequelize.cast(Sequelize.col(field), 'TEXT'),
-      { [Op.iLike]: `%${searchValue}%` }
-    );
+    return Sequelize.where(Sequelize.cast(Sequelize.col(field), "TEXT"), { [Op.iLike]: `%${searchValue}%` });
   } else if (isDate) {
     // For date fields, cast to text for searching
-    return Sequelize.where(
-      Sequelize.cast(Sequelize.col(field), 'TEXT'),
-      { [Op.iLike]: `%${searchValue}%` }
-    );
+    return Sequelize.where(Sequelize.cast(Sequelize.col(field), "TEXT"), { [Op.iLike]: `%${searchValue}%` });
   } else {
     // For text fields, use regular ILIKE
     return { [field]: { [Op.iLike]: `%${searchValue}%` } };
@@ -54,20 +42,22 @@ const createSearchCondition = (field, searchValue, Model) => {
 module.exports = {
   paginate: async (Model, req, options = {}) => {
     const { limit, page = 1, search, keyword, searchFields } = req.query;
-    
+
     const parsedLimit = limit ? parseInt(limit, 10) : 10;
     const parsedPage = parseInt(page, 10) || 1;
     const offset = (parsedPage - 1) * parsedLimit;
     const searchTerm = search || keyword;
     const isSearchApplied = Boolean(searchTerm);
 
+    const { includeSubQuery, ...restOptions } = options;
+
     // Build base query options
     const queryOptions = {
-      ...options,
+      ...restOptions,
       offset,
       limit: parsedLimit,
-      subQuery: false,
       distinct: true,
+      ...(includeSubQuery ? { subQuery: false } : {}),
     };
 
     // Apply search logic if search term exists
@@ -77,22 +67,22 @@ module.exports = {
       // Determine which fields to search
       if (searchFields) {
         // Use provided searchFields from query string (comma-separated)
-        fieldsToSearch = searchFields.split(',').map(f => f.trim());
+        fieldsToSearch = searchFields.split(",").map((f) => f.trim());
       } else if (options.searchFields && Array.isArray(options.searchFields)) {
         // Use searchFields from options (can include arrays and association fields)
         fieldsToSearch = options.searchFields;
       } else {
         // Default: search all string/text fields
-        fieldsToSearch = Object.keys(Model.rawAttributes).filter(field => {
+        fieldsToSearch = Object.keys(Model.rawAttributes).filter((field) => {
           const attr = Model.rawAttributes[field];
-          return ['STRING', 'TEXT', 'CHAR', 'VARCHAR'].includes(attr.type.key);
+          return ["STRING", "TEXT", "CHAR", "VARCHAR"].includes(attr.type.key);
         });
       }
 
       // Build search conditions
       const searchConditions = fieldsToSearch
-        .map(field => createSearchCondition(field, searchTerm, Model))
-        .filter(condition => condition !== null);
+        .map((field) => createSearchCondition(field, searchTerm, Model))
+        .filter((condition) => condition !== null);
 
       // Add search conditions to where clause
       if (searchConditions.length > 0) {
@@ -121,7 +111,7 @@ module.exports = {
       },
     };
   },
-  
+
   // Export helper for external use
   createSearchCondition,
 };

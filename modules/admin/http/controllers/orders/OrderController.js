@@ -31,6 +31,7 @@ class OrderController {
                             "first_name",
                             "last_name",
                             "email",
+                            "name",
                             [
                                 literal(
                                     `CONCAT_WS(' ', "user"."country_code", "user"."mobile")`,

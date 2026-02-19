@@ -43,18 +43,14 @@ body("state")
     .withMessage("Street address is required")
     .isString()
     .withMessage("Street address must be a string")
-    .trim()
-    .isLength({ min: 5, max: 500 })
-    .withMessage("Street address must be between 5 and 500 characters"),
-
+    .trim(),
+  
   body("companyName")
     .optional()
     .isString()
     .withMessage("Company name must be a string")
-    .trim()
-    .isLength({ max: 255 })
-    .withMessage("Company name must be less than 255 characters"),
-
+    .trim(),
+  
   body("apartment")
     .optional()
     .isString()
@@ -82,10 +78,8 @@ body("state")
     .withMessage("Shipping full name is required when shipping to different address")
     .isString()
     .withMessage("Shipping full name must be a string")
-    .trim()
-    .isLength({ min: 2, max: 255 })
-    .withMessage("Shipping full name must be between 2 and 255 characters"),
-
+    .trim(),
+ 
   body("shippingCompanyName")
     .if(body("shipToDifferentAddress").equals(true))
     .optional()
@@ -108,10 +102,8 @@ body("state")
     .withMessage("Shipping street address is required when shipping to different address")
     .isString()
     .withMessage("Shipping street address must be a string")
-    .trim()
-    .isLength({ min: 5, max: 500 })
-    .withMessage("Shipping street address must be between 5 and 500 characters"),
-
+    .trim(),
+  
   body("shippingApartment")
     .if(body("shipToDifferentAddress").equals(true))
     .optional()

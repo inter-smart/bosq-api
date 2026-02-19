@@ -7,8 +7,6 @@ class ProductsController {
     try {
       const { data, message } = await service.getProductBySlug(params);
 
-      console.log(data);
-
       return sendSuccessResponse(res, data, message, 200);
     } catch (error) {
       return sendErrorResponse(res, error, "Internal Server Error", 500);

@@ -211,8 +211,6 @@ class ProductsService {
 
       const isLoggedInUser = type == "user";
 
-      console.log("params", params);
-
       // Parse array parameters (handle both string and array inputs)
       const parseArrayParam = (param) => {
         if (!param) return [];

@@ -60,7 +60,8 @@ class AddressController {
     const { id } = req.params;
     try {
       const cartOwner = req.cartOwner;
-      const data = await service.destroy(cartOwner, id);
+      const addressType = req?.body?.addressType || "billing";
+      const data = await service.destroy(cartOwner, id, addressType);
       return ApiResponse.success(res, {
         message: RESPONSE_MESSAGES.SUCCESS.DATA_DELETED,
         data,

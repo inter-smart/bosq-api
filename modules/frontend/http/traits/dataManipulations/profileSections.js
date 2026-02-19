@@ -30,15 +30,16 @@ function   buildProfieSection(data) {
   };
 
   return {
-    first_name: userData.first_name ?? "N/A",
-    last_name: userData.last_name ?? "N/A",
+    first_name: userData.first_name ?? null,
+    last_name: userData.last_name ?? null,
+    name: userData.name ?? null,
     profile_image: userData.profile_image ?? null,
     phone:
       userData?.country_code && userData?.mobile
         ? `${userData.country_code} ${userData.mobile}`
         : "N/A",
     email: userData.email ?? "N/A",
-    address: formatAddress(billingAddress) ?? "N/A",
+    address: formatAddress(billingAddress) ?? null,
     shipping_address: formatAddress(shippingAddress) ?? null
   };
 }
@@ -46,6 +47,8 @@ function   buildProfieSection(data) {
 
 function buildProfileEditSection(data) {
   if (!data) return null;
+
+  console.log(data.toJSON)
 
   const userData = data.toJSON ? data.toJSON() : data;
   return {

@@ -349,4 +349,30 @@ const generateProductBasedata = (productData) => {
   return productBaseData;
 };
 
-module.exports = { transformProductData, transformModelData, buildAttributesFromVariants, generateQueryParams, generateProductBasedata };
+const isItemWishListed = (variantId, wishlistItems) => {
+  return wishlistItems.some((item) => {
+    return item.product_variant_id == variantId;
+  });
+};
+
+const checkInvalidProducts = (cartItems) => {
+  return cartItems.some((item) => {
+    const variant = item.variant;
+
+    if (!variant) return true;
+    if (variant.stock <= 0) return true;
+    if (variant.stock < item.quantity) return true;
+
+    return false;
+  });
+};
+
+module.exports = {
+  transformProductData,
+  transformModelData,
+  buildAttributesFromVariants,
+  generateQueryParams,
+  generateProductBasedata,
+  isItemWishListed,
+  checkInvalidProducts,
+};

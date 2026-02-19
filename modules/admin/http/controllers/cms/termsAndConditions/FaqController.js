@@ -1,18 +1,8 @@
 const { validationResult } = require("express-validator");
 const { sequelize, models } = require("../../../../../../database/models");
-const {
-  sendValidationError,
-  sendSuccessResponse,
-  sendErrorResponse,
-  sendNotFoundError,
-} = require("../../../traits/responseHandler");
-const {
-  validationRequestPost,
-  validateId,
-} = require("../../../request/cms/termsAndConditions/faqRequest.js");
-const {
-  paginate,
-} = require("../../../../http/traits/datatablePaginationHelper");
+const { sendValidationError, sendSuccessResponse, sendErrorResponse, sendNotFoundError } = require("../../../traits/responseHandler");
+const { validationRequestPost, validateId } = require("../../../request/cms/termsAndConditions/faqRequest.js");
+const { paginate } = require("../../../../http/traits/datatablePaginationHelper");
 const cacheKeys = require("../../../../../redis/cacheKeys.js");
 const { invalidateCache } = require("../../../../../redis/redisService.js");
 
@@ -23,9 +13,7 @@ class FaqController {
   static async index(req, res) {
     try {
       const result = await paginate(DataModel, req, {
-        order: [
-          ["sort_order", "ASC"],
-        ],
+        order: [["sort_order", "ASC"]],
         searchFields: ["question"],
       });
 
@@ -42,11 +30,7 @@ class FaqController {
   }
 
   static async store(req, res) {
-    console.log(req.body);
-
-    await Promise.all(
-      validationRequestPost.map((validation) => validation.run(req))
-    );
+    await Promise.all(validationRequestPost.map((validation) => validation.run(req)));
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return sendValidationError(res, errors.array());
@@ -94,9 +78,7 @@ class FaqController {
   }
 
   static async update(req, res) {
-    await Promise.all(
-      [...validateId, ...validationRequestPost].map((v) => v.run(req))
-    );
+    await Promise.all([...validateId, ...validationRequestPost].map((v) => v.run(req)));
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return sendValidationError(res, errors.array());

@@ -1,18 +1,8 @@
 const { validationResult } = require("express-validator");
 const { sequelize, models } = require("../../../../../../database/models");
-const {
-  sendValidationError,
-  sendSuccessResponse,
-  sendErrorResponse,
-  sendNotFoundError,
-} = require("../../../traits/responseHandler");
-const {
-  validationRequestPost,
-  validateId,
-} = require("../../../request/cms/materialGuide/materialCategoryRequest");
-const {
-  paginate,
-} = require("../../../traits/datatablePaginationHelper");
+const { sendValidationError, sendSuccessResponse, sendErrorResponse, sendNotFoundError } = require("../../../traits/responseHandler");
+const { validationRequestPost, validateId } = require("../../../request/cms/materialGuide/materialCategoryRequest");
+const { paginate } = require("../../../traits/datatablePaginationHelper");
 const { Op } = require("sequelize");
 const cacheKeys = require("../../../../../redis/cacheKeys");
 const { invalidateCache } = require("../../../../../redis/redisService");
@@ -44,12 +34,7 @@ class MaterialsCategoryController {
   }
 
   static async store(req, res) {
-    console.log(req.body);
-    
-
-    await Promise.all(
-      validationRequestPost.map((validation) => validation.run(req))
-    );
+    await Promise.all(validationRequestPost.map((validation) => validation.run(req)));
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return sendValidationError(res, errors.array());
@@ -109,9 +94,7 @@ class MaterialsCategoryController {
   }
 
   static async update(req, res) {
-    await Promise.all(
-      [...validateId, ...validationRequestPost].map((v) => v.run(req))
-    );
+    await Promise.all([...validateId, ...validationRequestPost].map((v) => v.run(req)));
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return sendValidationError(res, errors.array());

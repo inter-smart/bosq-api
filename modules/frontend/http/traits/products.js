@@ -3,7 +3,7 @@ const { Op } = require("sequelize");
 const cacheKeys = require("../../../redis/cacheKeys");
 const { getCache, setCache } = require("../../../redis/redisService");
 const { generateImageUrl } = require("../../traits/imageUrlHelper");
-const { generateProductBasedata, buildAttributesFromVariants } = require("./dataManipulations/product/product");
+const { generateProductBasedata, buildAttributesFromVariants, generateQueryParams } = require("./dataManipulations/product/product");
 
 const productAttributes = [
   "id",
@@ -95,6 +95,7 @@ class ProductServiceHelpers {
         title_ar: model.title_ar,
         slug: model.slug,
         base_price: model.base_price,
+        stock: model.variants?.[0]?.stock,
         media_path: generateImageUrl(model.media_path),
         variants:
           model.variants?.map((v) => ({
@@ -116,30 +117,147 @@ class ProductServiceHelpers {
     };
   }
 
-  static async recalculateCartTotals(cartId, transaction = null) {
-    const cartItems = await models.CartItems.findAll({
-      where: { cart_id: cartId },
-      transaction,
+  static async getSimiliarProducts(modelId, variantId) {
+    const variants = await models.ProductVariants.findAll({
+      where: {
+        product_model_id: modelId,
+        id: { [Op.ne]: variantId },
+        status: true,
+      },
+      limit: 6,
+      include: [
+        {
+          model: models.ProductModels,
+          as: "productModel",
+          attributes: ["id", "slug", "title"],
+          include: [
+            {
+              model: models.ProductBase,
+              as: "product",
+              attributes: ["id", "slug"],
+              include: [
+                {
+                  model: models.ProductCategory,
+                  as: "category",
+                  attributes: ["id", "name", "name_ar"],
+                },
+              ],
+            },
+          ],
+        },
+        {
+          model: models.ProductVariantAttributes,
+          as: "variant_attributes",
+          attributes: ["id", "attribute_id", "attribute_value_id"],
+          include: [
+            {
+              model: models.ProductAttribute,
+              as: "ProductAttribute",
+              attributes: ["id", "name", "name_ar", "code", "slug"],
+            },
+            {
+              model: models.AttributeValues,
+              as: "AttributeValue",
+              attributes: ["id", "value", "value_ar", "slug"],
+            },
+          ],
+        },
+      ],
     });
+
+    const modelVariantCount = await models.ProductVariants.count({
+      where: { product_model_id: modelId, status: true },
+    });
+
+    return variants.map((item) => {
+      const json = item.toJSON();
+
+      const formattedAttributes = (json?.variant_attributes || []).map((va) => ({
+        code: va?.ProductAttribute?.code,
+        slug: va?.ProductAttribute?.slug,
+        values: [
+          {
+            slug: va?.AttributeValue?.slug,
+            value: va?.AttributeValue?.value,
+          },
+        ],
+      }));
+
+      const baseSlug = json?.productModel?.product?.slug;
+      const modelSlug = json?.productModel?.slug;
+      const variantSku = json?.sku;
+
+      return {
+        id: json?.id,
+        title: json?.title,
+        title_ar: json?.title_ar,
+        media_path: generateImageUrl(json?.media_path),
+        slug: json?.sku,
+        base_slug: baseSlug,
+        model_slug: modelSlug,
+        product_code: json?.product_code,
+        variants_available: json?.has_more_items,
+        hasMoreVariants: modelVariantCount > 1,
+        price: json?.price,
+        stock: json?.stock,
+        category_name: json?.productModel?.product?.category?.name || null,
+        category_ar: json?.productModel?.product?.category?.name_ar || null,
+        variant_attributes: json?.variant_attributes,
+        query_params: generateQueryParams(variantSku, modelSlug, formattedAttributes),
+      };
+    });
+  }
+
+  static async recalculateCartTotals(cartId, transaction = null) {
+    const [cart, cartItems] = await Promise.all([
+      models.Cart.findOne({
+        where: { id: cartId },
+        attributes: ["id", "applied_coupon_scope", "discount_total", "applied_coupon_code"],
+        transaction,
+      }),
+      models.CartItems.findAll({
+        where: { cart_id: cartId },
+        transaction,
+      }),
+    ]);
 
     let subtotal = 0;
     let discountTotal = 0;
 
     for (const item of cartItems) {
-      const itemTotal = parseFloat(item.final_price) * item.quantity;
-      const itemDiscount = parseFloat(item.discount_amount);
-
-      console.log("itemTotal", itemTotal);
-      console.log("itemDiscount", itemDiscount);
-
-      subtotal += itemTotal;
-      discountTotal += itemDiscount;
+      // Always sum the pre-discount line price so subtotal reflects original prices
+      subtotal += parseFloat(item.price) * item.quantity;
+      discountTotal += parseFloat(item.discount_amount || 0);
     }
 
-    console.log("subtotal", subtotal);
-    console.log("discountTotal", discountTotal);
+    // Common scope coupons store the discount at cart level only — CartItems have no
+    // discount_amount — so we must derive the correct discount from the coupon itself.
+    if (cart?.applied_coupon_scope === "common" && cart?.applied_coupon_code) {
+      const coupon = await models.Coupons.findOne({
+        where: { code: cart.applied_coupon_code },
+        attributes: ["discount_type", "discount_value", "max_discount_amount"],
+        transaction,
+      });
 
-    const grandTotal = subtotal;
+      if (coupon) {
+        if (coupon.discount_type === "percentage") {
+          // Percentage discount must be recalculated against the NEW subtotal
+          let pctDiscount = (subtotal * parseFloat(coupon.discount_value)) / 100;
+          if (coupon.max_discount_amount && pctDiscount > parseFloat(coupon.max_discount_amount)) {
+            pctDiscount = parseFloat(coupon.max_discount_amount);
+          }
+
+          discountTotal = pctDiscount;
+          // Keep cart.discount_total in sync
+          await models.Cart.update({ discount_total: pctDiscount.toFixed(2) }, { where: { id: cartId }, transaction });
+        } else {
+          // Fixed discount: the amount doesn't change with subtotal
+          discountTotal = Math.min(parseFloat(cart.discount_total || 0), subtotal);
+        }
+      }
+    }
+
+    const grandTotal = Math.max(0, subtotal - discountTotal);
 
     await models.Cart.update(
       {
@@ -165,12 +283,16 @@ class ProductServiceHelpers {
 
       const variantPrice = parseFloat(item.variant.price);
       const cartItemPrice = parseFloat(item.price);
+      const cartQuantity = item.quantity;
 
       if (variantPrice !== cartItemPrice) {
+        // Preserve any existing coupon discount when the price changes
+        const existingDiscount = parseFloat(item.discount_amount || 0);
+        const newFinalPrice = Math.max(0, variantPrice * cartQuantity - existingDiscount);
         await item.update(
           {
             price: variantPrice,
-            final_price: variantPrice,
+            final_price: newFinalPrice.toFixed(2),
           },
           { transaction },
         );
@@ -178,63 +300,36 @@ class ProductServiceHelpers {
       }
     }
 
-    if (priceChanged) {
-      await this.recalculateCartTotals(cart.id, transaction);
-    }
+    await this.recalculateCartTotals(cart.id, transaction);
 
     return { priceChanged };
   }
 
   static async validateCoupon(cart, transaction = null) {
     const couponCode = cart.applied_coupon_code;
-    if (!couponCode) return;
 
     const coupon = await models.Coupons.findOne({
       where: { code: couponCode },
       transaction,
     });
 
-
-
     if (!coupon) {
-      await this.removeCouponFromCart(cart, transaction);
-      return;
+      const priceChanged = await this.syncCartItemPrices(cart, transaction);
+      return { priceChanged };
     }
 
     const now = new Date();
     const isExpired = coupon.end_at < now || coupon.start_at > now;
     const isInactive = !coupon.status;
-
-    let isBelowMin = false;
-    if (coupon.scope_type === "common") {
-      // If there was a min_order_amount before, it seems to have been removed or should be handled here.
-      // For now, if it's common and we don't have a min_order_amount field, we skip this check.
-      if (coupon.min_order_amount && parseFloat(cart.subtotal) < parseFloat(coupon.min_order_amount)) {
-        isBelowMin = true;
-      }
-    } else {
-      // For scoped coupons, we check against min_product_amount
-      const CheckOutService = require("../services/CheckOutService.js");
-      const matchingItems = CheckOutService.getMatchingCartItems(coupon, cart.items || []);
-      const eligibleSubtotal = matchingItems.reduce((sum, item) => sum + parseFloat(item.price) * item.quantity, 0);
-
-      if (coupon.min_product_amount && eligibleSubtotal < parseFloat(coupon.min_product_amount)) {
-        isBelowMin = true;
-      }
-    }
-
-    console.log("IS EXPIRED", isExpired);
-    console.log("IS INACTIVE", isInactive);
-    console.log("IS BELOW MIN", isBelowMin);
+    const isBelowMin = coupon.min_order_amount && parseFloat(cart.subtotal) < parseFloat(coupon.min_order_amount);
 
     if (isExpired || isInactive || isBelowMin) {
       await this.removeCouponFromCart(cart, transaction);
-      console.log("COUPON REMOVED");
-      return;
     }
 
-    return
+    const priceChanged = await this.syncCartItemPrices(cart, transaction);
 
+    return { priceChanged };
   }
 
   static async removeCouponFromCart(cart, transaction = null) {
@@ -242,7 +337,7 @@ class ProductServiceHelpers {
     await models.CartItems.update(
       {
         discount_amount: 0,
-        final_price: sequelize.col("price"),
+        final_price: sequelize.literal("ROUND(price * quantity, 2)"),
         coupon_id: null,
         applied_coupon_code: null,
         applied_coupon_scope: null,
@@ -257,26 +352,11 @@ class ProductServiceHelpers {
     await cart.update(
       {
         applied_coupon_code: null,
-        applied_coupon_scope: null,
         coupon_id: null,
-        discount_total: 0,
-        grand_total: cart.subtotal,
+        applied_coupon_scope: null,
       },
       { transaction },
     );
-  }
-
-
-  static checkInvalidProducts(cartItems) {
-    return cartItems.some((item) => {
-      const variant = item.variant;
-
-      if (!variant) return true;
-      if (variant.stock <= 0) return true;
-      if (variant.stock < item.quantity) return true;
-
-      return false;
-    });
   }
 }
 

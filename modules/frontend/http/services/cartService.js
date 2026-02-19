@@ -3,6 +3,7 @@ const { ErrorHandler } = require("../traits/errorHandler.js");
 const { HTTP_STATUS, ERROR_CODES } = require("../traits/constants.js");
 const { generateImageUrl } = require("../../traits/imageUrlHelper.js");
 const ProductServiceHelpers = require("../traits/products.js");
+const { isItemWishListed, generateQueryParams } = require("../traits/dataManipulations/product/product.js");
 
 class CartService {
   /**
@@ -80,37 +81,32 @@ class CartService {
         };
       }
 
-      // await ProductServiceHelpers.validateCoupon(cart);
+      await ProductServiceHelpers.validateCoupon(cart);
 
-      const priceChanged = await ProductServiceHelpers.syncCartItemPrices(cart, transaction);
-
+      console.log("here");
 
       // Reload cart with fresh data after price sync
-      if (priceChanged) {
-        await cart.reload({
-          include: [
-            {
-              model: models.CartItems,
-              as: "items",
-              include: [
-                {
-                  model: models.ProductBase,
-                  as: "product",
-                  attributes: ["id", "title", "slug"],
-                },
-                {
-                  model: models.ProductVariants,
-                  as: "variant",
-                  attributes: ["id", "sku", "price", "media_path", "stock", "title", "title_ar"],
-                },
-              ],
-            },
-          ],
-          transaction,
-        });
-      }
-
-      console.log("CART FROM GET", JSON.stringify(cart, null, 2));
+      await cart.reload({
+        include: [
+          {
+            model: models.CartItems,
+            as: "items",
+            include: [
+              {
+                model: models.ProductBase,
+                as: "product",
+                attributes: ["id", "title", "slug"],
+              },
+              {
+                model: models.ProductVariants,
+                as: "variant",
+                attributes: ["id", "sku", "price", "media_path", "stock", "title", "title_ar"],
+              },
+            ],
+          },
+        ],
+        transaction,
+      });
 
       const itemCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -185,6 +181,7 @@ class CartService {
         await existingItem.update(
           {
             quantity: existingItem.quantity + quantity,
+            final_price: (existingItem.quantity + quantity) * price,
           },
           { transaction },
         );
@@ -227,10 +224,30 @@ class CartService {
     try {
       const whereClause = userId ? { user_id: userId, status: "active" } : { session_id: sessionId, status: "active", user_id: null };
 
-      const cart = await models.Cart.findOne({
-        where: whereClause,
-        transaction,
-      });
+      const cart = await models.Cart.findOne(
+        {
+          where: whereClause,
+          include: [
+            {
+              model: models.CartItems,
+              as: "items",
+              include: [
+                {
+                  model: models.ProductBase,
+                  as: "product",
+                  attributes: ["id", "title", "slug"],
+                },
+                {
+                  model: models.ProductVariants,
+                  as: "variant",
+                  attributes: ["id", "sku", "price", "media_path", "stock", "title", "title_ar"],
+                },
+              ],
+            },
+          ],
+        },
+        { transaction },
+      );
 
       if (!cart) {
         throw ErrorHandler.createError("Cart not found", HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
@@ -255,9 +272,14 @@ class CartService {
         throw ErrorHandler.createError("Product variant out of stock", HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
       }
 
-      await cartItem.update({ quantity }, { transaction });
+      const currentPrice = cartItem.price;
+      // Preserve any existing item-level coupon discount when quantity changes
+      const existingDiscount = parseFloat(cartItem.discount_amount || 0);
+      const finalPrice = Math.max(0, currentPrice * quantity - existingDiscount);
 
-      // Recalculate totals
+      await cartItem.update({ quantity, final_price: finalPrice.toFixed(2) }, { transaction });
+
+      // Recalculate totals inside the transaction so committed data is consistent
       await ProductServiceHelpers.recalculateCartTotals(cart.id, transaction);
 
       await transaction.commit();
@@ -300,6 +322,22 @@ class CartService {
       }
 
       await cartItem.destroy({ transaction });
+
+      // For scoped coupons: if no remaining items carry a discount, the coupon no
+      // longer applies to anything — clear it so the badge doesn't stay showing.
+      if (cart.applied_coupon_code && cart.applied_coupon_scope !== "common") {
+        const remainingDiscountedItems = await models.CartItems.count({
+          where: { cart_id: cart.id, discount_amount: { [require("sequelize").Op.gt]: 0 } },
+          transaction,
+        });
+
+        if (remainingDiscountedItems === 0) {
+          await models.Cart.update(
+            { applied_coupon_code: null, coupon_id: null, applied_coupon_scope: null },
+            { where: { id: cart.id }, transaction },
+          );
+        }
+      }
 
       // Recalculate totals
       await ProductServiceHelpers.recalculateCartTotals(cart.id, transaction);
@@ -449,6 +487,146 @@ class CartService {
 
       throw error;
     }
+  }
+
+  /**
+   * Get similar products based on the dominant model in the cart
+   * GET /api/frontend/cart/similar-products
+   */
+  static async getSimilarFromCart(userId, sessionId) {
+    // 1. Find the active cart
+    const whereClause = userId ? { user_id: userId, status: "active" } : { session_id: sessionId, status: "active", user_id: null };
+
+    const cart = await models.Cart.findOne({
+      where: whereClause,
+      include: [
+        {
+          model: models.CartItems,
+          as: "items",
+          include: [
+            {
+              model: models.ProductVariants,
+              as: "variant",
+              attributes: ["id", "product_model_id"],
+            },
+          ],
+        },
+      ],
+    });
+
+    if (!cart || !cart.items?.length) {
+      return [];
+    }
+
+    // 2. Count model occurrences weighted by quantity → find dominant model
+    const modelCounts = {};
+    for (const item of cart.items) {
+      const modelId = item.variant?.product_model_id;
+      if (modelId) {
+        modelCounts[modelId] = (modelCounts[modelId] || 0) + item.quantity;
+      }
+    }
+
+    const dominantModelId = Object.entries(modelCounts).sort(([, a], [, b]) => b - a)[0]?.[0];
+
+    if (!dominantModelId) {
+      return [];
+    }
+
+    // 3. Wishlist check for logged-in users
+    let wishlistedItems = [];
+    if (userId) {
+      wishlistedItems = await models.Wishlist.findAll({
+        where: { user_id: userId },
+        attributes: ["product_variant_id"],
+        raw: true,
+      });
+    }
+
+    // 4. Total variant count for hasMoreVariants flag
+    const modelVariantCount = await models.ProductVariants.count({
+      where: { product_model_id: dominantModelId, status: true },
+    });
+
+    // 5. Fetch up to 6 variants from the dominant model
+    const variants = await models.ProductVariants.findAll({
+      where: { product_model_id: dominantModelId, status: true },
+      limit: 6,
+      attributes: ["id", "title", "title_ar", "media_path", "price", "stock", "product_code", "sku", "product_model_id"],
+      include: [
+        {
+          model: models.ProductModels,
+          as: "productModel",
+          attributes: ["id", "slug", "title"],
+          include: [
+            {
+              model: models.ProductBase,
+              as: "product",
+              attributes: ["id", "slug"],
+              include: [
+                {
+                  model: models.ProductCategory,
+                  as: "category",
+                  attributes: ["id", "name", "name_ar"],
+                },
+              ],
+            },
+          ],
+        },
+        {
+          model: models.ProductVariantAttributes,
+          as: "variant_attributes",
+          attributes: ["id", "attribute_id", "attribute_value_id"],
+          include: [
+            {
+              model: models.ProductAttribute,
+              as: "ProductAttribute",
+              attributes: ["id", "name", "name_ar", "code", "slug"],
+            },
+            {
+              model: models.AttributeValues,
+              as: "AttributeValue",
+              attributes: ["id", "value", "value_ar", "slug"],
+            },
+          ],
+        },
+      ],
+    });
+
+    // 6. Transform to standard product card format
+    return variants.map((item) => {
+      const json = item.toJSON();
+
+      const formattedAttributes = (json?.variant_attributes || []).map((va) => ({
+        code: va?.ProductAttribute?.code,
+        slug: va?.ProductAttribute?.slug,
+        values: [{ slug: va?.AttributeValue?.slug, value: va?.AttributeValue?.value }],
+      }));
+
+      const baseSlug = json?.productModel?.product?.slug;
+      const modelSlug = json?.productModel?.slug;
+      const variantSku = json?.sku;
+
+      return {
+        id: json?.id,
+        title: json?.title,
+        title_ar: json?.title_ar,
+        media_path: generateImageUrl(json?.media_path),
+        slug: json?.sku,
+        base_slug: baseSlug,
+        model_slug: modelSlug,
+        product_code: json?.product_code,
+        variants_available: json?.has_more_items,
+        hasMoreVariants: modelVariantCount > 1,
+        wishlisted: isItemWishListed(json?.id, wishlistedItems),
+        price: json?.price,
+        stock: json?.stock,
+        category_name: json?.productModel?.product?.category?.name || null,
+        category_ar: json?.productModel?.product?.category?.name_ar || null,
+        variant_attributes: json?.variant_attributes,
+        query_params: generateQueryParams(variantSku, modelSlug, formattedAttributes),
+      };
+    });
   }
 }
 

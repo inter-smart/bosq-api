@@ -1,11 +1,6 @@
-const { Op, literal } = require("sequelize");
+const { Op, literal, where } = require("sequelize");
 const { models } = require("../../../../../database/models/index");
-const {
-  transformProductData,
-  transformModelData,
-  buildAttributesFromVariants,
-  generateQueryParams,
-} = require("../../traits/dataManipulations/product/product");
+const { transformProductData, transformModelData, generateQueryParams, isItemWishListed } = require("../../traits/dataManipulations/product/product");
 const { generateImageUrl } = require("../../../traits/imageUrlHelper");
 const { setCache, getCache } = require("../../../../redis/redisService");
 const ProductServiceHelpers = require("../../traits/products");
@@ -26,13 +21,6 @@ class ProductsService {
     const filterEntries = Object.entries(filters);
 
     const isModelAndFilters = model && filterEntries.length > 0;
-
-    console.log("FILLTERS", isModelAndFilters);
-    console.log("FILLTERS", filterEntries);
-    console.log("FILLTERS", variantSku);
-    console.log("FILLTERS", model);
-
-
 
     try {
       const baseProduct = await ProductServiceHelpers?.getProductBaseData(slug);
@@ -185,33 +173,17 @@ class ProductsService {
         }
       }
 
-      const similarProducts = modelsData
-        ?.filter((m) => String(m.id) !== String(initialVariant?.model_id))
-        ?.map((m) => {
-          const firstVariant = m.variants?.[0];
-          return {
-            id: m.id,
-            title: m.title,
-            title_ar: m.title_ar,
-            base_slug: baseData.slug,
-            category_name: baseData.category_name,
-            price: firstVariant?.price || m.base_price,
-            media_path: firstVariant?.media_path || m.media_path,
-            hoverMedia: firstVariant?.hover_media_path ? { path: firstVariant.hover_media_path } : null,
-            query_params: `?model=${m.slug}`,
-            hasMoreVariants: m.variants?.length > 1,
-          };
-        });
+      const currentVariantId = initialVariant?.id;
+      const currentModelId = initialVariant?.model_id;
+
+      const similarVariants = currentModelId ? await ProductServiceHelpers.getSimiliarProducts(currentModelId, currentVariantId) : [];
 
       return {
         data: {
           product: baseData,
           initialVariant,
           models: modelsData,
-          similarProducts: {
-            title: "Similar products",
-            product: similarProducts,
-          },
+          similarVariants,
         },
         fromCache: false,
         message: "Data fetched",
@@ -222,7 +194,7 @@ class ProductsService {
     }
   }
 
-  static async getProductListing(params) {
+  static async getProductListing(params, type, userId) {
     try {
       const {
         category,
@@ -236,6 +208,8 @@ class ProductsService {
         page = 1,
         limit = 12,
       } = params;
+
+      const isLoggedInUser = type == "user";
 
       // Parse array parameters (handle both string and array inputs)
       const parseArrayParam = (param) => {
@@ -401,14 +375,14 @@ class ProductsService {
                 },
                 ...(needsSectorFilter
                   ? [
-                    {
-                      association: "sectors",
-                      attributes: ["id", "name", "name_ar", "slug"],
-                      through: { attributes: [] },
-                      where: sectorCondition,
-                      required: true,
-                    },
-                  ]
+                      {
+                        association: "sectors",
+                        attributes: ["id", "name", "name_ar", "slug"],
+                        through: { attributes: [] },
+                        where: sectorCondition,
+                        required: true,
+                      },
+                    ]
                   : []),
               ],
             },
@@ -448,6 +422,18 @@ class ProductsService {
         }, {});
       }
 
+      let wishlistedItems = [];
+
+      if (isLoggedInUser) {
+        wishlistedItems = await models.Wishlist.findAll({
+          where: {
+            user_id: userId,
+          },
+          attributes: ["product_variant_id"],
+          raw: true,
+        });
+      }
+
       const transformedData = products.map((item) => {
         const json = item.toJSON();
         const modelVariantCount = variantCountsMap[json?.product_model_id] || 0;
@@ -479,6 +465,7 @@ class ProductsService {
           product_code: json?.product_code,
           variants_available: json?.has_more_items,
           hasMoreVariants: modelVariantCount > 1,
+          wishlisted: isItemWishListed(json?.id, wishlistedItems),
           price: json?.price,
           stock: json?.stock,
           category_name: json?.productModel?.product?.category?.name || null,
@@ -508,6 +495,7 @@ class ProductsService {
       throw new Error(`Error fetching PRODUCT listing: ${error.message}`);
     }
   }
+
   static async getProductModelData(params) {
     const { slug, attributes: allAttributes } = params;
 

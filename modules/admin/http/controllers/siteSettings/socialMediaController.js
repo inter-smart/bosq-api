@@ -60,7 +60,7 @@ class SocialMediaController {
     const transaction = await sequelize.transaction();
 
     try {
-      const fileFields = ["icon_media_path"];
+      const fileFields = ["icon_media_path", "footer_icon_media_path"];
       handleFileUploadStore(req, fileFields);
 
       // Create data with transaction
@@ -123,7 +123,7 @@ class SocialMediaController {
         return sendNotFoundError(res, "Data");
       }
 
-      const fileFields = ["icon_media_path"];
+      const fileFields = ["icon_media_path", "footer_icon_media_path"];
       await handleFileUploadUpdate(req, data, fileFields);
 
       await data.update(req.body, { transaction });

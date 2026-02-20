@@ -1,7 +1,7 @@
 const { generateImageUrl } = require("../../../traits/imageUrlHelper");
 const { singleMediaWithoutType } = require("../mediaButtonHelper")
 
-function buildHeaderSection(cms){
+function buildHeaderSection(cms) {
   return {
     primary_media: singleMediaWithoutType(cms, "header_logo_media_path", "header_media_alt", "header_media_alt_ar"),
     secondary_media: singleMediaWithoutType(cms, "footer_logo_media_path", "footer_media_alt", "footer_media_alt_ar")
@@ -45,11 +45,11 @@ function buildFooterSection(cms) {
 }
 
 
-function buildFooterIcons(links){
+function buildFooterIcons(links) {
   return links.map(link => ({
-    media: singleMediaWithoutType(link, "icon_media_path", "icon_alt", "icon_alt_ar"),
+    media: singleMediaWithoutType(link, "footer_icon_media_path", "icon_alt", "icon_alt_ar"),
     ...(link?.link ? { link: link.link } : {}),
-    
+
   }))
 }
 
@@ -80,15 +80,15 @@ function buildNavigationData(products, projects) {
       image: generateImageUrl(category.media_path),
       ...(hasChildren
         ? {
-            items: children.map((child) => ({
-              id: child.id,
-              hasSubmenu: false,
-              name: child.name,
-              name_ar: child.name_ar,
-              slug: `/products?subcategory=${child.slug}`,
-              image: generateImageUrl(child.media_path),
-            })),
-          }
+          items: children.map((child) => ({
+            id: child.id,
+            hasSubmenu: false,
+            name: child.name,
+            name_ar: child.name_ar,
+            slug: `/products?subcategory=${child.slug}`,
+            image: generateImageUrl(child.media_path),
+          })),
+        }
         : {}),
     };
   });

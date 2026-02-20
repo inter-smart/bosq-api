@@ -76,7 +76,7 @@ class ErrorHandler {
         // Handle custom application errors
         if (error.isOperational) {
             return ApiResponse.error(res, {
-                message: error.message,
+                message: error.i18nMessage || error.message,
                 status: error.statusCode || HTTP_STATUS.INTERNAL_SERVER_ERROR,
                 error_code: error.errorCode || ERROR_CODES.INTERNAL_ERROR
             });
@@ -114,15 +114,19 @@ class ErrorHandler {
     
     /**
      * Create custom application error
-     * @param {string} message - Error message
+     * @param {string|object} message - Error message string or { en, ar } bilingual object
      * @param {number} statusCode - HTTP status code
      * @param {string} errorCode - Application error code
      */
     static createError(message, statusCode = 500, errorCode = ERROR_CODES.INTERNAL_ERROR) {
-        const error = new Error(message);
+        const isI18n = message && typeof message === 'object' && message.en;
+        const error = new Error(isI18n ? message.en : message);
         error.statusCode = statusCode;
         error.errorCode = errorCode;
         error.isOperational = true;
+        if (isI18n) {
+            error.i18nMessage = message;
+        }
         return error;
     }
     

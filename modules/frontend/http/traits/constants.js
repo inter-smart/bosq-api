@@ -3,72 +3,173 @@
 // ============================================
 
 const HTTP_STATUS = {
-    OK: 200,
-    CREATED: 201,
-    NO_CONTENT: 204,
-    BAD_REQUEST: 400,
-    UNAUTHORIZED: 401,
-    FORBIDDEN: 403,
-    NOT_FOUND: 404,
-    METHOD_NOT_ALLOWED: 405,
-    REQUEST_TIMEOUT: 408,
-    CONFLICT: 409,
-    UNPROCESSABLE_ENTITY: 422,
-    TOO_MANY_REQUESTS: 429,
-    INTERNAL_SERVER_ERROR: 500,
-    BAD_GATEWAY: 502,
-    SERVICE_UNAVAILABLE: 503,
-    GATEWAY_TIMEOUT: 504
+  OK: 200,
+  CREATED: 201,
+  NO_CONTENT: 204,
+  BAD_REQUEST: 400,
+  UNAUTHORIZED: 401,
+  FORBIDDEN: 403,
+  NOT_FOUND: 404,
+  METHOD_NOT_ALLOWED: 405,
+  REQUEST_TIMEOUT: 408,
+  CONFLICT: 409,
+  UNPROCESSABLE_ENTITY: 422,
+  TOO_MANY_REQUESTS: 429,
+  INTERNAL_SERVER_ERROR: 500,
+  BAD_GATEWAY: 502,
+  SERVICE_UNAVAILABLE: 503,
+  GATEWAY_TIMEOUT: 504,
 };
 
 const RESPONSE_MESSAGES = {
-    SUCCESS: {
-        DATA_RETRIEVED: 'Data retrieved successfully',
-        DATA_CREATED: 'Data created successfully',
-        DATA_UPDATED: 'Data updated successfully',
-        DATA_DELETED: 'Data deleted successfully',
-        OPERATION_SUCCESSFUL: 'Operation completed successfully',
-        LOGIN_SUCCESSFUL: 'Login successful',
-        LOGOUT_SUCCESSFUL: 'Logout successful',
-        STATS_RETRIEVED: 'Statistics retrieved successfully',
-        FEATURED_RETRIEVED: 'Featured items retrieved successfully',
-        SEARCH_COMPLETED: 'Search completed successfully'
+  SUCCESS: {
+    DATA_RETRIEVED: {
+      en: "Data retrieved successfully",
+      ar: "تم جلب البيانات بنجاح",
     },
-    ERROR: {
-        INTERNAL_SERVER: 'Internal server error occurred',
-        DATABASE_CONNECTION: 'Database connection failed',
-        DATABASE_TIMEOUT: 'Database operation timed out',
-        DATA_FETCH_FAILED: 'Failed to fetch data',
-        DATA_NOT_FOUND: 'Requested data not found',
-        UNAUTHORIZED_ACCESS: 'Unauthorized access',
-        FORBIDDEN_ACCESS: 'Access forbidden',
-        VALIDATION_FAILED: 'Validation failed',
-        DUPLICATE_ENTRY: 'Duplicate entry found',
-        INVALID_CREDENTIALS: 'Invalid credentials provided',
-        TOKEN_EXPIRED: 'Authentication token expired',
-        TOKEN_INVALID: 'Invalid authentication token',
-        SEARCH_QUERY_TOO_SHORT: 'Search query must be at least 2 characters long',
-        INVALID_PARAMETERS: 'Invalid parameters provided',
-        RATE_LIMIT_EXCEEDED: 'Too many requests, please try again later',
-        SERVICE_UNAVAILABLE: 'Service temporarily unavailable'
-    }
+    DATA_CREATED: {
+      en: "Data created successfully",
+      ar: "تم إنشاء البيانات بنجاح",
+    },
+    DATA_UPDATED: {
+      en: "Data updated successfully",
+      ar: "تم تحديث البيانات بنجاح",
+    },
+    DATA_DELETED: {
+      en: "Data deleted successfully",
+      ar: "تم حذف البيانات بنجاح",
+    },
+    OPERATION_SUCCESSFUL: {
+      en: "Operation completed successfully",
+      ar: "تمت العملية بنجاح",
+    },
+    LOGIN_SUCCESSFUL: {
+      en: "Login successful",
+      ar: "تم تسجيل الدخول بنجاح",
+    },
+    LOGOUT_SUCCESSFUL: {
+      en: "Logout successful",
+      ar: "تم تسجيل الخروج بنجاح",
+    },
+    STATS_RETRIEVED: {
+      en: "Statistics retrieved successfully",
+      ar: "تم جلب الإحصائيات بنجاح",
+    },
+    FEATURED_RETRIEVED: {
+      en: "Featured items retrieved successfully",
+      ar: "تم جلب العناصر المميزة بنجاح",
+    },
+    SEARCH_COMPLETED: {
+      en: "Search completed successfully",
+      ar: "تم إكمال البحث بنجاح",
+    },
+  },
+
+  ERROR: {
+    INTERNAL_SERVER: {
+      en: "Internal server error occurred",
+      ar: "حدث خطأ في الخادم الداخلي",
+    },
+    DATABASE_CONNECTION: {
+      en: "Database connection failed",
+      ar: "فشل الاتصال بقاعدة البيانات",
+    },
+    DATABASE_TIMEOUT: {
+      en: "Database operation timed out",
+      ar: "انتهت مهلة عملية قاعدة البيانات",
+    },
+    DATA_FETCH_FAILED: {
+      en: "Failed to fetch data",
+      ar: "فشل في جلب البيانات",
+    },
+    DATA_NOT_FOUND: {
+      en: "Requested data not found",
+      ar: "البيانات المطلوبة غير موجودة",
+    },
+    UNAUTHORIZED_ACCESS: {
+      en: "Unauthorized access",
+      ar: "وصول غير مصرح به",
+    },
+    FORBIDDEN_ACCESS: {
+      en: "Access forbidden",
+      ar: "تم رفض الوصول",
+    },
+    VALIDATION_FAILED: {
+      en: "Validation failed",
+      ar: "فشل التحقق من البيانات",
+    },
+    DUPLICATE_ENTRY: {
+      en: "Duplicate entry found",
+      ar: "تم العثور على إدخال مكرر",
+    },
+    INVALID_CREDENTIALS: {
+      en: "Invalid credentials provided",
+      ar: "بيانات تسجيل الدخول غير صحيحة",
+    },
+    TOKEN_EXPIRED: {
+      en: "Authentication token expired",
+      ar: "انتهت صلاحية رمز المصادقة",
+    },
+    TOKEN_INVALID: {
+      en: "Invalid authentication token",
+      ar: "رمز المصادقة غير صالح",
+    },
+    SEARCH_QUERY_TOO_SHORT: {
+      en: "Search query must be at least 2 characters long",
+      ar: "يجب أن يكون نص البحث مكونًا من حرفين على الأقل",
+    },
+    INVALID_PARAMETERS: {
+      en: "Invalid parameters provided",
+      ar: "تم تقديم معلمات غير صالحة",
+    },
+    RATE_LIMIT_EXCEEDED: {
+      en: "Too many requests, please try again later",
+      ar: "عدد الطلبات كبير جدًا، يرجى المحاولة لاحقًا",
+    },
+    SERVICE_UNAVAILABLE: {
+      en: "Service temporarily unavailable",
+      ar: "الخدمة غير متوفرة مؤقتًا",
+    },
+    PRODUCT_VARIANT_NOT_FOUND: {
+      en: "Product variant not found",
+      ar: "لم يتم العثور على متغير المنتج",
+    },
+    OUT_OF_STOCK: {
+      en: "Out of stock limit",
+      ar: "تجاوز الحد المتاح في المخزون",
+    },
+    CART_NOT_FOUND: {
+      en: "Cart not found",
+      ar: "لم يتم العثور على سلة التسوق",
+    },
+    CART_ITEM_NOT_FOUND: {
+      en: "Cart item not found",
+      ar: "لم يتم العثور على عنصر سلة التسوق",
+    },
+    PRODUCT_VARIANT_OUT_OF_STOCK: {
+      en: "Product variant out of stock",
+      ar: "متغير المنتج غير متوفر في المخزون",
+    },
+  },
 };
 
 const ERROR_CODES = {
-    INTERNAL_ERROR: 'INTERNAL_ERROR',
-    DB_CONNECTION_ERROR: 'DB_CONNECTION_ERROR',
-    DB_TIMEOUT_ERROR: 'DB_TIMEOUT_ERROR',
-    DATA_FETCH_ERROR: 'DATA_FETCH_ERROR',
-    VALIDATION_ERROR: 'VALIDATION_ERROR',
-    AUTH_ERROR: 'AUTH_ERROR',
-    NOT_FOUND_ERROR: 'NOT_FOUND_ERROR',
-    DUPLICATE_ERROR: 'DUPLICATE_ERROR',
-    PERMISSION_ERROR: 'PERMISSION_ERROR',
-    RATE_LIMIT_ERROR: 'RATE_LIMIT_ERROR'
+  INTERNAL_ERROR: "INTERNAL_ERROR",
+  DB_CONNECTION_ERROR: "DB_CONNECTION_ERROR",
+  DB_TIMEOUT_ERROR: "DB_TIMEOUT_ERROR",
+  DATA_FETCH_ERROR: "DATA_FETCH_ERROR",
+  VALIDATION_ERROR: "VALIDATION_ERROR",
+  AUTH_ERROR: "AUTH_ERROR",
+  NOT_FOUND_ERROR: "NOT_FOUND_ERROR",
+  DUPLICATE_ERROR: "DUPLICATE_ERROR",
+  PERMISSION_ERROR: "PERMISSION_ERROR",
+  RATE_LIMIT_ERROR: "RATE_LIMIT_ERROR",
 };
 
+module.exports = { RESPONSE_MESSAGES, ERROR_CODES };
+
 module.exports = {
-    HTTP_STATUS,
-    RESPONSE_MESSAGES,
-    ERROR_CODES
+  HTTP_STATUS,
+  RESPONSE_MESSAGES,
+  ERROR_CODES,
 };

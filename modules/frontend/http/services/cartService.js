@@ -1,6 +1,6 @@
 const { models, sequelize } = require("../../../../database/models/index.js");
 const { ErrorHandler } = require("../traits/errorHandler.js");
-const { HTTP_STATUS, ERROR_CODES } = require("../traits/constants.js");
+const { HTTP_STATUS, ERROR_CODES, RESPONSE_MESSAGES } = require("../traits/constants.js");
 const { generateImageUrl } = require("../../traits/imageUrlHelper.js");
 const ProductServiceHelpers = require("../traits/products.js");
 const { isItemWishListed, generateQueryParams } = require("../traits/dataManipulations/product/product.js");
@@ -153,19 +153,20 @@ class CartService {
       });
 
       if (!variant) {
-        throw ErrorHandler.createError("Product variant not found", HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.PRODUCT_VARIANT_NOT_FOUND, HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
       }
 
+      console.log(variant.stock);
+      console.log(quantity);
+
       if (variant.stock < quantity) {
-        throw ErrorHandler.createError("Out of stock limit", HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.OUT_OF_STOCK, HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
       }
 
       let price = variant.price;
 
-      // Get or create cart
       const cart = await this.getOrCreateCart(userId, sessionId, transaction);
 
-      // Check if item already exists in cart
       const existingItem = await models.CartItems.findOne({
         where: {
           cart_id: cart.id,
@@ -174,8 +175,13 @@ class CartService {
         transaction,
       });
 
+      const currentQuantityInCart = existingItem ? existingItem.quantity : 0;
+
+      if (currentQuantityInCart + quantity > variant.stock) {
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.OUT_OF_STOCK, HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
+      }
+
       if (existingItem) {
-        // Update quantity
         await existingItem.update(
           {
             quantity: existingItem.quantity + quantity,
@@ -184,7 +190,6 @@ class CartService {
           { transaction },
         );
       } else {
-        // Create new cart item
         await models.CartItems.create(
           {
             cart_id: cart.id,
@@ -203,8 +208,10 @@ class CartService {
 
       await transaction.commit();
 
+      return;
+
       // Return updated cart
-      return await this.getCart(userId, sessionId);
+      // return await this.getCart(userId, sessionId);
     } catch (error) {
       if (!transaction.finished) {
         await transaction.rollback();
@@ -248,7 +255,7 @@ class CartService {
       );
 
       if (!cart) {
-        throw ErrorHandler.createError("Cart not found", HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.CART_NOT_FOUND, HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
       }
 
       const cartItem = await models.CartItems.findOne({
@@ -257,17 +264,17 @@ class CartService {
       });
 
       if (!cartItem) {
-        throw ErrorHandler.createError("Cart item not found", HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.CART_ITEM_NOT_FOUND, HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
       }
 
       const variant = await models.ProductVariants.findByPk(variantId, { attributes: ["id", "status", "stock"], transaction });
 
       if (!variant) {
-        throw ErrorHandler.createError("Product variant not found", HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.PRODUCT_VARIANT_NOT_FOUND, HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
       }
 
       if (variant.stock < quantity) {
-        throw ErrorHandler.createError("Product variant out of stock", HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.PRODUCT_VARIANT_OUT_OF_STOCK, HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
       }
 
       const currentPrice = cartItem.price;
@@ -307,7 +314,7 @@ class CartService {
       });
 
       if (!cart) {
-        throw ErrorHandler.createError("Cart not found", HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.CART_NOT_FOUND, HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
       }
 
       const cartItem = await models.CartItems.findOne({
@@ -316,7 +323,7 @@ class CartService {
       });
 
       if (!cartItem) {
-        throw ErrorHandler.createError("Cart item not found", HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.CART_ITEM_NOT_FOUND, HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
       }
 
       await cartItem.destroy({ transaction });
@@ -367,7 +374,7 @@ class CartService {
       });
 
       if (!cart) {
-        throw ErrorHandler.createError("Cart not found", HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.CART_NOT_FOUND, HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
       }
 
       await models.CartItems.destroy({

@@ -1,7 +1,7 @@
 const { Op } = require("sequelize");
 const { models, sequelize } = require("../../../../database/models/index.js");
 const { ErrorHandler } = require("../traits/errorHandler.js");
-const { HTTP_STATUS, ERROR_CODES } = require("../traits/constants.js");
+const { HTTP_STATUS, ERROR_CODES, RESPONSE_MESSAGES } = require("../traits/constants.js");
 const { generateImageUrl } = require("../../traits/imageUrlHelper.js");
 const { buildCheckoutFormPayload } = require("../traits/dataManipulations/address.js");
 const ProductServiceHelpers = require("../traits/products.js");
@@ -61,11 +61,11 @@ class CheckOutService {
     });
 
     if (!cart || cart.items.length === 0) {
-      throw ErrorHandler.createError("Cart is empty", HTTP_STATUS.BAD_REQUEST, ERROR_CODES.BAD_REQUEST_ERROR);
+      throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.CART_IS_EMPTY, HTTP_STATUS.BAD_REQUEST, ERROR_CODES.BAD_REQUEST_ERROR);
     }
 
     if (checkInvalidProducts(cart.items)) {
-      throw new Error("Some items are out of stock, please update your cart");
+      throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.ITEMS_OUT_OF_STOCK, HTTP_STATUS.BAD_REQUEST, ERROR_CODES.BAD_REQUEST_ERROR);
     }
 
     return cart;
@@ -196,12 +196,12 @@ class CheckOutService {
       });
 
       if (!cart || cart.items.length === 0) {
-        throw ErrorHandler.createError("Cart is empty or not found", HTTP_STATUS.BAD_REQUEST);
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.CART_IS_EMPTY, HTTP_STATUS.BAD_REQUEST);
       }
 
       // 2. Check if a coupon is already applied
       if (cart.applied_coupon_code) {
-        throw ErrorHandler.createError("A coupon is already applied. Remove it first before applying a new one", HTTP_STATUS.BAD_REQUEST);
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.COUPON_ALREADY_APPLIED, HTTP_STATUS.BAD_REQUEST);
       }
 
       // 3. Find and validate the coupon
@@ -216,14 +216,15 @@ class CheckOutService {
       });
 
       if (!coupon) {
-        throw ErrorHandler.createError("Invalid or expired coupon code", HTTP_STATUS.BAD_REQUEST);
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.INVALID_OR_EXPIRED_COUPON, HTTP_STATUS.BAD_REQUEST);
       }
 
       // 4. Check minimum order amount
       const subtotal = parseFloat(cart.subtotal);
       // 5. Check minimum order amount if it exists
       if (coupon.min_order_amount && subtotal < parseFloat(coupon.min_order_amount)) {
-        throw ErrorHandler.createError(`Minimum order amount of ${coupon.min_order_amount} AED is required for this coupon`, HTTP_STATUS.BAD_REQUEST);
+        const message = RESPONSE_MESSAGES.ERROR.MINIMUM_ORDER_AMOUNT_REQUIRED(coupon.min_order_amount);
+        throw ErrorHandler.createError(message, HTTP_STATUS.BAD_REQUEST);
       }
 
       // 5. Check total usage limit
@@ -233,7 +234,7 @@ class CheckOutService {
       });
 
       if (totalUsageCount >= coupon.usage_limit_total) {
-        throw ErrorHandler.createError("This coupon has reached its maximum usage limit", HTTP_STATUS.BAD_REQUEST);
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.COUPON_USAGE_LIMIT_REACHED, HTTP_STATUS.BAD_REQUEST);
       }
 
       // 6. Check per-user usage limit (only for logged-in users)
@@ -244,7 +245,7 @@ class CheckOutService {
         });
 
         if (userUsageCount >= coupon.usage_limit_per_user) {
-          throw ErrorHandler.createError("You have already used this coupon the maximum number of times", HTTP_STATUS.BAD_REQUEST);
+          throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.COUPON_USER_LIMIT_REACHED, HTTP_STATUS.BAD_REQUEST);
         }
       }
 
@@ -253,7 +254,7 @@ class CheckOutService {
         const isApplicable = this.isCouponApplicableToCart(coupon, cart.items);
 
         if (!isApplicable) {
-          throw ErrorHandler.createError("This coupon is not applicable to the items in your cart", HTTP_STATUS.BAD_REQUEST);
+          throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.COUPON_NOT_APPLICABLE, HTTP_STATUS.BAD_REQUEST);
         }
       }
 
@@ -313,11 +314,11 @@ class CheckOutService {
       });
 
       if (!cart) {
-        throw ErrorHandler.createError("Cart not found", HTTP_STATUS.BAD_REQUEST);
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.CART_NOT_FOUND, HTTP_STATUS.BAD_REQUEST);
       }
 
       if (!cart.applied_coupon_code) {
-        throw ErrorHandler.createError("No coupon is applied to this cart", HTTP_STATUS.BAD_REQUEST);
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.NO_COUPON_APPLIED, HTTP_STATUS.BAD_REQUEST);
       }
 
       const applliedCoupon = await models.Coupons.findOne({
@@ -329,7 +330,7 @@ class CheckOutService {
       });
 
       if (!applliedCoupon) {
-        throw ErrorHandler.createError("Invalid or expired coupon code", HTTP_STATUS.BAD_REQUEST);
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.INVALID_OR_EXPIRED_COUPON, HTTP_STATUS.BAD_REQUEST);
       }
 
       await models.CartItems.update(
@@ -505,7 +506,7 @@ class CheckOutService {
       const matchingItems = this.getMatchingCartItems(coupon, cart.items);
 
       if (matchingItems.length === 0) {
-        throw ErrorHandler.createError("This coupon is not applicable to the items in your cart", HTTP_STATUS.BAD_REQUEST);
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.COUPON_NOT_APPLICABLE, HTTP_STATUS.BAD_REQUEST);
       }
 
       // Calculate eligible subtotal from matching items only

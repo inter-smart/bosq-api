@@ -64,7 +64,7 @@ class ProductsService {
       } else {
         if (model && !isModelAndFilters) {
           const productModelData = await models.ProductModels.findOne({
-            where: { product_id: baseData.id, slug: model, status: true },
+            where: { slug: model, status: true },
             attributes: ["id", "code", "title", "slug", "media_path"],
             required: true,
             include: [
@@ -122,7 +122,7 @@ class ProductsService {
           }
 
           // Build where clause for ProductVariants with strict attribute matching
-          const whereClause = { product_id: baseData.id, status: true };
+          const whereClause = { status: true };
 
           if (attributeFilterConditions.length > 0) {
             whereClause[Op.and] = attributeFilterConditions.map((cond) => {

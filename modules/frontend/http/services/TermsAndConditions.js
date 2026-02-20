@@ -1,4 +1,5 @@
 const { models } = require("../../../../database/models");
+const { sendErrorResponse, sendSuccessResponse } = require("../../../admin/http/traits/responseHandler");
 const cacheKeys = require("../../../redis/cacheKeys");
 const { setCache, getCache } = require("../../../redis/redisService");
 const { buildTitleSection } = require("../traits/dataManipulations/common");
@@ -6,10 +7,10 @@ const { buildFaqData } = require("../traits/dataManipulations/termsAndConditions
 
 const cacheKey = cacheKeys.termsAndConditions;
 
-class TermsAndConditionsService{
-    static async getData(req, res) {
-        try {
-          // 1. Get data from cache
+class TermsAndConditionsService {
+  static async getData(req, res) {
+    try {
+      // 1. Get data from cache
       const cachedData = await getCache(cacheKey);
 
       // 2. If cached data exists, return it
@@ -29,7 +30,7 @@ class TermsAndConditionsService{
             status: true,
           },
           order: [["sort_order", "ASC"]],
-    }),
+        }),
       ]);
 
       if (!termsAndConditions) {
@@ -56,11 +57,10 @@ class TermsAndConditionsService{
         data: result,
         message: "Terms and conditions page data fetched",
       };
-          return sendSuccessResponse(res, data, message, 200);
-        } catch (error) {
-          return sendErrorResponse(res, error, "Internal Server Error", 500);
-        }
-      }
+    } catch (error) {
+      return sendErrorResponse(res, error, "Internal Server Error", 500);
+    }
+  }
 }
 
 

@@ -63,8 +63,9 @@ class ProductsService {
         initialVariant = transformedData?.data?.variantData;
       } else {
         if (model && !isModelAndFilters) {
+          console.log("HERE 1");
           const productModelData = await models.ProductModels.findOne({
-            where: { slug: model, status: true },
+            where: { product_id: baseData?.id, slug: model, status: true },
             attributes: ["id", "code", "title", "slug", "media_path"],
             required: true,
             include: [
@@ -95,6 +96,8 @@ class ProductsService {
           const transformedData = transformModelData(productModelData);
           initialVariant = transformedData;
         } else {
+          console.log("HERE 2");
+          console.log(isModelAndFilters);
           // When filters are present without model, query variants directly with attribute filters
           // First, resolve attribute slugs and value slugs to their IDs
           const attributeFilterConditions = [];
@@ -159,7 +162,7 @@ class ProductsService {
               {
                 association: "productModel",
                 attributes: ["id", "code", "title", "base_price", "slug", "media_path"],
-                where: isModelAndFilters ? { slug: model } : undefined,
+                where: isModelAndFilters ? { product_id: baseData?.id, slug: model } : undefined,
               },
             ],
           });

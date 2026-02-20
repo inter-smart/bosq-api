@@ -12,6 +12,8 @@ const transformProductData = (productData, startFromVariant = false) => {
     const { productModel, variant_images = [], attribute_values = [], ...variant } = jsonData;
     const initialModel = productModel || {};
 
+    console.log(initialModel);
+
     const attributesMap = {};
     attribute_values.forEach((item) => {
       const attr = item.attribute;

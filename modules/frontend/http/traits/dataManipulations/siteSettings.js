@@ -39,7 +39,6 @@ function buildFooterSection(cms) {
     address_block: {
       address: cms?.address,
       address_ar: cms?.address_ar,
-      po_box_number: cms?.po_box_number,
     },
   };
 }

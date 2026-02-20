@@ -25,7 +25,6 @@ class AddressService {
         throw new Error("Cart owner not found");
       }
 
-
       const { type, id } = req.cartOwner;
 
       const config = modelsMap[type];
@@ -113,8 +112,6 @@ class AddressService {
           message: "Invalid cart owner type",
         });
       }
-
-      console.log("Cart owner:", config);
 
       const { model: Model, field, aliasName: alias } = config;
 

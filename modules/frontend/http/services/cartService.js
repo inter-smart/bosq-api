@@ -83,8 +83,6 @@ class CartService {
 
       await ProductServiceHelpers.validateCoupon(cart);
 
-      console.log("here");
-
       // Reload cart with fresh data after price sync
       await cart.reload({
         include: [

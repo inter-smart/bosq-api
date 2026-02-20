@@ -39,7 +39,13 @@ class ProductServiceHelpers {
       where: { slug: slug, status: true },
       attributes: productAttributes,
       include: [
-        { association: "sellingPoints", attributes: ["id", "name", "slug", "media_path"], through: { attributes: [] } },
+        {
+          association: "sellingPoints",
+          attributes: ["id", "name", "slug", "media_path", "status"],
+          where: { status: true },
+          required: false,
+          through: { attributes: [] },
+        },
         { association: "category", attributes: ["id", "name", "name_ar", "parent_id", "slug"] },
         { association: "projectImages", attributes: ["id", "media_path", "media_alt", "media_alt_ar"] },
         { association: "faqs", attributes: ["id", "question", "answer", "question_ar", "answer_ar"] },

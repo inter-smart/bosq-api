@@ -284,6 +284,7 @@ class ProductsService {
           id: {
             [Op.in]: sectors,
           },
+          status: true,
         };
       }
 
@@ -377,7 +378,7 @@ class ProductsService {
                   ? [
                       {
                         association: "sectors",
-                        attributes: ["id", "name", "name_ar", "slug"],
+                        attributes: ["id", "name", "name_ar", "slug", "status"],
                         through: { attributes: [] },
                         where: sectorCondition,
                         required: true,

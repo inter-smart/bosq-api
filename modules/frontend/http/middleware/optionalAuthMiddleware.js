@@ -10,10 +10,6 @@ const optionalAuth = () => {
     try {
       const token = req.cookies?.access_token;
 
-      console.log("ENDPOINT =======>", `${req.method} ${req.originalUrl}`);
-      console.log("COOKIES ========>", req.cookies);
-      console.log("TOKEN ==========>", token);
-
       if (!token) {
         return next(); // guest request
       }

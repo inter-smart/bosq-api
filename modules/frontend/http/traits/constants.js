@@ -146,6 +146,46 @@ const RESPONSE_MESSAGES = {
       en: "Cart item not found",
       ar: "لم يتم العثور على عنصر سلة التسوق",
     },
+    CART_IS_EMPTY: {
+      en: "Cart is empty",
+      ar: "سلة التسوق فارغة",
+    },
+    ITEMS_OUT_OF_STOCK: {
+      en: "Some items are out of stock, please update your cart",
+      ar: "بعض العناصر غير متوفرة في المخزون، يرجى تحديث سلة التسوق",
+    },
+    COUPON_ALREADY_APPLIED: {
+      en: "A coupon is already applied. Remove it first before applying a new one",
+      ar: "تم تطبيق كوبون بالفعل. يرجى إزالته أولاً قبل تطبيق كوبون جديد",
+    },
+    INVALID_OR_EXPIRED_COUPON: {
+      en: "Invalid or expired coupon code",
+      ar: "رمز القسيمة غير صالح أو منتهي الصلاحية",
+    },
+    MINIMUM_ORDER_AMOUNT_REQUIRED: (amount) => ({
+      en: `Minimum order amount of ${amount} AED is required for this coupon`,
+      ar: `الحد الأدنى للطلب بقيمة ${amount} درهم مطلوب لاستخدام هذه القسيمة`,
+    }),
+    COUPON_USAGE_LIMIT_REACHED: {
+      en: "This coupon has reached its maximum usage limit",
+      ar: "لقد وصل هذا الكوبون إلى الحد الأقصى لعدد مرات الاستخدام",
+    },
+    COUPON_USER_LIMIT_REACHED: {
+      en: "You have already used this coupon the maximum number of times",
+      ar: "لقد استخدمت هذا الكوبون بالفعل الحد الأقصى من المرات",
+    },
+    COUPON_NOT_APPLICABLE: {
+      en: "This coupon is not applicable to the items in your cart",
+      ar: "هذا الكوبون غير قابل للتطبيق على العناصر الموجودة في سلة التسوق",
+    },
+    MINIMUM_ELIGIBLE_PRODUCTS_AMOUNT_REQUIRED: (amount) => ({
+      en: `The total of eligible products must be at least ${amount} to use this coupon`,
+      ar: `يجب أن يكون إجمالي المنتجات المؤهلة على الأقل ${amount} لاستخدام هذا الكوبون`,
+    }),
+    NO_COUPON_APPLIED: {
+      en: "No coupon is applied to this cart",
+      ar: "لا يوجد كوبون مطبق على سلة التسوق",
+    },
     PRODUCT_VARIANT_OUT_OF_STOCK: {
       en: "Product variant out of stock",
       ar: "متغير المنتج غير متوفر في المخزون",

@@ -12,6 +12,8 @@ const productAttributes = [
   "slug",
   "description",
   "description_ar",
+  "enhance_title",
+  "enhance_title_ar",
   "details",
   "details_ar",
   "details_points",
@@ -41,7 +43,7 @@ class ProductServiceHelpers {
       include: [
         {
           association: "sellingPoints",
-          attributes: ["id", "name", "slug", "media_path", "status"],
+          attributes: ["id", "name", "name_ar", "slug", "media_path", "status"],
           where: { status: true },
           required: false,
           through: { attributes: [] },
@@ -84,7 +86,7 @@ class ProductServiceHelpers {
               include: [
                 {
                   association: "attribute",
-                  attributes: ["id", "name", "code", "slug"],
+                  attributes: ["id", "name", "code", "slug", "name_ar"],
                 },
               ],
             },

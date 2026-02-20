@@ -36,7 +36,7 @@ class ProductsService {
       if (variantSku) {
         const variantData = await models.ProductVariants.findOne({
           where: { sku: variantSku, status: true },
-          attributes: ["id", "product_model_id", "sku", "title", "title_ar", "price", "stock", "media_path"],
+          attributes: ["id", "product_model_id", "sku", "title", "title_ar", "price", "stock", "media_path", "design_title_ar", "design_title"],
           include: [
             {
               association: "variant_images",
@@ -55,7 +55,7 @@ class ProductsService {
             },
             {
               association: "productModel",
-              attributes: ["id", "code", "title", "base_price", "slug", "media_path"],
+              attributes: ["id", "code", "title", "base_price", "slug", "media_path", "title_ar"],
             },
           ],
         });
@@ -67,12 +67,12 @@ class ProductsService {
           console.log("HERE 1");
           const productModelData = await models.ProductModels.findOne({
             where: { product_id: baseData?.id, slug: model, status: true },
-            attributes: ["id", "code", "title", "slug", "media_path"],
+            attributes: ["id", "code", "title", "slug", "media_path", "title_ar"],
             required: true,
             include: [
               {
                 association: "variants",
-                attributes: ["id", "product_model_id", "sku", "title", "title_ar", "price", "stock", "media_path"],
+                attributes: ["id", "product_model_id", "sku", "title", "title_ar", "price", "stock", "media_path", "design_title_ar", "design_title"],
                 required: true,
                 include: [
                   {
@@ -605,8 +605,6 @@ class ProductsService {
         limit = 12,
       } = params;
 
-      console.log(params);
-
       const isLoggedInUser = type === "user";
 
       const parseArrayParam = (param) => {
@@ -784,7 +782,7 @@ class ProductsService {
       -- Model
       INNER JOIN "product_models" pm
         ON pm."id" = pv."product_model_id"
-        AND pm."deletedAt" IS NULL
+        AND pm."deletedAt" IS NULL AND pm."status" = true
 
       -- Product base
       INNER JOIN "product_base" pb

@@ -41,7 +41,8 @@ class OrderController {
                         ],
                     },
                 ],
-                searchFields: ["order_id", "email"],
+                searchFields: ["order_id", "$user.name$"
+                ]
             });
 
             const response = {

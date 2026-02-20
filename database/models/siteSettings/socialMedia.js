@@ -13,6 +13,10 @@ module.exports = (sequelize) => {
         type: DataTypes.TEXT,
         allowNull: true,
       },
+      footer_icon_media_path: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
       icon_alt: {
         type: DataTypes.STRING,
         allowNull: true,

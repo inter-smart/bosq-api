@@ -49,8 +49,8 @@ const cacheDependencies = {
   DeliveryTime: [cacheKeys.deliveryPolicy],
   DeliveryMethods: [cacheKeys.deliveryPolicy],
   // FAQ Module
-  FaqList: [cacheKeys.faq],
-  FaqCategory: [cacheKeys.faq],
+  // FaqList: [cacheKeys.faq],
+  // FaqCategory: [cacheKeys.faq],
 
   // Contact Module
   Contact: [cacheKeys.contact],

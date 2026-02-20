@@ -95,10 +95,6 @@ exports.validationRequestPost = [
     .isString()
     .withMessage("Newsletter title Arabic must be a string"),
 
-  // PO BOX
-  body("po_box_number")
-    .isString()
-    .withMessage("PO Box number must be a string"),
 ];
 
 /**

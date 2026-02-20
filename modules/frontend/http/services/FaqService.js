@@ -25,6 +25,9 @@ class FaqService {
         models.FaqCms.findOne(),
 
         models.FaqCategory.findAll({
+          where: {
+            status: true,
+          },
           include: [
             {
               model: models.FaqList,

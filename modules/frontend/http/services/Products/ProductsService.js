@@ -1,11 +1,12 @@
 const { Op, literal, where } = require("sequelize");
-const { models } = require("../../../../../database/models/index");
+const { models, sequelize } = require("../../../../../database/models/index");
 const { transformProductData, transformModelData, generateQueryParams, isItemWishListed } = require("../../traits/dataManipulations/product/product");
 const { generateImageUrl } = require("../../../traits/imageUrlHelper");
 const { setCache, getCache } = require("../../../../redis/redisService");
 const ProductServiceHelpers = require("../../traits/products");
 
 const { singleMediaWithoutType } = require("../../traits/mediaButtonHelper");
+const { param } = require("../../../routes/products");
 
 class ProductsService {
   static async getProductBySlug(params) {
@@ -63,8 +64,9 @@ class ProductsService {
         initialVariant = transformedData?.data?.variantData;
       } else {
         if (model && !isModelAndFilters) {
+          console.log("HERE 1");
           const productModelData = await models.ProductModels.findOne({
-            where: { slug: model, status: true },
+            where: { product_id: baseData?.id, slug: model, status: true },
             attributes: ["id", "code", "title", "slug", "media_path"],
             required: true,
             include: [
@@ -159,7 +161,7 @@ class ProductsService {
               {
                 association: "productModel",
                 attributes: ["id", "code", "title", "base_price", "slug", "media_path"],
-                where: isModelAndFilters ? { slug: model } : undefined,
+                where: isModelAndFilters ? { product_id: baseData?.id, slug: model } : undefined,
               },
             ],
           });
@@ -296,6 +298,7 @@ class ProductsService {
         Object.entries(attributes).forEach(([attributeId, valueIds]) => {
           if (valueIds && Array.isArray(valueIds) && valueIds.length > 0) {
             const valuesList = valueIds.map((id) => parseInt(id)).join(",");
+            console.log("ATTRIBUTE VALUES", valuesList);
             attributeConditions.push(
               literal(`EXISTS (
                 SELECT 1 FROM "product_variant_attributes" 
@@ -335,6 +338,10 @@ class ProductsService {
       // Check if we need to filter by category or sector
       const needsCategoryFilter = category || allCategoryIds.length > 0;
       const needsSectorFilter = sectors.length > 0;
+
+      console.log("ORDER CLAUSE", orderClause);
+      console.log("ALL CATEGORY", needsCategoryFilter);
+      console.log("ALL SECTOR", needsSectorFilter);
 
       // Build include array
       const includeArray = [
@@ -584,98 +591,329 @@ class ProductsService {
     }
   }
 
-  static async getInitialProductList(page = 1, limit = 12) {
+  static async getInitialProductList(params, type, userId) {
     try {
+      const {
+        category,
+        categories: categoriesParam,
+        subCategories: subCategoriesParam,
+        sectors: sectorsParam,
+        priceMin,
+        priceMax,
+        sortBy,
+        page = 1,
+        limit = 12,
+      } = params;
+
+      console.log(params);
+
+      const isLoggedInUser = type === "user";
+
+      const parseArrayParam = (param) => {
+        if (!param) return [];
+        if (Array.isArray(param)) return param.map(Number);
+        if (typeof param === "string")
+          return param
+            .split(",")
+            .map((id) => parseInt(id.trim()))
+            .filter((id) => !isNaN(id));
+        return [];
+      };
+
+      const parsePriceRanges = (param) => {
+        if (!param) return [];
+        return param.split(",").map((range) => {
+          const [min, max] = range.split("-").map(Number);
+          return { min, max };
+        });
+      };
+
+      const priceRanges = parsePriceRanges(params.priceRanges);
+
+      const parseAttributesFromParams = (allParams) => {
+        const result = {};
+        Object.keys(allParams).forEach((key) => {
+          const match = key.match(/^attributes\[(\d+)\]$/);
+          if (match) {
+            const attributeId = match[1];
+            const valueIds = parseArrayParam(allParams[key]);
+            if (valueIds.length > 0) result[attributeId] = valueIds;
+          }
+        });
+        return result;
+      };
+
+      const categories = parseArrayParam(categoriesParam);
+      const subCategories = parseArrayParam(subCategoriesParam);
+      const sectors = parseArrayParam(sectorsParam);
+      const attributes = parseAttributesFromParams(params);
+
       const pageNum = Math.max(1, parseInt(page, 10));
       const limitNum = Math.max(1, parseInt(limit, 10));
       const offset = (pageNum - 1) * limitNum;
 
-      const { rows: products, count: totalCount } = await models.ProductVariants.findAndCountAll({
-        attributes: ["id", "title", "title_ar", "media_path", "price", "stock", "sku", "product_model_id"],
-        where: { status: true },
-        limit: limitNum,
-        offset,
-        include: [
-          {
-            attributes: ["id", "slug"],
-            model: models.ProductModels,
-            as: "productModel",
-            include: [
-              {
-                attributes: ["id", "category_id", "slug"],
-                model: models.ProductBase,
-                as: "product",
-                include: [
-                  {
-                    attributes: ["id", "name_ar", "name"],
-                    model: models.ProductCategory,
-                    as: "category",
-                  },
-                ],
-              },
-            ],
-          },
-        ],
+      // ─── Dynamic WHERE fragments + replacements ──────────────────────────────
+      const conditions = []; // SQL fragments for WHERE
+      const replacements = {}; // named replacements for sequelize.query
+
+      // Variant status
+      conditions.push(`pv."deletedAt" IS NULL`);
+      conditions.push(`pv."status" = true`);
+
+      // Price
+      if (priceMin) {
+        conditions.push(`pv."price" >= :priceMin`);
+        replacements.priceMin = parseFloat(priceMin);
+      }
+      if (priceMax) {
+        conditions.push(`pv."price" <= :priceMax`);
+        replacements.priceMax = parseFloat(priceMax);
+      }
+
+      if (priceRanges.length > 0) {
+        const rangeSQL = priceRanges
+          .map((r, i) => {
+            replacements[`priceRangeMin_${i}`] = r.min;
+            replacements[`priceRangeMax_${i}`] = r.max;
+            return `(pv."price" >= :priceRangeMin_${i} AND pv."price" <= :priceRangeMax_${i})`;
+          })
+          .join(" OR ");
+
+        conditions.push(`(${rangeSQL})`);
+      }
+
+      // Product base status
+      conditions.push(`pb."status" = true`);
+
+      // Category / SubCategory filter
+      const allCategoryIds = [...categories, ...subCategories];
+      if (allCategoryIds.length > 0) {
+        conditions.push(`pb."category_id" IN (:allCategoryIds)`);
+        replacements.allCategoryIds = allCategoryIds;
+      } else if (category) {
+        conditions.push(`pb."category_id" = :categoryId`);
+        replacements.categoryId = parseInt(category);
+      }
+
+      // Sector filter — semi-join via EXISTS
+      if (sectors.length > 0) {
+        replacements.sectorIds = sectors;
+        conditions.push(`
+        EXISTS (
+          SELECT 1 FROM "product_base_sectors" pbs   -- adjust junction table name
+          WHERE pbs."product_base_id" = pb."id"
+            AND pbs."sector_id" IN (:sectorIds)
+        )
+      `);
+      }
+
+      // Attribute filter — one EXISTS per attribute group (AND between groups)
+      if (Object.keys(attributes).length > 0) {
+        Object.entries(attributes).forEach(([attributeId, valueIds]) => {
+          if (Array.isArray(valueIds) && valueIds.length > 0) {
+            const key = `attrValues_${attributeId}`;
+            replacements[key] = valueIds.map(Number);
+            conditions.push(`
+            EXISTS (
+              SELECT 1 FROM "product_variant_attributes" pva
+              WHERE pva."product_variant_id" = pv."id"
+                AND pva."attribute_id"       = ${parseInt(attributeId)}
+                AND pva."attribute_value_id" IN (:${key})
+                AND pva."deletedAt"          IS NULL
+            )
+          `);
+          }
+        });
+      }
+
+      const whereSQL = conditions.length ? `WHERE ${conditions.join("\n  AND ")}` : "";
+
+      // ─── ORDER BY ────────────────────────────────────────────────────────────
+      const orderMap = {
+        "price-low-high": `pv."price" ASC`,
+        "price-high-low": `pv."price" DESC`,
+        "name-a-z": `pv."title" ASC`,
+        "name-z-a": `pv."title" DESC`,
+      };
+      const orderSQL = orderMap[sortBy] || `pv."createdAt" DESC`;
+
+      // ─── MAIN QUERY ──────────────────────────────────────────────────────────
+      const mainSQL = `
+      SELECT
+        pv."id",
+        pv."title",
+        pv."title_ar",
+        pv."media_path",
+        pv."price",
+        pv."stock",
+        pv."product_code",
+        pv."sku",
+        pv."product_model_id",
+
+        pm."slug"                         AS "model_slug",
+
+        pb."slug"                         AS "base_slug",
+
+        pc."id"                           AS "category_id",
+        pc."name"                         AS "category_name",
+        pc."name_ar"                      AS "category_ar",
+
+        -- Aggregate variant attributes as JSON array
+        COALESCE(
+          JSON_AGG(
+            DISTINCT JSONB_BUILD_OBJECT(
+              'id',                pva."id",
+              'attribute_id',      pva."attribute_id",
+              'attribute_value_id',pva."attribute_value_id",
+              'attribute_name',    pa."name",
+              'attribute_name_ar', pa."name_ar",
+              'attribute_code',    pa."code",
+              'attribute_slug',    pa."slug",
+              'value',             av."value",
+              'value_ar',          av."value_ar",
+              'value_slug',        av."slug"
+            )
+          ) FILTER (WHERE pva."id" IS NOT NULL),
+          '[]'
+        )                                 AS "variant_attributes",
+
+        COUNT(*) OVER()                   AS "total_count"   -- window for pagination total
+
+      FROM "product_variants" pv
+
+      -- Model
+      INNER JOIN "product_models" pm
+        ON pm."id" = pv."product_model_id"
+        AND pm."deletedAt" IS NULL
+
+      -- Product base
+      INNER JOIN "product_base" pb
+        ON pb."id" = pm."product_id"        -- adjust FK name if different
+        AND pb."deletedAt" IS NULL
+
+      -- Category (always present, left join so category-less products don't disappear)
+      LEFT JOIN "product_categories" pc
+        ON pc."id" = pb."category_id"
+         AND pc."deletedAt" IS NULL
+
+      -- Variant attributes (left join — variants without attributes still show)
+      LEFT JOIN "product_variant_attributes" pva
+        ON pva."product_variant_id" = pv."id"
+        AND pva."deletedAt" IS NULL
+
+      LEFT JOIN "product_attributes" pa
+        ON pa."id" = pva."attribute_id"
+
+      LEFT JOIN "attribute_values" av
+        ON av."id" = pva."attribute_value_id"
+
+      ${whereSQL}
+
+      GROUP BY
+        pv."id",
+        pv."title",
+        pv."title_ar",
+        pv."media_path",
+        pv."price",
+        pv."stock",
+        pv."product_code",
+        pv."sku",
+        pv."product_model_id",
+        pm."slug",
+        pb."slug",
+        pc."id",
+        pc."name",
+        pc."name_ar"
+
+      ORDER BY ${orderSQL}
+
+      LIMIT  :limitNum
+      OFFSET :offsetNum
+    `;
+
+      replacements.limitNum = limitNum;
+      replacements.offsetNum = offset;
+
+      let debugQuery = mainSQL;
+      Object.entries(replacements).forEach(([key, value]) => {
+        const val = Array.isArray(value) ? `(${value.join(",")})` : `'${value}'`;
+        debugQuery = debugQuery.replace(new RegExp(`:${key}\\b`, "g"), val);
+      });
+      console.log("FINAL QUERY:\n", debugQuery);
+
+      const rawResults = await sequelize.query(mainSQL, {
+        replacements,
+        type: sequelize.QueryTypes.SELECT,
       });
 
-      // Get all unique product_model_ids from fetched products
-      const productModelIds = [...new Set(products.map((p) => p.product_model_id).filter(Boolean))];
+      const totalCount = rawResults.length > 0 ? parseInt(rawResults[0].total_count, 10) : 0;
 
-      // Get variant counts per model to determine hasMoreVariants
+      // ─── Variant counts (kept as separate query — unchanged logic) ───────────
+      const productModelIds = [...new Set(rawResults.map((r) => r.product_model_id).filter(Boolean))];
       let variantCountsMap = {};
+
       if (productModelIds.length > 0) {
-        const variantCounts = await models.ProductVariants.findAll({
-          attributes: ["product_model_id", [literal("COUNT(id)"), "variant_count"]],
-          where: {
-            product_model_id: { [Op.in]: productModelIds },
-            status: true,
-          },
-          group: ["product_model_id"],
-          raw: true,
+        const countSQL = `
+        SELECT "product_model_id", COUNT("id") AS "variant_count"
+        FROM   "product_variants"
+        WHERE  "product_model_id" IN (:productModelIds)
+          AND  "status" = true
+          AND  "deletedAt" IS NULL
+        GROUP  BY "product_model_id"
+      `;
+        const variantCounts = await sequelize.query(countSQL, {
+          replacements: { productModelIds },
+          type: sequelize.QueryTypes.SELECT,
         });
         variantCountsMap = variantCounts.reduce((acc, item) => {
           acc[item.product_model_id] = parseInt(item.variant_count, 10);
           return acc;
         }, {});
       }
-      const transformedData = products.map((item) => {
-        const json = item.toJSON();
-        const modelVariantCount = variantCountsMap[json?.product_model_id] || 0;
 
-        const formattedAttributes = (json?.variant_attributes || []).map((va) => ({
-          code: va?.ProductAttribute?.code,
-          slug: va?.ProductAttribute?.slug,
-          values: [
-            {
-              slug: va?.AttributeValue?.slug,
-              value: va?.AttributeValue?.value,
-            },
-          ],
+      // ─── Wishlist (kept as separate query — unchanged logic) ─────────────────
+      let wishlistedItems = [];
+      if (isLoggedInUser) {
+        wishlistedItems = await models.Wishlist.findAll({
+          where: { user_id: userId },
+          attributes: ["product_variant_id"],
+          raw: true,
+        });
+      }
+
+      // ─── Transform ───────────────────────────────────────────────────────────
+      const transformedData = rawResults.map((row) => {
+        const variantAttrs = Array.isArray(row.variant_attributes) ? row.variant_attributes : JSON.parse(row.variant_attributes || "[]");
+
+        const modelVariantCount = variantCountsMap[row.product_model_id] || 0;
+
+        const formattedAttributes = variantAttrs.map((va) => ({
+          code: va.attribute_code,
+          slug: va.attribute_slug,
+          values: [{ slug: va.value_slug, value: va.value }],
         }));
 
-        const baseSlug = json?.productModel?.product?.slug;
-        const modelSlug = json?.productModel?.slug;
-        const variantSlug = json?.sku;
-
         return {
-          id: json?.id,
-          title: json?.title,
-          title_ar: json?.title_ar,
-          media_path: generateImageUrl(json?.media_path),
-          slug: json?.sku,
-          base_slug: baseSlug,
-          model_slug: json?.productModel?.slug,
-          product_code: json?.product_code,
+          id: row.id,
+          title: row.title,
+          title_ar: row.title_ar,
+          media_path: generateImageUrl(row.media_path),
+          slug: row.sku,
+          base_slug: row.base_slug,
+          model_slug: row.model_slug,
+          product_code: row.product_code,
           hasMoreVariants: modelVariantCount > 1,
-          variants_available: json?.has_more_items,
-          price: json?.price,
-          stock: json?.stock,
-          category_name: json?.productModel?.product?.category?.name || null,
-          category_ar: json?.productModel?.product?.category?.name_ar || null,
-          variant_attributes: json?.variant_attributes,
-          query_params: generateQueryParams(variantSlug, modelSlug, formattedAttributes),
+          wishlisted: isItemWishListed(row.id, wishlistedItems),
+          price: row.price,
+          stock: row.stock,
+          category_name: row.category_name || null,
+          category_ar: row.category_ar || null,
+          variant_attributes: variantAttrs,
+          query_params: generateQueryParams(row.sku, row.model_slug, formattedAttributes),
         };
       });
+
+      console.log(transformedData.length);
 
       return {
         data: {

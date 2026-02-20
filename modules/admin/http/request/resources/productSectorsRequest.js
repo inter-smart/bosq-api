@@ -6,7 +6,7 @@ exports.validationRequestPost = [
   body("name_ar").notEmpty().withMessage("Arabic name is required").isString().withMessage("Arabic name must be a string"),
   
   /* ---------- CODE ---------- */
-  body("code").notEmpty().withMessage("Code is required").isString().withMessage("Code must be a string"),
+  body("code").optional(),
 
   /* ---------- SLUG (AUTO-GENERATED) ---------- */
   body("slug").optional().isString().withMessage("Slug must be a string"),

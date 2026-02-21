@@ -9,8 +9,9 @@ const { singleMediaWithoutType } = require("../../traits/mediaButtonHelper");
 const { param } = require("../../../routes/products");
 
 class ProductsService {
-  static async getProductBySlug(params) {
+  static async getProductBySlug(params, type, userId) {
     const { slug, variantSku = null, model = null } = params;
+    const isLoggedInUser = type === "user";
 
     const filters = Object.entries(params)
       .filter(([key]) => key.startsWith("attr["))
@@ -177,6 +178,16 @@ class ProductsService {
 
       const currentVariantId = initialVariant?.id;
       const currentModelId = initialVariant?.model_id;
+
+      if (isLoggedInUser && currentVariantId) {
+        const wishlistEntry = await models.Wishlist.findOne({
+          where: { user_id: userId, product_variant_id: currentVariantId },
+        });
+
+        if (wishlistEntry) {
+          initialVariant.isWishlisted = true;
+        }
+      }
 
       const similarVariants = currentModelId ? await ProductServiceHelpers.getSimiliarProducts(currentModelId, currentVariantId) : [];
 

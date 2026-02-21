@@ -12,8 +12,6 @@ const transformProductData = (productData, startFromVariant = false) => {
     const { productModel, variant_images = [], attribute_values = [], ...variant } = jsonData;
     const initialModel = productModel || {};
 
-    console.log(initialModel);
-
     const attributesMap = {};
     attribute_values.forEach((item) => {
       const attr = item.attribute;
@@ -52,6 +50,7 @@ const transformProductData = (productData, startFromVariant = false) => {
       title_ar: variant?.title_ar,
       design_title_ar: variant?.design_title_ar,
       design_title: variant?.design_title,
+      isWishlisted: false,
       variant_image: generateImageUrl(variant?.media_path),
       slug: variant?.sku,
       price: variant?.price,
@@ -134,6 +133,7 @@ const transformProductData = (productData, startFromVariant = false) => {
     title_ar: variant?.title_ar,
     design_title_ar: variant?.design_title_ar,
     design_title: variant?.design_title,
+    isWishlisted: false,
     variant_image: generateImageUrl(variant?.media_path),
     slug: variant?.sku,
     price: variant?.price,
@@ -214,6 +214,7 @@ const transformModelData = (model) => {
     title_ar: variant?.title_ar,
     design_title_ar: variant?.design_title_ar,
     design_title: variant?.design_title,
+    isWishlisted: false,
     slug: variant?.sku,
     variant_image: generateImageUrl(variant?.media_path),
     price: variant?.price,

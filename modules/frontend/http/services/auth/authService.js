@@ -312,11 +312,12 @@ class UsersService {
         return sendErrorResponse(res, "User not found", null, 404);
       }
 
-      const isPasswordValid = await bcrypt.compare(password, user.password);
-
-      if (!isPasswordValid) {
-        await transaction.rollback();
-        return sendErrorResponse(res, "Invalid password", null, 401);
+      if (user.password) {
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+        if (!isPasswordValid) {
+          await transaction.rollback();
+          return sendErrorResponse(res, "Invalid password", null, 401);
+        }
       }
 
       const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, {
@@ -628,21 +629,17 @@ class UsersService {
             slug: baseSlug,
             profile_image: picture || null,
           },
-          { transaction }
+          { transaction },
         );
       } else if (!user.email_verified) {
         await user.update({ email_verified: true }, { transaction });
       }
 
       // Sign JWT (same pattern as regular login)
-      const jwtToken = jwt.sign(
-        { id: user.id, email: user.email },
-        process.env.JWT_SECRET,
-        {
-          expiresIn: process.env.JWT_EXPIRES_IN || "1d",
-          issuer: process.env.JWT_ISSUER || "BOSQ",
-        }
-      );
+      const jwtToken = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, {
+        expiresIn: process.env.JWT_EXPIRES_IN || "1d",
+        issuer: process.env.JWT_ISSUER || "BOSQ",
+      });
 
       res.cookie("access_token", jwtToken, {
         httpOnly: true,

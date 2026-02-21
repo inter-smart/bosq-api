@@ -179,6 +179,12 @@ module.exports = (sequelize) => {
       onDelete: "CASCADE",
     });
 
+    // project enquiry
+    Projects.hasMany(models.ProjectEnquiry, {
+      foreignKey: "project_id",
+      as: "project_enquiries",
+      onDelete: "CASCADE",
+    });
   };
 
   return Projects;

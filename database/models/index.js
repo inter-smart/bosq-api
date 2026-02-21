@@ -126,6 +126,8 @@ const defineContactEnquiry = require("./enquiries/contact");
 const defineNewsLetter = require("./enquiries/newsletter");
 const defineCustomizationEnquiry = require("./enquiries/customizationForm");
 const defineProductEnquiry = require("./enquiries/productEnquiry");
+const defineProjectEnquiry = require("./enquiries/projects");
+
 // STATE AND COUNTRY
 const defineState = require("./state");
 const defineCountry = require("./country");
@@ -233,6 +235,7 @@ const models = {
   CustomizationEnquiry: defineCustomizationEnquiry(sequelize),
   NewsLetter: defineNewsLetter(sequelize),
   ProductEnquiry: defineProductEnquiry(sequelize),
+  ProjectEnquiry: defineProjectEnquiry(sequelize),
 
   // Resources
   ProductCategory: defineProductCategory(sequelize),

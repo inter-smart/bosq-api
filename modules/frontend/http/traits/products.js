@@ -3,7 +3,12 @@ const { Op } = require("sequelize");
 const cacheKeys = require("../../../redis/cacheKeys");
 const { getCache, setCache } = require("../../../redis/redisService");
 const { generateImageUrl } = require("../../traits/imageUrlHelper");
-const { generateProductBasedata, buildAttributesFromVariants, generateQueryParams } = require("./dataManipulations/product/product");
+const {
+  generateProductBasedata,
+  buildAttributesFromVariants,
+  generateQueryParams,
+  isItemWishListed,
+} = require("./dataManipulations/product/product");
 
 const productAttributes = [
   "id",
@@ -125,7 +130,7 @@ class ProductServiceHelpers {
     };
   }
 
-  static async getSimiliarProducts(modelId, variantId) {
+  static async getSimiliarProducts(modelId, variantId, userId = null, isLoggedInUser = false) {
     const variants = await models.ProductVariants.findAll({
       where: {
         product_model_id: modelId,
@@ -177,7 +182,22 @@ class ProductServiceHelpers {
       where: { product_model_id: modelId, status: true },
     });
 
-    return variants.map((item) => {
+    let wishlistedItems = [];
+
+    if (isLoggedInUser && userId) {
+      wishlistedItems = await models.Wishlist.findAll({
+        where: { user_id: userId },
+        attributes: ["product_variant_id"],
+        raw: true,
+      });
+    }
+
+    console.log(variantId);
+    console.log(wishlistedItems);
+
+    const isVariantWishListed = wishlistedItems.some((item) => item.product_variant_id == variantId);
+
+    const similarProducts = variants.map((item) => {
       const json = item.toJSON();
 
       const formattedAttributes = (json?.variant_attributes || []).map((va) => ({
@@ -204,6 +224,7 @@ class ProductServiceHelpers {
         base_slug: baseSlug,
         model_slug: modelSlug,
         product_code: json?.product_code,
+        isWishlisted: isItemWishListed(json?.id, wishlistedItems),
         variants_available: json?.has_more_items,
         hasMoreVariants: modelVariantCount > 1,
         price: json?.price,
@@ -214,6 +235,11 @@ class ProductServiceHelpers {
         query_params: generateQueryParams(variantSku, modelSlug, formattedAttributes),
       };
     });
+
+    return {
+      similarProducts,
+      isVariantWishListed,
+    };
   }
 
   static async recalculateCartTotals(cartId, transaction = null) {

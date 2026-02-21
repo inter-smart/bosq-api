@@ -179,17 +179,15 @@ class ProductsService {
       const currentVariantId = initialVariant?.id;
       const currentModelId = initialVariant?.model_id;
 
-      if (isLoggedInUser && currentVariantId) {
-        const wishlistEntry = await models.Wishlist.findOne({
-          where: { user_id: userId, product_variant_id: currentVariantId },
-        });
+      const data = await ProductServiceHelpers.getSimiliarProducts(currentModelId, currentVariantId, userId, isLoggedInUser);
+      const similarVariants = data?.similarProducts || [];
+      const isVariantWishListed = data?.isVariantWishListed || false;
 
-        if (wishlistEntry) {
-          initialVariant.isWishlisted = true;
-        }
+      console.log(data);
+
+      if (isLoggedInUser && isVariantWishListed) {
+        initialVariant.isWishlisted = true;
       }
-
-      const similarVariants = currentModelId ? await ProductServiceHelpers.getSimiliarProducts(currentModelId, currentVariantId) : [];
 
       return {
         data: {
@@ -912,7 +910,7 @@ class ProductsService {
           model_slug: row.model_slug,
           product_code: row.product_code,
           hasMoreVariants: modelVariantCount > 1,
-          wishlisted: isItemWishListed(row.id, wishlistedItems),
+          isWishlisted: isItemWishListed(row.id, wishlistedItems),
           price: row.price,
           stock: row.stock,
           category_name: row.category_name || null,

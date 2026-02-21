@@ -626,7 +626,7 @@ class CartService {
         product_code: json?.product_code,
         variants_available: json?.has_more_items,
         hasMoreVariants: modelVariantCount > 1,
-        wishlisted: isItemWishListed(json?.id, wishlistedItems),
+        isWishlisted: isItemWishListed(json?.id, wishlistedItems),
         price: json?.price,
         stock: json?.stock,
         category_name: json?.productModel?.product?.category?.name || null,

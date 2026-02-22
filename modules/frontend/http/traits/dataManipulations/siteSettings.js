@@ -106,7 +106,7 @@ function buildNavigationData(products, projects) {
     hasSubmenu: false,
     name: project.title,
     name_ar: project.title_ar,
-    slug: `/projects?subcategory=${project.slug}`,
+    slug: `/projects/${project.slug}`,
     image: generateImageUrl(project.thumbnail),
   }));
 

@@ -9,8 +9,9 @@ const { singleMediaWithoutType } = require("../../traits/mediaButtonHelper");
 const { param } = require("../../../routes/products");
 
 class ProductsService {
-  static async getProductBySlug(params) {
+  static async getProductBySlug(params, type, userId) {
     const { slug, variantSku = null, model = null } = params;
+    const isLoggedInUser = type === "user";
 
     const filters = Object.entries(params)
       .filter(([key]) => key.startsWith("attr["))
@@ -36,7 +37,7 @@ class ProductsService {
       if (variantSku) {
         const variantData = await models.ProductVariants.findOne({
           where: { sku: variantSku, status: true },
-          attributes: ["id", "product_model_id", "sku", "title", "title_ar", "price", "stock", "media_path"],
+          attributes: ["id", "product_model_id", "sku", "title", "title_ar", "price", "stock", "media_path", "design_title_ar", "design_title"],
           include: [
             {
               association: "variant_images",
@@ -55,7 +56,7 @@ class ProductsService {
             },
             {
               association: "productModel",
-              attributes: ["id", "code", "title", "base_price", "slug", "media_path"],
+              attributes: ["id", "code", "title", "base_price", "slug", "media_path", "title_ar"],
             },
           ],
         });
@@ -67,12 +68,12 @@ class ProductsService {
           console.log("HERE 1");
           const productModelData = await models.ProductModels.findOne({
             where: { product_id: baseData?.id, slug: model, status: true },
-            attributes: ["id", "code", "title", "slug", "media_path"],
+            attributes: ["id", "code", "title", "slug", "media_path", "title_ar"],
             required: true,
             include: [
               {
                 association: "variants",
-                attributes: ["id", "product_model_id", "sku", "title", "title_ar", "price", "stock", "media_path"],
+                attributes: ["id", "product_model_id", "sku", "title", "title_ar", "price", "stock", "media_path", "design_title_ar", "design_title"],
                 required: true,
                 include: [
                   {
@@ -178,7 +179,15 @@ class ProductsService {
       const currentVariantId = initialVariant?.id;
       const currentModelId = initialVariant?.model_id;
 
-      const similarVariants = currentModelId ? await ProductServiceHelpers.getSimiliarProducts(currentModelId, currentVariantId) : [];
+      const data = await ProductServiceHelpers.getSimiliarProducts(currentModelId, currentVariantId, userId, isLoggedInUser);
+      const similarVariants = data?.similarProducts || [];
+      const isVariantWishListed = data?.isVariantWishListed || false;
+
+      console.log(data);
+
+      if (isLoggedInUser && isVariantWishListed) {
+        initialVariant.isWishlisted = true;
+      }
 
       return {
         data: {
@@ -605,8 +614,6 @@ class ProductsService {
         limit = 12,
       } = params;
 
-      console.log(params);
-
       const isLoggedInUser = type === "user";
 
       const parseArrayParam = (param) => {
@@ -784,7 +791,7 @@ class ProductsService {
       -- Model
       INNER JOIN "product_models" pm
         ON pm."id" = pv."product_model_id"
-        AND pm."deletedAt" IS NULL
+        AND pm."deletedAt" IS NULL AND pm."status" = true
 
       -- Product base
       INNER JOIN "product_base" pb
@@ -903,7 +910,7 @@ class ProductsService {
           model_slug: row.model_slug,
           product_code: row.product_code,
           hasMoreVariants: modelVariantCount > 1,
-          wishlisted: isItemWishListed(row.id, wishlistedItems),
+          isWishlisted: isItemWishListed(row.id, wishlistedItems),
           price: row.price,
           stock: row.stock,
           category_name: row.category_name || null,

@@ -12,8 +12,6 @@ const transformProductData = (productData, startFromVariant = false) => {
     const { productModel, variant_images = [], attribute_values = [], ...variant } = jsonData;
     const initialModel = productModel || {};
 
-    console.log(initialModel);
-
     const attributesMap = {};
     attribute_values.forEach((item) => {
       const attr = item.attribute;
@@ -50,6 +48,9 @@ const transformProductData = (productData, startFromVariant = false) => {
       id: variant?.id,
       title: variant?.title,
       title_ar: variant?.title_ar,
+      design_title_ar: variant?.design_title_ar,
+      design_title: variant?.design_title,
+      isWishlisted: false,
       variant_image: generateImageUrl(variant?.media_path),
       slug: variant?.sku,
       price: variant?.price,
@@ -58,6 +59,7 @@ const transformProductData = (productData, startFromVariant = false) => {
       model_media: generateImageUrl(initialModel?.media_path),
       model_slug: initialModel.slug,
       model_title: initialModel.title,
+      model_title_ar: initialModel.title_ar,
       attributes: Object.values(attributesMap),
       images: orderedImages.map((img, index) => ({
         id: img.id,
@@ -129,6 +131,9 @@ const transformProductData = (productData, startFromVariant = false) => {
     id: variant?.id,
     title: variant?.title,
     title_ar: variant?.title_ar,
+    design_title_ar: variant?.design_title_ar,
+    design_title: variant?.design_title,
+    isWishlisted: false,
     variant_image: generateImageUrl(variant?.media_path),
     slug: variant?.sku,
     price: variant?.price,
@@ -137,6 +142,7 @@ const transformProductData = (productData, startFromVariant = false) => {
     model_media: generateImageUrl(initialModel?.media_path),
     model_slug: initialModel.slug,
     model_title: initialModel.title,
+    model_title_ar: initialModel.title_ar,
     attributes: Object.values(attributesMap),
     images: orderedImages.map((img, index) => ({
       id: img.id,
@@ -206,6 +212,9 @@ const transformModelData = (model) => {
     id: variant?.id,
     title: variant?.title,
     title_ar: variant?.title_ar,
+    design_title_ar: variant?.design_title_ar,
+    design_title: variant?.design_title,
+    isWishlisted: false,
     slug: variant?.sku,
     variant_image: generateImageUrl(variant?.media_path),
     price: variant?.price,
@@ -214,6 +223,7 @@ const transformModelData = (model) => {
     model_media: generateImageUrl(initialModel?.media_path),
     model_slug: initialModel.slug,
     model_title: initialModel.title,
+    model_title_ar: initialModel.title_ar,
     attributes: Object.values(attributesMap),
     images: orderedImages.map((img, index) => ({
       id: img.id,
@@ -241,6 +251,7 @@ const buildAttributesFromVariants = (variants = []) => {
         attributeMap.set(attr.id, {
           id: attr.id,
           name: attr.name,
+          name_ar: attr.name_ar,
           slug: attr.slug,
           code: attr.code,
           values: [],
@@ -322,6 +333,7 @@ const generateProductBasedata = (productData) => {
     ? sellingPoints.map((sp) => ({
         id: sp.id,
         name: sp.name,
+        name_ar: sp.name_ar,
         media_path: generateImageUrl(sp.media_path),
       }))
     : [];
@@ -333,6 +345,8 @@ const generateProductBasedata = (productData) => {
     slug: product.slug,
     description: product.description,
     description_ar: product.description_ar,
+    enhance_title: product.enhance_title,
+    enhance_title_ar: product.enhance_title_ar,
     details: {
       details: product.details,
       details_ar: product.details_ar,

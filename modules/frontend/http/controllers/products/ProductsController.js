@@ -4,8 +4,13 @@ const service = require("../../services/Products/ProductsService");
 class ProductsController {
   static async getProductBySlug(req, res) {
     const params = req.query;
+
+    console.log(req.cartOwner);
+
+    const type = req?.cartOwner?.type || "guest";
+    const userId = req?.cartOwner?.id || null;
     try {
-      const { data, message } = await service.getProductBySlug(params);
+      const { data, message } = await service.getProductBySlug(params, type, userId);
 
       return sendSuccessResponse(res, data, message, 200);
     } catch (error) {

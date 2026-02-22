@@ -156,9 +156,6 @@ class CartService {
         throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.PRODUCT_VARIANT_NOT_FOUND, HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
       }
 
-      console.log(variant.stock);
-      console.log(quantity);
-
       if (variant.stock < quantity) {
         throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.OUT_OF_STOCK, HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
       }
@@ -275,6 +272,12 @@ class CartService {
 
       if (variant.stock < quantity) {
         throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.PRODUCT_VARIANT_OUT_OF_STOCK, HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
+      }
+
+      const currentQuantityInCart = cartItem ? cartItem.quantity : 0;
+
+      if (currentQuantityInCart < quantity && quantity > variant.stock) {
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.OUT_OF_STOCK, HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
       }
 
       const currentPrice = cartItem.price;
@@ -623,7 +626,7 @@ class CartService {
         product_code: json?.product_code,
         variants_available: json?.has_more_items,
         hasMoreVariants: modelVariantCount > 1,
-        wishlisted: isItemWishListed(json?.id, wishlistedItems),
+        isWishlisted: isItemWishListed(json?.id, wishlistedItems),
         price: json?.price,
         stock: json?.stock,
         category_name: json?.productModel?.product?.category?.name || null,

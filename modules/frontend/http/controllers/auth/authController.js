@@ -79,6 +79,17 @@ class UsersController {
       return sendErrorResponse(res, error, "Internal Server Error", 500);
     }
   }
+
+  static async googleLogin(req, res) {
+    try {
+      const result = await service.googleLogin(req, res);
+      if (result) {
+        return sendSuccessResponse(res, result?.data, result?.message, 200);
+      }
+    } catch (error) {
+      return sendErrorResponse(res, error, "Internal Server Error", 500);
+    }
+  }
 }
 
 module.exports = UsersController;

@@ -312,11 +312,12 @@ class UsersService {
         return sendErrorResponse(res, "User not found", null, 404);
       }
 
-      const isPasswordValid = await bcrypt.compare(password, user.password);
-
-      if (!isPasswordValid) {
-        await transaction.rollback();
-        return sendErrorResponse(res, "Invalid password", null, 401);
+      if (user.password) {
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+        if (!isPasswordValid) {
+          await transaction.rollback();
+          return sendErrorResponse(res, "Invalid password", null, 401);
+        }
       }
 
       const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, {
@@ -578,6 +579,92 @@ class UsersService {
     } catch (error) {
       console.error("Password creation failed:", error);
       return sendErrorResponse(res, error.message, null, 500);
+    }
+  }
+
+  static async googleLogin(req, res) {
+    const transaction = await sequelize.transaction();
+
+    try {
+      const { token } = req.body;
+
+      if (!token) {
+        await transaction.rollback();
+        return sendErrorResponse(res, "Google token is required", null, 400);
+      }
+
+      // Verify the access token and get user info from Google
+      const googleRes = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!googleRes.ok) {
+        await transaction.rollback();
+        return sendErrorResponse(res, "Invalid or expired Google token", null, 401);
+      }
+
+      const googleUser = await googleRes.json();
+      const { email, name, picture } = googleUser;
+
+      if (!email) {
+        await transaction.rollback();
+        return sendErrorResponse(res, "Google account does not have an email address", null, 400);
+      }
+
+      const normalizedEmail = email.trim().toLowerCase();
+
+      // Find or create user by email
+      let user = await Users.findOne({
+        where: { email: normalizedEmail },
+        transaction,
+      });
+
+      if (!user) {
+        const baseSlug = generateSlugWithTimestamp(name || normalizedEmail.split("@")[0]);
+        user = await Users.create(
+          {
+            name: name || normalizedEmail.split("@")[0],
+            email: normalizedEmail,
+            email_verified: true,
+            slug: baseSlug,
+            profile_image: picture || null,
+          },
+          { transaction },
+        );
+      } else if (!user.email_verified) {
+        await user.update({ email_verified: true }, { transaction });
+      }
+
+      // Sign JWT (same pattern as regular login)
+      const jwtToken = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, {
+        expiresIn: process.env.JWT_EXPIRES_IN || "1d",
+        issuer: process.env.JWT_ISSUER || "BOSQ",
+      });
+
+      res.cookie("access_token", jwtToken, {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: isProduction ? "none" : "lax",
+        path: "/",
+        maxAge: 24 * 60 * 60 * 1000,
+      });
+
+      await transaction.commit();
+
+      return {
+        success: true,
+        message: "Login successful",
+        data: {
+          user: { id: user.id, name: user.name, email: user.email },
+        },
+      };
+    } catch (error) {
+      await transaction.rollback();
+      console.error("Google Login Error:", error);
+
+      if (!res.headersSent) {
+        return sendErrorResponse(res, error.message, null, 500);
+      }
     }
   }
 }

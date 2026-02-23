@@ -1,4 +1,4 @@
-function   buildProfieSection(data) {
+function buildProfieSection(data) {
   if (!data) return null;
 
   const userData = data.toJSON ? data.toJSON() : data;
@@ -12,21 +12,9 @@ function   buildProfieSection(data) {
   const formatAddress = (address) => {
     if (!address) return null;
 
-    const region = [
-      address?.state?.name,
-      address?.state?.country?.name,
-    ]
-      .filter(Boolean)
-      .join(", ");
+    const region = [address?.state?.name, address?.state?.country?.name].filter(Boolean).join(", ");
 
-    return [
-      address?.company_name ? address?.company_name : null,
-      address?.apartment,
-      address?.street_address,
-      region,
-    ]
-      .filter(Boolean)
-      .join(",<br/>");
+    return [address?.company_name ? address?.company_name : null, address?.apartment, address?.street_address, region].filter(Boolean).join(",<br/>");
   };
 
   return {
@@ -34,21 +22,17 @@ function   buildProfieSection(data) {
     last_name: userData.last_name ?? null,
     name: userData.name ?? null,
     profile_image: userData.profile_image ?? null,
-    phone:
-      userData?.country_code && userData?.mobile
-        ? `${userData.country_code} ${userData.mobile}`
-        : "N/A",
+    phone: userData?.country_code && userData?.mobile ? `${userData.country_code} ${userData.mobile}` : null,
     email: userData.email ?? "N/A",
     address: formatAddress(billingAddress) ?? null,
-    shipping_address: formatAddress(shippingAddress) ?? null
+    shipping_address: formatAddress(shippingAddress) ?? null,
   };
 }
-
 
 function buildProfileEditSection(data) {
   if (!data) return null;
 
-  console.log(data.toJSON)
+  console.log(data.toJSON);
 
   const userData = data.toJSON ? data.toJSON() : data;
   return {

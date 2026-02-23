@@ -28,8 +28,7 @@ class BlogController {
     try {
       const result = await paginate(DataModel, req, {
         order: [
-          ["sort_order", "ASC"],
-          ["createdAt", "DESC"],
+          ["updatedAt", "DESC"],
         ],
         searchFields: ["title", "slug"],
       });

@@ -29,6 +29,15 @@ class BlogController {
       return sendErrorResponse(res, error, "Internal Server Error", 500);
     }
   }
+
+  static async incrementView(req, res) {
+    try {
+      await service.incrementView(req.query.slug);
+      return sendSuccessResponse(res, null, "View count updated", 200);
+    } catch (error) {
+      return sendErrorResponse(res, error, "Internal Server Error", 500);
+    }
+  }
 }
 
 module.exports = BlogController;

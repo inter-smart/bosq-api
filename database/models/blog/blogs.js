@@ -76,7 +76,7 @@ module.exports = (sequelize) => {
       },
       sort_order: {
         type: DataTypes.SMALLINT,
-        allowNull: false,
+        allowNull: true,
         defaultValue: 0,
       },
       status: {

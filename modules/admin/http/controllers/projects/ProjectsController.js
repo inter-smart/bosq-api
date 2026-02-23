@@ -79,7 +79,7 @@ class ProjectsController {
           400
         );
 
-      let baseSlug = req.body.slug;
+      const baseSlug = slugify(title.trim(), { lower: true, strict: true });
 
       const existing = await DataModel.findOne({
         where: { slug: baseSlug },

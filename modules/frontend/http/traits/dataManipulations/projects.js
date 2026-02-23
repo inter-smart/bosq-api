@@ -39,6 +39,7 @@ function buildProjectCategorySection(data) {
 
 function buildProjectListSection(data) {
   const section = data.map((item) => ({
+    id: item.id,
     title: item.title ?? "",
     title_ar: item.title_ar ?? "",
     slug: item.slug ?? "",
@@ -57,6 +58,7 @@ function buildProjectDetailsSection(data) {
 
 
   const section = {
+    id: data?.id,
     title: data?.title,
     title_ar: data?.title_ar,
     tags: Array.isArray(data?.tags) ? data.tags : [],

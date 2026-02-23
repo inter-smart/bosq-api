@@ -52,15 +52,13 @@ const validationRequestPost = [
     .withMessage("Customization option is requiredss")
     .isInt({ min: 1 })
     .withMessage("Invalid customization option"),
- 
-    
+
+
   // Message
   body("message")
     .trim()
     .notEmpty()
     .withMessage("Message is required")
-    .isLength({ min: 10, max: 1000 })
-    .withMessage("Message must be between 10 and 1000 characters"),
 ];
 
 // Middleware to handle validation errors

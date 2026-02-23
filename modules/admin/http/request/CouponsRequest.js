@@ -18,10 +18,7 @@ exports.validationRequestPost = [
     .withMessage("Title must not exceed 255 characters"),
 
   // DESCRIPTION (OPTIONAL)
-  body("description")
-    .optional()
-    .isString()
-    .withMessage("Description must be a string"),
+  body("description").optional().isString().withMessage("Description must be a string"),
 
   // TITLE (OPTIONAL)
   body("title_ar")
@@ -30,18 +27,6 @@ exports.validationRequestPost = [
     .withMessage("Title AR must be a string")
     .isLength({ max: 255 })
     .withMessage("Title AR must not exceed 255 characters"),
-
-  // DESCRIPTION (OPTIONAL)
-  body("description_ar")
-    .optional()
-    .isString()
-    .withMessage("Description AR must be a string"),
-
-  // MEDIA PATH
-  body("media_path")
-    .optional()
-    .isString()
-    .withMessage("Media path must be a string"),
 
   // DISCOUNT TYPE
   body("discount_type")
@@ -96,9 +81,7 @@ exports.validationRequestPost = [
     .withMessage("Invalid scope type"),
 
   // SCOPE ID (CONDITIONAL)
-  body("scope_id").optional({ nullable: true })
-    .isInt({ min: 1 })
-    .withMessage("Scope ID must be a valid integer"),
+  body("scope_id").optional({ nullable: true }).isInt({ min: 1 }).withMessage("Scope ID must be a valid integer"),
 
   // USAGE LIMIT TOTAL
   body("usage_limit_total")
@@ -115,19 +98,13 @@ exports.validationRequestPost = [
     .withMessage("Per-user usage limit must be a positive integer")
     .custom((value, { req }) => {
       if (Number(value) > Number(req.body.usage_limit_total)) {
-        throw new Error(
-          "Per-user usage limit cannot exceed total usage limit"
-        );
+        throw new Error("Per-user usage limit cannot exceed total usage limit");
       }
       return true;
     }),
 
   // START DATE
-  body("start_at")
-    .notEmpty()
-    .withMessage("Start date is required")
-    .isISO8601()
-    .withMessage("Start date must be a valid date"),
+  body("start_at").notEmpty().withMessage("Start date is required").isISO8601().withMessage("Start date must be a valid date"),
 
   // END DATE
   body("end_at")
@@ -143,15 +120,7 @@ exports.validationRequestPost = [
     }),
 
   // STATUS (OPTIONAL)
-  body("status")
-    .optional()
-    .isBoolean()
-    .withMessage("Status must be boolean"),
+  body("status").optional().isBoolean().withMessage("Status must be boolean"),
 ];
 
-
-exports.validateId = [
-  param("id")
-    .isInt({ min: 1 })
-    .withMessage("ID must be a positive integer"),
-];
+exports.validateId = [param("id").isInt({ min: 1 }).withMessage("ID must be a positive integer")];

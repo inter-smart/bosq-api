@@ -482,6 +482,8 @@ class CheckOutService {
         }
       }
 
+      console.log(discountAmount);
+
       const currentDiscount = parseFloat(cart.discount_total);
       const newDiscountTotal = currentDiscount + discountAmount;
       const newGrandTotal = subtotal - newDiscountTotal;
@@ -516,7 +518,10 @@ class CheckOutService {
 
       // Validate against min_product_amount
       if (coupon.min_product_amount && eligibleSubtotal < parseFloat(coupon.min_product_amount)) {
-        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.MINIMUM_ELIGIBLE_PRODUCTS_AMOUNT_REQUIRED(coupon.min_product_amount), HTTP_STATUS.BAD_REQUEST);
+        throw ErrorHandler.createError(
+          RESPONSE_MESSAGES.ERROR.MINIMUM_ELIGIBLE_PRODUCTS_AMOUNT_REQUIRED(coupon.min_product_amount),
+          HTTP_STATUS.BAD_REQUEST,
+        );
       }
 
       const round2 = (num) => Math.round((num + Number.EPSILON) * 100) / 100;

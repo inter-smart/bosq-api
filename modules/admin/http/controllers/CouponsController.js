@@ -2,7 +2,7 @@ const { validationResult } = require("express-validator");
 const { sequelize, models } = require("../../../../database/models/index.js");
 const { sendValidationError, sendSuccessResponse, sendErrorResponse, sendNotFoundError } = require("../traits/responseHandler.js");
 
-const { Op, where, fn, col } = require("sequelize");
+const { Op } = require("sequelize");
 
 const { validationRequestPost, validateId } = require("../request/CouponsRequest.js");
 const { paginate } = require("../traits/datatablePaginationHelper.js");

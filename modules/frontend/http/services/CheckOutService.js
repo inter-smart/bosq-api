@@ -516,10 +516,7 @@ class CheckOutService {
 
       // Validate against min_product_amount
       if (coupon.min_product_amount && eligibleSubtotal < parseFloat(coupon.min_product_amount)) {
-        throw ErrorHandler.createError(
-          `The total of eligible products must be at least ${coupon.min_product_amount} to use this coupon`,
-          HTTP_STATUS.BAD_REQUEST,
-        );
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.MINIMUM_ELIGIBLE_PRODUCTS_AMOUNT_REQUIRED(coupon.min_product_amount), HTTP_STATUS.BAD_REQUEST);
       }
 
       const round2 = (num) => Math.round((num + Number.EPSILON) * 100) / 100;

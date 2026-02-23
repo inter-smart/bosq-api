@@ -81,7 +81,7 @@ module.exports = {
 
       // Build search conditions
       const searchConditions = fieldsToSearch
-        .map((field) => createSearchCondition(field, searchTerm, Model))
+        .map((field) => createSearchCondition(field, searchTerm.trim(), Model))
         .filter((condition) => condition !== null);
 
       // Add search conditions to where clause

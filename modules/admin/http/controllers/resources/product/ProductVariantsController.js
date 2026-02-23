@@ -30,7 +30,7 @@ class ProductVariantsController {
           ["sort_order", "ASC"],
           ["createdAt", "DESC"],
         ],
-        searchFields: ["sku", "product_code"],
+        searchFields: ["sku", "product_code", "title"],
         include: [
           {
             association: "productModel",
@@ -66,7 +66,7 @@ class ProductVariantsController {
     const transaction = await sequelize.transaction();
 
     try {
-      const { product_model_id, attributes, product_code = null } = req.body;
+      const { product_model_id, variant_attributes: attributes, product_code = null } = req.body;
 
       const product = await models.ProductModels.findByPk(product_model_id);
       if (!product) {
@@ -120,7 +120,22 @@ class ProductVariantsController {
       const { id } = req.params;
 
       const data = await DataModel.findByPk(id, {
-        attributes: ["id", "status", "product_model_id", "sku", "product_code", "price", "status", "stock", "title", "title_ar", "media_path", "design_title", "design_title_ar", "hover_media_path"],
+        attributes: [
+          "id",
+          "status",
+          "product_model_id",
+          "sku",
+          "product_code",
+          "price",
+          "status",
+          "stock",
+          "title",
+          "title_ar",
+          "media_path",
+          "design_title",
+          "design_title_ar",
+          "hover_media_path",
+        ],
         include: [
           {
             model: models.ProductVariantAttributes,

@@ -6,7 +6,6 @@ const { setCache, getCache } = require("../../../../redis/redisService");
 const ProductServiceHelpers = require("../../traits/products");
 
 const { singleMediaWithoutType } = require("../../traits/mediaButtonHelper");
-const { param } = require("../../../routes/products");
 
 class ProductsService {
   static async getProductBySlug(params, type, userId) {
@@ -751,6 +750,7 @@ class ProductsService {
         pv."title",
         pv."title_ar",
         pv."media_path",
+        pv."hover_media_path",
         pv."price",
         pv."stock",
         pv."product_code",
@@ -905,6 +905,7 @@ class ProductsService {
           title: row.title,
           title_ar: row.title_ar,
           media_path: generateImageUrl(row.media_path),
+          hover_media_path: generateImageUrl(row.hover_media_path),
           slug: row.sku,
           base_slug: row.base_slug,
           model_slug: row.model_slug,
@@ -1158,8 +1159,8 @@ class ProductsService {
           id: json?.id,
           title: json?.title,
           title_ar: json?.title_ar,
-          media: singleMediaWithoutType(json, "media_path", "title", "title_ar"),
-          hoverMedia: singleMediaWithoutType(json, "hover_media_path", "title", "title_ar"),
+          media: json?.media_path && singleMediaWithoutType(json, "media_path", "title", "title_ar"),
+          hoverMedia: json?.hover_media_path && singleMediaWithoutType(json, "hover_media_path", "title", "title_ar"),
           slug: json?.sku,
           stock: json?.stock,
           baseSlug: json?.productModel?.product?.slug,

@@ -84,6 +84,17 @@ module.exports = {
         .map((field) => createSearchCondition(field, searchTerm.trim(), Model))
         .filter((condition) => condition !== null);
 
+      // If any search field references an association (e.g. "$product.title$"),
+      // the COUNT subquery won't have the JOIN — disable subQuery to fix it.
+      const hasAssociationField = fieldsToSearch.some(
+        (field) =>
+          !Array.isArray(field) &&
+          (field.includes(".") || (field.startsWith("$") && field.endsWith("$")))
+      );
+      if (hasAssociationField) {
+        queryOptions.subQuery = false;
+      }
+
       // Add search conditions to where clause
       if (searchConditions.length > 0) {
         queryOptions.where = {

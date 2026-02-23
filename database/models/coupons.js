@@ -24,19 +24,6 @@ module.exports = (sequelize) => {
         type: DataTypes.STRING(255),
         allowNUll: true,
       },
-      description: {
-        type: DataTypes.TEXT,
-        allowNull: true,
-      },
-      description_ar: {
-        type: DataTypes.TEXT,
-        allowNull: true,
-      },
-
-      media_path: {
-        type: DataTypes.TEXT,
-        allowNUll: true,
-      },
 
       discount_type: {
         type: DataTypes.ENUM("percentage", "flat"),
@@ -52,7 +39,6 @@ module.exports = (sequelize) => {
         type: DataTypes.DECIMAL(10, 2),
         allowNull: true,
       },
-
 
       min_product_amount: {
         type: DataTypes.DECIMAL(10, 2),

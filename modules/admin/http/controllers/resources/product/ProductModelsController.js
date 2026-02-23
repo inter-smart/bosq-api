@@ -61,7 +61,7 @@ class ProductModelsController {
           ["createdAt", "DESC"],
         ],
         where: whereClause,
-        searchFields: ["title", "title_ar"],
+        searchFields: ["title", "title_ar", "$product.title$"],
         include: [
           {
             model: models.ProductVariants,
@@ -72,6 +72,7 @@ class ProductModelsController {
             model: models.ProductBase,
             as: "product",
             attributes: ["id", "title", "slug"],
+            required: false,
           },
         ],
       });
@@ -111,7 +112,7 @@ class ProductModelsController {
       const existingTitle = await DataModel.findOne({
         where: {
           product_id: product_id,
-          title: title.trim()
+          title: title.trim(),
         },
         paranoid: true,
       });
@@ -127,7 +128,7 @@ class ProductModelsController {
         const existingCode = await DataModel.findOne({
           where: {
             product_id: product_id,
-            code: code.trim()
+            code: code.trim(),
           },
           paranoid: true,
         });

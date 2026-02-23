@@ -14,13 +14,13 @@ const mediaWithType = (
 ) => ({
   desktop: {
     type: data[typeKey] ?? "",
-    path: `${backendUrl}${data[desktopPathKey]}` ?? "",
+    path: data[desktopPathKey] ? `${backendUrl}${data[desktopPathKey]}` : null,
     alt: data[altKey] ?? "",
     alt_ar: altArKey ? data[altArKey] ?? "" : "",
   },
   mobile: {
     type: data[typeKey] ?? "",
-    path: `${backendUrl}${data[mobilePathKey]}` ?? "",
+    path: data[mobilePathKey] ? `${backendUrl}${data[mobilePathKey]}` : null,
     alt: data[altKey] ?? "",
     alt_ar: altArKey ? data[altArKey] ?? "" : "",
   },
@@ -35,12 +35,12 @@ const mediaWithoutType = (
   altArKey
 ) => ({
   desktop: {
-    path: `${backendUrl}${data[desktopPathKey]}` ?? "",
+    path: data[desktopPathKey] ? `${backendUrl}${data[desktopPathKey]}` : null,
     alt: data[altKey] ?? "",
     alt_ar: altArKey ? data[altArKey] ?? "" : "",
   },
   mobile: {
-    path: `${backendUrl}${data[mobilePathKey]}` ?? "",
+    path: data[mobilePathKey] ? `${backendUrl}${data[mobilePathKey]}` : null,
     alt: data[altKey] ?? "",
     alt_ar: altArKey ? data[altArKey] ?? "" : "",
   },
@@ -55,7 +55,7 @@ const singleMediaWithType = (
   altArKey
 ) => ({
   type: data[typeKey] ?? "",
-  path: `${backendUrl}${data[pathKey]}` ?? "",
+  path: data[pathKey] ? `${backendUrl}${data[pathKey]}` : null,
   alt: data[altKey] ?? "",
   alt_ar: altArKey ? data[altArKey] ?? "" : "",
 });
@@ -67,7 +67,7 @@ const singleMediaWithoutType = (
   altKey,
   altArKey
 ) => ({
-  path: `${backendUrl}${data[pathKey]}` ?? "",
+  path: data[pathKey] ? `${backendUrl}${data[pathKey]}` : null,
   alt: data[altKey] ?? "",
   alt_ar: altArKey ? data[altArKey] ?? "" : "",
 });

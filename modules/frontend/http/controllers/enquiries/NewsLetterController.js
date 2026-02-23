@@ -1,13 +1,23 @@
 const service = require("../../services/NewsLetterService.js");
-const { sendErrorResponse, sendSuccessResponse } = require("../../../../admin/http/traits/responseHandler.js");
+const {
+  sendErrorResponse,
+  sendSuccessResponse,
+} = require("../../../../admin/http/traits/responseHandler.js");
+const { ApiResponse } = require("../../traits/response.js");
 
 class NewsLetterController {
   static async store(req, res) {
     try {
-      const {data, message} = await service.store(req.body);
-      return sendSuccessResponse(res, data, message, 200);
-    } catch (error) {
-      return sendErrorResponse(res, error, "Internal Server Error", 500);
+      const { data, message } = await service.store(req.body);
+return ApiResponse.success(res, {
+        message: "Newsletter subscription submitted successfully",
+        data: data,
+        status: HTTP_STATUS.CREATED,
+      });    } catch (error) {
+      return ApiResponse.error(res, {
+        message: error.message || "Internal Server Error",
+        status: error.statusCode || 500,
+      });
     }
   }
 }

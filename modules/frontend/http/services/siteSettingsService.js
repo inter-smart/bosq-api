@@ -6,6 +6,7 @@ const {
   buildFooterSection,
   buildFooterIcons,
   buildNavigationData,
+  buildPaymentCards,
 } = require("../traits/dataManipulations/siteSettings");
 
 const cacheKey = cacheKeys.siteSettings;
@@ -46,12 +47,12 @@ class SiteSettingsService {
               status: true,
               parent_id: null
             },
-            attributes: ["name", "name_ar", "media_path", "slug"],
+            attributes: ["id", "name", "name_ar", "media_path", "slug"],
             include: [
               {
                 model: models.ProductCategory,
                 as: "children",
-                attributes: ["name", "name_ar", "media_path", "slug"],
+                attributes: ["id", "name", "name_ar", "media_path", "slug"],
                 where: { status: true },
                 required: false
               },
@@ -78,7 +79,7 @@ class SiteSettingsService {
       const headerData = buildHeaderSection(siteSettings);
       const footerData = buildFooterSection(siteSettings);
       const socialMedia = buildFooterIcons(socialLinks);
-      const cards = buildFooterIcons(paymentMethods);
+      const cards = buildPaymentCards(paymentMethods);
       const navigationData = buildNavigationData(products, projects);
 
       const result = {

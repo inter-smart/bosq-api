@@ -53,6 +53,13 @@ function buildFooterIcons(links) {
 }
 
 
+function buildPaymentCards(links) {
+  return links.map(link => ({
+    media: singleMediaWithoutType(link, "icon_media_path", "icon_alt", "icon_alt_ar"),
+    ...(link?.link ? { link: link.link } : {}),
+
+  }))
+}
 
 
 function buildNavigationData(products, projects) {
@@ -143,4 +150,5 @@ module.exports = {
   buildFooterSection,
   buildFooterIcons,
   buildNavigationData,
+  buildPaymentCards
 }

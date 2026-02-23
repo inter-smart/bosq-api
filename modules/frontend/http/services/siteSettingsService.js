@@ -6,6 +6,7 @@ const {
   buildFooterSection,
   buildFooterIcons,
   buildNavigationData,
+  buildPaymentCards,
 } = require("../traits/dataManipulations/siteSettings");
 
 const cacheKey = cacheKeys.siteSettings;
@@ -78,7 +79,7 @@ class SiteSettingsService {
       const headerData = buildHeaderSection(siteSettings);
       const footerData = buildFooterSection(siteSettings);
       const socialMedia = buildFooterIcons(socialLinks);
-      const cards = buildFooterIcons(paymentMethods);
+      const cards = buildPaymentCards(paymentMethods);
       const navigationData = buildNavigationData(products, projects);
 
       const result = {

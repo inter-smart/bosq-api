@@ -33,11 +33,7 @@ class NewsLetterService {
       });
 
       if (existingEntry) {
-        const error = new Error(
-          "You already have a newsletter subscription with this email",
-        );
-        error.statusCode = 409; // Conflict
-        throw error;
+        throw Error("This email is already subscribed to the newsletter.");
       }
 
       const enquiry = await models.NewsLetter.create({

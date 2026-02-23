@@ -6,7 +6,6 @@ const { setCache, getCache } = require("../../../../redis/redisService");
 const ProductServiceHelpers = require("../../traits/products");
 
 const { singleMediaWithoutType } = require("../../traits/mediaButtonHelper");
-const { param } = require("../../../routes/products");
 
 class ProductsService {
   static async getProductBySlug(params, type, userId) {

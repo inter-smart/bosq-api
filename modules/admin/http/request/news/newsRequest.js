@@ -69,8 +69,6 @@ exports.validationRequestPost = [
     .isISO8601()
     .withMessage("Published date must be a valid date"),
 
-  // Sort order
-  body("sort_order").isInt().withMessage("Sort order must be an integer"),
 
   // Status
   body("status").isBoolean().withMessage("Status must be true or false"),

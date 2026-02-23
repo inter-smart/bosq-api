@@ -10,7 +10,10 @@ const {
   buildRelatedBlogSection,
   buildBlogDetailsData,
 } = require("../traits/dataManipulations/blogCms");
-const { buildTitleSection, buildOtherMetaData } = require("../traits/dataManipulations/common");
+const {
+  buildTitleSection,
+  buildOtherMetaData,
+} = require("../traits/dataManipulations/common");
 
 const cacheKey = cacheKeys.blog;
 
@@ -36,7 +39,7 @@ class BlogService {
           where: {
             status: true,
           },
-          order: [["sort_order", "ASC"]],
+          order: [["createdAt", "ASC"]],
         }),
       ]);
 
@@ -88,7 +91,7 @@ class BlogService {
 
       const { count, rows } = await models.Blogs.findAndCountAll({
         where: { status: true },
-        order: [["sort_order", "ASC"]],
+        order: [["updatedAt", "DESC"]],
         limit: parsedLimit,
         offset,
       });
@@ -148,7 +151,7 @@ class BlogService {
               "popular_blogs_title",
               "popular_blogs_title_ar",
             ],
-          }
+          },
         ),
         models.Blogs.findOne({
           where: {
@@ -164,19 +167,19 @@ class BlogService {
           models.Blogs.findOne({
             attributes: ["slug"],
             where: {
-              createdAt: { [Op.lt]: blog.createdAt },
-              status: true
+              updatedAt: { [Op.lt]: blog.updatedAt },
+              status: true,
             },
-            order: [["createdAt", "DESC"]],
+            order: [["updatedAt", "DESC"]],
           }),
 
           models.Blogs.findOne({
             attributes: ["slug"],
             where: {
-              createdAt: { [Op.gt]: blog.createdAt },
-              status: true
+              updatedAt: { [Op.gt]: blog.updatedAt },
+              status: true,
             },
-            order: [["createdAt", "ASC"]],
+            order: [["updatedAt", "ASC"]],
           }),
 
           keywords.length
@@ -201,8 +204,8 @@ class BlogService {
                       id: { [Op.ne]: blog.id },
                     },
                     {
-                      status: true
-                    }
+                      status: true,
+                    },
                   ],
                 },
 
@@ -212,8 +215,9 @@ class BlogService {
             : Promise.resolve([]),
 
           models.Blogs.findAll({
-            where:{
-              status: true
+            where: {
+              status: true,
+              id: { [Op.ne]: blog.id }, 
             },
             attributes: [
               "slug",
@@ -225,7 +229,7 @@ class BlogService {
               "published_date",
             ],
             limit: 5,
-            order: [["createdAt", "DESC"]],
+            order: [["viewCount", "DESC"]],
           }),
         ]);
 
@@ -234,12 +238,12 @@ class BlogService {
       const relatedBlogData = buildRelatedBlogSection(
         cms,
         relatedBlogs,
-        "related_blogs"
+        "related_blogs",
       );
       const popularBlogData = buildRelatedBlogSection(
         cms,
         popularBlogs,
-        "popular_blogs"
+        "popular_blogs",
       );
 
       const metaData = buildOtherMetaData(blog);
@@ -249,7 +253,7 @@ class BlogService {
         blogData,
         popularBlogData,
         relatedBlogData,
-        metaData
+        metaData,
       };
 
       await setCache(`${cacheKey}:${slug}`, result);
@@ -262,6 +266,14 @@ class BlogService {
       console.error("Error getting BLOG PAGE data:", error);
       throw new Error(`Error fetching blog page data: ${error.message}`);
     }
+  }
+  static async incrementView(slug) {
+    if (!slug) {
+      throw new Error("No slug provided");
+    }
+    await models.Blogs.increment("viewCount", {
+      where: { slug, status: true },
+    });
   }
 }
 

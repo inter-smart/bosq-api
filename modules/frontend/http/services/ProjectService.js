@@ -1,8 +1,13 @@
 const { models } = require("../../../../database/models");
-const { sendErrorResponse } = require("../../../admin/http/traits/responseHandler.js");
+const {
+  sendErrorResponse,
+} = require("../../../admin/http/traits/responseHandler.js");
 const cacheKeys = require("../../../redis/cacheKeys");
 const { setCache, getCache } = require("../../../redis/redisService");
-const { buildTitleSection, buildCmsSection } = require("../traits/dataManipulations/common");
+const {
+  buildTitleSection,
+  buildCmsSection,
+} = require("../traits/dataManipulations/common");
 const {
   buildProjectCategorySection,
   buildProjectBannerSection,
@@ -84,9 +89,26 @@ class PrivacyPolicyService {
 
       let queryOptions = {
         where: {
-          status: true,
+          status: true, 
         },
-        attributes: ["id", "slug", "title", "title_ar", "thumbnail", "section3_title"],
+        include: [
+          {
+            model: models.ProjectCategories,
+            as: "project_categories",
+            where: {
+              status: true,
+            },
+            required: true,
+          },
+        ],
+        attributes: [
+          "id",
+          "slug",
+          "title",
+          "title_ar",
+          "thumbnail",
+          "section3_title",
+        ],
         order: [["sort_order", "ASC"]],
         limit: parseInt(limit),
       };
@@ -109,11 +131,10 @@ class PrivacyPolicyService {
         countOptions.include = [categoryFilter];
       }
 
-      const [projects, totalCount] = await Promise.all([models.Projects.findAll(queryOptions), models.Projects.count(countOptions)]);
-
-      if (!projects || projects.length === 0) {
-        throw new Error("No project data found");
-      }
+      const [projects, totalCount] = await Promise.all([
+        models.Projects.findAll(queryOptions),
+        models.Projects.count(countOptions),
+      ]);
 
       const projectData = buildProjectListSection(projects);
 

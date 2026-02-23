@@ -46,12 +46,12 @@ class SiteSettingsService {
               status: true,
               parent_id: null
             },
-            attributes: ["name", "name_ar", "media_path", "slug"],
+            attributes: ["id", "name", "name_ar", "media_path", "slug"],
             include: [
               {
                 model: models.ProductCategory,
                 as: "children",
-                attributes: ["name", "name_ar", "media_path", "slug"],
+                attributes: ["id", "name", "name_ar", "media_path", "slug"],
                 where: { status: true },
                 required: false
               },

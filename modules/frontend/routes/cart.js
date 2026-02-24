@@ -9,6 +9,7 @@ const { cartContext } = require("../http/middleware/cartMiddleware.js");
 router.get("/similar-products", optionalAuth(), cartContext, CartController.getSimilarFromCart);
 router.get("/", optionalAuth(), cartContext, CartController.getCart);
 router.post("/add", optionalAuth(), cartContext, CartController.addItem);
+router.post("/buynow", optionalAuth(), cartContext, CartController.buyNowItem);
 router.put("/item/:itemId", optionalAuth(), cartContext, CartController.updateItem);
 router.delete("/item/:itemId", optionalAuth(), cartContext, CartController.removeItem);
 router.delete("/clear", optionalAuth(), cartContext, CartController.clearCart);

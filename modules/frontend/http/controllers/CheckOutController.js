@@ -30,6 +30,30 @@ class CheckOutController {
     }
   }
 
+  static async getBuyNowCartData(req, res) {
+    try {
+      const userId = req.auth?.id;
+      const sessionId = req.cartOwner?.id;
+
+      if (!userId && !sessionId) {
+        return ApiResponse.error(res, {
+          message: "User ID or Session ID is required",
+          status: HTTP_STATUS.BAD_REQUEST,
+        });
+      }
+
+      const cart = await CheckOutService.getBuyNowCartData(userId, sessionId);
+
+      return ApiResponse.success(res, {
+        message: "Buy now cart data retrieved successfully",
+        data: cart,
+        status: HTTP_STATUS.OK,
+      });
+    } catch (error) {
+      return ErrorHandler.handleControllerError(error, res, "CheckOutController.getBuyNowCartData");
+    }
+  }
+
   static async validateCheckout(req, res) {
     try {
       const cartOwner = req.cartOwner;

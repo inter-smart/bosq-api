@@ -5,6 +5,8 @@ const transformProductData = (productData, startFromVariant = false) => {
     return null;
   }
 
+  console.log("Transforming product data for product ID:", productData.id, "Start from variant:", startFromVariant);
+
   const jsonData = productData.toJSON();
 
   // Handle case when query starts from variant

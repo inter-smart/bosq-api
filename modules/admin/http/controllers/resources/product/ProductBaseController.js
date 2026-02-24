@@ -56,7 +56,6 @@ class ProductBaseController {
         searchFields: ["title", "slug", "description"],
         include: [
           { association: "sellingPoints", attributes: ["id", "name", "slug"], through: { attributes: [] } },
-          { association: "category", attributes: ["id", "name", "parent_id", "slug"] },
           { association: "models", attributes: ["id", "code", "title", "slug"] },
           { association: "sectors", attributes: ["id", "name", "slug"], through: { attributes: [] } },
           { association: "projectImages", attributes: ["id", "media_path", "media_alt", "media_alt_ar"] },
@@ -147,7 +146,6 @@ class ProductBaseController {
 
       const data = await DataModel.findByPk(id, {
         include: [
-          { association: "category", attributes: ["id", "name", "parent_id", "slug"] },
           { association: "sellingPoints", attributes: ["id", "name", "slug"] },
           { association: "sectors", attributes: ["id", "name", "slug"] },
         ],

@@ -22,10 +22,13 @@ class ProductsService {
     const filterEntries = Object.entries(filters);
 
     const isModelAndFilters = model && filterEntries.length > 0;
+    console.log("HERE");
 
     try {
       const baseProduct = await ProductServiceHelpers?.getProductBaseData(slug);
       const { data: baseData, fromCache } = baseProduct;
+
+      console.log("HERE");
 
       const relatedModels = await ProductServiceHelpers?.getProductVariantRelatedModels(baseData?.id);
 
@@ -275,18 +278,6 @@ class ProductsService {
       const allCategoryIds = [...categories, ...subCategories];
       let productBaseWhere = { status: true };
 
-      // Single category filter (from URL/params)
-      if (category && allCategoryIds.length === 0) {
-        productBaseWhere.category_id = parseInt(category);
-      }
-
-      // Multiple categories/subcategories filter (from filter UI)
-      if (allCategoryIds.length > 0) {
-        productBaseWhere.category_id = {
-          [Op.in]: allCategoryIds,
-        };
-      }
-
       // Build sector condition for many-to-many relationship
       let sectorCondition = null;
       if (sectors.length > 0) {
@@ -347,6 +338,22 @@ class ProductsService {
       const needsCategoryFilter = category || allCategoryIds.length > 0;
       const needsSectorFilter = sectors.length > 0;
 
+      // Build variant-level category EXISTS filter
+      if (needsCategoryFilter) {
+        const catIds = allCategoryIds.length > 0 ? allCategoryIds : [parseInt(category)];
+        const safeCatIds = catIds.filter((id) => Number.isInteger(id) && id > 0);
+        if (safeCatIds.length > 0) {
+          whereClause[Op.and] = [
+            ...(whereClause[Op.and] || []),
+            literal(`EXISTS (
+              SELECT 1 FROM "product_variant_categories" pvc_f
+              WHERE pvc_f."product_variant_id" = "ProductVariants"."id"
+                AND pvc_f."category_id" IN (${safeCatIds.join(",")})
+            )`),
+          ];
+        }
+      }
+
       console.log("ORDER CLAUSE", orderClause);
       console.log("ALL CATEGORY", needsCategoryFilter);
       console.log("ALL SECTOR", needsSectorFilter);
@@ -372,23 +379,25 @@ class ProductsService {
           ],
         },
         {
+          model: models.ProductCategory,
+          as: "categories",
+          attributes: ["id", "name", "name_ar", "slug"],
+          through: { attributes: [] },
+          required: false,
+        },
+        {
           attributes: ["id", "slug"],
           model: models.ProductModels,
           as: "productModel",
-          required: needsCategoryFilter || needsSectorFilter,
+          required: needsSectorFilter,
           include: [
             {
-              attributes: ["id", "category_id", "slug"],
+              attributes: ["id", "slug"],
               model: models.ProductBase,
               as: "product",
               where: productBaseWhere,
-              required: needsCategoryFilter || needsSectorFilter,
+              required: needsSectorFilter,
               include: [
-                {
-                  attributes: ["id", "name_ar", "name"],
-                  model: models.ProductCategory,
-                  as: "category",
-                },
                 ...(needsSectorFilter
                   ? [
                       {
@@ -484,8 +493,7 @@ class ProductsService {
           wishlisted: isItemWishListed(json?.id, wishlistedItems),
           price: json?.price,
           stock: json?.stock,
-          category_name: json?.productModel?.product?.category?.name || null,
-          category_ar: json?.productModel?.product?.category?.name_ar || null,
+          categories: (json?.categories || []).map((c) => ({ id: c.id, name: c.name, name_ar: c.name_ar, slug: c.slug })),
           variant_attributes: json?.variant_attributes,
           query_params: generateQueryParams(variantSku, modelSlug, formattedAttributes),
         };
@@ -691,14 +699,22 @@ class ProductsService {
       // Product base status
       conditions.push(`pb."status" = true`);
 
-      // Category / SubCategory filter
+      // Category / SubCategory filter (now on variant level via product_variant_categories)
       const allCategoryIds = [...categories, ...subCategories];
       if (allCategoryIds.length > 0) {
-        conditions.push(`pb."category_id" IN (:allCategoryIds)`);
         replacements.allCategoryIds = allCategoryIds;
+        conditions.push(`EXISTS (
+          SELECT 1 FROM "product_variant_categories" pvc_f
+          WHERE pvc_f."product_variant_id" = pv."id"
+            AND pvc_f."category_id" IN (:allCategoryIds)
+        )`);
       } else if (category) {
-        conditions.push(`pb."category_id" = :categoryId`);
         replacements.categoryId = parseInt(category);
+        conditions.push(`EXISTS (
+          SELECT 1 FROM "product_variant_categories" pvc_f
+          WHERE pvc_f."product_variant_id" = pv."id"
+            AND pvc_f."category_id" = :categoryId
+        )`);
       }
 
       // Sector filter — semi-join via EXISTS
@@ -761,9 +777,18 @@ class ProductsService {
 
         pb."slug"                         AS "base_slug",
 
-        pc."id"                           AS "category_id",
-        pc."name"                         AS "category_name",
-        pc."name_ar"                      AS "category_ar",
+        -- Aggregate categories as JSON array
+        COALESCE(
+          JSON_AGG(
+            DISTINCT JSONB_BUILD_OBJECT(
+              'id',      pc."id",
+              'name',    pc."name",
+              'name_ar', pc."name_ar",
+              'slug',    pc."slug"
+            )
+          ) FILTER (WHERE pc."id" IS NOT NULL),
+          '[]'
+        )                                 AS "categories",
 
         -- Aggregate variant attributes as JSON array
         COALESCE(
@@ -798,10 +823,12 @@ class ProductsService {
         ON pb."id" = pm."product_id"        -- adjust FK name if different
         AND pb."deletedAt" IS NULL
 
-      -- Category (always present, left join so category-less products don't disappear)
+      -- Categories via junction table (left join so category-less variants still show)
+      LEFT JOIN "product_variant_categories" pvc_cat
+        ON pvc_cat."product_variant_id" = pv."id"
       LEFT JOIN "product_categories" pc
-        ON pc."id" = pb."category_id"
-         AND pc."deletedAt" IS NULL
+        ON pc."id" = pvc_cat."category_id"
+        AND pc."deletedAt" IS NULL
 
       -- Variant attributes (left join — variants without attributes still show)
       LEFT JOIN "product_variant_attributes" pva
@@ -821,16 +848,14 @@ class ProductsService {
         pv."title",
         pv."title_ar",
         pv."media_path",
+        pv."hover_media_path",
         pv."price",
         pv."stock",
         pv."product_code",
         pv."sku",
         pv."product_model_id",
         pm."slug",
-        pb."slug",
-        pc."id",
-        pc."name",
-        pc."name_ar"
+        pb."slug"
 
       ORDER BY ${orderSQL}
 
@@ -914,8 +939,7 @@ class ProductsService {
           isWishlisted: isItemWishListed(row.id, wishlistedItems),
           price: row.price,
           stock: row.stock,
-          category_name: row.category_name || null,
-          category_ar: row.category_ar || null,
+          categories: Array.isArray(row.categories) ? row.categories : JSON.parse(row.categories || "[]"),
           variant_attributes: variantAttrs,
           query_params: generateQueryParams(row.sku, row.model_slug, formattedAttributes),
         };
@@ -980,21 +1004,32 @@ class ProductsService {
       // Build WHERE clause for variants
       const variantWhere = { status: true };
 
-      // Build product base where clause
-      const productBaseWhere = { status: true };
+      // Apply variant-level category filter via EXISTS subquery
       if (categoryIds.length > 0) {
-        productBaseWhere.category_id = { [Op.in]: categoryIds };
+        const safeCatIds = categoryIds.filter((id) => Number.isInteger(id) && id > 0);
+        variantWhere[Op.and] = [
+          literal(`EXISTS (
+            SELECT 1 FROM "product_variant_categories" pvc_f
+            WHERE pvc_f."product_variant_id" = "ProductVariants"."id"
+              AND pvc_f."category_id" IN (${safeCatIds.join(",")})
+          )`),
+        ];
       }
 
       // First approach: Search in variants and their related products
       const { rows: products, count: totalCount } = await models.ProductVariants.findAndCountAll({
         attributes: ["id", "title", "title_ar", "media_path", "price", "stock", "product_code", "sku"],
-        where: {
-          ...variantWhere,
-        },
+        where: variantWhere,
         limit: limitNum,
         offset,
         include: [
+          {
+            model: models.ProductCategory,
+            as: "categories",
+            attributes: ["id", "name", "name_ar", "slug", "parent_id"],
+            through: { attributes: [] },
+            required: false,
+          },
           {
             model: models.ProductModels,
             as: "productModel",
@@ -1005,16 +1040,9 @@ class ProductsService {
               {
                 model: models.ProductBase,
                 as: "product",
-                attributes: ["id", "title", "title_ar", "slug", "category_id"],
+                attributes: ["id", "title", "title_ar", "slug"],
                 required: true,
-                where: categoryIds.length > 0 ? productBaseWhere : { status: true },
-                include: [
-                  {
-                    model: models.ProductCategory,
-                    as: "category",
-                    attributes: ["id", "name", "name_ar", "slug", "parent_id"],
-                  },
-                ],
+                where: { status: true },
               },
             ],
           },
@@ -1054,13 +1082,13 @@ class ProductsService {
           product_code: json?.product_code,
           price: json?.price,
           stock: json?.stock,
-          category: {
-            id: json?.productModel?.product?.category?.id,
-            name: json?.productModel?.product?.category?.name,
-            name_ar: json?.productModel?.product?.category?.name_ar,
-            slug: json?.productModel?.product?.category?.slug,
-            parent_id: json?.productModel?.product?.category?.parent_id,
-          },
+          categories: (json?.categories || []).map((c) => ({
+            id: c?.id,
+            name: c?.name,
+            name_ar: c?.name_ar,
+            slug: c?.slug,
+            parent_id: c?.parent_id,
+          })),
           product: {
             id: json?.productModel?.product?.id,
             title: json?.productModel?.product?.title,
@@ -1125,6 +1153,13 @@ class ProductsService {
         where: whereClause,
         include: [
           {
+            model: models.ProductCategory,
+            as: "categories",
+            attributes: ["id", "name", "name_ar", "slug", "parent_id"],
+            through: { attributes: [] },
+            required: false,
+          },
+          {
             model: models.ProductModels,
             as: "productModel",
             attributes: ["id", "slug", "title", "title_ar"],
@@ -1137,13 +1172,6 @@ class ProductsService {
                 attributes: ["id", "title", "slug"],
                 required: true,
                 where: { status: true },
-                include: [
-                  {
-                    model: models.ProductCategory,
-                    as: "category",
-                    attributes: ["id", "name", "name_ar", "slug", "parent_id"],
-                  },
-                ],
               },
             ],
           },
@@ -1164,13 +1192,13 @@ class ProductsService {
           slug: json?.sku,
           stock: json?.stock,
           baseSlug: json?.productModel?.product?.slug,
-          category: {
-            id: json?.productModel?.product?.category?.id,
-            name: json?.productModel?.product?.category?.name,
-            name_ar: json?.productModel?.product?.category?.name_ar,
-            slug: json?.productModel?.product?.category?.slug,
-            parent_id: json?.productModel?.product?.category?.parent_id,
-          },
+          categories: (json?.categories || []).map((c) => ({
+            id: c?.id,
+            name: c?.name,
+            name_ar: c?.name_ar,
+            slug: c?.slug,
+            parent_id: c?.parent_id,
+          })),
         };
       });
 

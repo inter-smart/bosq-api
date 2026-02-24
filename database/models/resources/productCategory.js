@@ -82,6 +82,14 @@ module.exports = (sequelize) => {
         scope_type: "category",
       },
     });
+
+    // Variants (many-to-many via product_variant_categories)
+    ProductCategory.belongsToMany(models.ProductVariants, {
+      through: models.ProductVariantCategories,
+      foreignKey: "category_id",
+      otherKey: "product_variant_id",
+      as: "variants",
+    });
   };
 
   return ProductCategory;

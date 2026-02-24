@@ -103,6 +103,38 @@ class CartController {
   }
 
   /**
+   * Add item to cart
+   * POST /api/frontend/cart/buynow
+   */
+  static async buyNowItem(req, res) {
+    try {
+      const userId = req.auth?.id || null;
+      const { variant_id, quantity = 1 } = req.body;
+
+      let sessionId = null;
+
+      // For guest users, use cookie-based session
+      if (!userId) {
+        sessionId = CartController.getSessionId(req);
+        // Generate new session if doesn't exist
+        if (!sessionId) {
+          sessionId = CartController.generateAndSetSessionCookie(res);
+        }
+      }
+
+      const cart = await CartService.buyNowItem(userId, sessionId, variant_id, quantity);
+
+      return ApiResponse.success(res, {
+        message: "Item added to cart successfully",
+        data: cart,
+        status: HTTP_STATUS.OK,
+      });
+    } catch (error) {
+      return ErrorHandler.handleControllerError(error, res, "CartController.buyNowItem");
+    }
+  }
+
+  /**
    * Update cart item quantity
    * PUT /api/frontend/cart/item/:itemId
    */

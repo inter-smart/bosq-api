@@ -165,6 +165,19 @@ module.exports = (sequelize) => {
       as: "enquiries",
       onDelete: "CASCADE",
     });
+
+    // Categories (many-to-many via product_variant_categories)
+    ProductVariants.belongsToMany(models.ProductCategory, {
+      through: models.ProductVariantCategories,
+      foreignKey: "product_variant_id",
+      otherKey: "category_id",
+      as: "categories",
+    });
+
+    ProductVariants.hasMany(models.ProductVariantCategories, {
+      foreignKey: "product_variant_id",
+      as: "variantCategories",
+    });
   };
 
   return ProductVariants;

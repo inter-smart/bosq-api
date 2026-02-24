@@ -30,7 +30,7 @@ class OrderController {
 
       const cartOwner = req.cartOwner;
 
-      const { payment_type, address } = req.body;
+      const { payment_type, address, type = "cart" } = req.body;
 
       if (!cartOwner) {
         return ApiResponse.error(res, {
@@ -39,7 +39,7 @@ class OrderController {
         });
       }
 
-      const order = await OrderService.placeOrder(cartOwner, payment_type, address);
+      const order = await OrderService.placeOrder(cartOwner, payment_type, address, type);
 
       return ApiResponse.success(res, {
         message: "Order placed successfully",

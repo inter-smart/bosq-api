@@ -43,6 +43,11 @@ class ProductVariantsController {
               },
             ],
           },
+          {
+            association: "categories",
+            attributes: ["id", "name", "name_ar", "slug", "parent_id"],
+            through: { attributes: [] },
+          },
         ],
       });
 
@@ -66,7 +71,7 @@ class ProductVariantsController {
     const transaction = await sequelize.transaction();
 
     try {
-      const { product_model_id, variant_attributes: attributes, product_code = null } = req.body;
+      const { product_model_id, variant_attributes: attributes, product_code = null, category_ids } = req.body;
 
       const product = await models.ProductModels.findByPk(product_model_id);
       if (!product) {
@@ -99,7 +104,19 @@ class ProductVariantsController {
         return sendNotFoundError(res, "Invalid attribute or attribute value detected");
       }
 
-      await createOrUpdateVariantAttributes(transaction, attributes, product_model_id, "create", null, {});
+      const variant = await createOrUpdateVariantAttributes(transaction, attributes, product_model_id, "create", null, {});
+
+      // Associate categories if provided
+      if (category_ids && Array.isArray(category_ids) && category_ids.length > 0) {
+        const createdVariant = await DataModel.findOne({
+          where: { product_model_id },
+          order: [["createdAt", "DESC"]],
+          transaction,
+        });
+        if (createdVariant) {
+          await createdVariant.setCategories(category_ids, { transaction });
+        }
+      }
 
       await transaction.commit();
 
@@ -142,6 +159,11 @@ class ProductVariantsController {
             as: "variant_attributes",
             attributes: ["id", "attribute_id", "attribute_value_id", "price"],
           },
+          {
+            association: "categories",
+            attributes: ["id", "name", "name_ar", "slug", "parent_id"],
+            through: { attributes: [] },
+          },
         ],
       });
 
@@ -163,7 +185,7 @@ class ProductVariantsController {
 
     try {
       const { id } = req.params;
-      const { product_model_id, attributes } = req.body;
+      const { product_model_id, attributes, category_ids } = req.body;
 
       const fileFields = ["media_path", "hover_media_path"];
       handleFileUploadStore(req, fileFields);
@@ -171,6 +193,15 @@ class ProductVariantsController {
       const meta = req.body;
 
       await createOrUpdateVariantAttributes(transaction, attributes, product_model_id, "update", id, meta);
+
+      // Update categories if provided
+      if (category_ids !== undefined) {
+        const variant = await DataModel.findByPk(id, { transaction });
+        if (variant) {
+          const ids = Array.isArray(category_ids) ? category_ids.map(Number) : [];
+          await variant.setCategories(ids, { transaction });
+        }
+      }
 
       await transaction.commit();
 

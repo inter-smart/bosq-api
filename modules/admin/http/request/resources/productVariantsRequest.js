@@ -30,5 +30,21 @@ exports.validationRequestPost = [
 
   /* ---------- STATUS ---------- */
   body("status").optional({ nullable: true }).isBoolean().withMessage("Status must be true or false"),
+
+  /* ---------- CATEGORY IDS ---------- */
+  body("category_ids")
+    .optional({ nullable: true })
+    .customSanitizer((value) => {
+      if (typeof value === "string") {
+        try { return JSON.parse(value); } catch { return value; }
+      }
+      return value;
+    })
+    .isArray()
+    .withMessage("category_ids must be an array"),
+  body("category_ids.*")
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage("Each category ID must be a positive integer"),
 ];
 exports.validateId = [param("id").isInt({ min: 1 }).withMessage("ID must be a positive integer")];

@@ -9,19 +9,17 @@ const { Op } = require("sequelize");
 const { invalidateCache } = require("../../../../../redis/redisService");
 const cacheKeys = require("../../../../../redis/cacheKeys");
 
-
 const DataModel = models.ProductCategory;
 const cacheKey = cacheKeys.listingDropdownFilters;
 const homeCachKey = cacheKeys.home;
 
 class ProductCategoryController {
-
   static async generateUniqueSlug(name, ignoreId = null) {
     const baseSlug = slugify(name.trim(), { lower: true, strict: true });
 
     // Check for any slugs starting with the baseSlug
     const whereClause = {
-      slug: { [Op.like]: `${baseSlug}%` }
+      slug: { [Op.like]: `${baseSlug}%` },
     };
 
     // Exclude current record if updating
@@ -29,17 +27,15 @@ class ProductCategoryController {
       whereClause.id = { [Op.ne]: ignoreId };
     }
 
-
     const duplicates = await DataModel.findAll({
       where: whereClause,
-      attributes: ['slug'],
-      paranoid: true
+      attributes: ["slug"],
+      paranoid: true,
     });
-
 
     if (duplicates.length === 0) return baseSlug;
 
-    const slugSet = new Set(duplicates.map(d => d.slug));
+    const slugSet = new Set(duplicates.map((d) => d.slug));
 
     // If exact baseSlug not taken, use it
     if (!slugSet.has(baseSlug)) return baseSlug;
@@ -61,7 +57,16 @@ class ProductCategoryController {
           ["createdAt", "DESC"],
         ],
         searchFields: ["name", "slug"],
+        include: [
+          {
+            model: DataModel,
+            as: "parent",
+            attributes: ["id", "name", "slug", "media_path"],
+          },
+        ],
       });
+
+      // const categories =
 
       const response = {
         list: result.data,

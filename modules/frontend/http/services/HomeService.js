@@ -60,11 +60,14 @@ class HomeService {
             status: true,
             id: {
               [Op.in]: sequelize.literal(`(
-                SELECT DISTINCT pb."category_id"
-                FROM "product_base" pb
-                INNER JOIN "product_models" pm ON pm."product_id" = pb."id" AND pm."status" = true AND pm."deletedAt" IS NULL
-                INNER JOIN "product_variants" pv ON pv."product_model_id" = pm."id" AND pv."status" = true AND pv."deletedAt" IS NULL
-                WHERE pb."status" = true AND pb."deletedAt" IS NULL
+                SELECT DISTINCT pvc."category_id"
+                FROM "product_variant_categories" pvc
+                INNER JOIN "product_variants" pv ON pv."id" = pvc."product_variant_id"
+                  AND pv."status" = true AND pv."deletedAt" IS NULL
+                INNER JOIN "product_models" pm ON pm."id" = pv."product_model_id"
+                  AND pm."status" = true AND pm."deletedAt" IS NULL
+                INNER JOIN "product_base" pb ON pb."id" = pm."product_id"
+                  AND pb."status" = true AND pb."deletedAt" IS NULL
               )`),
             },
           },

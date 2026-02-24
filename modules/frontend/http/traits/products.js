@@ -26,7 +26,6 @@ const productAttributes = [
   "additional_details",
   "additional_details_ar",
   "media_path",
-  "category_id",
   "sort_order",
   "status",
 ];
@@ -53,7 +52,6 @@ class ProductServiceHelpers {
           required: false,
           through: { attributes: [] },
         },
-        { association: "category", attributes: ["id", "name", "name_ar", "parent_id", "slug"] },
         { association: "projectImages", attributes: ["id", "media_path", "media_alt", "media_alt_ar"] },
         { association: "faqs", attributes: ["id", "question", "answer", "question_ar", "answer_ar"] },
       ],
@@ -140,6 +138,13 @@ class ProductServiceHelpers {
       limit: 6,
       include: [
         {
+          model: models.ProductCategory,
+          as: "categories",
+          attributes: ["id", "name", "name_ar", "slug"],
+          through: { attributes: [] },
+          required: false,
+        },
+        {
           model: models.ProductModels,
           as: "productModel",
           attributes: ["id", "slug", "title"],
@@ -148,13 +153,6 @@ class ProductServiceHelpers {
               model: models.ProductBase,
               as: "product",
               attributes: ["id", "slug"],
-              include: [
-                {
-                  model: models.ProductCategory,
-                  as: "category",
-                  attributes: ["id", "name", "name_ar"],
-                },
-              ],
             },
           ],
         },
@@ -229,8 +227,7 @@ class ProductServiceHelpers {
         hasMoreVariants: modelVariantCount > 1,
         price: json?.price,
         stock: json?.stock,
-        category_name: json?.productModel?.product?.category?.name || null,
-        category_ar: json?.productModel?.product?.category?.name_ar || null,
+        categories: (json?.categories || []).map((c) => ({ id: c.id, name: c.name, name_ar: c.name_ar, slug: c.slug })),
         variant_attributes: json?.variant_attributes,
         query_params: generateQueryParams(variantSku, modelSlug, formattedAttributes),
       };

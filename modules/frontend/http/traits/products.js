@@ -54,7 +54,7 @@ class ProductServiceHelpers {
           through: { attributes: [] },
         },
         { association: "category", attributes: ["id", "name", "name_ar", "parent_id", "slug"] },
-        { association: "projectImages", attributes: ["id", "media_path", "media_alt", "media_alt_ar"], where: { status: true } },
+        { association: "projectImages", attributes: ["id", "media_path", "media_alt", "media_alt_ar"] },
         { association: "faqs", attributes: ["id", "question", "answer", "question_ar", "answer_ar"] },
       ],
     });

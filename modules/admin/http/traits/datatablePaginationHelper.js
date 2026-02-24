@@ -51,13 +51,19 @@ module.exports = {
 
     const { includeSubQuery, ...restOptions } = options;
 
+    // Detect if any where-clause keys use $association.field$ notation — those
+    // require a JOIN that the COUNT subquery won't have, so disable subQuery.
+    const hasAssociationWhere = Object.keys(restOptions.where || {}).some(
+      (key) => key.startsWith("$") && key.endsWith("$")
+    );
+
     // Build base query options
     const queryOptions = {
       ...restOptions,
       offset,
       limit: parsedLimit,
       distinct: true,
-      ...(includeSubQuery ? { subQuery: false } : {}),
+      ...(includeSubQuery || hasAssociationWhere ? { subQuery: false } : {}),
     };
 
     // Apply search logic if search term exists

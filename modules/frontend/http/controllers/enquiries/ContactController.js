@@ -1,5 +1,5 @@
 const { ApiResponse } = require("../../traits/response");
-const { HTTP_STATUS } = require("../../traits/constants");
+const { HTTP_STATUS, RESPONSE_MESSAGES } = require("../../traits/constants");
 const service = require("../../services/ContactEnquiryService.js");
 
 class ContactEnquiryController {
@@ -7,10 +7,7 @@ class ContactEnquiryController {
     try {
       const result = await service.store(req.body);
       return ApiResponse.success(res, {
-        message:
-          req.body.type === "contact"
-            ? "Contact enquiry submitted successfully"
-            : "Lead generation enquiry submitted successfully",
+        message: RESPONSE_MESSAGES.SUCCESS.ENQUIRY_RECEIVED,
         data: result,
         status: HTTP_STATUS.CREATED,
       });

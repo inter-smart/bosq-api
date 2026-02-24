@@ -11,7 +11,7 @@ class CustomizationEnquiryController {
     try {
       const data = await service.store(req.body);
       return ApiResponse.success(res, {
-        message: RESPONSE_MESSAGES.SUCCESS.DATA_RETRIEVED,
+        message: RESPONSE_MESSAGES.SUCCESS.ENQUIRY_RECEIVED,
         data,
         status: HTTP_STATUS.OK,
       });

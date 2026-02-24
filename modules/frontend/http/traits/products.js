@@ -1,5 +1,5 @@
 const { models, sequelize } = require("../../../../database/models/index");
-const { Op } = require("sequelize");
+const { Op, where } = require("sequelize");
 const cacheKeys = require("../../../redis/cacheKeys");
 const { getCache, setCache } = require("../../../redis/redisService");
 const { generateImageUrl } = require("../../traits/imageUrlHelper");
@@ -54,7 +54,7 @@ class ProductServiceHelpers {
           through: { attributes: [] },
         },
         { association: "category", attributes: ["id", "name", "name_ar", "parent_id", "slug"] },
-        { association: "projectImages", attributes: ["id", "media_path", "media_alt", "media_alt_ar"] },
+        { association: "projectImages", attributes: ["id", "media_path", "media_alt", "media_alt_ar"], where: { status: true } },
         { association: "faqs", attributes: ["id", "question", "answer", "question_ar", "answer_ar"] },
       ],
     });

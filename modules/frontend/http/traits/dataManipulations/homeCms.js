@@ -138,9 +138,10 @@ function buildFeaturedProductSection(cms, data) {
     ...titleSection,
     list: data?.map((item) => ({
       media: singleMediaWithoutType(item, "media_path", "name", "name_ar"),
-      name: item?.name,
-      name_ar: item?.name_ar,
-      slug: item?.slug,
+      name: item?.name ?? null,
+      name_ar: item?.name_ar ?? null,
+      slug: item?.slug ?? null,
+      parent_id: item?.parent_id ?? null,
     })),
   };
 

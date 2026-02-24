@@ -1,6 +1,6 @@
 const { Op } = require("sequelize");
 const { redisClient } = require("../../../../config/redis");
-const { models } = require("../../../../database/models");
+const { models, sequelize } = require("../../../../database/models");
 
 const cacheKeys = require("../../../redis/cacheKeys");
 const { getCache, setCache } = require("../../../redis/redisService");
@@ -55,11 +55,21 @@ class HomeService {
         }),
 
         models.ProductCategory.findAll({
-          attributes: ["id", "name", "name_ar", "media_path", "slug"],
+          attributes: ["id", "name", "name_ar", "media_path", "slug", "parent_id"],
           where: {
             status: true,
+            id: {
+              [Op.in]: sequelize.literal(`(
+                SELECT DISTINCT pb."category_id"
+                FROM "product_base" pb
+                INNER JOIN "product_models" pm ON pm."product_id" = pb."id" AND pm."status" = true AND pm."deletedAt" IS NULL
+                INNER JOIN "product_variants" pv ON pv."product_model_id" = pm."id" AND pv."status" = true AND pv."deletedAt" IS NULL
+                WHERE pb."status" = true AND pb."deletedAt" IS NULL
+              )`),
+            },
           },
           order: [["sort_order", "ASC"]],
+          limit: 6,
         }),
         models.Projects.findAll({
           attributes: ["id", "title", "title_ar", "thumbnail", "slug"],

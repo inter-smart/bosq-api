@@ -198,7 +198,7 @@ class ProductVariantsController {
       if (category_ids !== undefined) {
         const variant = await DataModel.findByPk(id, { transaction });
         if (variant) {
-          const ids = Array.isArray(category_ids) ? category_ids : [];
+          const ids = Array.isArray(category_ids) ? category_ids.map(Number) : [];
           await variant.setCategories(ids, { transaction });
         }
       }

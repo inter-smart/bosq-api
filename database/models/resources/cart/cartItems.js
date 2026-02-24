@@ -57,6 +57,12 @@ module.exports = (sequelize) => {
         defaultValue: 0,
       },
 
+      is_buy_now: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+      },
+
       final_price: {
         type: DataTypes.DECIMAL(10, 2),
         allowNull: false,

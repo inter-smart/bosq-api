@@ -4,6 +4,7 @@ const { HTTP_STATUS, ERROR_CODES, RESPONSE_MESSAGES } = require("../traits/const
 const { generateImageUrl } = require("../../traits/imageUrlHelper.js");
 const ProductServiceHelpers = require("../traits/products.js");
 const { isItemWishListed, generateQueryParams } = require("../traits/dataManipulations/product/product.js");
+const { Op } = require("sequelize");
 
 class CartService {
   /**
@@ -37,6 +38,29 @@ class CartService {
   }
 
   /**
+   * Set all other buy now to false to set the new item for buy now, ensuring only one buy now item at a time
+   */
+  static async revertBuyNowItems(cartId, transaction = null) {
+    const cartItems = await models.CartItems.findAll({
+      where: {
+        cart_id: cartId,
+      },
+      transaction,
+    });
+
+    if (!cartItems || cartItems.length === 0) {
+      return;
+    }
+    await models.CartItems.destroy({
+      where: {
+        cart_id: cartId,
+        is_buy_now: true,
+      },
+      transaction,
+    });
+  }
+
+  /**
    * Get cart with items
    */
   static async getCart(userId, sessionId) {
@@ -51,6 +75,7 @@ class CartService {
             {
               model: models.CartItems,
               as: "items",
+              where: { is_buy_now: false },
               include: [
                 {
                   model: models.ProductBase,
@@ -89,6 +114,7 @@ class CartService {
           {
             model: models.CartItems,
             as: "items",
+            where: { is_buy_now: false },
             include: [
               {
                 model: models.ProductBase,
@@ -209,6 +235,85 @@ class CartService {
 
       // Return updated cart
       // return await this.getCart(userId, sessionId);
+    } catch (error) {
+      if (!transaction.finished) {
+        await transaction.rollback();
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Buy now - add item to cart with is_buy_now flag
+   */
+  static async buyNowItem(userId, sessionId, variantId, quantity = 1) {
+    const transaction = await sequelize.transaction();
+
+    try {
+      const variant = await models.ProductVariants.findOne({
+        attributes: ["id", "price", "status", "stock"],
+        where: { id: variantId, status: true },
+        transaction,
+      });
+
+      if (!variant) {
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.PRODUCT_VARIANT_NOT_FOUND, HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
+      }
+
+      if (variant.stock < quantity) {
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.OUT_OF_STOCK, HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
+      }
+
+      let price = variant.price;
+
+      const cart = await this.getOrCreateCart(userId, sessionId, transaction);
+
+      const existingItem = await models.CartItems.findOne({
+        where: {
+          cart_id: cart.id,
+          variant_id: variantId || null,
+          is_buy_now: true,
+        },
+        transaction,
+      });
+
+      const currentQuantityInCart = existingItem ? existingItem.quantity : 0;
+
+      if (currentQuantityInCart + quantity > variant.stock) {
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.OUT_OF_STOCK, HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
+      }
+
+      if (existingItem) {
+        await existingItem.update(
+          {
+            quantity: existingItem.quantity + quantity,
+            final_price: (existingItem.quantity + quantity) * price,
+          },
+          { transaction },
+        );
+      } else {
+        await this.revertBuyNowItems(cart.id, transaction);
+        await models.CartItems.create(
+          {
+            cart_id: cart.id,
+            variant_id: variantId || null,
+            quantity,
+            price,
+            final_price: quantity * price,
+            discount_amount: 0,
+            is_buy_now: true,
+          },
+          { transaction },
+        );
+      }
+
+      // Recalculate totals
+      await ProductServiceHelpers.recalculateCartTotals(cart.id, transaction);
+
+      await transaction.commit();
+
+      // Return updated cart
+      return await this.getCart(userId, sessionId, "buynow");
     } catch (error) {
       if (!transaction.finished) {
         await transaction.rollback();
@@ -541,6 +646,8 @@ class CartService {
       return [];
     }
 
+    const currentCartItemsId = cart.items.map((item) => item.variant_id);
+
     // 3. Wishlist check for logged-in users
     let wishlistedItems = [];
     if (userId) {
@@ -558,7 +665,7 @@ class CartService {
 
     // 5. Fetch up to 6 variants from the dominant model
     const variants = await models.ProductVariants.findAll({
-      where: { product_model_id: dominantModelId, status: true },
+      where: { product_model_id: dominantModelId, status: true, id: { [Op.notIn]: currentCartItemsId } },
       limit: 6,
       attributes: ["id", "title", "title_ar", "media_path", "price", "stock", "product_code", "sku", "product_model_id"],
       include: [

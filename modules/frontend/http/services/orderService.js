@@ -3,6 +3,7 @@ const { ErrorHandler } = require("../traits/errorHandler.js");
 const { HTTP_STATUS, ERROR_CODES } = require("../traits/constants.js");
 const { generateImageUrl } = require("../../traits/imageUrlHelper.js");
 const crypto = require("crypto");
+const { Op } = require("sequelize");
 
 const modelsMap = {
   user: {
@@ -29,8 +30,10 @@ class OrderService {
   /**
    * Place a new order from the active cart
    */
-  static async placeOrder(cartOwner, paymentType = "cod", address = {}) {
+  static async placeOrder(cartOwner, paymentType = "cod", address = {}, type = "cart") {
     const transaction = await sequelize.transaction();
+
+    console.log(type);
 
     const { type: userType, id: ownerId } = cartOwner;
     const isGuest = userType === "guest";
@@ -66,6 +69,7 @@ class OrderService {
           {
             model: models.CartItems,
             as: "items",
+            where: type === "buynow" ? { is_buy_now: true } : {},
             include: [
               {
                 model: models.ProductBase,
@@ -106,83 +110,96 @@ class OrderService {
       }
 
       // Create the order
-      const order = await models.Orders.create(
-        {
-          order_id: this.generateOrderId(),
-          user_id: userId,
-          session_id: sessionId,
-          status: "pending",
-          payment_status: "pending",
-          payment_type: paymentType,
-          subtotal: cart.subtotal,
-          discount_total: cart.discount_total,
-          tax_total: cart.tax_total,
-          grand_total: cart.grand_total,
-        },
-        { transaction },
-      );
+      // const order = await models.Orders.create(
+      //   {
+      //     order_id: this.generateOrderId(),
+      //     user_id: userId,
+      //     session_id: sessionId,
+      //     status: "pending",
+      //     payment_status: "pending",
+      //     payment_type: paymentType,
+      //     subtotal: cart.subtotal,
+      //     discount_total: cart.discount_total,
+      //     tax_total: cart.tax_total,
+      //     grand_total: cart.grand_total,
+      //   },
+      //   { transaction },
+      // );
 
       // Create order items and reduce stock
-      for (const item of cart.items) {
-        await models.OrderItem.create(
-          {
-            order_id: order.id,
-            product_id: item.product_id,
-            variant_id: item.variant_id,
-            quantity: item.quantity,
-            price: item.price,
-            discount_amount: item.discount_amount,
-          },
-          { transaction },
-        );
+      // for (const item of cart.items) {
+      //   await models.OrderItem.create(
+      //     {
+      //       order_id: order.id,
+      //       product_id: item.product_id,
+      //       variant_id: item.variant_id,
+      //       quantity: item.quantity,
+      //       price: item.price,
+      //       discount_amount: item.discount_amount,
+      //     },
+      //     { transaction },
+      //   );
 
-        // Reduce variant stock
-        await models.ProductVariants.update({ stock: item.variant.stock - item.quantity }, { where: { id: item.variant_id }, transaction });
-      }
+      //   // Reduce variant stock
+      //   await models.ProductVariants.update({ stock: item.variant.stock - item.quantity }, { where: { id: item.variant_id }, transaction });
+      // }
 
       // Create order addresses (billing + shipping)
-      if (cartBillingAddress) {
-        const billingAddress = await models.OrderAddress.create(
-          {
-            order_id: order.id,
-            address_type: "billing",
-            name: cartBillingAddress.name,
-            company_name: cartBillingAddress.company_name,
-            email: cartBillingAddress.email,
-            country_code: cartBillingAddress.country_code || "+91",
-            phone: cartBillingAddress.phone,
-            street_address: cartBillingAddress.street_address,
-            apartment: cartBillingAddress.apartment || null,
-            state_id: cartBillingAddress.state_id || null,
-            order_notes: cartBillingAddress.order_notes || null,
-          },
-          { transaction },
-        );
+      // if (cartBillingAddress) {
+      //   const billingAddress = await models.OrderAddress.create(
+      //     {
+      //       order_id: order.id,
+      //       address_type: "billing",
+      //       name: cartBillingAddress.name,
+      //       company_name: cartBillingAddress.company_name,
+      //       email: cartBillingAddress.email,
+      //       country_code: cartBillingAddress.country_code || "+91",
+      //       phone: cartBillingAddress.phone,
+      //       street_address: cartBillingAddress.street_address,
+      //       apartment: cartBillingAddress.apartment || null,
+      //       state_id: cartBillingAddress.state_id || null,
+      //       order_notes: cartBillingAddress.order_notes || null,
+      //     },
+      //     { transaction },
+      //   );
 
-        if (cartShippingAddress) {
-          await models.OrderAddress.create(
-            {
-              order_id: order.id,
-              address_type: "shipping",
-              name: cartShippingAddress.name,
-              company_name: cartShippingAddress.company_name,
-              email: cartShippingAddress.email,
-              country_code: cartShippingAddress.country_code || "+91",
-              phone: cartShippingAddress.phone,
-              street_address: cartShippingAddress.street_address,
-              apartment: cartShippingAddress.apartment || null,
-              state_id: cartShippingAddress.state_id || null,
-              order_notes: cartShippingAddress.order_notes || null,
-            },
-            { transaction },
-          );
-        }
-      }
+      //   if (cartShippingAddress) {
+      //     await models.OrderAddress.create(
+      //       {
+      //         order_id: order.id,
+      //         address_type: "shipping",
+      //         name: cartShippingAddress.name,
+      //         company_name: cartShippingAddress.company_name,
+      //         email: cartShippingAddress.email,
+      //         country_code: cartShippingAddress.country_code || "+91",
+      //         phone: cartShippingAddress.phone,
+      //         street_address: cartShippingAddress.street_address,
+      //         apartment: cartShippingAddress.apartment || null,
+      //         state_id: cartShippingAddress.state_id || null,
+      //         order_notes: cartShippingAddress.order_notes || null,
+      //       },
+      //       { transaction },
+      //     );
+      //   }
+      // }
 
       // Mark cart as ordered and clear items
-      await cart.update({ status: "ordered" }, { transaction });
+      type == "cart" && (await cart.update({ status: "ordered" }, { transaction }));
+
+      const cartItemswhere = {
+        cart_id: cart.id,
+      };
+
+      if (type === "buynow") {
+        cartItemswhere.is_buy_now = true;
+      }
+
+      console.log(cartItemswhere);
+
+      return;
+
       await models.CartItems.destroy({
-        where: { cart_id: cart.id },
+        where: cartItemswhere,
         transaction,
       });
 

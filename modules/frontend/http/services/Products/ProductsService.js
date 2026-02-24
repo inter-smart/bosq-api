@@ -22,10 +22,13 @@ class ProductsService {
     const filterEntries = Object.entries(filters);
 
     const isModelAndFilters = model && filterEntries.length > 0;
+    console.log("HERE");
 
     try {
       const baseProduct = await ProductServiceHelpers?.getProductBaseData(slug);
       const { data: baseData, fromCache } = baseProduct;
+
+      console.log("HERE");
 
       const relatedModels = await ProductServiceHelpers?.getProductVariantRelatedModels(baseData?.id);
 

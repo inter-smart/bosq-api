@@ -85,6 +85,8 @@ class CheckOutService {
         {
           model: models.CartItems,
           as: "items",
+          where: { is_buy_now: false },
+
           include: [
             {
               model: models.ProductVariants,
@@ -127,6 +129,94 @@ class CheckOutService {
           },
         ],
       }));
+
+    const itemCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
+
+    return {
+      id: cart.id,
+      items: cart.items.map((item) => ({
+        id: item.id,
+        variant_id: item.variant_id,
+        title: item.variant.title,
+        slug: item.variant.sku,
+        price: item.price,
+        media_path: generateImageUrl(item.variant.media_path),
+        quantity: item.quantity,
+        discount_amount: item.discount_amount,
+        line_total: (parseFloat(item.price) * item.quantity).toFixed(2),
+        is_sold_out: item.variant ? item.variant.stock < item.quantity : false,
+      })),
+      sub_total: cart.subtotal,
+      discount_total: cart.discount_total,
+      tax_total: cart.tax_total,
+      grand_total: cart.grand_total,
+      applied_coupon_code: cart.applied_coupon_code,
+      item_count: itemCount,
+    };
+  }
+
+  /**
+   * Get cart with  buy now items
+   */
+  static async getBuyNowCartData(userId, sessionId) {
+    const whereClause = userId ? { user_id: userId } : { session_id: sessionId, user_id: null };
+
+    console.log(`Fetching buy now cart data for ${userId ? "user" : "guest"} with ID ${userId || sessionId}`);
+
+    const cart = await models.Cart.findOne({
+      where: whereClause,
+      include: [
+        {
+          model: models.CartItems,
+          as: "items",
+          where: { is_buy_now: true },
+          include: [
+            {
+              model: models.ProductVariants,
+              as: "variant",
+              attributes: ["id", "sku", "price", "media_path", "title", "stock"],
+            },
+          ],
+        },
+      ],
+    });
+
+    console.log("CART 1111", JSON.stringify(cart, null, 2));
+
+    if (!cart) {
+      return {
+        cart: [],
+      };
+    }
+
+    const appliedCouponScope = cart.applied_coupon_scope;
+
+    appliedCouponScope !== "common" && (await ProductServiceHelpers.validateCoupon(cart));
+
+    appliedCouponScope !== "common" &&
+      (await cart.reload({
+        include: [
+          {
+            model: models.CartItems,
+            as: "items",
+            where: { is_buy_now: true },
+            include: [
+              {
+                model: models.ProductBase,
+                as: "product",
+                attributes: ["id", "title", "slug"],
+              },
+              {
+                model: models.ProductVariants,
+                as: "variant",
+                attributes: ["id", "sku", "price", "media_path", "stock", "title", "title_ar"],
+              },
+            ],
+          },
+        ],
+      }));
+
+    console.log("CART 2222", JSON.stringify(cart, null, 2));
 
     const itemCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
 

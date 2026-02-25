@@ -51,6 +51,14 @@ const RESPONSE_MESSAGES = {
       en: "Logout successful",
       ar: "تم تسجيل الخروج بنجاح",
     },
+    PROFILE_UPDATED: {
+      en: "Profile updated successfully",
+      ar: "تم تحديث الملف الشخصي بنجاح",
+    },
+    PASSWORD_CHANGED: {
+      en: "Password changed successfully. Please login again.",
+      ar: "تم تغيير كلمة المرور بنجاح. يرجى تسجيل الدخول مرة أخرى.",
+    },
     STATS_RETRIEVED: {
       en: "Statistics retrieved successfully",
       ar: "تم جلب الإحصائيات بنجاح",
@@ -236,6 +244,31 @@ const RESPONSE_MESSAGES = {
       en: "Invalid state",
       ar: "الولاية غير صالحة",
     },
+    USER_NOT_FOUND: {
+      en: "User not found",
+      ar: "لم يتم العثور على المستخدم",
+    },
+    EMAIL_ALREADY_IN_USE: {
+      en: "Email already in use by another account",
+      ar: "البريد الإلكتروني مستخدم بالفعل من قبل حساب آخر",
+    },
+    USER_NO_PASSWORD: {
+      en: "User does not have a password set",
+      ar: "لم يتم تعيين كلمة مرور للمستخدم",
+    },
+    CURRENT_PASSWORD_INCORRECT: {
+      en: "Current password is incorrect",
+      ar: "كلمة المرور الحالية غير صحيحة",
+    },
+    PASSWORD_SAME_AS_OLD: {
+      en: "New password must be different from old password",
+      ar: "يجب أن تكون كلمة المرور الجديدة مختلفة عن كلمة المرور القديمة",
+    },
+
+    EMAIL_ALREADY_EXISTS:{
+      en: "This email is already subscribed to the newsletter",
+      ar: "هذا البريد الإلكتروني مشترك بالفعل في النشرة الإخبارية",
+    }
   },
 };
 

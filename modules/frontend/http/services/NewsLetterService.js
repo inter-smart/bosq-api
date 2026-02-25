@@ -41,7 +41,7 @@ class NewsLetterService {
 
       if (existingEntry) {
         throw ErrorHandler.createError(
-          RESPONSE_MESSAGES.ERROR.DUPLICATE_ENTRY,
+          RESPONSE_MESSAGES.ERROR.EMAIL_ALREADY_EXISTS,
           HTTP_STATUS.CONFLICT,
           ERROR_CODES.DUPLICATE_ERROR,
         );

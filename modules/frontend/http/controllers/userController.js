@@ -35,7 +35,7 @@ class UserController {
         try {
             const data = await service.editProfile(req,res);
             return ApiResponse.success(res, {
-                message: RESPONSE_MESSAGES.SUCCESS.DATA_RETRIEVED,
+                message: RESPONSE_MESSAGES.SUCCESS.PROFILE_UPDATED,
                 data,
                 status: HTTP_STATUS.OK,
             });
@@ -48,10 +48,10 @@ class UserController {
 
     static async changePassword(req, res) {
         try {
-            const data = await service.changePassword(req,res);
+            await service.changePassword(req,res);
             return ApiResponse.success(res, {
-                message: RESPONSE_MESSAGES.SUCCESS.DATA_RETRIEVED,
-                data,
+                message: RESPONSE_MESSAGES.SUCCESS.PASSWORD_CHANGED,
+                data: null,
                 status: HTTP_STATUS.OK,
             });
         } catch (error) {
@@ -62,7 +62,12 @@ class UserController {
 
   static async logout(req, res) {
     try {
-      return await service.logout(req, res);
+      await service.logout(req, res);
+      return ApiResponse.success(res, {
+        message: RESPONSE_MESSAGES.SUCCESS.LOGOUT_SUCCESSFUL,
+        data: null,
+        status: HTTP_STATUS.OK,
+      });
     } catch (error) {
       return ErrorHandler.handleControllerError(error, res, "userController");
     }

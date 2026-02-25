@@ -544,7 +544,7 @@ class ProductsService {
           stock: json?.stock,
           categories: (json?.categories || []).map((c) => ({ id: c.id, name: c.name, name_ar: c.name_ar, slug: c.slug })),
           variant_attributes: json?.variant_attributes,
-          query_params: generateQueryParams(variantSku, modelSlug, formattedAttributes),
+          query_params: generateQueryParams(variantSku, formattedAttributes),
         };
       });
 
@@ -990,7 +990,7 @@ class ProductsService {
           stock: row.stock,
           categories: Array.isArray(row.categories) ? row.categories : JSON.parse(row.categories || "[]"),
           variant_attributes: variantAttrs,
-          query_params: generateQueryParams(row.sku, row.model_slug, formattedAttributes),
+          query_params: generateQueryParams(row.sku, formattedAttributes),
         };
       });
 

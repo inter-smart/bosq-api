@@ -127,9 +127,6 @@ class ProductServiceHelpers {
       });
     }
 
-    console.log(variantId);
-    console.log(wishlistedItems);
-
     const isVariantWishListed = wishlistedItems.some((item) => item.product_variant_id == variantId);
 
     const similarProducts = variants.map((item) => {
@@ -166,7 +163,7 @@ class ProductServiceHelpers {
         stock: json?.stock,
         categories: (json?.categories || []).map((c) => ({ id: c.id, name: c.name, name_ar: c.name_ar, slug: c.slug })),
         variant_attributes: json?.variant_attributes,
-        query_params: generateQueryParams(variantSku, modelSlug, formattedAttributes),
+        query_params: generateQueryParams(variantSku, formattedAttributes),
       };
     });
 
@@ -264,7 +261,7 @@ class ProductServiceHelpers {
         price: json?.price,
         stock: json?.stock,
         categories: (json?.categories || []).map((c) => ({ id: c.id, name: c.name, name_ar: c.name_ar, slug: c.slug })),
-        query_params: generateQueryParams(json?.sku, modelSlug, formattedAttributes),
+        query_params: generateQueryParams(json?.sku, formattedAttributes),
       };
     });
 

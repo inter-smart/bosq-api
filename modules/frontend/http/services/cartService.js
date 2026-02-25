@@ -811,7 +811,7 @@ class CartService {
         category_name: json?.productModel?.product?.category?.name || null,
         category_ar: json?.productModel?.product?.category?.name_ar || null,
         variant_attributes: json?.variant_attributes,
-        query_params: generateQueryParams(variantSku, modelSlug, formattedAttributes),
+        query_params: generateQueryParams(variantSku, formattedAttributes),
       };
     });
   }

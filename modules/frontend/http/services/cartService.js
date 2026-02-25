@@ -143,7 +143,7 @@ class CartService {
           product_id: item?.product_id,
           variant_id: item?.variant_id,
           title: item?.variant?.title,
-          media_path: generateImageUrl(item?.variant.media_path),
+          media_path: generateImageUrl(item?.variant?.media_path),
           quantity: item?.quantity,
           price: item?.price,
           discount_amount: item?.discount_amount,

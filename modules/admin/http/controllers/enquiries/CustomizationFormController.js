@@ -1,5 +1,8 @@
 const { validationResult } = require("express-validator");
-const { sequelize, models } = require("../../../../../database/models/index.js");
+const {
+  sequelize,
+  models,
+} = require("../../../../../database/models/index.js");
 const {
   sendValidationError,
   sendSuccessResponse,
@@ -13,9 +16,7 @@ const {
   validationRequestPost,
   validateId,
 } = require("../../request/enquiry/contactEnquiriesRequest.js");
-const {
-  paginate,
-} = require("../../traits/datatablePaginationHelper.js");
+const { paginate } = require("../../traits/datatablePaginationHelper.js");
 
 const DataModel = models.CustomizationEnquiry;
 
@@ -23,9 +24,7 @@ class ContactEnquiryController {
   static async index(req, res) {
     try {
       const result = await paginate(DataModel, req, {
-        order: [
-          ["createdAt", "DESC"],
-        ],
+        order: [["createdAt", "DESC"]],
         include: [
           {
             model: models.EnquiryDropdown,
@@ -36,9 +35,9 @@ class ContactEnquiryController {
             model: models.State,
             as: "state",
             attributes: ["id", "name", "slug"],
-          }
+          },
         ],
-        searchFields: ["first_name", "last_name", "email"],
+        searchFields: ["email", ["first_name", "last_name"]],
       });
 
       const response = {
@@ -52,7 +51,6 @@ class ContactEnquiryController {
       sendErrorResponse(res, error);
     }
   }
-
 
   static async show(req, res) {
     // Run ID validation
@@ -76,7 +74,7 @@ class ContactEnquiryController {
             model: models.State,
             as: "state",
             attributes: ["id", "name", "slug"],
-          }
+          },
         ],
       });
 
@@ -90,7 +88,6 @@ class ContactEnquiryController {
       sendErrorResponse(res, error);
     }
   }
-
 
   static async destroy(req, res) {
     // Run ID validation

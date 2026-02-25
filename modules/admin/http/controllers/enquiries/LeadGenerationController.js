@@ -28,7 +28,7 @@ class LeadGenerationController {
           type: LEAD_TYPE,
         },
         order: [["createdAt", "DESC"]],
-        searchFields: ["name", "email", "phone", "message"],
+        searchFields: ["name", "email"],
       });
 
       const response = {

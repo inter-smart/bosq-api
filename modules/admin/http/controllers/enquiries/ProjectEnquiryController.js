@@ -28,9 +28,11 @@ class ProjectEnquiryController {
             model: models.Projects,
             as: "project",
             attributes: ["id", "title", "slug"],
+                  required: false, // IMPORTANT for search
+
           },
         ],
-        searchFields: ["name", "email"],
+        searchFields: ["name", "email",],
       });
 
       const response = {

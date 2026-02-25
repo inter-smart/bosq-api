@@ -3,6 +3,12 @@ const EmailService = require("../../../../services/EmailService");
 const {
   validateRecaptcha,
 } = require("../../../../services/RecaptchaValidation");
+const { ErrorHandler } = require("../traits/errorHandler");
+const {
+  RESPONSE_MESSAGES,
+  ERROR_CODES,
+  HTTP_STATUS,
+} = require("../traits/constants");
 
 class NewsLetterService {
   static async store(data) {
@@ -11,20 +17,21 @@ class NewsLetterService {
       const token = data?.recaptcha_token;
 
       if (!token) {
-        throw new Error("reCAPTCHA token missing");
+        throw ErrorHandler.createError(
+          RESPONSE_MESSAGES.ERROR.RECAPTCHA_MISSING,
+          HTTP_STATUS.BAD_REQUEST,
+          ERROR_CODES.VALIDATION_ERROR,
+        );
       }
 
-      const { success, score, action } = await validateRecaptcha(token);
+      const { success, score } = await validateRecaptcha(token);
 
-      console.log("reCAPTCHA result:", { success, score, action });
-
-      // ✅ v3 validation
       if (!success || score < 0.5) {
-        const error = new Error(
-          "reCAPTCHA verification failed. Please try again.",
+        throw ErrorHandler.createError(
+          RESPONSE_MESSAGES.ERROR.RECAPTCHA_FAILED,
+          HTTP_STATUS.FORBIDDEN,
+          ERROR_CODES.VALIDATION_ERROR,
         );
-        error.statusCode = 403;
-        throw error;
       }
 
       // check user already exist
@@ -33,7 +40,11 @@ class NewsLetterService {
       });
 
       if (existingEntry) {
-        throw Error("This email is already subscribed to the newsletter.");
+        throw ErrorHandler.createError(
+          RESPONSE_MESSAGES.ERROR.DUPLICATE_ENTRY,
+          HTTP_STATUS.CONFLICT,
+          ERROR_CODES.DUPLICATE_ERROR,
+        );
       }
 
       const enquiry = await models.NewsLetter.create({

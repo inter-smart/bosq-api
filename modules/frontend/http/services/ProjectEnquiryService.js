@@ -3,6 +3,12 @@ const {
   validateRecaptcha,
 } = require("../../../../services/RecaptchaValidation");
 const EmailService = require("../../../../services/EmailService");
+const { ErrorHandler } = require("../traits/errorHandler");
+const {
+  RESPONSE_MESSAGES,
+  ERROR_CODES,
+  HTTP_STATUS,
+} = require("../traits/constants");
 
 class ProjectEnquiryService {
   static async store(data) {
@@ -10,17 +16,21 @@ class ProjectEnquiryService {
       const token = data?.recaptcha_token;
 
       if (!token) {
-        throw new Error("reCAPTCHA token missing");
+        throw ErrorHandler.createError(
+          RESPONSE_MESSAGES.ERROR.RECAPTCHA_MISSING,
+          HTTP_STATUS.BAD_REQUEST,
+          ERROR_CODES.VALIDATION_ERROR,
+        );
       }
 
       const { success, score } = await validateRecaptcha(token);
 
       if (!success || score < 0.5) {
-        const error = new Error(
-          "reCAPTCHA verification failed. Please try again.",
+        throw ErrorHandler.createError(
+          RESPONSE_MESSAGES.ERROR.RECAPTCHA_FAILED,
+          HTTP_STATUS.FORBIDDEN,
+          ERROR_CODES.VALIDATION_ERROR,
         );
-        error.statusCode = 403;
-        throw error;
       }
 
       const { project_id } = data;
@@ -30,7 +40,11 @@ class ProjectEnquiryService {
       });
 
       if (!projectExists) {
-        throw new Error("Invalid project");
+        throw ErrorHandler.createError(
+          RESPONSE_MESSAGES.ERROR.INVALID_PROJECT,
+          HTTP_STATUS.BAD_REQUEST,
+          ERROR_CODES.VALIDATION_ERROR,
+        );
       }
 
       const enquiry = await models.ProjectEnquiry.create({

@@ -71,6 +71,16 @@ const RESPONSE_MESSAGES = {
       en: "Newsletter subscription submitted successfully",
       ar: "تم إرسال طلب الاشتراك في النشرة الإخبارية بنجاح",
     },
+
+    PROJECT_ENQUIRY_RECEIVED:    {
+      en: "Project enquiry submitted successfully",
+      ar: "تم إرسال استفسار المشروع بنجاح",
+    },
+
+    PRODUCT_ENQUIRY_RECEIVED: {
+      en: "Product enquiry submitted successfully",
+      ar: "تم إرسال استفسار المنتج بنجاح",
+    }
   },
 
   ERROR: {
@@ -197,6 +207,34 @@ const RESPONSE_MESSAGES = {
     PRODUCT_VARIANT_OUT_OF_STOCK: {
       en: "Product variant out of stock",
       ar: "متغير المنتج غير متوفر في المخزون",
+    },
+    RECAPTCHA_MISSING: {
+      en: "reCAPTCHA token missing",
+      ar: "رمز reCAPTCHA مفقود",
+    },
+    RECAPTCHA_FAILED: {
+      en: "reCAPTCHA verification failed. Please try again.",
+      ar: "فشل التحقق من reCAPTCHA. يرجى المحاولة مرة أخرى.",
+    },
+    ENQUIRY_ALREADY_EXISTS: {
+      en: "You already have an enquiry with this email",
+      ar: "لديك استفسار بالفعل بهذا البريد الإلكتروني",
+    },
+    INVALID_PROJECT: {
+      en: "Invalid project",
+      ar: "المشروع غير صالح",
+    },
+    INVALID_PRODUCT: {
+      en: "Invalid product",
+      ar: "المنتج غير صالح",
+    },
+    INVALID_CUSTOMIZATION_OPTION: {
+      en: "Invalid customization option",
+      ar: "خيار التخصيص غير صالح",
+    },
+    INVALID_STATE: {
+      en: "Invalid state",
+      ar: "الولاية غير صالحة",
     },
   },
 };

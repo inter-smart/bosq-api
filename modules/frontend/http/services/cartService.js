@@ -245,6 +245,77 @@ class CartService {
   }
 
   /**
+   * Add multiple items to cart (qty 1 each) — used for "Frequently Bought Together"
+   */
+  static async addMultipleItems(userId, sessionId, variantIds = []) {
+    const transaction = await sequelize.transaction();
+
+    try {
+      const cart = await this.getOrCreateCart(userId, sessionId, transaction);
+
+      for (const variantId of variantIds) {
+        const variant = await models.ProductVariants.findOne({
+          attributes: ["id", "price", "status", "stock"],
+          where: { id: variantId, status: true },
+          transaction,
+        });
+
+        if (!variant) {
+          throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.PRODUCT_VARIANT_NOT_FOUND, HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
+        }
+
+        if (variant.stock < 1) {
+          throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.OUT_OF_STOCK, HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
+        }
+
+        const existingItem = await models.CartItems.findOne({
+          where: { cart_id: cart.id, variant_id: variantId },
+          transaction,
+        });
+
+        const currentQty = existingItem ? existingItem.quantity : 0;
+
+        if (currentQty + 1 > variant.stock) {
+          throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.OUT_OF_STOCK, HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
+        }
+
+        if (existingItem) {
+          await existingItem.update(
+            {
+              quantity: existingItem.quantity + 1,
+              final_price: (existingItem.quantity + 1) * variant.price,
+            },
+            { transaction },
+          );
+        } else {
+          await models.CartItems.create(
+            {
+              cart_id: cart.id,
+              variant_id: variantId,
+              quantity: 1,
+              price: variant.price,
+              final_price: variant.price,
+              discount_amount: 0,
+            },
+            { transaction },
+          );
+        }
+      }
+
+      await ProductServiceHelpers.recalculateCartTotals(cart.id, transaction);
+
+      await transaction.commit();
+
+      return;
+    } catch (error) {
+      if (!transaction.finished) {
+        await transaction.rollback();
+      }
+      throw error;
+    }
+  }
+
+  /**
    * Buy now - add item to cart with is_buy_now flag
    */
   static async buyNowItem(userId, sessionId, variantId, quantity = 1) {

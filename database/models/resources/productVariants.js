@@ -178,6 +178,14 @@ module.exports = (sequelize) => {
       foreignKey: "product_variant_id",
       as: "variantCategories",
     });
+
+    // Bought Together (self-referential many-to-many)
+    ProductVariants.belongsToMany(models.ProductVariants, {
+      through: models.ProductVariantBoughtTogether,
+      foreignKey: "variant_id",
+      otherKey: "related_variant_id",
+      as: "boughtTogetherVariants",
+    });
   };
 
   return ProductVariants;

@@ -11,8 +11,10 @@ const transformProductData = (productData, startFromVariant = false) => {
 
   // Handle case when query starts from variant
   if (startFromVariant) {
-    const { productModel, variant_images = [], attribute_values = [], ...variant } = jsonData;
+    const { productModel, variant_images = [], attribute_values = [], categories = [], ...variant } = jsonData;
     const initialModel = productModel || {};
+
+    console.log(categories);
 
     const attributesMap = {};
     attribute_values.forEach((item) => {
@@ -54,6 +56,7 @@ const transformProductData = (productData, startFromVariant = false) => {
       design_title: variant?.design_title,
       isWishlisted: false,
       variant_image: generateImageUrl(variant?.media_path),
+      hover_image: generateImageUrl(variant?.hover_media_path),
       slug: variant?.sku,
       price: variant?.price,
       stock: variant?.stock,
@@ -63,6 +66,12 @@ const transformProductData = (productData, startFromVariant = false) => {
       model_title: initialModel.title,
       model_title_ar: initialModel.title_ar,
       attributes: Object.values(attributesMap),
+      categories: categories.map((c) => ({
+        id: c.id,
+        name: c.name,
+        name_ar: c.name_ar,
+        slug: c.slug,
+      })),
       images: orderedImages.map((img, index) => ({
         id: img.id,
         media_path: generateImageUrl(img.media_path),
@@ -137,6 +146,7 @@ const transformProductData = (productData, startFromVariant = false) => {
     design_title: variant?.design_title,
     isWishlisted: false,
     variant_image: generateImageUrl(variant?.media_path),
+    hover_image: generateImageUrl(variant?.hover_media_path),
     slug: variant?.sku,
     price: variant?.price,
     stock: variant?.stock,
@@ -219,6 +229,7 @@ const transformModelData = (model) => {
     isWishlisted: false,
     slug: variant?.sku,
     variant_image: generateImageUrl(variant?.media_path),
+    hover_image: generateImageUrl(variant?.hover_media_path),
     price: variant?.price,
     stock: variant?.stock,
     model_id: initialModel?.id,
@@ -227,6 +238,12 @@ const transformModelData = (model) => {
     model_title: initialModel.title,
     model_title_ar: initialModel.title_ar,
     attributes: Object.values(attributesMap),
+    categories: (variant?.categories ?? []).map((c) => ({
+      id: c.id,
+      name: c.name,
+      name_ar: c.name_ar,
+      slug: c.slug,
+    })),
     images: orderedImages.map((img, index) => ({
       id: img.id,
       media_path: generateImageUrl(img.media_path),

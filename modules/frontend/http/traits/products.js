@@ -65,69 +65,6 @@ class ProductServiceHelpers {
     };
   }
 
-  static async getProductVariantRelatedModels(product_base_id) {
-    const cacheKey = cacheKeys?.productVariantRelatedModels(product_base_id);
-    const baseDataFromCache = await getCache(cacheKey);
-
-    const productmodels = await models?.ProductModels?.findAll({
-      where: { product_id: product_base_id, status: true },
-      attributes: ["id", "code", "title", "title_ar", "slug", "media_path", "base_price"],
-      include: [
-        {
-          association: "variants",
-          attributes: ["id", "sku", "title", "title_ar", "price", "stock", "media_path"],
-          required: false,
-          include: [
-            {
-              association: "variant_images",
-              attributes: ["id", "media_path", "media_type", "is_primary", "sort_order"],
-            },
-            {
-              association: "attribute_values",
-              attributes: ["id"],
-              through: { attributes: [] },
-              include: [
-                {
-                  association: "attribute",
-                  attributes: ["id", "name", "code", "slug", "name_ar"],
-                },
-              ],
-            },
-          ],
-        },
-      ],
-    });
-
-    const data =
-      productmodels?.map((model) => ({
-        id: model.id,
-        code: model.code,
-        title: model.title,
-        title_ar: model.title_ar,
-        slug: model.slug,
-        base_price: model.base_price,
-        stock: model.variants?.[0]?.stock,
-        media_path: generateImageUrl(model.media_path),
-        variants:
-          model.variants?.map((v) => ({
-            id: v.id,
-            sku: v.sku,
-            title: v.title,
-            title_ar: v.title_ar,
-            price: v.price,
-            stock: v.stock,
-            media_path: generateImageUrl(v.media_path),
-            hover_media_path: generateImageUrl(v.variant_images?.find((img) => !img.is_primary)?.media_path),
-          })) || [],
-        attributes: buildAttributesFromVariants(model.variants || []),
-      })) || [];
-    await setCache(cacheKey, data);
-    return {
-      data,
-      fromCache: false,
-    };
-  }
-
   static async getSimiliarProducts(modelId, variantId, userId = null, isLoggedInUser = false) {
     const variants = await models.ProductVariants.findAll({
       where: {
@@ -237,6 +174,105 @@ class ProductServiceHelpers {
       similarProducts,
       isVariantWishListed,
     };
+  }
+
+  static async getBoughtTogetherProducts(variantId, currentItem) {
+    if (!variantId || !currentItem) return null;
+
+    const variant = await models.ProductVariants.findByPk(variantId, {
+      attributes: ["id"],
+      include: [
+        {
+          association: "boughtTogetherVariants",
+          attributes: ["id", "sku", "title", "title_ar", "media_path", "price", "stock", "product_code", "product_model_id", "hover_media_path"],
+          through: { attributes: [] },
+          where: { status: true },
+          required: false,
+          include: [
+            {
+              model: models.ProductCategory,
+              as: "categories",
+              attributes: ["id", "name", "name_ar", "slug"],
+              through: { attributes: [] },
+              required: false,
+            },
+            {
+              model: models.ProductModels,
+              as: "productModel",
+              attributes: ["id", "slug", "title"],
+              include: [
+                {
+                  model: models.ProductBase,
+                  as: "product",
+                  attributes: ["id", "slug"],
+                },
+              ],
+            },
+            {
+              model: models.ProductVariantAttributes,
+              as: "variant_attributes",
+              attributes: ["id", "attribute_id", "attribute_value_id"],
+              include: [
+                {
+                  model: models.ProductAttribute,
+                  as: "ProductAttribute",
+                  attributes: ["id", "name", "name_ar", "code", "slug"],
+                },
+                {
+                  model: models.AttributeValues,
+                  as: "AttributeValue",
+                  attributes: ["id", "value", "value_ar", "slug"],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    const rawItems = variant?.boughtTogetherVariants ?? [];
+
+    if (rawItems.length == 0) return null;
+
+    const products = rawItems.map((item) => {
+      const json = item.toJSON();
+
+      const formattedAttributes = (json?.variant_attributes || []).map((va) => ({
+        code: va?.ProductAttribute?.code,
+        slug: va?.ProductAttribute?.slug,
+        values: [
+          {
+            slug: va?.AttributeValue?.slug,
+            value: va?.AttributeValue?.value,
+          },
+        ],
+      }));
+
+      const baseSlug = json?.productModel?.product?.slug;
+      const modelSlug = json?.productModel?.slug;
+
+      return {
+        id: json?.id,
+        title: json?.title,
+        title_ar: json?.title_ar,
+        variant_image: generateImageUrl(json?.media_path),
+        hover_image: generateImageUrl(json?.hover_media_path),
+        slug: json?.sku,
+        base_slug: baseSlug,
+        model_slug: modelSlug,
+        product_code: json?.product_code,
+        price: json?.price,
+        stock: json?.stock,
+        categories: (json?.categories || []).map((c) => ({ id: c.id, name: c.name, name_ar: c.name_ar, slug: c.slug })),
+        query_params: generateQueryParams(json?.sku, modelSlug, formattedAttributes),
+      };
+    });
+
+    const finalisedProducts = [currentItem, ...products].filter((p) => p.stock > 0);
+
+    const totalItems = finalisedProducts.length;
+    const totalPrice = finalisedProducts.reduce((sum, item) => sum + parseFloat(item.price || 0), 0);
+    return { products: finalisedProducts, totalItems, totalPrice };
   }
 
   static async recalculateCartTotals(cartId, transaction = null) {

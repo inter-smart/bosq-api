@@ -140,26 +140,27 @@ class CartService {
         id: cart.id,
         items: cart.items.map((item) => ({
           id: item.id,
-          product_id: item.product_id,
-          variant_id: item.variant_id,
-          title: item.variant.title,
-          media_path: generateImageUrl(item.variant.media_path),
-          quantity: item.quantity,
-          price: item.price,
-          discount_amount: item.discount_amount,
-          line_total: (parseFloat(item.price) * item.quantity).toFixed(2),
-          is_sold_out: item.variant ? item.variant.stock < item.quantity : false,
-          product: item.product,
-          variant: item.variant,
+          product_id: item?.product_id,
+          variant_id: item?.variant_id,
+          title: item?.variant?.title,
+          media_path: generateImageUrl(item?.variant.media_path),
+          quantity: item?.quantity,
+          price: item?.price,
+          discount_amount: item?.discount_amount,
+          line_total: (parseFloat(item?.price || 0) * item?.quantity || 0).toFixed(2),
+          is_sold_out: item?.variant ? item?.variant.stock < item?.quantity : false,
+          product: item?.product,
+          variant: item?.variant,
         })),
-        subtotal: cart.subtotal,
-        discount_total: cart.discount_total,
-        tax_total: cart.tax_total,
-        grand_total: cart.grand_total,
-        applied_coupon_code: cart.applied_coupon_code,
+        subtotal: cart?.subtotal,
+        discount_total: cart?.discount_total,
+        tax_total: cart?.tax_total,
+        grand_total: cart?.grand_total,
+        applied_coupon_code: cart?.applied_coupon_code,
         item_count: itemCount,
       };
     } catch (error) {
+      console.log(error);
       await transaction.rollback();
       throw error;
     }

@@ -742,6 +742,13 @@ class CartService {
       attributes: ["id", "title", "title_ar", "media_path", "price", "stock", "product_code", "sku", "product_model_id"],
       include: [
         {
+          model: models.ProductCategory,
+          as: "categories",
+          attributes: ["id", "name", "name_ar", "slug"],
+          through: { attributes: [] },
+          required: false,
+        },
+        {
           model: models.ProductModels,
           as: "productModel",
           attributes: ["id", "slug", "title"],
@@ -750,13 +757,6 @@ class CartService {
               model: models.ProductBase,
               as: "product",
               attributes: ["id", "slug"],
-              include: [
-                {
-                  model: models.ProductCategory,
-                  as: "category",
-                  attributes: ["id", "name", "name_ar"],
-                },
-              ],
             },
           ],
         },
@@ -808,9 +808,13 @@ class CartService {
         isWishlisted: isItemWishListed(json?.id, wishlistedItems),
         price: json?.price,
         stock: json?.stock,
-        category_name: json?.productModel?.product?.category?.name || null,
-        category_ar: json?.productModel?.product?.category?.name_ar || null,
         variant_attributes: json?.variant_attributes,
+        categories: json?.categories.map((c) => ({
+          id: c.id,
+          name: c.name,
+          name_ar: c.name_ar,
+          slug: c.slug,
+        })),
         query_params: generateQueryParams(variantSku, formattedAttributes),
       };
     });

@@ -194,29 +194,35 @@ class OrderService {
         cartItemsWhere.is_buy_now = true;
       }
 
-      await models.CartItems.destroy({ where: cartItemsWhere, transaction });
+      const deletedCount = await models.CartItems.destroy({ where: cartItemsWhere, transaction, force: true });
+
+      if (deletedCount > 0) {
+        console.log(`✅ CartItems deleted successfully. Count: ${deletedCount}`);
+      } else {
+        console.warn("⚠️ No CartItems found to delete.");
+      }
 
       await transaction.commit();
 
       // ── Enqueue order confirmation email (fire & forget — non-blocking) ──
-      addOrderConfirmationJob({
-        orderId: order.id,
-        orderCode: order.order_id,
-        email: cartBillingAddress.email,
-        name: cartBillingAddress.name,
-        paymentType,
-        subtotal: cart.subtotal,
-        discount_total: cart.discount_total,
-        tax_total: cart.tax_total,
-        grand_total: cart.grand_total,
-        items: cart.items.map((item) => ({
-          title: item.variant?.title || item.product?.title || "Product",
-          sku: item.variant?.sku || "",
-          quantity: item.quantity,
-          price: item.price,
-          line_total: (parseFloat(item.price) * item.quantity).toFixed(2),
-        })),
-      }).catch((err) => Logger.error(`Failed to enqueue order confirmation email for order ${order.order_id}: ${err.message}`));
+      // addOrderConfirmationJob({
+      //   orderId: order.id,
+      //   orderCode: order.order_id,
+      //   email: cartBillingAddress.email,
+      //   name: cartBillingAddress.name,
+      //   paymentType,
+      //   subtotal: cart.subtotal,
+      //   discount_total: cart.discount_total,
+      //   tax_total: cart.tax_total,
+      //   grand_total: cart.grand_total,
+      //   items: cart.items.map((item) => ({
+      //     title: item.variant?.title || item.product?.title || "Product",
+      //     sku: item.variant?.sku || "",
+      //     quantity: item.quantity,
+      //     price: item.price,
+      //     line_total: (parseFloat(item.price) * item.quantity).toFixed(2),
+      //   })),
+      // }).catch((err) => Logger.error(`Failed to enqueue order confirmation email for order ${order.order_id}: ${err.message}`));
 
       return await this.getOrderById(userId, sessionId, order.id);
     } catch (error) {

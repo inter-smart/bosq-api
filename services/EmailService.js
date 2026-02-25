@@ -1733,7 +1733,167 @@ static async sendProjectEnquiryAdmin(data) {
 </html>
     `.trim(),
   });
-}
+  }
+
+  static async sendOrderConfirmationEmail(email, data) {
+    const html = this.getOrderConfirmationTemplate(data);
+
+    return this.sendEmail({
+      to: email,
+      subject: `Order Confirmed – ${data.orderCode}`,
+      html,
+    });
+  }
+
+  
+  static getOrderConfirmationTemplate(data) {
+    const { orderCode, name, paymentType, subtotal, discount_total, tax_total, grand_total, items = [] } = data;
+
+    const orderDate = new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+    const paymentLabel = paymentType === "cod" ? "Cash on Delivery" : "Online Payment";
+
+    const itemRows = items
+      .map(
+        (item) => `
+      <tr>
+        <td style="padding:12px 8px;border-bottom:1px solid #f0ece6;font-family:Arial,sans-serif;font-size:13px;color:#333333;">
+          <div style="font-weight:600;">${item.title || "Product"}</div>
+          <div style="font-size:11px;color:#999999;margin-top:2px;">SKU: ${item.sku || "—"}</div>
+        </td>
+        <td style="padding:12px 8px;border-bottom:1px solid #f0ece6;text-align:center;font-family:Arial,sans-serif;font-size:13px;color:#333333;">${item.quantity}</td>
+        <td style="padding:12px 8px;border-bottom:1px solid #f0ece6;text-align:right;font-family:Arial,sans-serif;font-size:13px;color:#333333;">AED ${parseFloat(item.price).toFixed(2)}</td>
+        <td style="padding:12px 8px;border-bottom:1px solid #f0ece6;text-align:right;font-family:Arial,sans-serif;font-size:13px;font-weight:600;color:#1c1c1c;">AED ${parseFloat(item.line_total).toFixed(2)}</td>
+      </tr>`,
+      )
+      .join("");
+
+    const discountRow =
+      parseFloat(discount_total) > 0
+        ? `<tr>
+        <td colspan="3" style="padding:6px 8px;font-family:Arial,sans-serif;font-size:13px;color:#555555;text-align:right;">Discount</td>
+        <td style="padding:6px 8px;text-align:right;font-family:Arial,sans-serif;font-size:13px;color:#c0392b;">- AED ${parseFloat(discount_total).toFixed(2)}</td>
+      </tr>`
+        : "";
+
+    const taxRow =
+      parseFloat(tax_total) > 0
+        ? `<tr>
+        <td colspan="3" style="padding:6px 8px;font-family:Arial,sans-serif;font-size:13px;color:#555555;text-align:right;">Tax</td>
+        <td style="padding:6px 8px;text-align:right;font-family:Arial,sans-serif;font-size:13px;color:#333333;">AED ${parseFloat(tax_total).toFixed(2)}</td>
+      </tr>`
+        : "";
+
+    return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order Confirmed – ${orderCode}</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f4f1ec;font-family:Arial,sans-serif;">
+  <table role="presentation" style="width:100%;border-collapse:collapse;">
+    <tr>
+      <td align="center" style="padding:32px 16px;">
+        <table role="presentation" style="width:100%;max-width:600px;border-collapse:collapse;background-color:#ffffff;border-radius:4px;overflow:hidden;">
+
+          <!-- HEADER -->
+          <tr>
+            <td style="padding:32px 40px 24px;background-color:#1c1c1c;text-align:center;">
+              <h1 style="margin:0;font-size:22px;font-weight:700;letter-spacing:3px;color:#c9a96e;text-transform:uppercase;">BOSQ</h1>
+              <p style="margin:12px 0 0;font-size:12px;color:#888888;letter-spacing:1px;text-transform:uppercase;">Order Confirmation</p>
+            </td>
+          </tr>
+
+          <!-- GREETING -->
+          <tr>
+            <td style="padding:32px 40px 8px;">
+              <h2 style="margin:0 0 8px;font-size:18px;font-weight:600;color:#1c1c1c;">Thank you, ${name || "Valued Customer"}!</h2>
+              <p style="margin:0;font-size:14px;color:#555555;line-height:1.6;">
+                Your order has been received and is being processed. We'll notify you once it's on its way.
+              </p>
+            </td>
+          </tr>
+
+          <!-- ORDER META -->
+          <tr>
+            <td style="padding:20px 40px;">
+              <table role="presentation" style="width:100%;border-collapse:collapse;background-color:#f7f5f2;border-radius:4px;">
+                <tr>
+                  <td style="padding:14px 20px;border-bottom:1px solid #ede9e2;">
+                    <span style="font-size:11px;color:#999999;text-transform:uppercase;letter-spacing:1px;">Order ID</span><br>
+                    <span style="font-size:14px;font-weight:700;color:#1c1c1c;letter-spacing:0.5px;">${orderCode}</span>
+                  </td>
+                  <td style="padding:14px 20px;border-bottom:1px solid #ede9e2;">
+                    <span style="font-size:11px;color:#999999;text-transform:uppercase;letter-spacing:1px;">Date</span><br>
+                    <span style="font-size:14px;color:#333333;">${orderDate}</span>
+                  </td>
+                  <td style="padding:14px 20px;border-bottom:1px solid #ede9e2;">
+                    <span style="font-size:11px;color:#999999;text-transform:uppercase;letter-spacing:1px;">Payment</span><br>
+                    <span style="font-size:14px;color:#333333;">${paymentLabel}</span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- ITEMS TABLE -->
+          <tr>
+            <td style="padding:0 40px 8px;">
+              <table role="presentation" style="width:100%;border-collapse:collapse;">
+                <thead>
+                  <tr style="background-color:#f7f5f2;">
+                    <th style="padding:10px 8px;text-align:left;font-size:11px;color:#999999;text-transform:uppercase;letter-spacing:1px;font-weight:600;">Item</th>
+                    <th style="padding:10px 8px;text-align:center;font-size:11px;color:#999999;text-transform:uppercase;letter-spacing:1px;font-weight:600;">Qty</th>
+                    <th style="padding:10px 8px;text-align:right;font-size:11px;color:#999999;text-transform:uppercase;letter-spacing:1px;font-weight:600;">Price</th>
+                    <th style="padding:10px 8px;text-align:right;font-size:11px;color:#999999;text-transform:uppercase;letter-spacing:1px;font-weight:600;">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${itemRows}
+                </tbody>
+              </table>
+            </td>
+          </tr>
+
+          <!-- ORDER TOTALS -->
+          <tr>
+            <td style="padding:8px 40px 24px;">
+              <table role="presentation" style="width:100%;border-collapse:collapse;">
+                <tr>
+                  <td colspan="3" style="padding:6px 8px;font-family:Arial,sans-serif;font-size:13px;color:#555555;text-align:right;">Subtotal</td>
+                  <td style="padding:6px 8px;text-align:right;font-family:Arial,sans-serif;font-size:13px;color:#333333;width:120px;">AED ${parseFloat(subtotal).toFixed(2)}</td>
+                </tr>
+                ${discountRow}
+                ${taxRow}
+                <tr style="border-top:2px solid #1c1c1c;">
+                  <td colspan="3" style="padding:12px 8px;font-family:Arial,sans-serif;font-size:14px;font-weight:700;color:#1c1c1c;text-align:right;">Grand Total</td>
+                  <td style="padding:12px 8px;text-align:right;font-family:Arial,sans-serif;font-size:15px;font-weight:700;color:#c9a96e;">AED ${parseFloat(grand_total).toFixed(2)}</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- FOOTER -->
+          <tr>
+            <td style="padding:20px 40px;background-color:#1c1c1c;text-align:center;">
+              <p style="margin:0;font-size:11px;color:#666666;letter-spacing:0.3px;">
+                &copy; ${new Date().getFullYear()} BOSQ. All Rights Reserved.
+              </p>
+              <p style="margin:6px 0 0;font-size:11px;color:#555555;">
+                Questions? Contact us at <a href="mailto:${process.env.EMAIL_FROM || process.env.SMTP_USER}" style="color:#c9a96e;text-decoration:none;">${process.env.EMAIL_FROM || process.env.SMTP_USER}</a>
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+    `.trim();
+  }
 }
 
 module.exports = EmailService;

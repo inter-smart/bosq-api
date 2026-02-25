@@ -103,6 +103,44 @@ class CartController {
   }
 
   /**
+   * Add multiple items to cart (qty 1 each) — Frequently Bought Together
+   * POST /api/frontend/cart/add-together
+   * Body: { variant_ids: number[] }
+   */
+  static async addMultipleItems(req, res) {
+    try {
+      const userId = req.auth?.id || null;
+      const { variant_ids } = req.body;
+
+      if (!Array.isArray(variant_ids) || variant_ids.length === 0) {
+        return ApiResponse.error(res, {
+          message: "variant_ids must be a non-empty array",
+          status: HTTP_STATUS.BAD_REQUEST,
+        });
+      }
+
+      let sessionId = null;
+
+      if (!userId) {
+        sessionId = CartController.getSessionId(req);
+        if (!sessionId) {
+          sessionId = CartController.generateAndSetSessionCookie(res);
+        }
+      }
+
+      await CartService.addMultipleItems(userId, sessionId, variant_ids);
+
+      return ApiResponse.success(res, {
+        message: "Items added to cart successfully",
+        data: null,
+        status: HTTP_STATUS.OK,
+      });
+    } catch (error) {
+      return ErrorHandler.handleControllerError(error, res, "CartController.addMultipleItems");
+    }
+  }
+
+  /**
    * Add item to cart
    * POST /api/frontend/cart/buynow
    */

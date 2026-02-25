@@ -140,26 +140,27 @@ class CartService {
         id: cart.id,
         items: cart.items.map((item) => ({
           id: item.id,
-          product_id: item.product_id,
-          variant_id: item.variant_id,
-          title: item.variant.title,
-          media_path: generateImageUrl(item.variant.media_path),
-          quantity: item.quantity,
-          price: item.price,
-          discount_amount: item.discount_amount,
-          line_total: (parseFloat(item.price) * item.quantity).toFixed(2),
-          is_sold_out: item.variant ? item.variant.stock < item.quantity : false,
-          product: item.product,
-          variant: item.variant,
+          product_id: item?.product_id,
+          variant_id: item?.variant_id,
+          title: item?.variant?.title,
+          media_path: generateImageUrl(item?.variant?.media_path),
+          quantity: item?.quantity,
+          price: item?.price,
+          discount_amount: item?.discount_amount,
+          line_total: (parseFloat(item?.price || 0) * item?.quantity || 0).toFixed(2),
+          is_sold_out: item?.variant ? item?.variant.stock < item?.quantity : false,
+          product: item?.product,
+          variant: item?.variant,
         })),
-        subtotal: cart.subtotal,
-        discount_total: cart.discount_total,
-        tax_total: cart.tax_total,
-        grand_total: cart.grand_total,
-        applied_coupon_code: cart.applied_coupon_code,
+        subtotal: cart?.subtotal,
+        discount_total: cart?.discount_total,
+        tax_total: cart?.tax_total,
+        grand_total: cart?.grand_total,
+        applied_coupon_code: cart?.applied_coupon_code,
         item_count: itemCount,
       };
     } catch (error) {
+      console.log(error);
       await transaction.rollback();
       throw error;
     }
@@ -235,6 +236,77 @@ class CartService {
 
       // Return updated cart
       // return await this.getCart(userId, sessionId);
+    } catch (error) {
+      if (!transaction.finished) {
+        await transaction.rollback();
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Add multiple items to cart (qty 1 each) — used for "Frequently Bought Together"
+   */
+  static async addMultipleItems(userId, sessionId, variantIds = []) {
+    const transaction = await sequelize.transaction();
+
+    try {
+      const cart = await this.getOrCreateCart(userId, sessionId, transaction);
+
+      for (const variantId of variantIds) {
+        const variant = await models.ProductVariants.findOne({
+          attributes: ["id", "price", "status", "stock"],
+          where: { id: variantId, status: true },
+          transaction,
+        });
+
+        if (!variant) {
+          throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.PRODUCT_VARIANT_NOT_FOUND, HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
+        }
+
+        if (variant.stock < 1) {
+          throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.OUT_OF_STOCK, HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
+        }
+
+        const existingItem = await models.CartItems.findOne({
+          where: { cart_id: cart.id, variant_id: variantId },
+          transaction,
+        });
+
+        const currentQty = existingItem ? existingItem.quantity : 0;
+
+        if (currentQty + 1 > variant.stock) {
+          throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.OUT_OF_STOCK, HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
+        }
+
+        if (existingItem) {
+          await existingItem.update(
+            {
+              quantity: existingItem.quantity + 1,
+              final_price: (existingItem.quantity + 1) * variant.price,
+            },
+            { transaction },
+          );
+        } else {
+          await models.CartItems.create(
+            {
+              cart_id: cart.id,
+              variant_id: variantId,
+              quantity: 1,
+              price: variant.price,
+              final_price: variant.price,
+              discount_amount: 0,
+            },
+            { transaction },
+          );
+        }
+      }
+
+      await ProductServiceHelpers.recalculateCartTotals(cart.id, transaction);
+
+      await transaction.commit();
+
+      return;
     } catch (error) {
       if (!transaction.finished) {
         await transaction.rollback();
@@ -670,6 +742,13 @@ class CartService {
       attributes: ["id", "title", "title_ar", "media_path", "price", "stock", "product_code", "sku", "product_model_id"],
       include: [
         {
+          model: models.ProductCategory,
+          as: "categories",
+          attributes: ["id", "name", "name_ar", "slug"],
+          through: { attributes: [] },
+          required: false,
+        },
+        {
           model: models.ProductModels,
           as: "productModel",
           attributes: ["id", "slug", "title"],
@@ -678,13 +757,6 @@ class CartService {
               model: models.ProductBase,
               as: "product",
               attributes: ["id", "slug"],
-              include: [
-                {
-                  model: models.ProductCategory,
-                  as: "category",
-                  attributes: ["id", "name", "name_ar"],
-                },
-              ],
             },
           ],
         },
@@ -736,10 +808,14 @@ class CartService {
         isWishlisted: isItemWishListed(json?.id, wishlistedItems),
         price: json?.price,
         stock: json?.stock,
-        category_name: json?.productModel?.product?.category?.name || null,
-        category_ar: json?.productModel?.product?.category?.name_ar || null,
         variant_attributes: json?.variant_attributes,
-        query_params: generateQueryParams(variantSku, modelSlug, formattedAttributes),
+        categories: json?.categories.map((c) => ({
+          id: c.id,
+          name: c.name,
+          name_ar: c.name_ar,
+          slug: c.slug,
+        })),
+        query_params: generateQueryParams(variantSku, formattedAttributes),
       };
     });
   }

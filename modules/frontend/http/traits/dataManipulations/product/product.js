@@ -5,14 +5,14 @@ const transformProductData = (productData, startFromVariant = false) => {
     return null;
   }
 
-  console.log("Transforming product data for product ID:", productData.id, "Start from variant:", startFromVariant);
-
   const jsonData = productData.toJSON();
 
   // Handle case when query starts from variant
   if (startFromVariant) {
-    const { productModel, variant_images = [], attribute_values = [], ...variant } = jsonData;
+    const { productModel, variant_images = [], attribute_values = [], categories = [], ...variant } = jsonData;
     const initialModel = productModel || {};
+
+    console.log(categories);
 
     const attributesMap = {};
     attribute_values.forEach((item) => {
@@ -23,11 +23,11 @@ const transformProductData = (productData, startFromVariant = false) => {
 
       if (!attributesMap[key]) {
         attributesMap[key] = {
-          id: attr.id,
-          name: attr.name,
-          name_ar: attr.name_ar,
-          code: attr.code,
-          slug: attr.slug,
+          id: attr?.id,
+          name: attr?.name,
+          name_ar: attr?.name_ar,
+          code: attr?.code,
+          slug: attr?.slug,
           values: [],
         };
       }
@@ -35,11 +35,11 @@ const transformProductData = (productData, startFromVariant = false) => {
       const valueExists = attributesMap[key].values.some((v) => v.id === item.id);
       if (!valueExists) {
         attributesMap[key].values.push({
-          id: item.id,
-          value: item.value,
-          value_ar: item.value_ar,
-          slug: item.slug,
-          media_path: item.media_path,
+          id: item?.id,
+          value: item?.value,
+          value_ar: item?.value_ar,
+          slug: item?.slug,
+          media_path: item?.media_path,
         });
       }
     });
@@ -54,22 +54,29 @@ const transformProductData = (productData, startFromVariant = false) => {
       design_title: variant?.design_title,
       isWishlisted: false,
       variant_image: generateImageUrl(variant?.media_path),
+      hover_image: generateImageUrl(variant?.hover_media_path),
       slug: variant?.sku,
       price: variant?.price,
       stock: variant?.stock,
       model_id: initialModel?.id,
       model_media: generateImageUrl(initialModel?.media_path),
-      model_slug: initialModel.slug,
-      model_title: initialModel.title,
-      model_title_ar: initialModel.title_ar,
+      model_slug: initialModel?.slug,
+      model_title: initialModel?.title,
+      model_title_ar: initialModel?.title_ar,
       attributes: Object.values(attributesMap),
+      categories: categories.map((c) => ({
+        id: c.id,
+        name: c.name,
+        name_ar: c.name_ar,
+        slug: c.slug,
+      })),
       images: orderedImages.map((img, index) => ({
-        id: img.id,
-        media_path: generateImageUrl(img.media_path),
-        media_type: img.media_type,
-        thumbnail_path: generateImageUrl(img.thumbnail_path),
+        id: img?.id,
+        media_path: generateImageUrl(img?.media_path),
+        media_type: img?.media_type,
+        thumbnail_path: generateImageUrl(img?.thumbnail_path),
         is_primary: index === 0,
-        sort_order: img.sort_order,
+        sort_order: img?.sort_order,
       })),
     };
 
@@ -113,18 +120,18 @@ const transformProductData = (productData, startFromVariant = false) => {
       const valueExists = attributesMap[key].values.some((v) => v.id === item.id);
       if (!valueExists) {
         attributesMap[key].values.push({
-          id: item.id,
-          value: item.value,
-          value_ar: item.value_ar,
-          slug: item.slug,
-          media_path: item.media_path,
+          id: item?.id,
+          value: item?.value,
+          value_ar: item?.value_ar,
+          slug: item?.slug,
+          media_path: item?.media_path,
         });
       }
     });
   });
 
   // Get images from the first variant if available
-  const firstVariantImages = variants.length > 0 && variants[0].variant_images ? variants[0].variant_images : [];
+  const firstVariantImages = variants.length > 0 && variants[0]?.variant_images ? variants[0]?.variant_images : [];
   const variant = variants[0] ? variants[0] : null;
 
   const orderedImages = firstVariantImages.sort((a, b) => a.sort_order - b.sort_order);
@@ -137,22 +144,23 @@ const transformProductData = (productData, startFromVariant = false) => {
     design_title: variant?.design_title,
     isWishlisted: false,
     variant_image: generateImageUrl(variant?.media_path),
+    hover_image: generateImageUrl(variant?.hover_media_path),
     slug: variant?.sku,
     price: variant?.price,
     stock: variant?.stock,
     model_id: initialModel?.id,
     model_media: generateImageUrl(initialModel?.media_path),
-    model_slug: initialModel.slug,
-    model_title: initialModel.title,
-    model_title_ar: initialModel.title_ar,
+    model_slug: initialModel?.slug,
+    model_title: initialModel?.title,
+    model_title_ar: initialModel?.title_ar,
     attributes: Object.values(attributesMap),
     images: orderedImages.map((img, index) => ({
-      id: img.id,
-      media_path: generateImageUrl(img.media_path),
-      media_type: img.media_type,
-      thumbnail_path: generateImageUrl(img.thumbnail_path),
+      id: img?.id,
+      media_path: generateImageUrl(img?.media_path),
+      media_type: img?.media_type,
+      thumbnail_path: generateImageUrl(img?.thumbnail_path),
       is_primary: index === 0,
-      sort_order: img.sort_order,
+      sort_order: img?.sort_order,
     })),
   };
 
@@ -171,7 +179,7 @@ const transformModelData = (model) => {
   const { variants = [], ...modelData } = model.toJSON();
   const initialModel = modelData;
   // Get images from the first variant if available
-  const firstVariantImages = variants.length > 0 && variants[0].variant_images ? variants[0].variant_images : [];
+  const firstVariantImages = variants.length > 0 && variants[0]?.variant_images ? variants[0]?.variant_images : [];
   const variant = variants[0] ? variants[0] : null;
 
   const attributesMap = {};
@@ -182,15 +190,15 @@ const transformModelData = (model) => {
     const attr = item.attribute;
     if (!attr) return;
 
-    const key = attr.code || attr.slug;
+    const key = attr?.code || attr?.slug;
 
     if (!attributesMap[key]) {
       attributesMap[key] = {
-        id: attr.id,
-        name: attr.name,
-        name_ar: attr.name_ar,
-        code: attr.code,
-        slug: attr.slug,
+        id: attr?.id,
+        name: attr?.name,
+        name_ar: attr?.name_ar,
+        code: attr?.code,
+        slug: attr?.slug,
         values: [],
       };
     }
@@ -199,11 +207,11 @@ const transformModelData = (model) => {
     const valueExists = attributesMap[key].values.some((v) => v.id === item.id);
     if (!valueExists) {
       attributesMap[key].values.push({
-        id: item.id,
-        value: item.value,
-        value_ar: item.value_ar,
-        slug: item.slug,
-        media_path: item.media_path,
+        id: item?.id,
+        value: item?.value,
+        value_ar: item?.value_ar,
+        slug: item?.slug,
+        media_path: item?.media_path,
       });
     }
   });
@@ -219,19 +227,26 @@ const transformModelData = (model) => {
     isWishlisted: false,
     slug: variant?.sku,
     variant_image: generateImageUrl(variant?.media_path),
+    hover_image: generateImageUrl(variant?.hover_media_path),
     price: variant?.price,
     stock: variant?.stock,
     model_id: initialModel?.id,
     model_media: generateImageUrl(initialModel?.media_path),
-    model_slug: initialModel.slug,
-    model_title: initialModel.title,
-    model_title_ar: initialModel.title_ar,
+    model_slug: initialModel?.slug,
+    model_title: initialModel?.title,
+    model_title_ar: initialModel?.title_ar,
     attributes: Object.values(attributesMap),
+    categories: (variant?.categories ?? []).map((c) => ({
+      id: c?.id,
+      name: c?.name,
+      name_ar: c?.name_ar,
+      slug: c?.slug,
+    })),
     images: orderedImages.map((img, index) => ({
-      id: img.id,
-      media_path: generateImageUrl(img.media_path),
-      media_type: img.media_type,
-      thumbnail_path: generateImageUrl(img.thumbnail_path),
+      id: img?.id,
+      media_path: generateImageUrl(img?.media_path),
+      media_type: img?.media_type,
+      thumbnail_path: generateImageUrl(img?.thumbnail_path),
       is_primary: index === 0,
       sort_order: img.sort_order,
     })),
@@ -245,33 +260,33 @@ const buildAttributesFromVariants = (variants = []) => {
 
   variants.forEach((variant) => {
     variant.attribute_values?.forEach((av) => {
-      const attr = av.attribute;
+      const attr = av?.attribute;
       if (!attr) return;
 
       // Initialize attribute entry
       if (!attributeMap.has(attr.id)) {
         attributeMap.set(attr.id, {
-          id: attr.id,
-          name: attr.name,
-          name_ar: attr.name_ar,
-          slug: attr.slug,
-          code: attr.code,
+          id: attr?.id,
+          name: attr?.name,
+          name_ar: attr?.name_ar,
+          slug: attr?.slug,
+          code: attr?.code,
           values: [],
         });
       }
 
-      const attributeEntry = attributeMap.get(attr.id);
+      const attributeEntry = attributeMap.get(attr?.id);
 
       // Values now come from attribute.values
       attr.values?.forEach((value) => {
-        const exists = attributeEntry.values.some((v) => v.id === value.id);
+        const exists = attributeEntry.values.some((v) => v?.id === value?.id);
 
         if (!exists) {
           attributeEntry.values.push({
-            id: value.id,
-            attribute_id: value.attribute_id,
-            value: value.value,
-            slug: value.slug,
+            id: value?.id,
+            attribute_id: value?.attribute_id,
+            value: value?.value,
+            slug: value?.slug,
           });
         }
       });
@@ -289,7 +304,7 @@ const getOrderedImagesFn = (images = []) =>
     return (a.sort_order ?? 0) - (b.sort_order ?? 0);
   });
 
-const generateQueryParams = (variantSku, model, attributes = []) => {
+const generateQueryParams = (variantSku, attributes = []) => {
   let params = [];
 
   if (variantSku) {
@@ -310,53 +325,52 @@ const generateQueryParams = (variantSku, model, attributes = []) => {
 };
 
 const generateProductBasedata = (productData) => {
-  const { faqs = [], projectImages = [], sellingPoints = [], variants = [], category, ...product } = productData.toJSON();
+  const data = productData?.toJSON?.() || {};
 
-  const faqsData = faqs
-    ? faqs.map((faq) => ({
-        id: faq.id,
-        question: faq.question,
-        answer: faq.answer,
-        question_ar: faq.question_ar,
-        answer_ar: faq.answer_ar,
-      }))
-    : [];
+  const { faqs = [], projectImages = [], sellingPoints = [], variants = [], category, ...product } = data;
 
-  const projectImagesData = projectImages
-    ? projectImages.map((img) => ({
-        id: img.id,
-        media_path: generateImageUrl(img.media_path),
-        media_alt: img.media_alt,
-        media_alt_ar: img.media_alt_ar,
-      }))
-    : [];
+  const faqsData =
+    faqs?.map((faq) => ({
+      id: faq?.id,
+      question: faq?.question,
+      answer: faq?.answer,
+      question_ar: faq?.question_ar,
+      answer_ar: faq?.answer_ar,
+    })) || [];
 
-  const sellingPointsData = sellingPoints
-    ? sellingPoints.map((sp) => ({
-        id: sp.id,
-        name: sp.name,
-        name_ar: sp.name_ar,
-        media_path: generateImageUrl(sp.media_path),
-      }))
-    : [];
+  const projectImagesData =
+    projectImages?.map((img) => ({
+      id: img?.id,
+      media_path: generateImageUrl?.(img?.media_path),
+      media_alt: img?.media_alt,
+      media_alt_ar: img?.media_alt_ar,
+    })) || [];
+
+  const sellingPointsData =
+    sellingPoints?.map((sp) => ({
+      id: sp?.id,
+      name: sp?.name,
+      name_ar: sp?.name_ar,
+      media_path: generateImageUrl?.(sp?.media_path),
+    })) || [];
 
   const productBaseData = {
-    id: product.id,
-    title: product.title,
-    title_ar: product.title_ar,
-    slug: product.slug,
-    description: product.description,
-    description_ar: product.description_ar,
-    enhance_title: product.enhance_title,
-    enhance_title_ar: product.enhance_title_ar,
+    id: product?.id,
+    title: product?.title,
+    title_ar: product?.title_ar,
+    slug: product?.slug,
+    description: product?.description,
+    description_ar: product?.description_ar,
+    enhance_title: product?.enhance_title,
+    enhance_title_ar: product?.enhance_title_ar,
     details: {
-      details: product.details,
-      details_ar: product.details_ar,
-      details_points: product.details_points,
-      details_points_ar: product.details_points_ar,
+      details: product?.details,
+      details_ar: product?.details_ar,
+      details_points: product?.details_points,
+      details_points_ar: product?.details_points_ar,
     },
-    additional_details: product.additional_details,
-    additional_details_ar: product.additional_details_ar,
+    additional_details: product?.additional_details,
+    additional_details_ar: product?.additional_details_ar,
     category_name: category?.name,
     category_name_ar: category?.name_ar,
     selling_points: sellingPointsData,
@@ -378,8 +392,8 @@ const checkInvalidProducts = (cartItems) => {
     const variant = item.variant;
 
     if (!variant) return true;
-    if (variant.stock <= 0) return true;
-    if (variant.stock < item.quantity) return true;
+    if (variant?.stock <= 0) return true;
+    if (variant?.stock < item?.quantity) return true;
 
     return false;
   });

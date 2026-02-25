@@ -4,6 +4,8 @@ const { HTTP_STATUS, ERROR_CODES } = require("../traits/constants.js");
 const { generateImageUrl } = require("../../traits/imageUrlHelper.js");
 const crypto = require("crypto");
 const { Op } = require("sequelize");
+const { addOrderConfirmationJob } = require("../../../../queues/emailQueue.js");
+const Logger = require("../../../../config/logger.js");
 
 const modelsMap = {
   user: {
@@ -33,15 +35,12 @@ class OrderService {
   static async placeOrder(cartOwner, paymentType = "cod", address = {}, type = "cart") {
     const transaction = await sequelize.transaction();
 
-    console.log(type);
-
     const { type: userType, id: ownerId } = cartOwner;
     const isGuest = userType === "guest";
     const userId = isGuest ? null : ownerId;
     const sessionId = isGuest ? ownerId : null;
 
     const config = modelsMap[userType];
-
     const { model: Model, field } = config;
 
     try {
@@ -63,6 +62,10 @@ class OrderService {
         transaction,
       });
 
+      if (!cartBillingAddress) {
+        throw ErrorHandler.createError("Billing address not found", HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION_ERROR);
+      }
+
       const cart = await models.Cart.findOne({
         where: whereClause,
         include: [
@@ -79,7 +82,7 @@ class OrderService {
               {
                 model: models.ProductVariants,
                 as: "variant",
-                attributes: ["id", "sku", "price", "media_path", "stock"],
+                attributes: ["id", "sku", "price", "media_path", "stock", "title"],
               },
             ],
           },
@@ -109,101 +112,117 @@ class OrderService {
         }
       }
 
-      // Create the order
-      // const order = await models.Orders.create(
-      //   {
-      //     order_id: this.generateOrderId(),
-      //     user_id: userId,
-      //     session_id: sessionId,
-      //     status: "pending",
-      //     payment_status: "pending",
-      //     payment_type: paymentType,
-      //     subtotal: cart.subtotal,
-      //     discount_total: cart.discount_total,
-      //     tax_total: cart.tax_total,
-      //     grand_total: cart.grand_total,
-      //   },
-      //   { transaction },
-      // );
+      // Create the order record
+      const order = await models.Orders.create(
+        {
+          order_id: this.generateOrderId(),
+          user_id: userId,
+          session_id: sessionId,
+          status: "pending",
+          payment_status: "pending",
+          payment_type: paymentType,
+          subtotal: cart.subtotal,
+          discount_total: cart.discount_total,
+          tax_total: cart.tax_total,
+          grand_total: cart.grand_total,
+        },
+        { transaction },
+      );
 
       // Create order items and reduce stock
-      // for (const item of cart.items) {
-      //   await models.OrderItem.create(
-      //     {
-      //       order_id: order.id,
-      //       product_id: item.product_id,
-      //       variant_id: item.variant_id,
-      //       quantity: item.quantity,
-      //       price: item.price,
-      //       discount_amount: item.discount_amount,
-      //     },
-      //     { transaction },
-      //   );
+      for (const item of cart.items) {
+        await models.OrderItem.create(
+          {
+            order_id: order.id,
+            product_id: item.product_id,
+            variant_id: item.variant_id,
+            quantity: item.quantity,
+            price: item.price,
+            discount_amount: item.discount_amount,
+          },
+          { transaction },
+        );
 
-      //   // Reduce variant stock
-      //   await models.ProductVariants.update({ stock: item.variant.stock - item.quantity }, { where: { id: item.variant_id }, transaction });
-      // }
-
-      // Create order addresses (billing + shipping)
-      // if (cartBillingAddress) {
-      //   const billingAddress = await models.OrderAddress.create(
-      //     {
-      //       order_id: order.id,
-      //       address_type: "billing",
-      //       name: cartBillingAddress.name,
-      //       company_name: cartBillingAddress.company_name,
-      //       email: cartBillingAddress.email,
-      //       country_code: cartBillingAddress.country_code || "+91",
-      //       phone: cartBillingAddress.phone,
-      //       street_address: cartBillingAddress.street_address,
-      //       apartment: cartBillingAddress.apartment || null,
-      //       state_id: cartBillingAddress.state_id || null,
-      //       order_notes: cartBillingAddress.order_notes || null,
-      //     },
-      //     { transaction },
-      //   );
-
-      //   if (cartShippingAddress) {
-      //     await models.OrderAddress.create(
-      //       {
-      //         order_id: order.id,
-      //         address_type: "shipping",
-      //         name: cartShippingAddress.name,
-      //         company_name: cartShippingAddress.company_name,
-      //         email: cartShippingAddress.email,
-      //         country_code: cartShippingAddress.country_code || "+91",
-      //         phone: cartShippingAddress.phone,
-      //         street_address: cartShippingAddress.street_address,
-      //         apartment: cartShippingAddress.apartment || null,
-      //         state_id: cartShippingAddress.state_id || null,
-      //         order_notes: cartShippingAddress.order_notes || null,
-      //       },
-      //       { transaction },
-      //     );
-      //   }
-      // }
-
-      // Mark cart as ordered and clear items
-      type == "cart" && (await cart.update({ status: "ordered" }, { transaction }));
-
-      const cartItemswhere = {
-        cart_id: cart.id,
-      };
-
-      if (type === "buynow") {
-        cartItemswhere.is_buy_now = true;
+        // Reduce variant stock
+        await models.ProductVariants.update({ stock: item.variant.stock - item.quantity }, { where: { id: item.variant_id }, transaction });
       }
 
-      console.log(cartItemswhere);
+      // Create order addresses (billing + shipping)
+      await models.OrderAddress.create(
+        {
+          order_id: order.id,
+          address_type: "billing",
+          name: cartBillingAddress.name,
+          company_name: cartBillingAddress.company_name,
+          email: cartBillingAddress.email,
+          country_code: cartBillingAddress.country_code || "+971",
+          phone: cartBillingAddress.phone,
+          street_address: cartBillingAddress.street_address,
+          apartment: cartBillingAddress.apartment || null,
+          state_id: cartBillingAddress.state_id || null,
+          order_notes: cartBillingAddress.order_notes || null,
+        },
+        { transaction },
+      );
 
-      return;
+      if (cartShippingAddress) {
+        await models.OrderAddress.create(
+          {
+            order_id: order.id,
+            address_type: "shipping",
+            name: cartShippingAddress.name,
+            company_name: cartShippingAddress.company_name,
+            email: cartShippingAddress.email,
+            country_code: cartShippingAddress.country_code || "+971",
+            phone: cartShippingAddress.phone,
+            street_address: cartShippingAddress.street_address,
+            apartment: cartShippingAddress.apartment || null,
+            state_id: cartShippingAddress.state_id || null,
+            order_notes: cartShippingAddress.order_notes || null,
+          },
+          { transaction },
+        );
+      }
 
-      await models.CartItems.destroy({
-        where: cartItemswhere,
-        transaction,
-      });
+      // Mark cart as ordered and clear items
+      if (type === "cart") {
+        await cart.update({ status: "ordered" }, { transaction });
+      }
+
+      const cartItemsWhere = { cart_id: cart.id };
+      if (type === "buynow") {
+        cartItemsWhere.is_buy_now = true;
+      }
+
+      const deletedCount = await models.CartItems.destroy({ where: cartItemsWhere, transaction, force: true });
+
+      if (deletedCount > 0) {
+        console.log(`✅ CartItems deleted successfully. Count: ${deletedCount}`);
+      } else {
+        console.warn("⚠️ No CartItems found to delete.");
+      }
 
       await transaction.commit();
+
+      // ── Enqueue order confirmation email (fire & forget — non-blocking) ──
+      // addOrderConfirmationJob({
+      //   orderId: order.id,
+      //   orderCode: order.order_id,
+      //   email: cartBillingAddress.email,
+      //   name: cartBillingAddress.name,
+      //   paymentType,
+      //   subtotal: cart.subtotal,
+      //   discount_total: cart.discount_total,
+      //   tax_total: cart.tax_total,
+      //   grand_total: cart.grand_total,
+      //   items: cart.items.map((item) => ({
+      //     title: item.variant?.title || item.product?.title || "Product",
+      //     sku: item.variant?.sku || "",
+      //     quantity: item.quantity,
+      //     price: item.price,
+      //     line_total: (parseFloat(item.price) * item.quantity).toFixed(2),
+      //   })),
+      // }).catch((err) => Logger.error(`Failed to enqueue order confirmation email for order ${order.order_id}: ${err.message}`));
 
       return await this.getOrderById(userId, sessionId, order.id);
     } catch (error) {

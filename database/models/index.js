@@ -101,6 +101,7 @@ const defineProductVariants = require("./resources/productVariants");
 const defineProductVariantAttributes = require("./resources/productVariantAttributes");
 const defineProductVariantImages = require("./resources/productVariantImages");
 const defineProductVariantCategories = require("./resources/productVariantCategories");
+const defineProductVariantBoughtTogether = require("./resources/productVariantBoughtTogether");
 const defineProductProjectImage = require("./resources/productProjectImage");
 const defineProductModels = require("./resources/productModels");
 
@@ -251,6 +252,7 @@ const models = {
   ProductVariantAttributes: defineProductVariantAttributes(sequelize),
   ProductVariantImages: defineProductVariantImages(sequelize),
   ProductVariantCategories: defineProductVariantCategories(sequelize),
+  ProductVariantBoughtTogether: defineProductVariantBoughtTogether(sequelize),
   ProductProjectImage: defineProductProjectImage(sequelize),
   ProductModels: defineProductModels(sequelize),
 

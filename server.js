@@ -12,6 +12,7 @@ const cookieParser = require("cookie-parser");
 const { createAdminUser } = require("./database/seeders/adminUser");
 const { seedMetaTags } = require("./database/seeders/metaTags");
 const { redisClient, connectRedis } = require("./config/redis");
+const { startEmailWorker, stopEmailWorker } = require("./queues/workers/emailWorker");
 const { homeCmsData } = require("./database/seeders/HomeCms");
 const users = require("./database/models/users/users");
 const seedCountriesAndStates = require("./database/seeders/stateCountry");
@@ -72,6 +73,8 @@ const startServer = async () => {
     await connectRedis();
     app.set("redisClient", redisClient);
 
+    startEmailWorker();
+
     app.listen(PORT, () => {
       Logger.info(`🚀 Server running on port ${PORT}`);
 
@@ -111,6 +114,7 @@ const startServer = async () => {
 startServer();
 
 process.on("SIGINT", async () => {
+  await stopEmailWorker();
   await sequelize.close();
   process.exit(0);
 });

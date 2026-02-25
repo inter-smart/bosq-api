@@ -12,7 +12,7 @@ const DataModel = models.ProductVariants;
 class ProductVariantsController {
   static async index(req, res) {
     try {
-      const { product_id, product_model_id } = req.query;
+      const { product_id, product_model_id, category_id } = req.query;
 
       const whereClause = {};
       if (product_model_id) {
@@ -22,6 +22,14 @@ class ProductVariantsController {
       if (product_id) {
         // Filter by base product ID via the productModel association
         whereClause["$productModel.product_id$"] = product_id;
+      }
+
+      if (category_id) {
+        whereClause[Op.and] = sequelize.literal(`EXISTS (
+          SELECT 1 FROM "product_variant_categories" pvc
+          WHERE pvc."product_variant_id" = "ProductVariants"."id"
+            AND pvc."category_id" = ${parseInt(category_id, 10)}
+        )`);
       }
 
       const result = await paginate(DataModel, req, {

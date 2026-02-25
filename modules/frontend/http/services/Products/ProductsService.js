@@ -22,25 +22,37 @@ class ProductsService {
     const filterEntries = Object.entries(filters);
 
     const isModelAndFilters = model && filterEntries.length > 0;
-    console.log("HERE");
 
     try {
       const baseProduct = await ProductServiceHelpers?.getProductBaseData(slug);
       const { data: baseData, fromCache } = baseProduct;
-
-      console.log("HERE");
-
-      const relatedModels = await ProductServiceHelpers?.getProductVariantRelatedModels(baseData?.id);
-
-      const { data: modelsData, fromCache: modelsFromCache } = relatedModels;
 
       let initialVariant;
 
       if (variantSku) {
         const variantData = await models.ProductVariants.findOne({
           where: { sku: variantSku, status: true },
-          attributes: ["id", "product_model_id", "sku", "title", "title_ar", "price", "stock", "media_path", "design_title_ar", "design_title"],
+          attributes: [
+            "id",
+            "product_model_id",
+            "sku",
+            "title",
+            "title_ar",
+            "price",
+            "stock",
+            "media_path",
+            "design_title_ar",
+            "design_title",
+            "hover_media_path",
+          ],
           include: [
+            {
+              model: models.ProductCategory,
+              as: "categories",
+              attributes: ["id", "name", "name_ar", "slug"],
+              through: { attributes: [] },
+              required: false,
+            },
             {
               association: "variant_images",
               attributes: ["id", "media_path", "media_type", "is_primary", "sort_order", "thumbnail_path"],
@@ -67,7 +79,6 @@ class ProductsService {
         initialVariant = transformedData?.data?.variantData;
       } else {
         if (model && !isModelAndFilters) {
-          console.log("HERE 1");
           const productModelData = await models.ProductModels.findOne({
             where: { product_id: baseData?.id, slug: model, status: true },
             attributes: ["id", "code", "title", "slug", "media_path", "title_ar"],
@@ -75,9 +86,28 @@ class ProductsService {
             include: [
               {
                 association: "variants",
-                attributes: ["id", "product_model_id", "sku", "title", "title_ar", "price", "stock", "media_path", "design_title_ar", "design_title"],
+                attributes: [
+                  "id",
+                  "product_model_id",
+                  "sku",
+                  "title",
+                  "title_ar",
+                  "price",
+                  "stock",
+                  "media_path",
+                  "hover_media_path",
+                  "design_title_ar",
+                  "design_title",
+                ],
                 required: true,
                 include: [
+                  {
+                    model: models.ProductCategory,
+                    as: "categories",
+                    attributes: ["id", "name", "name_ar", "slug"],
+                    through: { attributes: [] },
+                    required: false,
+                  },
                   {
                     association: "variant_images",
                     attributes: ["id", "media_path", "media_type", "is_primary", "sort_order"],
@@ -144,8 +174,27 @@ class ProductsService {
           // Find variant matching all filters
           const variantData = await models.ProductVariants.findOne({
             where: whereClause,
-            attributes: ["id", "product_model_id", "sku", "title", "title_ar", "price", "stock", "media_path"],
+            attributes: [
+              "id",
+              "product_model_id",
+              "sku",
+              "title",
+              "title_ar",
+              "price",
+              "stock",
+              "media_path",
+              "hover_media_path",
+              "design_title_ar",
+              "design_title",
+            ],
             include: [
+              {
+                model: models.ProductCategory,
+                as: "categories",
+                attributes: ["id", "name", "name_ar", "slug"],
+                through: { attributes: [] },
+                required: false,
+              },
               {
                 association: "variant_images",
                 attributes: ["id", "media_path", "media_type", "is_primary", "sort_order", "thumbnail_path"],
@@ -185,7 +234,7 @@ class ProductsService {
       const similarVariants = data?.similarProducts || [];
       const isVariantWishListed = data?.isVariantWishListed || false;
 
-      console.log(data);
+      const boughtTogetherVariants = await ProductServiceHelpers.getBoughtTogetherProducts(currentVariantId, initialVariant);
 
       if (isLoggedInUser && isVariantWishListed) {
         initialVariant.isWishlisted = true;
@@ -195,8 +244,8 @@ class ProductsService {
         data: {
           product: baseData,
           initialVariant,
-          models: modelsData,
           similarVariants,
+          boughtTogetherVariants,
         },
         fromCache: false,
         message: "Data fetched",
@@ -495,7 +544,7 @@ class ProductsService {
           stock: json?.stock,
           categories: (json?.categories || []).map((c) => ({ id: c.id, name: c.name, name_ar: c.name_ar, slug: c.slug })),
           variant_attributes: json?.variant_attributes,
-          query_params: generateQueryParams(variantSku, modelSlug, formattedAttributes),
+          query_params: generateQueryParams(variantSku, formattedAttributes),
         };
       });
 
@@ -941,7 +990,7 @@ class ProductsService {
           stock: row.stock,
           categories: Array.isArray(row.categories) ? row.categories : JSON.parse(row.categories || "[]"),
           variant_attributes: variantAttrs,
-          query_params: generateQueryParams(row.sku, row.model_slug, formattedAttributes),
+          query_params: generateQueryParams(row.sku, formattedAttributes),
         };
       });
 

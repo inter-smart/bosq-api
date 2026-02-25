@@ -7,7 +7,7 @@ const EmailService = require("../../../../services/EmailService");
 
 const dataModel = models.CustomizationEnquiry;
 
-class ContactEnquiryService {
+class CustomizationEnquiryService {
   static async store(data) {
     try {
       // ✅ Correct token key
@@ -81,4 +81,4 @@ class ContactEnquiryService {
   }
 }
 
-module.exports = ContactEnquiryService;
+module.exports = CustomizationEnquiryService;

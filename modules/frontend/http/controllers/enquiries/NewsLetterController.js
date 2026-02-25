@@ -10,7 +10,7 @@ class NewsLetterController {
     try {
       const { data, message } = await service.store(req.body);
 return ApiResponse.success(res, {
-        message: "Newsletter subscription submitted successfully",
+        message: RESPONSE_MESSAGES.SUCCESS.SUBSCRIPTION_SUCCESSFUL,
         data: data,
         status: HTTP_STATUS.CREATED,
       });    } catch (error) {

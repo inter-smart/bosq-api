@@ -63,6 +63,14 @@ const RESPONSE_MESSAGES = {
       en: "Search completed successfully",
       ar: "تم إكمال البحث بنجاح",
     },
+    ENQUIRY_RECEIVED: {
+      en: "Enquiry received successfully",
+      ar: "تم استلام الاستفسار بنجاح",
+    },
+    SUBSCRIPTION_SUCCESSFUL: {
+      en: "Newsletter subscription submitted successfully",
+      ar: "تم إرسال طلب الاشتراك في النشرة الإخبارية بنجاح",
+    },
   },
 
   ERROR: {

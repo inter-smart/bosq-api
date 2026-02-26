@@ -86,6 +86,25 @@ class CartService {
                   model: models.ProductVariants,
                   as: "variant",
                   attributes: ["id", "sku", "price", "media_path", "stock", "title", "title_ar"],
+                  include: [
+                    {
+                      model: models.ProductVariantAttributes,
+                      as: "variant_attributes",
+                      attributes: ["id", "attribute_id", "attribute_value_id"],
+                      include: [
+                        {
+                          model: models.ProductAttribute,
+                          as: "ProductAttribute",
+                          attributes: ["id", "name", "name_ar", "code", "slug"],
+                        },
+                        {
+                          model: models.AttributeValues,
+                          as: "AttributeValue",
+                          attributes: ["id", "value", "value_ar", "slug"],
+                        },
+                      ],
+                    },
+                  ],
                 },
               ],
             },
@@ -117,14 +136,40 @@ class CartService {
             where: { is_buy_now: false },
             include: [
               {
-                model: models.ProductBase,
-                as: "product",
-                attributes: ["id", "title", "slug"],
-              },
-              {
                 model: models.ProductVariants,
                 as: "variant",
-                attributes: ["id", "sku", "price", "media_path", "stock", "title", "title_ar"],
+                attributes: ["id", "sku", "price", "media_path", "stock", "title", "title_ar", "design_title", "design_title_ar"],
+                include: [
+                  {
+                    model: models.ProductModels,
+                    as: "productModel",
+                    attributes: ["id"],
+                    include: [
+                      {
+                        model: models.ProductBase,
+                        as: "product",
+                        attributes: ["id", "slug"],
+                      },
+                    ],
+                  },
+                  {
+                    model: models.ProductVariantAttributes,
+                    as: "variant_attributes",
+                    attributes: ["id", "attribute_id", "attribute_value_id"],
+                    include: [
+                      {
+                        model: models.ProductAttribute,
+                        as: "ProductAttribute",
+                        attributes: ["id", "name", "name_ar", "code", "slug"],
+                      },
+                      {
+                        model: models.AttributeValues,
+                        as: "AttributeValue",
+                        attributes: ["id", "value", "value_ar", "slug"],
+                      },
+                    ],
+                  },
+                ],
               },
             ],
           },
@@ -136,14 +181,29 @@ class CartService {
 
       await transaction.commit();
 
-      return {
-        id: cart.id,
-        items: cart.items.map((item) => ({
+      const formattedCartData = cart.items.map((data) => {
+        const item = data.toJSON();
+
+        const formattedAttributes = (item?.variant?.variant_attributes || []).map((va) => ({
+          code: va?.ProductAttribute?.code,
+          slug: va?.ProductAttribute?.slug,
+          values: [
+            {
+              slug: va?.AttributeValue?.slug,
+              value: va?.AttributeValue?.value,
+            },
+          ],
+        }));
+        const variantSku = item?.variant?.sku;
+        return {
           id: item.id,
-          product_id: item?.product_id,
+          base_slug: item?.variant?.productModel?.product?.slug,
           variant_id: item?.variant_id,
           title: item?.variant?.title,
+          title_ar: item?.variant?.title_ar,
           media_path: generateImageUrl(item?.variant?.media_path),
+          design_title: item?.variant?.design_title,
+          design_title_ar: item?.variant?.design_title_ar,
           quantity: item?.quantity,
           price: item?.price,
           discount_amount: item?.discount_amount,
@@ -151,7 +211,13 @@ class CartService {
           is_sold_out: item?.variant ? item?.variant.stock < item?.quantity : false,
           product: item?.product,
           variant: item?.variant,
-        })),
+          query_params: generateQueryParams(variantSku, formattedAttributes),
+        };
+      });
+
+      return {
+        id: cart.id,
+        items: formattedCartData,
         subtotal: cart?.subtotal,
         discount_total: cart?.discount_total,
         tax_total: cart?.tax_total,

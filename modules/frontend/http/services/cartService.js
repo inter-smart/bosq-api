@@ -1,3 +1,4 @@
+const crypto = require("crypto");
 const { models, sequelize } = require("../../../../database/models/index.js");
 const { ErrorHandler } = require("../traits/errorHandler.js");
 const { HTTP_STATUS, ERROR_CODES, RESPONSE_MESSAGES } = require("../traits/constants.js");
@@ -736,6 +737,67 @@ class CartService {
         await transaction.rollback();
       }
 
+      throw error;
+    }
+  }
+
+  /**
+   * Copy user cart items to a new guest cart (call before logout when user wants to keep cart)
+   * Returns the new guest sessionId, or null if cart is empty
+   */
+  static async keepCartAsGuest(userId) {
+    const transaction = await sequelize.transaction();
+
+    try {
+      const userCart = await models.Cart.findOne({
+        where: { user_id: userId, status: "active" },
+        include: [{ model: models.CartItems, as: "items", where: { is_buy_now: false }, required: false }],
+        transaction,
+      });
+
+      if (!userCart || !userCart.items || userCart.items.length === 0) {
+        await transaction.commit();
+        return null;
+      }
+
+      const sessionId = crypto.randomUUID();
+
+      const guestCart = await models.Cart.create(
+        {
+          user_id: null,
+          session_id: sessionId,
+          status: "active",
+          currency: userCart.currency || "AED",
+          subtotal: 0,
+          discount_total: 0,
+          tax_total: 0,
+          grand_total: 0,
+        },
+        { transaction },
+      );
+
+      for (const item of userCart.items) {
+        await models.CartItems.create(
+          {
+            cart_id: guestCart.id,
+            variant_id: item.variant_id,
+            quantity: item.quantity,
+            price: item.price,
+            final_price: item.final_price,
+            discount_amount: item.discount_amount,
+          },
+          { transaction },
+        );
+      }
+
+      await ProductServiceHelpers.recalculateCartTotals(guestCart.id, transaction);
+
+      await transaction.commit();
+      return sessionId;
+    } catch (error) {
+      if (!transaction.finished) {
+        await transaction.rollback();
+      }
       throw error;
     }
   }

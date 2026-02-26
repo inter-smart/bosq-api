@@ -297,6 +297,43 @@ class CartController {
   }
 
   /**
+   * Copy user cart to a new guest cart before logout (so cart persists as guest)
+   * POST /api/frontend/cart/keep-as-guest
+   */
+  static async keepAsGuest(req, res) {
+    try {
+      const userId = req.auth?.id;
+
+      if (!userId) {
+        return ApiResponse.error(res, {
+          message: "User must be logged in",
+          status: HTTP_STATUS.UNAUTHORIZED,
+        });
+      }
+
+      const sessionId = await CartService.keepCartAsGuest(userId);
+
+      if (sessionId) {
+        res.cookie(GUEST_SESSION_COOKIE, sessionId, {
+          maxAge: COOKIE_MAX_AGE,
+          httpOnly: true,
+          secure: isProduction,
+          sameSite: isProduction ? "none" : "lax",
+          path: "/",
+        });
+      }
+
+      return ApiResponse.success(res, {
+        message: "Cart saved as guest",
+        data: null,
+        status: HTTP_STATUS.OK,
+      });
+    } catch (error) {
+      return ErrorHandler.handleControllerError(error, res, "CartController.keepAsGuest");
+    }
+  }
+
+  /**
    * Merge guest cart into user cart (call after login)
    * POST /api/frontend/cart/merge
    */

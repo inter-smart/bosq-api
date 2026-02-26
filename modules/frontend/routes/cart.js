@@ -17,5 +17,6 @@ router.delete("/clear", optionalAuth(), cartContext, CartController.clearCart);
 
 // Routes that require authentication
 router.post("/merge", optionalAuth(), cartContext, CartController.mergeCart);
+router.post("/keep-as-guest", optionalAuth(), CartController.keepAsGuest);
 
 module.exports = router;

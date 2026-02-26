@@ -90,6 +90,12 @@ class WishListService {
                 ],
               },
               {
+                model: models.ProductCategory,
+                as: "categories",
+                attributes: ["id", "name", "name_ar"],
+                through: { attributes: [] },
+              },
+              {
                 model: models.ProductModels,
                 as: "productModel",
                 attributes: ["id", "slug"],
@@ -97,13 +103,8 @@ class WishListService {
                   {
                     model: models.ProductBase,
                     as: "product",
-                    attributes: ["id", "category_id", "slug", "description", "description_ar", "details", "details_ar"],
+                    attributes: ["id", "slug", "description", "description_ar", "details", "details_ar"],
                     include: [
-                      {
-                        model: models.ProductCategory,
-                        as: "category",
-                        attributes: ["id", "name_ar", "name"],
-                      },
                       {
                         model: models.ProductSectors,
                         as: "sectors",
@@ -125,6 +126,7 @@ class WishListService {
         const variant = json.variant || {};
         const productBase = variant.productModel?.product || {};
         const attributeValues = variant.attribute_values || [];
+        const categories = variant.categories || [];
 
         const modelSlug = variant.productModel?.slug;
         const variantSku = variant.sku;
@@ -157,6 +159,7 @@ class WishListService {
           // name: variant.title,
           base_slug: `${productBase.slug}`,
           price: variant.price,
+          categories,
           query_params: generateQueryParams(variantSku, formattedAttributes),
         };
       });

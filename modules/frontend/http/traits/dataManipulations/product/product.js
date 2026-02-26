@@ -12,8 +12,6 @@ const transformProductData = (productData, startFromVariant = false) => {
     const { productModel, variant_images = [], attribute_values = [], categories = [], ...variant } = jsonData;
     const initialModel = productModel || {};
 
-    console.log(categories);
-
     const attributesMap = {};
     attribute_values.forEach((item) => {
       const attr = item.attribute;
@@ -44,7 +42,7 @@ const transformProductData = (productData, startFromVariant = false) => {
       }
     });
 
-    const orderedImages = variant_images.sort((a, b) => a.sort_order - b.sort_order);
+    const orderedImages = getOrderedImagesFn(variant_images);
 
     const variantData = {
       id: variant?.id,
@@ -134,7 +132,7 @@ const transformProductData = (productData, startFromVariant = false) => {
   const firstVariantImages = variants.length > 0 && variants[0]?.variant_images ? variants[0]?.variant_images : [];
   const variant = variants[0] ? variants[0] : null;
 
-  const orderedImages = firstVariantImages.sort((a, b) => a.sort_order - b.sort_order);
+  const orderedImages = getOrderedImagesFn(firstVariantImages);
 
   const variantData = {
     id: variant?.id,

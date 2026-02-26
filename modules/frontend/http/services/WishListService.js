@@ -77,6 +77,13 @@ class WishListService {
             attributes: ["id", "title", "title_ar", "media_path", "hover_media_path", "price", "stock", "product_code", "sku", "product_model_id"],
             include: [
               {
+                model: models.ProductCategory,
+                as: "categories",
+                attributes: ["id", "name", "name_ar", "slug"],
+                through: { attributes: [] },
+                required: false,
+              },
+              {
                 model: models.AttributeValues,
                 as: "attribute_values",
                 attributes: ["id", "value", "value_ar", "slug", "media_path"],
@@ -97,13 +104,8 @@ class WishListService {
                   {
                     model: models.ProductBase,
                     as: "product",
-                    attributes: ["id", "category_id", "slug", "description", "description_ar", "details", "details_ar"],
+                    attributes: ["id", "slug", "description", "description_ar", "details", "details_ar"],
                     include: [
-                      {
-                        model: models.ProductCategory,
-                        as: "category",
-                        attributes: ["id", "name_ar", "name"],
-                      },
                       {
                         model: models.ProductSectors,
                         as: "sectors",
@@ -146,6 +148,12 @@ class WishListService {
           wishlisted: true,
           title: variant.title,
           title_ar: variant.title_ar,
+          categories: (json.variant?.categories ?? []).map((c) => ({
+            id: c?.id,
+            name: c?.name,
+            name_ar: c?.name_ar,
+            slug: c?.slug,
+          })),
           colorVariant: ["#bababa", "#333333", "#8db600", "#ff0000", "#000000"],
           hoverMedia: variant.hover_media_path
             ? {

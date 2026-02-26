@@ -172,7 +172,6 @@ class WishListService {
           // name: variant.title,
           base_slug: `${productBase.slug}`,
           price: variant.price,
-          categories,
           query_params: generateQueryParams(variantSku, formattedAttributes),
         };
       });

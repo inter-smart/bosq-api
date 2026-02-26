@@ -30,7 +30,7 @@ class ContactEnquiryController {
         where:{
           type: TYPE
         },
-        searchFields: ["title", "description"],
+        searchFields: ["name", "email"],
       });
 
       const response = {

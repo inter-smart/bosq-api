@@ -558,22 +558,22 @@ class EmailService {
 
 
   // ─────────────────────────────────────────────
-//  CUSTOMIZATION ENQUIRY — User Confirmation
+//  GENERAL ENQUIRY — User Confirmation
 // ─────────────────────────────────────────────
-static async sendCustomizationEnquiry(data) {
+static async sendGeneralEnquiry(data) {
   const transporter = this.getTransporter();
 
   return transporter.sendMail({
     from: `"${process.env.EMAIL_FROM_NAME || "BOSQ"}" <${process.env.EMAIL_FROM || process.env.SMTP_USER}>`,
     to: data.email,
-    subject: "We've Received Your Customization Enquiry – BOSQ",
+    subject: "We've Received Your General Enquiry – BOSQ",
     html: `
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Customization Enquiry Confirmation</title>
+  <title>General Enquiry Confirmation</title>
 </head>
 <body style="margin:0;padding:0;background-color:#f0ede8;font-family:Georgia,'Times New Roman',serif;">
 
@@ -615,7 +615,7 @@ static async sendCustomizationEnquiry(data) {
                 Dear ${data.first_name} ${data.last_name},
               </p>
               <p style="margin:0;font-size:14px;color:#666666;line-height:1.85;font-family:Arial,sans-serif;">
-                We have received your customization enquiry and appreciate your interest in BOSQ. 
+                We have received your general enquiry and appreciate your interest in BOSQ. 
                 Our specialists are reviewing your requirements and will provide personalised 
                 recommendations tailored to your needs.
               </p>
@@ -657,7 +657,7 @@ static async sendCustomizationEnquiry(data) {
                     <span style="font-size:11px;font-weight:700;color:#888888;text-transform:uppercase;letter-spacing:1.2px;font-family:Arial,sans-serif;">Help Required</span>
                   </td>
                   <td style="padding:12px 18px;border-bottom:1px solid #e8e3db;border-left:1px solid #e8e3db;vertical-align:top;">
-                    <span style="font-size:13px;color:#c9a96e;font-family:Arial,sans-serif;font-weight:600;">${data.option_label || "Customization Request"}</span>
+                    <span style="font-size:13px;color:#c9a96e;font-family:Arial,sans-serif;font-weight:600;">${data.option_label || "General Request"}</span>
                   </td>
                 </tr>
 
@@ -700,7 +700,7 @@ static async sendCustomizationEnquiry(data) {
                 <tr>
                   <td style="padding:8px 28px 20px;">
                     <p style="margin:0;font-size:14px;color:#cccccc;line-height:1.8;font-family:Arial,sans-serif;">
-                      Our BOSQ customization expert will contact you within <strong style="color:#ffffff;">24 hours</strong> with 
+                      Our BOSQ specialist will contact you within <strong style="color:#ffffff;">24 hours</strong> with
                       tailored recommendations, pricing, and available options for your specific requirements.
                     </p>
                   </td>
@@ -774,22 +774,22 @@ static async sendCustomizationEnquiry(data) {
 
 
 // ─────────────────────────────────────────────
-//  CUSTOMIZATION ENQUIRY — Admin Notification
+//  GENERAL ENQUIRY — Admin Notification
 // ─────────────────────────────────────────────
-static async sendCustomizationEnquiryAdmin(data) {
+static async sendGeneralEnquiryAdmin(data) {
   const transporter = this.getTransporter();
 
   return transporter.sendMail({
     from: `"${process.env.EMAIL_FROM_NAME || "BOSQ"}" <${process.env.EMAIL_FROM || process.env.SMTP_USER}>`,
     to: process.env.ADMIN_EMAIL,
-    subject: `New Customization Enquiry – ${data.first_name} ${data.last_name}`,
+    subject: `New General Enquiry – ${data.first_name} ${data.last_name}`,
     html: `
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>New Customization Enquiry</title>
+  <title>New General Enquiry</title>
 </head>
 <body style="margin:0;padding:0;background-color:#f0ede8;font-family:Georgia,'Times New Roman',serif;">
 
@@ -820,7 +820,7 @@ static async sendCustomizationEnquiryAdmin(data) {
             <td align="center" style="padding:36px 50px 8px;">
               <div style="display:inline-block;background-color:#fff4e0;border:1px solid #c9a96e;border-radius:20px;padding:6px 18px;">
                 <span style="font-size:11px;font-weight:700;color:#c9a96e;text-transform:uppercase;letter-spacing:2px;font-family:Arial,sans-serif;">
-                  ● New Customization Enquiry
+                  ● New General Enquiry
                 </span>
               </div>
             </td>
@@ -830,7 +830,7 @@ static async sendCustomizationEnquiryAdmin(data) {
           <tr>
             <td align="center" style="padding:16px 50px 8px;">
               <h1 style="margin:0;font-size:26px;font-weight:400;color:#1c1c1c;font-family:Georgia,serif;line-height:1.3;">
-                New Customization Enquiry
+                New General Enquiry
               </h1>
               <p style="margin:10px 0 0;font-size:13px;color:#999999;font-family:Arial,sans-serif;">
                 ${new Date().toLocaleString("en-AE", { dateStyle: "full", timeStyle: "short" })}
@@ -965,7 +965,7 @@ static async sendCustomizationEnquiryAdmin(data) {
                   <td style="padding:8px 28px 20px;">
                     <p style="margin:0;font-size:14px;color:#cccccc;line-height:1.8;font-family:Arial,sans-serif;">
                       Please follow up with this customer within <strong style="color:#ffffff;">24 hours</strong> to provide 
-                      tailored customization recommendations and pricing.
+                      tailored recommendations and pricing.
                     </p>
                   </td>
                 </tr>

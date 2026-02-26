@@ -1,18 +1,19 @@
 const { ApiResponse } = require("../../traits/response");
 const { HTTP_STATUS, RESPONSE_MESSAGES } = require("../../traits/constants");
 const service = require("../../services/ContactEnquiryService.js");
+const { ErrorHandler } = require("../../traits/errorHandler.js");
 
 class ContactEnquiryController {
   static async store(req, res) {
     try {
-      const result = await service.store(req.body);
+      const data = await service.store(req.body);
       return ApiResponse.success(res, {
         message: RESPONSE_MESSAGES.SUCCESS.ENQUIRY_RECEIVED,
-        data: result,
+        data,
         status: HTTP_STATUS.CREATED,
       });
     } catch (error) {
-      return ApiResponse.error(res, error, "Internal Server Error", 500);
+      return ErrorHandler.handleControllerError(error, res, "ContactEnquiryController.store");
     }
   }
 }

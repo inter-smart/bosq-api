@@ -1,14 +1,7 @@
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
-const { validationResult } = require("express-validator");
-const { sendValidationError, sendErrorResponse, sendSuccessResponse, sendCustomError } = require("../../../../admin/http/traits/responseHandler.js");
-const {
-  validateRegisterRequest,
-  verifyOtpValidation,
-  createPasswordRequest,
-  loginRequest,
-  forgotPasswordRequest,
-} = require("../../request/authRequest.js");
+const { ErrorHandler } = require("../../traits/errorHandler.js");
+const { RESPONSE_MESSAGES, HTTP_STATUS, ERROR_CODES } = require("../../traits/constants.js");
 const { models, sequelize } = require("../../../../../database/models/index.js");
 const EmailService = require("../../../../../services/EmailService.js");
 const { generateSlugWithTimestamp } = require("../../traits/mediaButtonHelper.js");
@@ -24,16 +17,9 @@ const generateOtp = () => {
 };
 
 class UsersService {
-  static async register(req, res) {
+  static async register(req) {
     const transaction = await sequelize.transaction();
     try {
-      // Run express-validator rules
-      await Promise.all(validateRegisterRequest.map((v) => v.run(req)));
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return sendValidationError(res, errors.array());
-      }
-
       let { name, countryCode, mobile, email } = req.body;
 
       // Trim & normalize inputs
@@ -42,9 +28,13 @@ class UsersService {
       mobile = mobile?.trim();
       email = email?.trim().toLowerCase();
 
-      // Required field check (handles empty strings & spaces)k
+      // Required field check (handles empty strings & spaces)
       if (!name || !countryCode || !mobile || !email) {
-        return sendErrorResponse(res, "All fields are required", null, 400);
+        throw ErrorHandler.createError(
+          RESPONSE_MESSAGES.ERROR.ALL_FIELDS_REQUIRED,
+          HTTP_STATUS.BAD_REQUEST,
+          ERROR_CODES.VALIDATION_ERROR,
+        );
       }
 
       // Check if user already exists
@@ -63,7 +53,11 @@ class UsersService {
       if (existingUser) {
         // If already verified → block
         if (existingUser.email_verified) {
-          return sendErrorResponse(res, "User already exists", null, 400);
+          throw ErrorHandler.createError(
+            RESPONSE_MESSAGES.ERROR.USER_ALREADY_EXISTS,
+            HTTP_STATUS.CONFLICT,
+            ERROR_CODES.DUPLICATE_ERROR,
+          );
         }
 
         await Otps.create(
@@ -84,14 +78,18 @@ class UsersService {
           await EmailService.sendOtp(email, otp);
         } catch (emailError) {
           console.error("Failed to send OTP email:", emailError);
-          return sendErrorResponse(res, "Failed to send OTP email. Please try again.", null, 500);
+          throw ErrorHandler.createError(
+            RESPONSE_MESSAGES.ERROR.OTP_EMAIL_FAILED,
+            HTTP_STATUS.INTERNAL_SERVER_ERROR,
+            ERROR_CODES.INTERNAL_ERROR,
+          );
         }
 
-        return res.status(200).json({
-          success: true,
-          message: "OTP resent successfully",
+        return {
           data: { email, expiresIn: 300 },
-        });
+          message: RESPONSE_MESSAGES.SUCCESS.OTP_RESENT,
+          status: HTTP_STATUS.OK,
+        };
       }
 
       // Create user first to get the user ID
@@ -122,34 +120,34 @@ class UsersService {
       await transaction.commit();
       EmailService.sendOtp(email, otp);
 
-      return res.status(201).json({
-        success: true,
-        message: "OTP sent successfully",
+      return {
         data: { email, expiresIn: 300 },
-      });
+        message: RESPONSE_MESSAGES.SUCCESS.REGISTER_SUCCESS,
+        status: HTTP_STATUS.CREATED,
+      };
     } catch (error) {
-      await transaction.rollback();
+      if (!transaction.finished) {
+        await transaction.rollback();
+      }
 
       // Handle race condition (duplicate email)
       if (error.name === "SequelizeUniqueConstraintError") {
-        return sendErrorResponse(res, "User already exists", null, 400);
+        throw ErrorHandler.createError(
+          RESPONSE_MESSAGES.ERROR.USER_ALREADY_EXISTS,
+          HTTP_STATUS.CONFLICT,
+          ERROR_CODES.DUPLICATE_ERROR,
+        );
       }
 
       console.error("Register Error:", error);
-      return sendErrorResponse(res, error.message, null, 500);
+      throw error;
     }
   }
 
-  static async verifyOtp(req, res) {
+  static async verifyOtp(req) {
     const transaction = await sequelize.transaction();
 
     try {
-      await Promise.all(verifyOtpValidation.map((v) => v.run(req)));
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return sendValidationError(res, errors.array());
-      }
-
       let { email, otp } = req.body;
       const redisClient = req.app.get("redisClient");
 
@@ -170,21 +168,29 @@ class UsersService {
 
       if (!otpRecord) {
         await transaction.rollback();
-        return sendCustomError(res, "Invalid OTP", 400);
+        throw ErrorHandler.createError(
+          RESPONSE_MESSAGES.ERROR.INVALID_OTP,
+          HTTP_STATUS.BAD_REQUEST,
+          ERROR_CODES.VALIDATION_ERROR,
+        );
       }
 
       // Check expiration
       if (new Date() > new Date(otpRecord.expires_at)) {
         await transaction.rollback();
-        return sendCustomError(res, "OTP has expired", 400);
+        throw ErrorHandler.createError(
+          RESPONSE_MESSAGES.ERROR.OTP_EXPIRED,
+          HTTP_STATUS.BAD_REQUEST,
+          ERROR_CODES.VALIDATION_ERROR,
+        );
       }
 
       // Mark OTP as used (no delete)
       await otpRecord.update({ is_used: true }, { transaction });
 
       await Users.update({ email_verified: true }, { where: { email }, transaction });
-      // Generate temp jwt token
 
+      // Generate temp jwt token
       const tempToken = jwt.sign(
         {
           email,
@@ -197,6 +203,7 @@ class UsersService {
           issuer: process.env.JWT_ISSUER || "BOSQ",
         },
       );
+
       if (!redisClient) {
         throw new Error("Redis client not available");
       }
@@ -206,25 +213,20 @@ class UsersService {
 
       await transaction.commit();
 
-      return sendSuccessResponse(res, { tempToken }, "OTP verified successfully", 200);
+      return { data: { tempToken } };
     } catch (error) {
-      await transaction.rollback();
+      if (!transaction.finished) {
+        await transaction.rollback();
+      }
       console.error("Verify OTP Error:", error);
-      return sendErrorResponse(res, error.message, null, 500);
+      throw error;
     }
   }
 
-  // Password creation
-  static async createPassword(req, res) {
+  static async createPassword(req) {
     const transaction = await sequelize.transaction();
 
     try {
-      await Promise.all(createPasswordRequest.map((v) => v.run(req)));
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return sendValidationError(res, errors.array());
-      }
-
       const { password } = req.body;
       const { email } = req.auth;
       const token = req.token;
@@ -235,7 +237,11 @@ class UsersService {
       }
 
       if (!password || !password.trim()) {
-        return sendErrorResponse(res, "Password IS required", null, 400);
+        throw ErrorHandler.createError(
+          RESPONSE_MESSAGES.ERROR.VALIDATION_FAILED,
+          HTTP_STATUS.BAD_REQUEST,
+          ERROR_CODES.VALIDATION_ERROR,
+        );
       }
 
       const redisKey = `register-temp-token:${email}`;
@@ -243,13 +249,21 @@ class UsersService {
 
       if (!redisData) {
         await transaction.rollback();
-        return sendErrorResponse(res, "Token expired or already used", null, 401);
+        throw ErrorHandler.createError(
+          RESPONSE_MESSAGES.ERROR.TOKEN_EXPIRED,
+          HTTP_STATUS.UNAUTHORIZED,
+          ERROR_CODES.AUTH_ERROR,
+        );
       }
 
       const { tempToken } = JSON.parse(redisData);
 
       if (tempToken !== token) {
-        return sendErrorResponse(res, "Token mismatch", null, 401);
+        throw ErrorHandler.createError(
+          RESPONSE_MESSAGES.ERROR.TOKEN_INVALID,
+          HTTP_STATUS.UNAUTHORIZED,
+          ERROR_CODES.AUTH_ERROR,
+        );
       }
 
       // Find user
@@ -261,13 +275,21 @@ class UsersService {
 
       if (!user) {
         await transaction.rollback();
-        return sendErrorResponse(res, "User not found", null, 404);
+        throw ErrorHandler.createError(
+          RESPONSE_MESSAGES.ERROR.USER_NOT_FOUND,
+          HTTP_STATUS.NOT_FOUND,
+          ERROR_CODES.NOT_FOUND_ERROR,
+        );
       }
 
-      /* 🔴 Password already set (important!) */
+      // Password already set
       if (user.password) {
         await transaction.rollback();
-        return sendErrorResponse(res, "Password already created", null, 409);
+        throw ErrorHandler.createError(
+          RESPONSE_MESSAGES.ERROR.PASSWORD_ALREADY_SET,
+          HTTP_STATUS.CONFLICT,
+          ERROR_CODES.DUPLICATE_ERROR,
+        );
       }
 
       // Hash password
@@ -281,42 +303,41 @@ class UsersService {
 
       await transaction.commit();
 
-      return sendSuccessResponse(res, { userId: user.id }, "Account created successfully", 200);
+      return { data: { userId: user.id } };
     } catch (error) {
+      if (!transaction.finished) {
+        await transaction.rollback();
+      }
       console.error("Password creation failed:", error);
-      return sendErrorResponse(res, error.message, null, 500);
+      throw error;
     }
   }
 
   static async login(req, res) {
-    const transaction = await sequelize.transaction();
-
+const transaction = await sequelize.transaction();
     try {
-      await Promise.all(loginRequest.map((v) => v.run(req)));
-      const errors = validationResult(req);
-
-      if (!errors.isEmpty()) {
-        await transaction.rollback();
-        return sendValidationError(res, errors.array());
-      }
-
       const { email, password } = req.body;
       const user = await Users.findOne({
         where: { email },
         attributes: ["id", "email", "password", "name", "country_code", "mobile"],
-        transaction,
       });
 
       if (!user) {
-        await transaction.rollback();
-        return sendErrorResponse(res, "User not found", null, 404);
+        throw ErrorHandler.createError(
+          RESPONSE_MESSAGES.ERROR.USER_NOT_FOUND,
+          HTTP_STATUS.NOT_FOUND,
+          ERROR_CODES.NOT_FOUND_ERROR,
+        );
       }
 
       if (user.password) {
         const isPasswordValid = await bcrypt.compare(password, user.password);
         if (!isPasswordValid) {
-          await transaction.rollback();
-          return sendErrorResponse(res, "Invalid password", null, 401);
+          throw ErrorHandler.createError(
+            RESPONSE_MESSAGES.ERROR.PASSWORD_INCORRECT,
+            HTTP_STATUS.UNAUTHORIZED,
+            ERROR_CODES.AUTH_ERROR,
+          );
         }
       }
 
@@ -338,31 +359,21 @@ class UsersService {
       await transaction.commit();
 
       return {
-        success: true,
-        message: "Login successful",
         data: { user: { id: user.id, name: user.name, phone: mobileNumber, email: user.email } },
       };
     } catch (error) {
-      await transaction.rollback();
-      console.error("Login Error:", error);
-
-      if (!res.headersSent) {
-        return sendErrorResponse(res, error.message, null, 500);
+      if (!transaction.finished) {
+        await transaction.rollback();
       }
+      console.error("Login Error:", error);
+      throw error;
     }
   }
 
-  // forgot password
-  static async forgotPassword(req, res) {
+  static async forgotPassword(req) {
     const transaction = await sequelize.transaction();
 
     try {
-      await Promise.all(forgotPasswordRequest.map((v) => v.run(req)));
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return sendValidationError(res, errors.array());
-      }
-
       const { email } = req.body;
 
       const user = await Users.findOne({
@@ -372,7 +383,11 @@ class UsersService {
 
       if (!user) {
         await transaction.rollback();
-        return sendErrorResponse(res, "User not found", null, 404);
+        throw ErrorHandler.createError(
+          RESPONSE_MESSAGES.ERROR.USER_NOT_FOUND,
+          HTTP_STATUS.NOT_FOUND,
+          ERROR_CODES.NOT_FOUND_ERROR,
+        );
       }
 
       const lastOtp = await Otps.findOne({
@@ -389,10 +404,14 @@ class UsersService {
 
       if (lastOtp) {
         await transaction.rollback();
-        return sendErrorResponse(res, "Please wait before requesting another OTP", null, 429);
+        throw ErrorHandler.createError(
+          RESPONSE_MESSAGES.ERROR.OTP_RATE_LIMITED,
+          HTTP_STATUS.TOO_MANY_REQUESTS,
+          ERROR_CODES.RATE_LIMIT_ERROR,
+        );
       }
 
-      // invalidate old OTPs
+      // Invalidate old OTPs
       await Otps.update(
         { is_used: true },
         {
@@ -419,36 +438,26 @@ class UsersService {
         },
         { transaction },
       );
+
       await transaction.commit();
 
-      // respond first
-      res.status(200).json({
-        success: true,
-        message: "OTP sent successfully",
-        data: { expiresIn: 300 },
-      });
-
-      // async email
+      // Async email
       EmailService.sendOtp(email, otp).catch((err) => console.error("OTP email failed:", err));
+
+      return { data: { expiresIn: 300 } };
     } catch (error) {
       if (!transaction.finished) {
         await transaction.rollback();
       }
-      console.error("Login Error:", error);
-      return sendErrorResponse(res, error.message, null, 500);
+      console.error("Forgot Password Error:", error);
+      throw error;
     }
   }
 
-  static async verifyForgotPasswordOtp(req, res) {
+  static async verifyForgotPasswordOtp(req) {
     const transaction = await sequelize.transaction();
 
     try {
-      await Promise.all(verifyOtpValidation.map((v) => v.run(req)));
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return sendValidationError(res, errors.array());
-      }
-
       let { email, otp } = req.body;
       const redisClient = req.app.get("redisClient");
 
@@ -469,21 +478,29 @@ class UsersService {
 
       if (!otpRecord) {
         await transaction.rollback();
-        return sendCustomError(res, "Invalid OTP", 400);
+        throw ErrorHandler.createError(
+          RESPONSE_MESSAGES.ERROR.INVALID_OTP,
+          HTTP_STATUS.BAD_REQUEST,
+          ERROR_CODES.VALIDATION_ERROR,
+        );
       }
 
       // Check expiration
       if (new Date() > new Date(otpRecord.expires_at)) {
         await transaction.rollback();
-        return sendCustomError(res, "OTP has expired", 400);
+        throw ErrorHandler.createError(
+          RESPONSE_MESSAGES.ERROR.OTP_EXPIRED,
+          HTTP_STATUS.BAD_REQUEST,
+          ERROR_CODES.VALIDATION_ERROR,
+        );
       }
 
       // Mark OTP as used (no delete)
       await otpRecord.update({ is_used: true }, { transaction });
 
       await Users.update({ email_verified: true }, { where: { email }, transaction });
-      // Generate temp jwt token
 
+      // Generate temp jwt token
       const resetToken = jwt.sign(
         {
           email,
@@ -506,25 +523,20 @@ class UsersService {
 
       await transaction.commit();
 
-      return sendSuccessResponse(res, { resetToken }, "OTP verified successfully", 200);
+      return { data: { resetToken } };
     } catch (error) {
-      await transaction.rollback();
-      console.error("Verify OTP Error:", error);
-      return sendErrorResponse(res, error.message, null, 500);
+      if (!transaction.finished) {
+        await transaction.rollback();
+      }
+      console.error("Verify Forgot Password OTP Error:", error);
+      throw error;
     }
   }
 
-  // Password creation
-  static async createNewPassword(req, res) {
+  static async createNewPassword(req) {
     const transaction = await sequelize.transaction();
 
     try {
-      await Promise.all(createPasswordRequest.map((v) => v.run(req)));
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return sendValidationError(res, errors.array());
-      }
-
       const { password } = req.body;
       const { email } = req.auth;
       const token = req.token;
@@ -535,7 +547,11 @@ class UsersService {
       }
 
       if (!password || !password.trim()) {
-        return sendErrorResponse(res, "Password Is required", null, 400);
+        throw ErrorHandler.createError(
+          RESPONSE_MESSAGES.ERROR.VALIDATION_FAILED,
+          HTTP_STATUS.BAD_REQUEST,
+          ERROR_CODES.VALIDATION_ERROR,
+        );
       }
 
       const redisKey = `forgot-password-temp-token:${email}`;
@@ -543,13 +559,21 @@ class UsersService {
 
       if (!redisData) {
         await transaction.rollback();
-        return sendErrorResponse(res, "Token expired or already used", null, 401);
+        throw ErrorHandler.createError(
+          RESPONSE_MESSAGES.ERROR.TOKEN_EXPIRED,
+          HTTP_STATUS.UNAUTHORIZED,
+          ERROR_CODES.AUTH_ERROR,
+        );
       }
 
       const { resetToken } = JSON.parse(redisData);
 
       if (resetToken !== token) {
-        return sendErrorResponse(res, "Token mismatch", null, 401);
+        throw ErrorHandler.createError(
+          RESPONSE_MESSAGES.ERROR.TOKEN_INVALID,
+          HTTP_STATUS.UNAUTHORIZED,
+          ERROR_CODES.AUTH_ERROR,
+        );
       }
 
       // Find user
@@ -561,7 +585,11 @@ class UsersService {
 
       if (!user) {
         await transaction.rollback();
-        return sendErrorResponse(res, "User not found", null, 404);
+        throw ErrorHandler.createError(
+          RESPONSE_MESSAGES.ERROR.USER_NOT_FOUND,
+          HTTP_STATUS.NOT_FOUND,
+          ERROR_CODES.NOT_FOUND_ERROR,
+        );
       }
 
       // Hash password
@@ -575,10 +603,13 @@ class UsersService {
 
       await transaction.commit();
 
-      return sendSuccessResponse(res, { userId: user.id }, "Password reset successfully", 200);
+      return { data: { userId: user.id } };
     } catch (error) {
-      console.error("Password creation failed:", error);
-      return sendErrorResponse(res, error.message, null, 500);
+      if (!transaction.finished) {
+        await transaction.rollback();
+      }
+      console.error("Create New Password Error:", error);
+      throw error;
     }
   }
 
@@ -590,7 +621,11 @@ class UsersService {
 
       if (!token) {
         await transaction.rollback();
-        return sendErrorResponse(res, "Google token is required", null, 400);
+        throw ErrorHandler.createError(
+          RESPONSE_MESSAGES.ERROR.GOOGLE_TOKEN_REQUIRED,
+          HTTP_STATUS.BAD_REQUEST,
+          ERROR_CODES.VALIDATION_ERROR,
+        );
       }
 
       // Verify the access token and get user info from Google
@@ -600,7 +635,11 @@ class UsersService {
 
       if (!googleRes.ok) {
         await transaction.rollback();
-        return sendErrorResponse(res, "Invalid or expired Google token", null, 401);
+        throw ErrorHandler.createError(
+          RESPONSE_MESSAGES.ERROR.GOOGLE_TOKEN_INVALID,
+          HTTP_STATUS.UNAUTHORIZED,
+          ERROR_CODES.AUTH_ERROR,
+        );
       }
 
       const googleUser = await googleRes.json();
@@ -608,7 +647,11 @@ class UsersService {
 
       if (!email) {
         await transaction.rollback();
-        return sendErrorResponse(res, "Google account does not have an email address", null, 400);
+        throw ErrorHandler.createError(
+          RESPONSE_MESSAGES.ERROR.GOOGLE_EMAIL_MISSING,
+          HTTP_STATUS.BAD_REQUEST,
+          ERROR_CODES.VALIDATION_ERROR,
+        );
       }
 
       const normalizedEmail = email.trim().toLowerCase();
@@ -652,19 +695,14 @@ class UsersService {
       await transaction.commit();
 
       return {
-        success: true,
-        message: "Login successful",
-        data: {
-          user: { id: user.id, name: user.name, email: user.email },
-        },
+        data: { user: { id: user.id, name: user.name, email: user.email } },
       };
     } catch (error) {
-      await transaction.rollback();
-      console.error("Google Login Error:", error);
-
-      if (!res.headersSent) {
-        return sendErrorResponse(res, error.message, null, 500);
+      if (!transaction.finished) {
+        await transaction.rollback();
       }
+      console.error("Google Login Error:", error);
+      throw error;
     }
   }
 }

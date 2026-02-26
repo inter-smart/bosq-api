@@ -4,20 +4,23 @@ const {
   sendSuccessResponse,
 } = require("../../../../admin/http/traits/responseHandler.js");
 const { ApiResponse } = require("../../traits/response.js");
-
+const { RESPONSE_MESSAGES, HTTP_STATUS } = require("../../traits/constants.js");
+const { ErrorHandler } = require("../../traits/errorHandler.js");
 class NewsLetterController {
   static async store(req, res) {
     try {
       const { data, message } = await service.store(req.body);
-return ApiResponse.success(res, {
+      return ApiResponse.success(res, {
         message: RESPONSE_MESSAGES.SUCCESS.SUBSCRIPTION_SUCCESSFUL,
         data: data,
         status: HTTP_STATUS.CREATED,
-      });    } catch (error) {
-      return ApiResponse.error(res, {
-        message: error.message || "Internal Server Error",
-        status: error.statusCode || 500,
       });
+    } catch (error) {
+      return ErrorHandler.handleControllerError(
+        error,
+        res,
+        "NewsLetterController.store",
+      );
     }
   }
 }

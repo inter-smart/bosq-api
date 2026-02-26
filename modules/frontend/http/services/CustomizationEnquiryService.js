@@ -1,31 +1,38 @@
-const { Op } = require("sequelize");
 const { models } = require("../../../../database/models");
 const {
   validateRecaptcha,
 } = require("../../../../services/RecaptchaValidation");
 const EmailService = require("../../../../services/EmailService");
+const { ErrorHandler } = require("../traits/errorHandler");
+const {
+  RESPONSE_MESSAGES,
+  ERROR_CODES,
+  HTTP_STATUS,
+} = require("../traits/constants");
 
 const dataModel = models.CustomizationEnquiry;
 
 class CustomizationEnquiryService {
   static async store(data) {
     try {
-      // ✅ Correct token key
       const token = data?.recaptcha_token;
 
       if (!token) {
-        throw new Error("reCAPTCHA token missing");
+        throw ErrorHandler.createError(
+          RESPONSE_MESSAGES.ERROR.RECAPTCHA_MISSING,
+          HTTP_STATUS.BAD_REQUEST,
+          ERROR_CODES.VALIDATION_ERROR,
+        );
       }
 
-      const { success, score, action } = await validateRecaptcha(token);
+      const { success, score } = await validateRecaptcha(token);
 
-      // ✅ v3 validation
       if (!success || score < 0.5) {
-        const error = new Error(
-          "reCAPTCHA verification failed. Please try again.",
+        throw ErrorHandler.createError(
+          RESPONSE_MESSAGES.ERROR.RECAPTCHA_FAILED,
+          HTTP_STATUS.FORBIDDEN,
+          ERROR_CODES.VALIDATION_ERROR,
         );
-        error.statusCode = 403;
-        throw error;
       }
 
       const { dropdown_id } = data;
@@ -38,7 +45,11 @@ class CustomizationEnquiryService {
           where: { id: dropdown_id },
         });
         if (!isExist) {
-          throw new Error("Invalid customization option");
+          throw ErrorHandler.createError(
+            RESPONSE_MESSAGES.ERROR.INVALID_CUSTOMIZATION_OPTION,
+            HTTP_STATUS.BAD_REQUEST,
+            ERROR_CODES.VALIDATION_ERROR,
+          );
         }
       }
       // Sanitize state_id — convert falsy values to null (column is nullable)
@@ -49,7 +60,11 @@ class CustomizationEnquiryService {
           where: { id: data.state_id },
         });
         if (!stateExists) {
-          throw new Error("Invalid state");
+          throw ErrorHandler.createError(
+            RESPONSE_MESSAGES.ERROR.INVALID_STATE,
+            HTTP_STATUS.BAD_REQUEST,
+            ERROR_CODES.VALIDATION_ERROR,
+          );
         }
       }
 
@@ -68,8 +83,8 @@ class CustomizationEnquiryService {
       const enquiry = await dataModel.create(data);
 
       await Promise.all([
-        EmailService.sendCustomizationEnquiry(emailData),
-        EmailService.sendCustomizationEnquiryAdmin(emailData),
+        EmailService.sendGeneralEnquiry(emailData),
+        EmailService.sendGeneralEnquiryAdmin(emailData),
       ]).catch((error) => {
         console.error("Failed to send emails:", error);
       });

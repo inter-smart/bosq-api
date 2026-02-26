@@ -51,6 +51,14 @@ const RESPONSE_MESSAGES = {
       en: "Logout successful",
       ar: "تم تسجيل الخروج بنجاح",
     },
+    PROFILE_UPDATED: {
+      en: "Profile updated successfully",
+      ar: "تم تحديث الملف الشخصي بنجاح",
+    },
+    PASSWORD_CHANGED: {
+      en: "Password changed successfully. Please login again.",
+      ar: "تم تغيير كلمة المرور بنجاح. يرجى تسجيل الدخول مرة أخرى.",
+    },
     STATS_RETRIEVED: {
       en: "Statistics retrieved successfully",
       ar: "تم جلب الإحصائيات بنجاح",
@@ -70,6 +78,48 @@ const RESPONSE_MESSAGES = {
     SUBSCRIPTION_SUCCESSFUL: {
       en: "Newsletter subscription submitted successfully",
       ar: "تم إرسال طلب الاشتراك في النشرة الإخبارية بنجاح",
+    },
+
+    PROJECT_ENQUIRY_RECEIVED:    {
+      en: "Project enquiry submitted successfully",
+      ar: "تم إرسال استفسار المشروع بنجاح",
+    },
+
+    PRODUCT_ENQUIRY_RECEIVED: {
+      en: "Product enquiry submitted successfully",
+      ar: "تم إرسال استفسار المنتج بنجاح",
+    },
+    REGISTER_SUCCESS: {
+      en: "Registration successful. Please verify your OTP.",
+      ar: "تم التسجيل بنجاح. يرجى التحقق من رمز OTP.",
+    },
+    OTP_RESENT: {
+      en: "OTP resent successfully",
+      ar: "تمت إعادة إرسال رمز OTP بنجاح",
+    },
+    OTP_VERIFIED: {
+      en: "OTP verified successfully",
+      ar: "تم التحقق من رمز OTP بنجاح",
+    },
+    ACCOUNT_CREATED: {
+      en: "Account created successfully",
+      ar: "تم إنشاء الحساب بنجاح",
+    },
+    FORGOT_PASSWORD_OTP_SENT: {
+      en: "OTP sent to your email",
+      ar: "تم إرسال رمز OTP إلى بريدك الإلكتروني",
+    },
+    RESET_PASSWORD_OTP_VERIFIED: {
+      en: "Reset password OTP verified successfully",
+      ar: "تم التحقق من رمز OTP لإعادة تعيين كلمة المرور بنجاح",
+    },
+    PASSWORD_RESET_SUCCESS: {
+      en: "Password reset successfully",
+      ar: "تم إعادة تعيين كلمة المرور بنجاح",
+    },
+    GOOGLE_LOGIN_SUCCESSFUL: {
+      en: "Google login successful",
+      ar: "تم تسجيل الدخول عبر جوجل بنجاح",
     },
   },
 
@@ -198,6 +248,103 @@ const RESPONSE_MESSAGES = {
       en: "Product variant out of stock",
       ar: "متغير المنتج غير متوفر في المخزون",
     },
+    RECAPTCHA_MISSING: {
+      en: "reCAPTCHA token missing",
+      ar: "رمز reCAPTCHA مفقود",
+    },
+    RECAPTCHA_FAILED: {
+      en: "reCAPTCHA verification failed. Please try again.",
+      ar: "فشل التحقق من reCAPTCHA. يرجى المحاولة مرة أخرى.",
+    },
+    ENQUIRY_ALREADY_EXISTS: {
+      en: "You already have an enquiry with this email",
+      ar: "لديك استفسار بالفعل بهذا البريد الإلكتروني",
+    },
+    INVALID_PROJECT: {
+      en: "Invalid project",
+      ar: "المشروع غير صالح",
+    },
+    INVALID_PRODUCT: {
+      en: "Invalid product",
+      ar: "المنتج غير صالح",
+    },
+    INVALID_CUSTOMIZATION_OPTION: {
+      en: "Invalid customization option",
+      ar: "خيار التخصيص غير صالح",
+    },
+    INVALID_STATE: {
+      en: "Invalid state",
+      ar: "الولاية غير صالحة",
+    },
+    USER_NOT_FOUND: {
+      en: "User not found",
+      ar: "لم يتم العثور على المستخدم",
+    },
+    EMAIL_ALREADY_IN_USE: {
+      en: "Email already in use by another account",
+      ar: "البريد الإلكتروني مستخدم بالفعل من قبل حساب آخر",
+    },
+    USER_NO_PASSWORD: {
+      en: "User does not have a password set",
+      ar: "لم يتم تعيين كلمة مرور للمستخدم",
+    },
+    CURRENT_PASSWORD_INCORRECT: {
+      en: "Current password is incorrect",
+      ar: "كلمة المرور الحالية غير صحيحة",
+    },
+    PASSWORD_SAME_AS_OLD: {
+      en: "New password must be different from old password",
+      ar: "يجب أن تكون كلمة المرور الجديدة مختلفة عن كلمة المرور القديمة",
+    },
+
+    EMAIL_ALREADY_EXISTS:{
+      en: "This email is already subscribed to the newsletter",
+      ar: "هذا البريد الإلكتروني مشترك بالفعل في النشرة الإخبارية",
+    },
+    INVALID_OTP: {
+      en: "Invalid OTP",
+      ar: "رمز OTP غير صالح",
+    },
+    OTP_EXPIRED: {
+      en: "OTP has expired",
+      ar: "انتهت صلاحية رمز OTP",
+    },
+    PASSWORD_ALREADY_SET: {
+      en: "Password already created",
+      ar: "كلمة المرور تم إنشاؤها بالفعل",
+    },
+    GOOGLE_TOKEN_REQUIRED: {
+      en: "Google token is required",
+      ar: "رمز Google مطلوب",
+    },
+    GOOGLE_TOKEN_INVALID: {
+      en: "Invalid or expired Google token",
+      ar: "رمز Google غير صالح أو منتهي الصلاحية",
+    },
+    OTP_RATE_LIMITED: {
+      en: "Please wait before requesting another OTP",
+      ar: "يرجى الانتظار قبل طلب رمز OTP آخر",
+    },
+    GOOGLE_EMAIL_MISSING: {
+      en: "Google account does not have an email address",
+      ar: "حساب Google لا يحتوي على عنوان بريد إلكتروني",
+    },
+    USER_ALREADY_EXISTS: {
+      en: "User already exists",
+      ar: "المستخدم موجود بالفعل",
+    },
+    ALL_FIELDS_REQUIRED: {
+      en: "All fields are required",
+      ar: "جميع الحقول مطلوبة",
+    },
+    OTP_EMAIL_FAILED: {
+      en: "Failed to send OTP email. Please try again.",
+      ar: "فشل إرسال بريد OTP. يرجى المحاولة مرة أخرى.",
+    },
+    PASSWORD_INCORRECT:{
+      en: "Password is incorrect",
+      ar: "كلمة المرور غير صحيحة",
+    }
   },
 };
 

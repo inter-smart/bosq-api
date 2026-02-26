@@ -43,22 +43,16 @@ const validationRequestPost = [
   body("phone")
     .optional({ checkFalsy: true })
     .trim()
-    .matches(/^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,9}$/)
+    .matches(
+      /^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,9}$/,
+    )
     .withMessage("Please provide a valid phone number"),
 
   // Options ID
   body("dropdown_id")
-    .notEmpty()
-    .withMessage("Customization option is requiredss")
-    .isInt({ min: 1 })
-    .withMessage("Invalid customization option"),
-
-
+   .optional(),
   // Message
-  body("message")
-    .trim()
-    .notEmpty()
-    .withMessage("Message is required")
+  body("message").optional(),
 ];
 
 // Middleware to handle validation errors

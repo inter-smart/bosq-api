@@ -3,9 +3,15 @@ const {
   validateRecaptcha,
 } = require("../../../../services/RecaptchaValidation");
 const { handleFileUploadStore } = require("../../../admin/http/middleware/multerMiddleware");
+const { ErrorHandler } = require("../traits/errorHandler");
+const {
+  RESPONSE_MESSAGES,
+  ERROR_CODES,
+  HTTP_STATUS,
+} = require("../traits/constants");
 
 class ProductEnquiryService {
-  static async store(req,res) {
+  static async store(req, res) {
     try {
       const data = req.body;
       const token = data?.recaptcha_token;
@@ -13,17 +19,21 @@ class ProductEnquiryService {
       console.log(data?.media_path);
 
       if (!token) {
-        throw new Error("reCAPTCHA token missing");
+        throw ErrorHandler.createError(
+          RESPONSE_MESSAGES.ERROR.RECAPTCHA_MISSING,
+          HTTP_STATUS.BAD_REQUEST,
+          ERROR_CODES.VALIDATION_ERROR,
+        );
       }
 
-      const { success, score, action } = await validateRecaptcha(token);
+      const { success, score } = await validateRecaptcha(token);
 
       if (!success || score < 0.5) {
-        const error = new Error(
-          "reCAPTCHA verification failed. Please try again.",
+        throw ErrorHandler.createError(
+          RESPONSE_MESSAGES.ERROR.RECAPTCHA_FAILED,
+          HTTP_STATUS.FORBIDDEN,
+          ERROR_CODES.VALIDATION_ERROR,
         );
-        error.statusCode = 403;
-        throw error;
       }
 
       const { product_id } = data;
@@ -33,7 +43,11 @@ class ProductEnquiryService {
       });
 
       if (!productExists) {
-        throw new Error("Invalid product");
+        throw ErrorHandler.createError(
+          RESPONSE_MESSAGES.ERROR.INVALID_PRODUCT,
+          HTTP_STATUS.BAD_REQUEST,
+          ERROR_CODES.VALIDATION_ERROR,
+        );
       }
 
       const fileFields = ["media_path"];

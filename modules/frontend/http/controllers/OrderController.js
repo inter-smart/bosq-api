@@ -3,7 +3,7 @@ const OrderService = require("../services/orderService.js");
 const { ApiResponse } = require("../traits/response.js");
 const { ErrorHandler } = require("../traits/errorHandler.js");
 const { HTTP_STATUS } = require("../traits/constants.js");
-const { placeOrderRequest, getOrderByIdRequest, cancelOrderRequest, getOrdersRequest } = require("../request/orderRequest.js");
+const { placeOrderRequest, getOrderByIdRequest, cancelOrderRequest, reorderOrderRequest, getOrdersRequest } = require("../request/orderRequest.js");
 
 const GUEST_SESSION_COOKIE = "guest_cart_session";
 
@@ -159,6 +159,42 @@ class OrderController {
       });
     } catch (error) {
       return ErrorHandler.handleControllerError(error, res, "OrderController.cancelOrder");
+    }
+  }
+
+  /**
+   * Reorder — add items from an existing order to the active cart
+   * POST /api/frontend/orders/:orderId/reorder
+   */
+  static async reorderOrder(req, res) {
+    try {
+      await Promise.all(reorderOrderRequest.map((v) => v.run(req)));
+      const errors = validationResult(req);
+
+      if (!errors.isEmpty()) {
+        return ApiResponse.validationError(res, errors.array());
+      }
+
+      const userId = req.auth?.id || null;
+      const sessionId = OrderController.getSessionId(req);
+      const { orderId } = req.params;
+
+      if (!userId && !sessionId) {
+        return ApiResponse.error(res, {
+          message: "User must be logged in or have an active cart session",
+          status: HTTP_STATUS.BAD_REQUEST,
+        });
+      }
+
+      const cart = await OrderService.reorderOrder(userId, sessionId, parseInt(orderId));
+
+      return ApiResponse.success(res, {
+        message: "Items added to cart successfully",
+        data: cart,
+        status: HTTP_STATUS.OK,
+      });
+    } catch (error) {
+      return ErrorHandler.handleControllerError(error, res, "OrderController.reorderOrder");
     }
   }
 }

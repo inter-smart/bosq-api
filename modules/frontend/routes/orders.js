@@ -41,4 +41,7 @@ router.get("/:orderId", optionalAuth(), cartContext, OrderController.getOrderByI
 // Cancel a pending order
 router.put("/:orderId/cancel", optionalAuth(), cartContext, OrderController.cancelOrder);
 
+// Reorder — add items from a past order to the active cart
+router.post("/:orderId/reorder", optionalAuth(), cartContext, OrderController.reorderOrder);
+
 module.exports = router;

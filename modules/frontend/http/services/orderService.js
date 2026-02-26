@@ -390,6 +390,30 @@ class OrderService {
   }
 
   /**
+   * Reorder — copy items from an existing order back into the active cart
+   */
+  static async reorderOrder(userId, sessionId, orderId) {
+    const CartService = require("./cartService.js");
+
+    const whereClause = userId ? { id: orderId, user_id: userId } : { id: orderId, session_id: sessionId, user_id: null };
+
+    const order = await models.Orders.findOne({
+      where: whereClause,
+      include: [{ model: models.OrderItem, as: "items" }],
+    });
+
+    if (!order) {
+      throw ErrorHandler.createError("Order not found", HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
+    }
+
+    for (const item of order.items) {
+      await CartService.addItem(userId, sessionId, item.variant_id, item.quantity);
+    }
+
+    return CartService.getCart(userId, sessionId);
+  }
+
+  /**
    * Format order for response
    */
   static formatOrder(order) {

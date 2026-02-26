@@ -88,7 +88,39 @@ const RESPONSE_MESSAGES = {
     PRODUCT_ENQUIRY_RECEIVED: {
       en: "Product enquiry submitted successfully",
       ar: "تم إرسال استفسار المنتج بنجاح",
-    }
+    },
+    REGISTER_SUCCESS: {
+      en: "Registration successful. Please verify your OTP.",
+      ar: "تم التسجيل بنجاح. يرجى التحقق من رمز OTP.",
+    },
+    OTP_RESENT: {
+      en: "OTP resent successfully",
+      ar: "تمت إعادة إرسال رمز OTP بنجاح",
+    },
+    OTP_VERIFIED: {
+      en: "OTP verified successfully",
+      ar: "تم التحقق من رمز OTP بنجاح",
+    },
+    ACCOUNT_CREATED: {
+      en: "Account created successfully",
+      ar: "تم إنشاء الحساب بنجاح",
+    },
+    FORGOT_PASSWORD_OTP_SENT: {
+      en: "OTP sent to your email",
+      ar: "تم إرسال رمز OTP إلى بريدك الإلكتروني",
+    },
+    RESET_PASSWORD_OTP_VERIFIED: {
+      en: "Reset password OTP verified successfully",
+      ar: "تم التحقق من رمز OTP لإعادة تعيين كلمة المرور بنجاح",
+    },
+    PASSWORD_RESET_SUCCESS: {
+      en: "Password reset successfully",
+      ar: "تم إعادة تعيين كلمة المرور بنجاح",
+    },
+    GOOGLE_LOGIN_SUCCESSFUL: {
+      en: "Google login successful",
+      ar: "تم تسجيل الدخول عبر جوجل بنجاح",
+    },
   },
 
   ERROR: {
@@ -268,6 +300,50 @@ const RESPONSE_MESSAGES = {
     EMAIL_ALREADY_EXISTS:{
       en: "This email is already subscribed to the newsletter",
       ar: "هذا البريد الإلكتروني مشترك بالفعل في النشرة الإخبارية",
+    },
+    INVALID_OTP: {
+      en: "Invalid OTP",
+      ar: "رمز OTP غير صالح",
+    },
+    OTP_EXPIRED: {
+      en: "OTP has expired",
+      ar: "انتهت صلاحية رمز OTP",
+    },
+    PASSWORD_ALREADY_SET: {
+      en: "Password already created",
+      ar: "كلمة المرور تم إنشاؤها بالفعل",
+    },
+    GOOGLE_TOKEN_REQUIRED: {
+      en: "Google token is required",
+      ar: "رمز Google مطلوب",
+    },
+    GOOGLE_TOKEN_INVALID: {
+      en: "Invalid or expired Google token",
+      ar: "رمز Google غير صالح أو منتهي الصلاحية",
+    },
+    OTP_RATE_LIMITED: {
+      en: "Please wait before requesting another OTP",
+      ar: "يرجى الانتظار قبل طلب رمز OTP آخر",
+    },
+    GOOGLE_EMAIL_MISSING: {
+      en: "Google account does not have an email address",
+      ar: "حساب Google لا يحتوي على عنوان بريد إلكتروني",
+    },
+    USER_ALREADY_EXISTS: {
+      en: "User already exists",
+      ar: "المستخدم موجود بالفعل",
+    },
+    ALL_FIELDS_REQUIRED: {
+      en: "All fields are required",
+      ar: "جميع الحقول مطلوبة",
+    },
+    OTP_EMAIL_FAILED: {
+      en: "Failed to send OTP email. Please try again.",
+      ar: "فشل إرسال بريد OTP. يرجى المحاولة مرة أخرى.",
+    },
+    PASSWORD_INCORRECT:{
+      en: "Password is incorrect",
+      ar: "كلمة المرور غير صحيحة",
     }
   },
 };

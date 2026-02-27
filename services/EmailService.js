@@ -1,4 +1,5 @@
 const nodemailer = require("nodemailer");
+const models = require("../database/models");
 
 class EmailService {
   static transporter = null;
@@ -41,6 +42,29 @@ class EmailService {
     };
 
     return transporter.sendMail(mailOptions);
+  }
+
+  static async getSocialIconsHtml() {
+    try {
+      const socialLinks = await models.SocialMedia.findAll({
+        where: { status: true },
+        order: [["sort_order", "ASC"]],
+      });
+
+      if (!socialLinks || !socialLinks.length) return "";
+
+      const iconsHtml = socialLinks
+        .map((item) => {
+          const label = item.icon_alt ? item.icon_alt.substring(0, 2) : "●";
+          const href = item.link || "#";
+          return `<td style="padding:0 6px;"><a href="${href}" style="display:inline-block;width:32px;height:32px;background-color:#1c1c1c;border-radius:50%;text-align:center;line-height:32px;text-decoration:none;"><span style="color:#ffffff;font-size:11px;font-weight:700;font-family:Arial,sans-serif;">${label}</span></a></td>`;
+        })
+        .join("");
+
+      return `<tr><td align="center" style="padding:0 50px 24px;"><table role="presentation" cellpadding="0" cellspacing="0"><tr>${iconsHtml}</tr></table></td></tr>`;
+    } catch (e) {
+      return "";
+    }
   }
 
   /**
@@ -173,6 +197,7 @@ class EmailService {
   // For contact enquiry
   static async sendContactEnquiry(data) {
     const transporter = this.getTransporter();
+    const socialIconsHtml = await EmailService.getSocialIconsHtml();
 
     return transporter.sendMail({
       from: `"${process.env.EMAIL_FROM_NAME || "BOSQ"}" <${process.env.EMAIL_FROM || process.env.SMTP_USER}>`,
@@ -305,33 +330,7 @@ class EmailService {
             </td>
           </tr>
 
-          <!-- ── SOCIAL ICONS ── -->
-          <tr>
-            <td align="center" style="padding:0 50px 24px;">
-              <table role="presentation" cellpadding="0" cellspacing="0">
-                <tr>
-                  <!-- Facebook -->
-                  <td style="padding:0 6px;">
-                    <a href="#" style="display:inline-block;width:32px;height:32px;background-color:#1c1c1c;border-radius:50%;text-align:center;line-height:32px;text-decoration:none;">
-                      <span style="color:#ffffff;font-size:13px;font-weight:700;font-family:Arial,sans-serif;">f</span>
-                    </a>
-                  </td>
-                  <!-- Instagram -->
-                  <td style="padding:0 6px;">
-                    <a href="#" style="display:inline-block;width:32px;height:32px;background-color:#1c1c1c;border-radius:50%;text-align:center;line-height:32px;text-decoration:none;">
-                      <span style="color:#ffffff;font-size:11px;font-family:Arial,sans-serif;">&#9679;</span>
-                    </a>
-                  </td>
-                  <!-- LinkedIn -->
-                  <td style="padding:0 6px;">
-                    <a href="#" style="display:inline-block;width:32px;height:32px;background-color:#1c1c1c;border-radius:50%;text-align:center;line-height:32px;text-decoration:none;">
-                      <span style="color:#ffffff;font-size:11px;font-weight:700;font-family:Arial,sans-serif;">in</span>
-                    </a>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
+          ${socialIconsHtml}
 
           <!-- ── FOOTER ── -->
           <tr>
@@ -562,6 +561,7 @@ class EmailService {
 // ─────────────────────────────────────────────
 static async sendGeneralEnquiry(data) {
   const transporter = this.getTransporter();
+  const socialIconsHtml = await EmailService.getSocialIconsHtml();
 
   return transporter.sendMail({
     from: `"${process.env.EMAIL_FROM_NAME || "BOSQ"}" <${process.env.EMAIL_FROM || process.env.SMTP_USER}>`,
@@ -728,30 +728,7 @@ static async sendGeneralEnquiry(data) {
             </td>
           </tr>
 
-          <!-- SOCIAL -->
-          <tr>
-            <td align="center" style="padding:0 50px 24px;">
-              <table role="presentation" cellpadding="0" cellspacing="0">
-                <tr>
-                  <td style="padding:0 6px;">
-                    <a href="#" style="display:inline-block;width:32px;height:32px;background-color:#1c1c1c;border-radius:50%;text-align:center;line-height:32px;text-decoration:none;">
-                      <span style="color:#ffffff;font-size:13px;font-weight:700;font-family:Arial,sans-serif;">f</span>
-                    </a>
-                  </td>
-                  <td style="padding:0 6px;">
-                    <a href="#" style="display:inline-block;width:32px;height:32px;background-color:#1c1c1c;border-radius:50%;text-align:center;line-height:32px;text-decoration:none;">
-                      <span style="color:#ffffff;font-size:11px;font-family:Arial,sans-serif;">&#9679;</span>
-                    </a>
-                  </td>
-                  <td style="padding:0 6px;">
-                    <a href="#" style="display:inline-block;width:32px;height:32px;background-color:#1c1c1c;border-radius:50%;text-align:center;line-height:32px;text-decoration:none;">
-                      <span style="color:#ffffff;font-size:11px;font-weight:700;font-family:Arial,sans-serif;">in</span>
-                    </a>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
+          ${socialIconsHtml}
 
           <!-- FOOTER -->
           <tr>
@@ -1016,6 +993,7 @@ static async sendGeneralEnquiryAdmin(data) {
 // ─────────────────────────────────────────────
 static async sendNewsletterConfirmation(email) {
   const transporter = this.getTransporter();
+  const socialIconsHtml = await EmailService.getSocialIconsHtml();
 
   return transporter.sendMail({
     from: `"${process.env.EMAIL_FROM_NAME || "BOSQ"}" <${process.env.EMAIL_FROM || process.env.SMTP_USER}>`,
@@ -1175,30 +1153,7 @@ static async sendNewsletterConfirmation(email) {
             </td>
           </tr>
 
-          <!-- SOCIAL -->
-          <tr>
-            <td align="center" style="padding:0 50px 24px;">
-              <table role="presentation" cellpadding="0" cellspacing="0">
-                <tr>
-                  <td style="padding:0 6px;">
-                    <a href="#" style="display:inline-block;width:32px;height:32px;background-color:#1c1c1c;border-radius:50%;text-align:center;line-height:32px;text-decoration:none;">
-                      <span style="color:#ffffff;font-size:13px;font-weight:700;font-family:Arial,sans-serif;">f</span>
-                    </a>
-                  </td>
-                  <td style="padding:0 6px;">
-                    <a href="#" style="display:inline-block;width:32px;height:32px;background-color:#1c1c1c;border-radius:50%;text-align:center;line-height:32px;text-decoration:none;">
-                      <span style="color:#ffffff;font-size:11px;font-family:Arial,sans-serif;">&#9679;</span>
-                    </a>
-                  </td>
-                  <td style="padding:0 6px;">
-                    <a href="#" style="display:inline-block;width:32px;height:32px;background-color:#1c1c1c;border-radius:50%;text-align:center;line-height:32px;text-decoration:none;">
-                      <span style="color:#ffffff;font-size:11px;font-weight:700;font-family:Arial,sans-serif;">in</span>
-                    </a>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
+          ${socialIconsHtml}
 
           <!-- FOOTER -->
           <tr>

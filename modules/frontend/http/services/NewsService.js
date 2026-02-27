@@ -35,7 +35,7 @@ class newservice {
           where: {
             status: true,
           },
-          order: [["sort_order", "ASC"]],
+          order: [["updatedAt", "ASC"]],
         }),
       ]);
 
@@ -87,7 +87,7 @@ class newservice {
 
       const { count, rows } = await models.News.findAndCountAll({
         where: { status: true },
-        order: [["sort_order", "ASC"]],
+        order: [["updatedAt", "ASC"]],
         limit: parsedLimit,
         offset,
       });
@@ -169,19 +169,19 @@ class newservice {
         models.News.findOne({
           attributes: ["slug"],
           where: {
-            createdAt: { [Op.lt]: news?.createdAt },
+            updatedAt: { [Op.lt]: news?.updatedAt },
             status: true,
           },
-          order: [["createdAt", "DESC"]],
+          order: [["updatedAt", "DESC"]],
         }),
 
         models.News.findOne({
           attributes: ["slug"],
           where: {
-            createdAt: { [Op.gt]: news?.createdAt },
+            updatedAt: { [Op.gt]: news?.updatedAt },
             status: true,
           },
-          order: [["createdAt", "ASC"]],
+          order: [["updatedAt", "ASC"]],
         }),
 
         keywords.length
@@ -235,7 +235,7 @@ class newservice {
       ]);
 
       const heroData = buildTitleSection(cms);
-      const newsData = buildNewsDetailsData(news, prevnews, nextnews);
+      const newsData = buildNewsDetailsData(news, nextnews, prevnews);
       const relatedNewsData = buildRelatedNewsSection(cms,relatednews, "related_news");
       const popularNewsData = buildRelatedNewsSection(cms, popularnews, "popular_news");
       const metaData = buildOtherMetaData(news);

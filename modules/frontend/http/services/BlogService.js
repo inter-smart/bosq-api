@@ -39,7 +39,7 @@ class BlogService {
           where: {
             status: true,
           },
-          order: [["createdAt", "ASC"]],
+          order: [["updatedAt", "ASC"]],
         }),
       ]);
 
@@ -167,19 +167,19 @@ class BlogService {
           models.Blogs.findOne({
             attributes: ["slug"],
             where: {
-              updatedAt: { [Op.lt]: blog.updatedAt },
+              updatedAt: { [Op.gt]: blog.updatedAt },
               status: true,
             },
-            order: [["updatedAt", "DESC"]],
+            order: [["updatedAt", "ASC"]],
           }),
 
           models.Blogs.findOne({
             attributes: ["slug"],
             where: {
-              updatedAt: { [Op.gt]: blog.updatedAt },
+              updatedAt: { [Op.lt]: blog.updatedAt },
               status: true,
             },
-            order: [["updatedAt", "ASC"]],
+            order: [["updatedAt", "DESC"]],
           }),
 
           keywords.length
@@ -210,7 +210,7 @@ class BlogService {
                 },
 
                 limit: 5,
-                order: [["createdAt", "DESC"]],
+                order: [["updatedAt", "DESC"]],
               })
             : Promise.resolve([]),
 
@@ -234,7 +234,7 @@ class BlogService {
         ]);
 
       const heroData = buildTitleSection(cms);
-      const blogData = buildBlogDetailsData(blog, prevBlog, nextBlog);
+      const blogData = buildBlogDetailsData(blog, nextBlog, prevBlog);
       const relatedBlogData = buildRelatedBlogSection(
         cms,
         relatedBlogs,

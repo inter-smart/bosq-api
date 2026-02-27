@@ -186,34 +186,34 @@ class newservice {
 
         keywords.length
           ? models.News.findAll({
-              attributes: [
-                "slug",
-                "title",
-                "title_ar",
-                "thumbnail",
-                "thumbnail_alt",
-                "thumbnail_alt_ar",
-                "published_date",
-              ],
+            attributes: [
+              "slug",
+              "title",
+              "title_ar",
+              "thumbnail",
+              "thumbnail_alt",
+              "thumbnail_alt_ar",
+              "published_date",
+            ],
 
-              where: {
-                [Op.and]: [
-                  literal(`
+            where: {
+              [Op.and]: [
+                literal(`
             to_tsvector('simple', title || ' ' || coalesce(title_ar, ''))
             @@ plainto_tsquery('simple', '${keywords.join(" ")}')
           `),
-                  {
-                    id: { [Op.ne]: news.id },
-                  },
-                  {
-                    status: true,
-                  },
-                ],
-              },
+                {
+                  id: { [Op.ne]: news.id },
+                },
+                {
+                  status: true,
+                },
+              ],
+            },
 
-              limit: 5,
-              order: [["createdAt", "DESC"]],
-            })
+            limit: 5,
+            order: [["createdAt", "DESC"]],
+          })
           : Promise.resolve([]),
 
         models.News.findAll({
@@ -230,13 +230,13 @@ class newservice {
             "published_date",
           ],
           limit: 5,
-          order: [["createdAt", "DESC"]],
+          order: [["viewCount", "DESC"]],
         }),
       ]);
 
       const heroData = buildTitleSection(cms);
       const newsData = buildNewsDetailsData(news, nextnews, prevnews);
-      const relatedNewsData = buildRelatedNewsSection(cms,relatednews, "related_news");
+      const relatedNewsData = buildRelatedNewsSection(cms, relatednews, "related_news");
       const popularNewsData = buildRelatedNewsSection(cms, popularnews, "popular_news");
       const metaData = buildOtherMetaData(news);
 
@@ -258,6 +258,15 @@ class newservice {
       console.error("Error getting news PAGE data:", error);
       throw new Error(`Error fetching news page data: ${error.message}`);
     }
+  }
+
+  static async incrementView(slug) {
+    if (!slug) {
+      throw new Error("No slug provided");
+    }
+    await models.News.increment("viewCount", {
+      where: { slug, status: true },
+    });
   }
 }
 

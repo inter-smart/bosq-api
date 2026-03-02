@@ -205,24 +205,47 @@ class OrderService {
       await transaction.commit();
 
       // ── Enqueue order confirmation email (fire & forget — non-blocking) ──
-      // addOrderConfirmationJob({
-      //   orderId: order.id,
-      //   orderCode: order.order_id,
-      //   email: cartBillingAddress.email,
-      //   name: cartBillingAddress.name,
-      //   paymentType,
-      //   subtotal: cart.subtotal,
-      //   discount_total: cart.discount_total,
-      //   tax_total: cart.tax_total,
-      //   grand_total: cart.grand_total,
-      //   items: cart.items.map((item) => ({
-      //     title: item.variant?.title || item.product?.title || "Product",
-      //     sku: item.variant?.sku || "",
-      //     quantity: item.quantity,
-      //     price: item.price,
-      //     line_total: (parseFloat(item.price) * item.quantity).toFixed(2),
-      //   })),
-      // }).catch((err) => Logger.error(`Failed to enqueue order confirmation email for order ${order.order_id}: ${err.message}`));
+      Promise.all([
+        cartBillingAddress.state_id ? models.State.findByPk(cartBillingAddress.state_id, { attributes: ["name"] }) : null,
+        cartShippingAddress?.state_id ? models.State.findByPk(cartShippingAddress.state_id, { attributes: ["name"] }) : null,
+      ])
+        .then(([billingState, shippingState]) => {
+          return addOrderConfirmationJob({
+            orderId: order.id,
+            orderCode: order.order_id,
+            email: cartBillingAddress.email,
+            name: cartBillingAddress.name,
+            paymentType,
+            subtotal: cart.subtotal,
+            discount_total: cart.discount_total,
+            tax_total: cart.tax_total,
+            grand_total: cart.grand_total,
+            estDelivery: order.est_delivery_details || null,
+            billingAddress: {
+              street_address: cartBillingAddress.street_address,
+              apartment: cartBillingAddress.apartment || null,
+              state_name: billingState?.name || null,
+              country: "UAE",
+            },
+            shippingAddress: cartShippingAddress
+              ? {
+                  street_address: cartShippingAddress.street_address,
+                  apartment: cartShippingAddress.apartment || null,
+                  state_name: shippingState?.name || null,
+                  country: "UAE",
+                }
+              : null,
+            items: cart.items.map((item) => ({
+              title: item.variant?.title || item.product?.title || "Product",
+              sku: item.variant?.sku || "",
+              quantity: item.quantity,
+              price: item.price,
+              line_total: (parseFloat(item.price) * item.quantity).toFixed(2),
+              image: generateImageUrl(item.variant?.media_path) || null,
+            })),
+          });
+        })
+        .catch((err) => Logger.error(`Failed to enqueue order confirmation email for order ${order.order_id}: ${err.message}`));
 
       return await this.getOrderById(userId, sessionId, order.id);
     } catch (error) {

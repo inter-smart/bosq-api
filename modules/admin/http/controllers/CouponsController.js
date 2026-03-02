@@ -56,6 +56,27 @@ class CouponsController {
               attributes: ["id", "sku", "title"],
               include: [
                 {
+                  model: models.ProductCategory,
+                  as: "categories",
+                  attributes: ["id", "name", "name_ar", "slug"],
+                  through: { attributes: [] },
+                  include: [
+                    {
+                      model: models.ProductCategory,
+                      as: "parent",
+                      required: false,
+                      attributes: ["id", "slug", "name", "name_ar", "parent_id"],
+                    },
+                    {
+                      model: models.ProductCategory,
+                      as: "children",
+                      required: false,
+                      attributes: ["id", "slug", "name", "name_ar", "parent_id"],
+                    },
+                  ],
+                  required: false,
+                },
+                {
                   model: models.ProductModels,
                   as: "productModel",
                   required: false,
@@ -66,28 +87,6 @@ class CouponsController {
                       as: "product",
                       required: false,
                       attributes: ["id", "slug", "title"],
-                      include: [
-                        {
-                          model: models.ProductCategory,
-                          as: "category",
-                          required: false,
-                          attributes: ["id", "slug", "name", "name_ar", "parent_id"],
-                          include: [
-                            {
-                              model: models.ProductCategory,
-                              as: "parent",
-                              required: false,
-                              attributes: ["id", "slug", "name", "name_ar", "parent_id"],
-                            },
-                            {
-                              model: models.ProductCategory,
-                              as: "children",
-                              required: false,
-                              attributes: ["id", "slug", "name", "name_ar", "parent_id"],
-                            },
-                          ],
-                        },
-                      ],
                     },
                   ],
                 },

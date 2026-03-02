@@ -1,20 +1,27 @@
+const fs = require("fs").promises;
+const path = require("path");
 const { models } = require("../../database/models");
 const { Op } = require("sequelize");
 
-const {
-  ProductBase,
-  ProductModels,
-  ProductVariants,
-  ProductCategory,
-  ProductAttribute,
-  AttributeValues,
-} = models;
+const { ProductBase, ProductModels, ProductVariants, ProductCategory, ProductAttribute, AttributeValues } = models;
 
-// ─── Field Definitions ──────────────────────────────────────────────────────
+// ─── Constants ────────────────────────────────────────────────────────────────
 
-const BASE_REQUIRED = ["slug", "title", "title_ar", "description", "description_ar"];
-const MODEL_REQUIRED = ["base_slug", "slug", "title", "title_ar"];
-const VARIANT_REQUIRED = ["base_slug", "model_slug"];
+// Images uploaded via the bulk image upload endpoint land here
+const BULK_DIR = path.join(__dirname, "../../uploads/bulk");
+
+const VIDEO_EXTS = new Set([".mp4", ".webm", ".mov", ".avi", ".mkv"]);
+
+// ─── Field Definitions ───────────────────────────────────────────────────────
+
+// slug removed — auto-generated from title on insert
+const BASE_REQUIRED = ["title", "title_ar", "description", "description_ar"];
+
+// base_slug → base_title; slug removed — auto-generated from title on insert
+const MODEL_REQUIRED = ["base_title", "title", "title_ar", "media_path", "base_price"];
+
+// base_slug → base_title; model_slug → model_title
+const VARIANT_REQUIRED = ["base_title", "model_title"];
 
 const DECIMAL_FIELDS = new Set(["base_price", "price"]);
 const INTEGER_FIELDS = new Set(["stock", "sort_order"]);
@@ -88,6 +95,18 @@ function parseAttributePairs(cell) {
     .filter(Boolean);
 }
 
+/**
+ * Parse a comma-separated filename list cell into an array of trimmed filenames.
+ * Used for `images` and `video_thumbnails` columns.
+ */
+function parseCommaList(cell) {
+  if (!cell) return [];
+  return String(cell)
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
 // ─── Step 1: Schema Validation ───────────────────────────────────────────────
 
 function validateSchema(rows, sheetName, requiredFields, errors) {
@@ -120,38 +139,34 @@ function validateSchema(rows, sheetName, requiredFields, errors) {
 // ─── Step 2: Internal Relational Integrity ───────────────────────────────────
 
 function validateRelations(baseRows, modelRows, variantRows, errors) {
-  // Build base slug set
-  const baseSlugSet = new Set(baseRows.map((r) => r.slug).filter(Boolean));
+  // Build base title set
+  const baseTitleSet = new Set(baseRows.map((r) => r.title).filter(Boolean));
 
   for (const row of modelRows) {
-    if (row.base_slug && !baseSlugSet.has(row.base_slug)) {
+    if (row.base_title && !baseTitleSet.has(row.base_title)) {
       addError(
         errors,
         "product_models",
         row._rowNumber,
-        "base_slug",
-        `No product_base with slug "${row.base_slug}" found in the product_base sheet`
+        "base_title",
+        `No product_base with title "${row.base_title}" found in the product_base sheet`,
       );
     }
   }
 
-  // Build model lookup: "base_slug:model_slug"
-  const modelLookupSet = new Set(
-    modelRows
-      .filter((r) => r.base_slug && r.slug)
-      .map((r) => `${r.base_slug}:${r.slug}`)
-  );
+  // Build model lookup: "base_title:model_title"
+  const modelLookupSet = new Set(modelRows.filter((r) => r.base_title && r.title).map((r) => `${r.base_title}:${r.title}`));
 
   for (const row of variantRows) {
-    if (row.base_slug && row.model_slug) {
-      const key = `${row.base_slug}:${row.model_slug}`;
+    if (row.base_title && row.model_title) {
+      const key = `${row.base_title}:${row.model_title}`;
       if (!modelLookupSet.has(key)) {
         addError(
           errors,
           "product_variants",
           row._rowNumber,
-          "model_slug",
-          `No product_model with slug "${row.model_slug}" under base "${row.base_slug}" found in the product_models sheet`
+          "model_title",
+          `No product_model with title "${row.model_title}" under base "${row.base_title}" found in the product_models sheet`,
         );
       }
     }
@@ -161,53 +176,53 @@ function validateRelations(baseRows, modelRows, variantRows, errors) {
 // ─── Step 3: Internal Duplicate Checks ──────────────────────────────────────
 
 function validateInternalDuplicates(baseRows, modelRows, variantRows, errors) {
-  // Duplicate base slugs
-  const baseSlugs = new Map();
+  // Duplicate base titles
+  const baseTitles = new Map();
   for (const row of baseRows) {
-    if (!row.slug) continue;
-    if (baseSlugs.has(row.slug)) {
+    if (!row.title) continue;
+    if (baseTitles.has(row.title)) {
       addError(
         errors,
         "product_base",
         row._rowNumber,
-        "slug",
-        `Duplicate slug "${row.slug}" within product_base sheet (first seen at row ${baseSlugs.get(row.slug)})`
+        "title",
+        `Duplicate title "${row.title}" within product_base sheet (first seen at row ${baseTitles.get(row.title)})`,
       );
     } else {
-      baseSlugs.set(row.slug, row._rowNumber);
+      baseTitles.set(row.title, row._rowNumber);
     }
   }
 
-  // Duplicate model slug per base
+  // Duplicate model title per base_title
   const modelKeys = new Map();
   for (const row of modelRows) {
-    if (!row.base_slug || !row.slug) continue;
-    const key = `${row.base_slug}:${row.slug}`;
+    if (!row.base_title || !row.title) continue;
+    const key = `${row.base_title}:${row.title}`;
     if (modelKeys.has(key)) {
       addError(
         errors,
         "product_models",
         row._rowNumber,
-        "slug",
-        `Duplicate model slug "${row.slug}" under base "${row.base_slug}" (first seen at row ${modelKeys.get(key)})`
+        "title",
+        `Duplicate model title "${row.title}" under base "${row.base_title}" (first seen at row ${modelKeys.get(key)})`,
       );
     } else {
       modelKeys.set(key, row._rowNumber);
     }
   }
 
-  // Duplicate model code per base
+  // Duplicate model code per base_title
   const modelCodes = new Map();
   for (const row of modelRows) {
-    if (!row.base_slug || !row.code) continue;
-    const key = `${row.base_slug}:${row.code}`;
+    if (!row.base_title || !row.code) continue;
+    const key = `${row.base_title}:${row.code}`;
     if (modelCodes.has(key)) {
       addError(
         errors,
         "product_models",
         row._rowNumber,
         "code",
-        `Duplicate model code "${row.code}" under base "${row.base_slug}" (first seen at row ${modelCodes.get(key)})`
+        `Duplicate model code "${row.code}" under base "${row.base_title}" (first seen at row ${modelCodes.get(key)})`,
       );
     } else {
       modelCodes.set(key, row._rowNumber);
@@ -224,7 +239,7 @@ function validateInternalDuplicates(baseRows, modelRows, variantRows, errors) {
         "product_variants",
         row._rowNumber,
         "sku",
-        `Duplicate SKU "${row.sku}" within product_variants sheet (first seen at row ${skus.get(row.sku)})`
+        `Duplicate SKU "${row.sku}" within product_variants sheet (first seen at row ${skus.get(row.sku)})`,
       );
     } else {
       skus.set(row.sku, row._rowNumber);
@@ -241,7 +256,7 @@ function validateInternalDuplicates(baseRows, modelRows, variantRows, errors) {
         "product_variants",
         row._rowNumber,
         "product_code",
-        `Duplicate product_code "${row.product_code}" within product_variants sheet (first seen at row ${productCodes.get(row.product_code)})`
+        `Duplicate product_code "${row.product_code}" within product_variants sheet (first seen at row ${productCodes.get(row.product_code)})`,
       );
     } else {
       productCodes.set(row.product_code, row._rowNumber);
@@ -252,35 +267,25 @@ function validateInternalDuplicates(baseRows, modelRows, variantRows, errors) {
 // ─── Step 4: DB Duplicate Checks ────────────────────────────────────────────
 
 async function validateDbDuplicates(baseRows, modelRows, variantRows, errors) {
-  // ── ProductBase slugs ──
-  const baseSlugsInExcel = baseRows.map((r) => r.slug).filter(Boolean);
-  if (baseSlugsInExcel.length > 0) {
+  // ── ProductBase titles ──
+  const baseTitlesInExcel = baseRows.map((r) => r.title).filter(Boolean);
+  if (baseTitlesInExcel.length > 0) {
     const existingBases = await ProductBase.findAll({
-      attributes: ["slug"],
-      where: { slug: { [Op.in]: baseSlugsInExcel }, deletedAt: null },
+      attributes: ["title"],
+      where: { title: { [Op.in]: baseTitlesInExcel }, deletedAt: null },
       paranoid: false,
     });
-    const existingBaseSlugs = new Set(existingBases.map((r) => r.slug));
+    const existingBaseTitles = new Set(existingBases.map((r) => r.title));
     for (const row of baseRows) {
-      if (row.slug && existingBaseSlugs.has(row.slug)) {
-        addError(
-          errors,
-          "product_base",
-          row._rowNumber,
-          "slug",
-          `Slug "${row.slug}" already exists in the database`
-        );
+      if (row.title && existingBaseTitles.has(row.title)) {
+        addError(errors, "product_base", row._rowNumber, "title", `Title "${row.title}" already exists in the database`);
       }
     }
   }
 
-  // ── ProductModel codes & slugs (global check — title uniqueness enforced at insert) ──
-  const modelSlugsInExcel = modelRows.map((r) => r.slug).filter(Boolean);
+  // ── ProductModel codes (globally unique) ──
   const modelCodesInExcel = modelRows.map((r) => r.code).filter(Boolean);
 
-  // Note: model slug uniqueness is per-product so we can't easily pre-check without
-  // knowing the new product IDs. We skip slug DB check for models (new products) but
-  // check codes globally since codes should ideally be globally unique.
   if (modelCodesInExcel.length > 0) {
     const existingModelCodes = await ProductModels.findAll({
       attributes: ["code"],
@@ -290,13 +295,7 @@ async function validateDbDuplicates(baseRows, modelRows, variantRows, errors) {
     const existingCodes = new Set(existingModelCodes.map((r) => r.code));
     for (const row of modelRows) {
       if (row.code && existingCodes.has(row.code)) {
-        addError(
-          errors,
-          "product_models",
-          row._rowNumber,
-          "code",
-          `Model code "${row.code}" already exists in the database`
-        );
+        addError(errors, "product_models", row._rowNumber, "code", `Model code "${row.code}" already exists in the database`);
       }
     }
   }
@@ -314,13 +313,7 @@ async function validateDbDuplicates(baseRows, modelRows, variantRows, errors) {
     const existingSkuSet = new Set(existingSkus.map((r) => r.sku));
     for (const row of variantRows) {
       if (row.sku && existingSkuSet.has(row.sku)) {
-        addError(
-          errors,
-          "product_variants",
-          row._rowNumber,
-          "sku",
-          `SKU "${row.sku}" already exists in the database`
-        );
+        addError(errors, "product_variants", row._rowNumber, "sku", `SKU "${row.sku}" already exists in the database`);
       }
     }
   }
@@ -334,32 +327,32 @@ async function validateDbDuplicates(baseRows, modelRows, variantRows, errors) {
     const existingCodeSet = new Set(existingCodes.map((r) => r.product_code));
     for (const row of variantRows) {
       if (row.product_code && existingCodeSet.has(row.product_code)) {
-        addError(
-          errors,
-          "product_variants",
-          row._rowNumber,
-          "product_code",
-          `Product code "${row.product_code}" already exists in the database`
-        );
+        addError(errors, "product_variants", row._rowNumber, "product_code", `Product code "${row.product_code}" already exists in the database`);
       }
     }
   }
 }
 
-// ─── Step 5: Resolve Categories & Attributes ────────────────────────────────
+// ─── Step 5: Resolve Categories, Attributes & Validate Images ────────────────
 
 async function resolveAndValidateLookups(variantRows, errors) {
   const categorySlugToId = new Map();
   const attributeSlugToId = new Map();
   const attributeValueMap = new Map(); // "attrId:valueSlug" → valueId
 
-  // Collect all unique category slugs
+  // Collect all unique slugs and image filenames
   const allCategorySlugs = new Set();
   const allAttributeSlugs = new Set();
+  const allImageFiles = new Set();
 
   for (const row of variantRows) {
     parseCategorySlugs(row.categories).forEach((s) => allCategorySlugs.add(s));
     parseAttributePairs(row.attributes).forEach(({ attrSlug }) => allAttributeSlugs.add(attrSlug));
+
+    if (row.cover_image) allImageFiles.add(String(row.cover_image).trim());
+    if (row.hover_image) allImageFiles.add(String(row.hover_image).trim());
+    parseCommaList(row.images).forEach((f) => allImageFiles.add(f));
+    parseCommaList(row.video_thumbnails).forEach((f) => allImageFiles.add(f));
   }
 
   // Fetch categories
@@ -372,7 +365,7 @@ async function resolveAndValidateLookups(variantRows, errors) {
     cats.forEach((c) => categorySlugToId.set(c.slug, c.id));
   }
 
-  // Fetch attributes
+  // Fetch attributes and their values
   if (allAttributeSlugs.size > 0) {
     const attrs = await ProductAttribute.findAll({
       attributes: ["id", "slug"],
@@ -392,6 +385,17 @@ async function resolveAndValidateLookups(variantRows, errors) {
     }
   }
 
+  // Batch-check image file existence in BULK_DIR
+  const missingFiles = new Set();
+  for (const filename of allImageFiles) {
+    const fullPath = path.join(BULK_DIR, filename);
+    const exists = await fs
+      .access(fullPath)
+      .then(() => true)
+      .catch(() => false);
+    if (!exists) missingFiles.add(filename);
+  }
+
   // Validate per-row and build resolved data
   const resolvedVariants = variantRows.map((row) => {
     const categorySlugs = parseCategorySlugs(row.categories);
@@ -401,13 +405,7 @@ async function resolveAndValidateLookups(variantRows, errors) {
 
     for (const slug of categorySlugs) {
       if (!categorySlugToId.has(slug)) {
-        addError(
-          errors,
-          "product_variants",
-          row._rowNumber,
-          "categories",
-          `Category slug "${slug}" not found in the database`
-        );
+        addError(errors, "product_variants", row._rowNumber, "categories", `Category slug "${slug}" not found in the database`);
       } else {
         categoryIds.push(categorySlugToId.get(slug));
       }
@@ -416,13 +414,7 @@ async function resolveAndValidateLookups(variantRows, errors) {
     for (const { attrSlug, valueSlug } of attributePairs) {
       const attrId = attributeSlugToId.get(attrSlug);
       if (!attrId) {
-        addError(
-          errors,
-          "product_variants",
-          row._rowNumber,
-          "attributes",
-          `Attribute slug "${attrSlug}" not found in the database`
-        );
+        addError(errors, "product_variants", row._rowNumber, "attributes", `Attribute slug "${attrSlug}" not found in the database`);
         continue;
       }
       const valueKey = `${attrId}:${valueSlug}`;
@@ -433,14 +425,89 @@ async function resolveAndValidateLookups(variantRows, errors) {
           "product_variants",
           row._rowNumber,
           "attributes",
-          `Attribute value slug "${valueSlug}" not found for attribute "${attrSlug}"`
+          `Attribute value slug "${valueSlug}" not found for attribute "${attrSlug}"`,
         );
         continue;
       }
       attributeValueIds.push({ attribute_id: attrId, attribute_value_id: valueId });
     }
 
-    return { row, categoryIds, attributeValueIds };
+    // ── Image validation & resolution ─────────────────────────────────────────
+    //
+    // Sheet columns:
+    //   cover_image       — single filename → ProductVariants.media_path
+    //   hover_image       — single filename → ProductVariants.hover_media_path
+    //   images            — comma-separated filenames (images + videos in display order)
+    //                       → ProductVariantImages records
+    //   video_thumbnails  — comma-separated thumbnails, one per video in "images" order
+    //                       → thumbnail_path on the matching video record
+
+    const checkFile = (filename, field) => {
+      if (missingFiles.has(filename)) {
+        addError(errors, "product_variants", row._rowNumber, field, `Image file "${filename}" not found in the bulk upload directory`);
+        return false;
+      }
+      return true;
+    };
+
+    let coverImage = null;
+    let hoverImage = null;
+    const mediaRecords = [];
+
+    const coverFilename = row.cover_image ? String(row.cover_image).trim() : null;
+    const hoverFilename = row.hover_image ? String(row.hover_image).trim() : null;
+
+    if (coverFilename && checkFile(coverFilename, "cover_image")) {
+      coverImage = `uploads/bulk/${coverFilename}`;
+    }
+
+    if (hoverFilename && checkFile(hoverFilename, "hover_image")) {
+      hoverImage = `uploads/bulk/${hoverFilename}`;
+    }
+
+    const imageFiles = parseCommaList(row.images);
+    const thumbnailFiles = parseCommaList(row.video_thumbnails);
+
+    // Validate thumbnail count does not exceed video count
+    const videoCount = imageFiles.filter((f) => VIDEO_EXTS.has(path.extname(f).toLowerCase())).length;
+    if (thumbnailFiles.length > videoCount) {
+      addError(
+        errors,
+        "product_variants",
+        row._rowNumber,
+        "video_thumbnails",
+        `More video thumbnails (${thumbnailFiles.length}) than videos (${videoCount}) in the "images" column`,
+      );
+    }
+
+    let thumbIdx = 0;
+    imageFiles.forEach((filename, sortIdx) => {
+      const ext = path.extname(filename).toLowerCase();
+      const isVideo = VIDEO_EXTS.has(ext);
+      const fileValid = checkFile(filename, "images");
+
+      let thumbnailPath = null;
+      if (isVideo) {
+        const thumbFilename = thumbnailFiles[thumbIdx] || null;
+        if (thumbFilename && checkFile(thumbFilename, "video_thumbnails")) {
+          thumbnailPath = `uploads/bulk/${thumbFilename}`;
+        }
+        thumbIdx++;
+      }
+
+      if (fileValid) {
+        mediaRecords.push({
+          media_path: `uploads/bulk/${filename}`,
+          media_type: isVideo ? "video" : "image",
+          sort_order: sortIdx + 1,
+          status: true,
+          is_primary: false,
+          thumbnail_path: thumbnailPath,
+        });
+      }
+    });
+
+    return { row, categoryIds, attributeValueIds, coverImage, hoverImage, mediaRecords };
   });
 
   return resolvedVariants;
@@ -449,19 +516,20 @@ async function resolveAndValidateLookups(variantRows, errors) {
 // ─── Build Hierarchy ────────────────────────────────────────────────────────
 
 function buildHierarchy(baseRows, modelRows, resolvedVariants) {
-  // Index models by "base_slug"
+  // Index models by "base_title"
   const modelsByBase = new Map();
   for (const row of modelRows) {
-    if (!modelsByBase.has(row.base_slug)) modelsByBase.set(row.base_slug, []);
-    modelsByBase.get(row.base_slug).push(row);
+    if (!modelsByBase.has(row.base_title)) modelsByBase.set(row.base_title, []);
+    modelsByBase.get(row.base_title).push(row);
   }
 
-  // Index variants by "base_slug:model_slug"
+  // Index variants by "base_title:model_title"
   const variantsByModel = new Map();
-  for (const { row, categoryIds, attributeValueIds } of resolvedVariants) {
-    const key = `${row.base_slug}:${row.model_slug}`;
+  for (const resolved of resolvedVariants) {
+    const { row } = resolved;
+    const key = `${row.base_title}:${row.model_title}`;
     if (!variantsByModel.has(key)) variantsByModel.set(key, []);
-    variantsByModel.get(key).push({ row, categoryIds, attributeValueIds });
+    variantsByModel.get(key).push(resolved);
   }
 
   const cleanRow = (row, fields) => {
@@ -476,41 +544,63 @@ function buildHierarchy(baseRows, modelRows, resolvedVariants) {
     return obj;
   };
 
+  // slug removed from both sheets — the upload service generates slugs from titles
   const BASE_FIELDS = [
-    "slug", "title", "title_ar", "description", "description_ar",
-    "enhance_title", "enhance_title_ar", "details", "details_ar",
-    "details_points", "details_points_ar", "additional_details", "additional_details_ar",
-    "sort_order", "status",
+    "title",
+    "title_ar",
+    "description",
+    "description_ar",
+    "enhance_title",
+    "enhance_title_ar",
+    "details",
+    "details_ar",
+    "details_points",
+    "details_points_ar",
+    "additional_details",
+    "additional_details_ar",
+    "sort_order",
+    "status",
   ];
-  const MODEL_FIELDS = [
-    "slug", "title", "title_ar", "code", "base_price", "sort_order", "status",
-  ];
+  const MODEL_FIELDS = ["title", "title_ar", "code", "base_price", "sort_order", "status"];
   const VARIANT_FIELDS = [
-    "sku", "product_code", "title", "title_ar", "design_title", "design_title_ar",
-    "price", "stock", "is_primary", "sort_order", "status",
+    "sku",
+    "product_code",
+    "title",
+    "title_ar",
+    "design_title",
+    "design_title_ar",
+    "price",
+    "stock",
+    "is_primary",
+    "sort_order",
+    "status",
   ];
 
   const bases = baseRows.map((baseRow) => {
-    const models = (modelsByBase.get(baseRow.slug) || []).map((modelRow) => {
-      const key = `${modelRow.base_slug}:${modelRow.slug}`;
-      const variants = (variantsByModel.get(key) || []).map(({ row, categoryIds, attributeValueIds }) => ({
+    const baseModelRows = modelsByBase.get(baseRow.title) || [];
+    const modelsList = baseModelRows.map((modelRow) => {
+      const key = `${modelRow.base_title}:${modelRow.title}`;
+      const variantList = (variantsByModel.get(key) || []).map(({ row, categoryIds, attributeValueIds, coverImage, hoverImage, mediaRecords }) => ({
         rowNum: row._rowNumber,
         data: cleanRow(row, VARIANT_FIELDS),
         categoryIds,
         attributeValueIds,
+        coverImage,
+        hoverImage,
+        mediaRecords,
       }));
 
       return {
         rowNum: modelRow._rowNumber,
         data: cleanRow(modelRow, MODEL_FIELDS),
-        variants,
+        variants: variantList,
       };
     });
 
     return {
       rowNum: baseRow._rowNumber,
       data: cleanRow(baseRow, BASE_FIELDS),
-      models,
+      models: modelsList,
     };
   });
 
@@ -537,7 +627,7 @@ async function validateBulkUpload(parsedSheets) {
   // Step 4: DB duplicate checks
   await validateDbDuplicates(baseRows, modelRows, variantRows, errors);
 
-  // Step 5: Resolve & validate lookups (categories + attributes)
+  // Step 5: Resolve & validate lookups (categories, attributes, image files)
   const resolvedVariants = await resolveAndValidateLookups(variantRows, errors);
 
   if (errors.length > 0) {

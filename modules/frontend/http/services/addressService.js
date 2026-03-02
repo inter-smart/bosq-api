@@ -560,9 +560,7 @@ class AddressService {
 
       await transaction.commit();
 
-      return {
-        data: billingAddress,
-      };
+      return billingAddress;
     } catch (error) {
       if (!transaction.finished) {
         await transaction.rollback();

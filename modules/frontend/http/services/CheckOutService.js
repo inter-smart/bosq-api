@@ -132,6 +132,19 @@ class CheckOutService {
 
     const itemCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
 
+    let couponDiscountType = null;
+    let couponDiscountValue = null;
+    if (cart.coupon_id) {
+      const coupon = await models.Coupons.findOne({
+        where: { id: cart.coupon_id },
+        attributes: ["discount_type", "discount_value"],
+      });
+      if (coupon) {
+        couponDiscountType = coupon.discount_type;
+        couponDiscountValue = coupon.discount_value;
+      }
+    }
+
     return {
       id: cart.id,
       items: cart.items.map((item) => ({
@@ -151,6 +164,8 @@ class CheckOutService {
       tax_total: cart.tax_total,
       grand_total: cart.grand_total,
       applied_coupon_code: cart.applied_coupon_code,
+      coupon_discount_type: couponDiscountType,
+      coupon_discount_value: couponDiscountValue,
       item_count: itemCount,
     };
   }
@@ -220,6 +235,19 @@ class CheckOutService {
 
     const itemCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
 
+    let couponDiscountType = null;
+    let couponDiscountValue = null;
+    if (cart.coupon_id) {
+      const coupon = await models.Coupons.findOne({
+        where: { id: cart.coupon_id },
+        attributes: ["discount_type", "discount_value"],
+      });
+      if (coupon) {
+        couponDiscountType = coupon.discount_type;
+        couponDiscountValue = coupon.discount_value;
+      }
+    }
+
     return {
       id: cart.id,
       items: cart.items.map((item) => ({
@@ -239,6 +267,8 @@ class CheckOutService {
       tax_total: cart.tax_total,
       grand_total: cart.grand_total,
       applied_coupon_code: cart.applied_coupon_code,
+      coupon_discount_type: couponDiscountType,
+      coupon_discount_value: couponDiscountValue,
       item_count: itemCount,
     };
   }

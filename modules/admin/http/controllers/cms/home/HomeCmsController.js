@@ -4,11 +4,12 @@ const { sendValidationError, sendSuccessResponse, sendErrorResponse } = require(
 const { validationRequestPost } = require("../../../request/cms/home/HomeCmsRequest");
 const { handleFileUploadUpdate } = require("../../../../http/middleware/multerMiddleware");
 const { getCache, invalidateCache, setCache } = require("../../../../../redis/redisService");
+const cacheKeys = require("../../../../../redis/cacheKeys");
 
 
 
 const DataModel = models.HomeCms;
-const cacheKey = 'home_cms_data';
+const cacheKey = cacheKeys.home;
 
 class HomeCmsController {
 

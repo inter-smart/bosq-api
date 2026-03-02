@@ -33,13 +33,12 @@ function makeSlug(title) {
 }
 
 /**
- * Assign unique slugs to a list of bases.
+ * Assign unique slugs to a list of bases that need to be created.
  * Checks existing DB slugs and within-batch collisions.
  */
 async function assignBaseSlugs(bases, t) {
   const candidates = bases.map((b) => makeSlug(b.data.title));
 
-  // Batch-check DB for slug conflicts on the exact candidate values
   const uniqueCandidates = [...new Set(candidates)];
   const dbMatches = await ProductBase.findAll({
     attributes: ["slug"],
@@ -65,14 +64,12 @@ async function assignBaseSlugs(bases, t) {
 }
 
 /**
- * Assign unique slugs to a list of models, scoped per product_id.
- * allModelRows must be [{...data, product_id}].
- * productIds[i] is the DB id for allModelRows[i].
+ * Assign unique slugs to a list of models that need to be created.
+ * Scoped per product_id to avoid cross-product collisions.
  */
 async function assignModelSlugs(allModelRows, t) {
   const candidates = allModelRows.map((r) => makeSlug(r.title));
 
-  // Group candidate slugs by product_id for scoped DB check
   const byProduct = new Map();
   allModelRows.forEach((r, i) => {
     if (!byProduct.has(r.product_id)) byProduct.set(r.product_id, []);
@@ -115,51 +112,85 @@ async function assignModelSlugs(allModelRows, t) {
 
 /**
  * Processes the validated bulk upload hierarchy within a single DB transaction.
+ * Uses upsert (update-or-create) for all entities so re-uploads are safe.
  *
- * Insertion order:
- *   1. ProductBase (all)             → build baseTitleToId map
- *   2. ProductModels (all)           → build modelKeyToId map ("baseTitle:modelTitle")
- *   3. ProductVariants (all)         → build variantIndexToId map (with media_path / hover_media_path)
- *   4. ProductVariantCategories      → junction rows
- *   5. ProductVariantAttributes      → junction rows
- *   6. ProductVariantImages          → gallery image / video records
+ * Identity keys:
+ *   ProductBase     — title
+ *   ProductModels   — (product_id, title)
+ *   ProductVariants — sku (primary), then product_code (fallback)
+ *
+ * Junction strategies:
+ *   Categories / Attributes — full replace for updated variants
+ *   Images                  — add-only (skip existing media_paths)
  */
 async function processUpload(hierarchy) {
   const { bases } = hierarchy;
 
   return sequelize.transaction(async (t) => {
-    // ── 1. Insert ProductBase ────────────────────────────────────────────────
+    // ── 1. Upsert ProductBase ────────────────────────────────────────────────
 
-    // Generate unique slugs from titles before inserting
-    const baseSlugs = await assignBaseSlugs(bases, t);
+    const allBaseTitles = bases.map((b) => b.data.title);
 
-    const baseDataRows = bases.map((b, i) => ({
+    const existingBases = await ProductBase.findAll({
+      attributes: ["id", "title", "slug"],
+      where: { title: { [Op.in]: allBaseTitles }, deletedAt: null },
+      paranoid: false,
+      transaction: t,
+    });
+    const existingBaseMap = new Map(existingBases.map((b) => [b.title, b]));
+
+    const basesToCreate = [];
+    const basesToUpdate = [];
+
+    for (const base of bases) {
+      if (existingBaseMap.has(base.data.title)) {
+        basesToUpdate.push({ base, existing: existingBaseMap.get(base.data.title) });
+      } else {
+        basesToCreate.push(base);
+      }
+    }
+
+    // Generate slugs only for new bases
+    const newBaseSlugs = basesToCreate.length > 0 ? await assignBaseSlugs(basesToCreate, t) : [];
+
+    const newBaseDataRows = basesToCreate.map((b, i) => ({
       ...b.data,
-      slug: baseSlugs[i],
+      slug: newBaseSlugs[i],
       status: b.data.status ?? true,
       sort_order: b.data.sort_order ?? 1,
     }));
 
-    Logger.info(`[BulkUpload] Inserting ${baseDataRows.length} product_base rows`);
-    const insertedBases = [];
-    for (const batchRows of chunk(baseDataRows, BATCH_SIZE)) {
-      const result = await ProductBase.bulkCreate(batchRows, {
-        transaction: t,
-        returning: true,
+    const baseTitleToId = new Map();
+
+    // Insert new bases
+    if (newBaseDataRows.length > 0) {
+      Logger.info(`[BulkUpload] Creating ${newBaseDataRows.length} product_base rows`);
+      const insertedBases = [];
+      for (const batchRows of chunk(newBaseDataRows, BATCH_SIZE)) {
+        const result = await ProductBase.bulkCreate(batchRows, { transaction: t, returning: true });
+        insertedBases.push(...result);
+      }
+      insertedBases.forEach((b, idx) => {
+        baseTitleToId.set(basesToCreate[idx].data.title, b.id);
       });
-      insertedBases.push(...result);
     }
 
-    // Build title → real DB id map
-    const baseTitleToId = new Map();
-    insertedBases.forEach((b, idx) => {
-      baseTitleToId.set(bases[idx].data.title, b.id);
-    });
+    // Update existing bases (no slug change to preserve URLs)
+    for (const { base, existing } of basesToUpdate) {
+      const updateData = { ...base.data };
+      delete updateData.slug; // never overwrite slug on update
+      await ProductBase.update(
+        { ...updateData, status: base.data.status ?? existing.status, sort_order: base.data.sort_order ?? existing.sort_order },
+        { where: { id: existing.id }, transaction: t },
+      );
+      baseTitleToId.set(base.data.title, existing.id);
+    }
+    Logger.info(`[BulkUpload] ProductBase — created: ${basesToCreate.length}, updated: ${basesToUpdate.length}`);
 
-    // ── 2. Insert ProductModels ──────────────────────────────────────────────
+    // ── 2. Upsert ProductModels ──────────────────────────────────────────────
 
     const allModelRowsRaw = [];
-    const modelMeta = []; // track { baseTitle, modelTitle } for map building
+    const modelMeta = []; // { baseTitle, modelTitle }
 
     for (const base of bases) {
       const productId = baseTitleToId.get(base.data.title);
@@ -174,31 +205,72 @@ async function processUpload(hierarchy) {
       }
     }
 
-    // Generate unique slugs for models (scoped per product_id)
-    const modelSlugs = await assignModelSlugs(allModelRowsRaw, t);
-    const allModelRows = allModelRowsRaw.map((row, i) => ({ ...row, slug: modelSlugs[i] }));
+    // Batch-fetch existing models by (product_id, title) pairs
+    const productIdTitlePairs = allModelRowsRaw.map((r) => ({ product_id: r.product_id, title: r.title }));
+    const uniqueProductIds = [...new Set(allModelRowsRaw.map((r) => r.product_id))];
+    const uniqueModelTitles = [...new Set(allModelRowsRaw.map((r) => r.title))];
 
-    Logger.info(`[BulkUpload] Inserting ${allModelRows.length} product_model rows`);
-    const insertedModels = [];
-    for (const batchRows of chunk(allModelRows, BATCH_SIZE)) {
-      const result = await ProductModels.bulkCreate(batchRows, {
-        transaction: t,
-        returning: true,
-      });
-      insertedModels.push(...result);
-    }
+    const existingModels = await ProductModels.findAll({
+      attributes: ["id", "product_id", "title", "slug"],
+      where: {
+        product_id: { [Op.in]: uniqueProductIds },
+        title: { [Op.in]: uniqueModelTitles },
+        deletedAt: null,
+      },
+      paranoid: false,
+      transaction: t,
+    });
+    // Narrow key: "productId:title"
+    const existingModelMap = new Map(existingModels.map((m) => [`${m.product_id}:${m.title}`, m]));
 
-    // Build "baseTitle:modelTitle" → real model DB id map
-    const modelKeyToId = new Map();
-    insertedModels.forEach((m, idx) => {
-      const { baseTitle, modelTitle } = modelMeta[idx];
-      modelKeyToId.set(`${baseTitle}:${modelTitle}`, m.id);
+    const modelsToCreate = [];
+    const modelsToCreateMeta = [];
+    const modelsToUpdate = [];
+    const modelsToUpdateMeta = [];
+
+    allModelRowsRaw.forEach((row, i) => {
+      const key = `${row.product_id}:${row.title}`;
+      if (existingModelMap.has(key)) {
+        modelsToUpdate.push({ row, existing: existingModelMap.get(key) });
+        modelsToUpdateMeta.push(modelMeta[i]);
+      } else {
+        modelsToCreate.push(row);
+        modelsToCreateMeta.push(modelMeta[i]);
+      }
     });
 
-    // ── 3. Insert ProductVariants ────────────────────────────────────────────
+    const newModelSlugs = modelsToCreate.length > 0 ? await assignModelSlugs(modelsToCreate, t) : [];
+    const newModelRows = modelsToCreate.map((row, i) => ({ ...row, slug: newModelSlugs[i] }));
+
+    const modelKeyToId = new Map();
+
+    if (newModelRows.length > 0) {
+      Logger.info(`[BulkUpload] Creating ${newModelRows.length} product_model rows`);
+      const insertedModels = [];
+      for (const batchRows of chunk(newModelRows, BATCH_SIZE)) {
+        const result = await ProductModels.bulkCreate(batchRows, { transaction: t, returning: true });
+        insertedModels.push(...result);
+      }
+      insertedModels.forEach((m, idx) => {
+        const { baseTitle, modelTitle } = modelsToCreateMeta[idx];
+        modelKeyToId.set(`${baseTitle}:${modelTitle}`, m.id);
+      });
+    }
+
+    for (const { row, existing } of modelsToUpdate) {
+      const updateData = { ...row };
+      delete updateData.slug;
+      await ProductModels.update(updateData, { where: { id: existing.id }, transaction: t });
+    }
+    modelsToUpdateMeta.forEach(({ baseTitle, modelTitle }, idx) => {
+      modelKeyToId.set(`${baseTitle}:${modelTitle}`, modelsToUpdate[idx].existing.id);
+    });
+    Logger.info(`[BulkUpload] ProductModels — created: ${modelsToCreate.length}, updated: ${modelsToUpdate.length}`);
+
+    // ── 3. Upsert ProductVariants ────────────────────────────────────────────
 
     const allVariantRows = [];
-    const variantMeta = []; // track { categoryIds, attributeValueIds, mediaRecords }
+    const variantMeta = [];
 
     for (const base of bases) {
       for (const model of base.models) {
@@ -209,7 +281,6 @@ async function processUpload(hierarchy) {
           allVariantRows.push({
             ...variant.data,
             product_model_id: modelId,
-            // cover_image and hover_image from the sheet go directly onto the variant record
             ...(variant.coverImage ? { media_path: variant.coverImage } : {}),
             ...(variant.hoverImage ? { hover_media_path: variant.hoverImage } : {}),
             status: variant.data.status ?? true,
@@ -225,25 +296,95 @@ async function processUpload(hierarchy) {
       }
     }
 
-    Logger.info(`[BulkUpload] Inserting ${allVariantRows.length} product_variant rows`);
-    const insertedVariants = [];
-    for (const batchRows of chunk(allVariantRows, BATCH_SIZE)) {
-      const result = await ProductVariants.bulkCreate(batchRows, {
+    // Batch-fetch existing variants by sku and product_code
+    const allSkus = allVariantRows.map((r) => r.sku).filter(Boolean);
+    const allProductCodes = allVariantRows.map((r) => r.product_code).filter(Boolean);
+
+    const orConditions = [];
+    if (allSkus.length > 0) orConditions.push({ sku: { [Op.in]: allSkus } });
+    if (allProductCodes.length > 0) orConditions.push({ product_code: { [Op.in]: allProductCodes } });
+
+    const existingVariantsBySkuMap = new Map();
+    const existingVariantsByCodeMap = new Map();
+
+    if (orConditions.length > 0) {
+      const existingVariants = await ProductVariants.findAll({
+        attributes: ["id", "sku", "product_code"],
+        where: { [Op.or]: orConditions, deletedAt: null },
+        paranoid: false,
         transaction: t,
-        returning: true,
       });
-      insertedVariants.push(...result);
+      existingVariants.forEach((v) => {
+        if (v.sku) existingVariantsBySkuMap.set(v.sku, v);
+        if (v.product_code) existingVariantsByCodeMap.set(v.product_code, v);
+      });
     }
 
-    // ── 4. Insert ProductVariantCategories ───────────────────────────────────
+    const variantsToCreate = [];
+    const variantsToCreateMeta = [];
+    const variantsToUpdate = []; // { row, existingId }
+    const variantsToUpdateMeta = [];
+    const updatedVariantIds = new Set();
+
+    allVariantRows.forEach((row, i) => {
+      // sku is the primary identity key; product_code is the fallback
+      const existing =
+        (row.sku && existingVariantsBySkuMap.get(row.sku)) ||
+        (row.product_code && existingVariantsByCodeMap.get(row.product_code)) ||
+        null;
+
+      if (existing) {
+        variantsToUpdate.push({ row, existingId: existing.id });
+        variantsToUpdateMeta.push(variantMeta[i]);
+        updatedVariantIds.add(existing.id);
+      } else {
+        variantsToCreate.push(row);
+        variantsToCreateMeta.push(variantMeta[i]);
+      }
+    });
+
+    const insertedVariants = [];
+
+    if (variantsToCreate.length > 0) {
+      Logger.info(`[BulkUpload] Creating ${variantsToCreate.length} product_variant rows`);
+      for (const batchRows of chunk(variantsToCreate, BATCH_SIZE)) {
+        const result = await ProductVariants.bulkCreate(batchRows, { transaction: t, returning: true });
+        insertedVariants.push(...result);
+      }
+    }
+
+    if (variantsToUpdate.length > 0) {
+      Logger.info(`[BulkUpload] Updating ${variantsToUpdate.length} product_variant rows`);
+      for (const { row, existingId } of variantsToUpdate) {
+        await ProductVariants.update(row, { where: { id: existingId }, transaction: t });
+      }
+    }
+    Logger.info(`[BulkUpload] ProductVariants — created: ${variantsToCreate.length}, updated: ${variantsToUpdate.length}`);
+
+    // Build combined variant id → meta index for junction inserts
+    // insertedVariants[i] corresponds to variantsToCreateMeta[i]
+    // updatedVariantIds entries correspond to variantsToUpdate[i].existingId
+
+    // ── 4. ProductVariantCategories ───────────────────────────────────────────
+    // Replace all category rows for updated variants; insert for new variants.
+
+    if (updatedVariantIds.size > 0) {
+      await ProductVariantCategories.destroy({
+        where: { product_variant_id: { [Op.in]: [...updatedVariantIds] } },
+        transaction: t,
+      });
+    }
 
     const categoryJunctionRows = [];
+
     insertedVariants.forEach((variant, idx) => {
-      for (const categoryId of variantMeta[idx].categoryIds) {
-        categoryJunctionRows.push({
-          product_variant_id: variant.id,
-          category_id: categoryId,
-        });
+      for (const categoryId of variantsToCreateMeta[idx].categoryIds) {
+        categoryJunctionRows.push({ product_variant_id: variant.id, category_id: categoryId });
+      }
+    });
+    variantsToUpdate.forEach(({ existingId }, idx) => {
+      for (const categoryId of variantsToUpdateMeta[idx].categoryIds) {
+        categoryJunctionRows.push({ product_variant_id: existingId, category_id: categoryId });
       }
     });
 
@@ -254,16 +395,29 @@ async function processUpload(hierarchy) {
       }
     }
 
-    // ── 5. Insert ProductVariantAttributes ───────────────────────────────────
+    // ── 5. ProductVariantAttributes ───────────────────────────────────────────
+    // Replace all attribute rows for updated variants; insert for new variants.
+    // force: true because ProductVariantAttributes is paranoid — soft-delete would
+    // leave the unique index occupied and cause constraint errors on re-insert.
+
+    if (updatedVariantIds.size > 0) {
+      await ProductVariantAttributes.destroy({
+        where: { product_variant_id: { [Op.in]: [...updatedVariantIds] } },
+        force: true,
+        transaction: t,
+      });
+    }
 
     const attributeJunctionRows = [];
+
     insertedVariants.forEach((variant, idx) => {
-      for (const { attribute_id, attribute_value_id } of variantMeta[idx].attributeValueIds) {
-        attributeJunctionRows.push({
-          product_variant_id: variant.id,
-          attribute_id,
-          attribute_value_id,
-        });
+      for (const { attribute_id, attribute_value_id } of variantsToCreateMeta[idx].attributeValueIds) {
+        attributeJunctionRows.push({ product_variant_id: variant.id, attribute_id, attribute_value_id });
+      }
+    });
+    variantsToUpdate.forEach(({ existingId }, idx) => {
+      for (const { attribute_id, attribute_value_id } of variantsToUpdateMeta[idx].attributeValueIds) {
+        attributeJunctionRows.push({ product_variant_id: existingId, attribute_id, attribute_value_id });
       }
     });
 
@@ -274,17 +428,39 @@ async function processUpload(hierarchy) {
       }
     }
 
-    // ── 6. Insert ProductVariantImages ───────────────────────────────────────
+    // ── 6. ProductVariantImages ───────────────────────────────────────────────
+    // New variants: insert all media records.
+    // Updated variants: add-only — fetch existing media_paths and skip duplicates.
 
     const imageRows = [];
+
+    // New variants — insert everything
     insertedVariants.forEach((variant, idx) => {
-      for (const record of variantMeta[idx].mediaRecords) {
-        imageRows.push({
-          ...record,
-          product_variant_id: variant.id,
-        });
+      for (const record of variantsToCreateMeta[idx].mediaRecords) {
+        imageRows.push({ ...record, product_variant_id: variant.id });
       }
     });
+
+    // Updated variants — skip media_paths that already exist
+    if (variantsToUpdate.length > 0) {
+      const updatedIds = variantsToUpdate.map((v) => v.existingId);
+      const existingImages = await ProductVariantImages.findAll({
+        attributes: ["product_variant_id", "media_path"],
+        where: { product_variant_id: { [Op.in]: updatedIds } },
+        transaction: t,
+      });
+      // Set of "variantId:media_path" strings that already exist
+      const existingImageSet = new Set(existingImages.map((img) => `${img.product_variant_id}:${img.media_path}`));
+
+      variantsToUpdate.forEach(({ existingId }, idx) => {
+        for (const record of variantsToUpdateMeta[idx].mediaRecords) {
+          const key = `${existingId}:${record.media_path}`;
+          if (!existingImageSet.has(key)) {
+            imageRows.push({ ...record, product_variant_id: existingId });
+          }
+        }
+      });
+    }
 
     if (imageRows.length > 0) {
       Logger.info(`[BulkUpload] Inserting ${imageRows.length} product_variant_images rows`);
@@ -294,9 +470,12 @@ async function processUpload(hierarchy) {
     }
 
     const summary = {
-      bases_inserted: insertedBases.length,
-      models_inserted: insertedModels.length,
-      variants_inserted: insertedVariants.length,
+      bases_created: basesToCreate.length,
+      bases_updated: basesToUpdate.length,
+      models_created: modelsToCreate.length,
+      models_updated: modelsToUpdate.length,
+      variants_created: variantsToCreate.length,
+      variants_updated: variantsToUpdate.length,
       category_links: categoryJunctionRows.length,
       attribute_links: attributeJunctionRows.length,
       images_inserted: imageRows.length,

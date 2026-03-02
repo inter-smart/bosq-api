@@ -3,7 +3,7 @@ const path = require("path");
 const { models } = require("../../database/models");
 const { Op } = require("sequelize");
 
-const { ProductBase, ProductModels, ProductVariants, ProductCategory, ProductAttribute, AttributeValues } = models;
+const { ProductCategory, ProductAttribute, AttributeValues } = models;
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -264,76 +264,45 @@ function validateInternalDuplicates(baseRows, modelRows, variantRows, errors) {
   }
 }
 
-// ─── Step 4: DB Duplicate Checks ────────────────────────────────────────────
+// ─── Step 4 (removed): DB duplicate checks are no longer performed here.
+// The upload service handles existing records via upsert (update-or-create).
 
-async function validateDbDuplicates(baseRows, modelRows, variantRows, errors) {
-  // ── ProductBase titles ──
-  const baseTitlesInExcel = baseRows.map((r) => r.title).filter(Boolean);
-  if (baseTitlesInExcel.length > 0) {
-    const existingBases = await ProductBase.findAll({
-      attributes: ["title"],
-      where: { title: { [Op.in]: baseTitlesInExcel }, deletedAt: null },
-      paranoid: false,
-    });
-    const existingBaseTitles = new Set(existingBases.map((r) => r.title));
-    for (const row of baseRows) {
-      if (row.title && existingBaseTitles.has(row.title)) {
-        addError(errors, "product_base", row._rowNumber, "title", `Title "${row.title}" already exists in the database`);
-      }
-    }
+// ─── Step 5a: Resolve Model Media Images ─────────────────────────────────────
+
+/**
+ * Checks that each product_model's media_path filename exists in BULK_DIR.
+ * Returns a Map: rowNumber → "uploads/bulk/<filename>" for valid rows.
+ */
+async function resolveModelImages(modelRows, errors) {
+  const allModelImageFiles = new Set();
+  for (const row of modelRows) {
+    if (row.media_path) allModelImageFiles.add(String(row.media_path).trim());
   }
 
-  // ── ProductModel codes (globally unique) ──
-  const modelCodesInExcel = modelRows.map((r) => r.code).filter(Boolean);
-
-  if (modelCodesInExcel.length > 0) {
-    const existingModelCodes = await ProductModels.findAll({
-      attributes: ["code"],
-      where: { code: { [Op.in]: modelCodesInExcel }, deletedAt: null },
-      paranoid: false,
-    });
-    const existingCodes = new Set(existingModelCodes.map((r) => r.code));
-    for (const row of modelRows) {
-      if (row.code && existingCodes.has(row.code)) {
-        addError(errors, "product_models", row._rowNumber, "code", `Model code "${row.code}" already exists in the database`);
-      }
-    }
+  const missingFiles = new Set();
+  for (const filename of allModelImageFiles) {
+    const fullPath = path.join(BULK_DIR, filename);
+    const exists = await fs
+      .access(fullPath)
+      .then(() => true)
+      .catch(() => false);
+    if (!exists) missingFiles.add(filename);
   }
 
-  // ── ProductVariant SKUs and product_codes ──
-  const skusInExcel = variantRows.map((r) => r.sku).filter(Boolean);
-  const productCodesInExcel = variantRows.map((r) => r.product_code).filter(Boolean);
-
-  if (skusInExcel.length > 0) {
-    const existingSkus = await ProductVariants.findAll({
-      attributes: ["sku"],
-      where: { sku: { [Op.in]: skusInExcel }, deletedAt: null },
-      paranoid: false,
-    });
-    const existingSkuSet = new Set(existingSkus.map((r) => r.sku));
-    for (const row of variantRows) {
-      if (row.sku && existingSkuSet.has(row.sku)) {
-        addError(errors, "product_variants", row._rowNumber, "sku", `SKU "${row.sku}" already exists in the database`);
-      }
+  const resolvedPaths = new Map(); // rowNumber → resolved path string
+  for (const row of modelRows) {
+    if (!row.media_path) continue;
+    const filename = String(row.media_path).trim();
+    if (missingFiles.has(filename)) {
+      addError(errors, "product_models", row._rowNumber, "media_path", `Image file "${filename}" not found in the bulk upload directory`);
+    } else {
+      resolvedPaths.set(row._rowNumber, `uploads/bulk/${filename}`);
     }
   }
-
-  if (productCodesInExcel.length > 0) {
-    const existingCodes = await ProductVariants.findAll({
-      attributes: ["product_code"],
-      where: { product_code: { [Op.in]: productCodesInExcel }, deletedAt: null },
-      paranoid: false,
-    });
-    const existingCodeSet = new Set(existingCodes.map((r) => r.product_code));
-    for (const row of variantRows) {
-      if (row.product_code && existingCodeSet.has(row.product_code)) {
-        addError(errors, "product_variants", row._rowNumber, "product_code", `Product code "${row.product_code}" already exists in the database`);
-      }
-    }
-  }
+  return resolvedPaths;
 }
 
-// ─── Step 5: Resolve Categories, Attributes & Validate Images ────────────────
+// ─── Step 5b: Resolve Categories, Attributes & Validate Variant Images ────────
 
 async function resolveAndValidateLookups(variantRows, errors) {
   const categorySlugToId = new Map();
@@ -515,7 +484,7 @@ async function resolveAndValidateLookups(variantRows, errors) {
 
 // ─── Build Hierarchy ────────────────────────────────────────────────────────
 
-function buildHierarchy(baseRows, modelRows, resolvedVariants) {
+function buildHierarchy(baseRows, modelRows, resolvedVariants, modelImagePaths) {
   // Index models by "base_title"
   const modelsByBase = new Map();
   for (const row of modelRows) {
@@ -590,9 +559,13 @@ function buildHierarchy(baseRows, modelRows, resolvedVariants) {
         mediaRecords,
       }));
 
+      const resolvedMediaPath = modelImagePaths ? modelImagePaths.get(modelRow._rowNumber) : null;
       return {
         rowNum: modelRow._rowNumber,
-        data: cleanRow(modelRow, MODEL_FIELDS),
+        data: {
+          ...cleanRow(modelRow, MODEL_FIELDS),
+          ...(resolvedMediaPath ? { media_path: resolvedMediaPath } : {}),
+        },
         variants: variantList,
       };
     });
@@ -624,11 +597,12 @@ async function validateBulkUpload(parsedSheets) {
   // Step 3: Internal duplicates
   validateInternalDuplicates(baseRows, modelRows, variantRows, errors);
 
-  // Step 4: DB duplicate checks
-  await validateDbDuplicates(baseRows, modelRows, variantRows, errors);
-
-  // Step 5: Resolve & validate lookups (categories, attributes, image files)
-  const resolvedVariants = await resolveAndValidateLookups(variantRows, errors);
+  // Note: DB duplicate checks removed — service layer handles upsert (update-or-create)
+  // Resolve model images and variant lookups in parallel
+  const [modelImagePaths, resolvedVariants] = await Promise.all([
+    resolveModelImages(modelRows, errors),
+    resolveAndValidateLookups(variantRows, errors),
+  ]);
 
   if (errors.length > 0) {
     const totalRows = baseRows.length + modelRows.length + variantRows.length;
@@ -645,7 +619,7 @@ async function validateBulkUpload(parsedSheets) {
   }
 
   // Build hierarchy for storage
-  const hierarchy = buildHierarchy(baseRows, modelRows, resolvedVariants);
+  const hierarchy = buildHierarchy(baseRows, modelRows, resolvedVariants, modelImagePaths);
   const summary = {
     total_bases: baseRows.length,
     total_models: modelRows.length,

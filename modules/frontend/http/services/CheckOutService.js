@@ -303,7 +303,7 @@ class CheckOutService {
                       {
                         model: models.ProductBase,
                         as: "product",
-                        attributes: ["id", "category_id"],
+                        attributes: ["id"],
                       },
                     ],
                   },

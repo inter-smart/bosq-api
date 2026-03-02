@@ -41,9 +41,9 @@ function rowToObject(headers, row, rowNumber) {
  *
  * Returns:
  * {
- *   product_base: [{ _rowNumber, slug, title, ... }],
- *   product_models: [...],
- *   product_variants: [...]
+ *   product_base: [{ _rowNumber, title, title_ar, ... }],
+ *   product_models: [{ _rowNumber, base_title, title, ... }],
+ *   product_variants: [{ _rowNumber, base_title, model_title, cover_image, hover_image, images, video_thumbnails, ... }]
  * }
  */
 async function parseExcelBuffer(buffer) {

@@ -14,6 +14,7 @@ const { seedMetaTags } = require("./database/seeders/metaTags");
 const { redisClient, connectRedis } = require("./config/redis");
 const { startEmailWorker, stopEmailWorker } = require("./queues/workers/emailWorker");
 const { startBulkUploadWorker, stopBulkUploadWorker } = require("./queues/workers/bulkUploadWorker");
+const { startBulkImageUploadWorker, stopBulkImageUploadWorker } = require("./queues/workers/bulkImageUploadWorker");
 const { homeCmsData } = require("./database/seeders/HomeCms");
 const users = require("./database/models/users/users");
 const seedCountriesAndStates = require("./database/seeders/stateCountry");
@@ -76,6 +77,7 @@ const startServer = async () => {
 
     startEmailWorker();
     startBulkUploadWorker();
+    startBulkImageUploadWorker();
 
     app.listen(PORT, () => {
       Logger.info(`🚀 Server running on port ${PORT}`);
@@ -118,6 +120,7 @@ startServer();
 process.on("SIGINT", async () => {
   await stopEmailWorker();
   await stopBulkUploadWorker();
+  await stopBulkImageUploadWorker();
   await sequelize.close();
   process.exit(0);
 });

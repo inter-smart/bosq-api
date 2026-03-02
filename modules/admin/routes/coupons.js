@@ -15,9 +15,11 @@ router.use(authMiddleware(["admin"]));
 router.get("/", Controller.index);
 router.get("/product-category", Controller.getAllProductCategories);
 
+router.get("/products", Controller.getAllProductsAll);
 router.get("/product/:id", Controller.getAllProducts);
 router.get("/product-model/:id", Controller.getAllProductModels);
 router.get("/product-variant/:id", Controller.getAllProductVariants);
+router.get("/model-categories/:id", Controller.getAllModelCategories);
 
 router.get("/:id", Controller.show);
 router.post("/", upload, Controller.store);

@@ -296,6 +296,14 @@ class CheckOutService {
                 attributes: ["id", "product_model_id"],
                 include: [
                   {
+                    // Needed for category-scoped coupons (category is now M2M on variants)
+                    model: models.ProductCategory,
+                    as: "categories",
+                    attributes: ["id"],
+                    through: { attributes: [] },
+                    required: false,
+                  },
+                  {
                     model: models.ProductModels,
                     as: "productModel",
                     attributes: ["id"],
@@ -411,7 +419,8 @@ class CheckOutService {
           if (item.product_id === scopeId) return true;
           break;
         case "category":
-          if (item.variant?.productModel?.product?.category_id == scopeId) return true;
+          // Category is now M2M on variants — check the variant's categories array
+          if (item.variant?.categories?.some((cat) => cat.id === scopeId)) return true;
           break;
       }
     }
@@ -577,7 +586,8 @@ class CheckOutService {
         case "product":
           return item.product_id === scopeId;
         case "category":
-          return item.variant?.productModel?.product?.category_id === scopeId && item.final_price >= minimumProductAmount;
+          // Category is now M2M on variants — check the variant's categories array
+          return (item.variant?.categories?.some((cat) => cat.id === scopeId) ?? false) && item.final_price >= minimumProductAmount;
         default:
           return false;
       }

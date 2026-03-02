@@ -49,7 +49,6 @@ class CouponsController {
         data = await DataModel.findByPk(id, {
           include: [
             {
-              // variants
               model: models.ProductVariants,
               as: "variant",
               required: false,
@@ -58,22 +57,9 @@ class CouponsController {
                 {
                   model: models.ProductCategory,
                   as: "categories",
-                  attributes: ["id", "name", "name_ar", "slug"],
+                  // parent_id is required by the admin form to determine parent vs sub-category
+                  attributes: ["id", "name", "name_ar", "slug", "parent_id"],
                   through: { attributes: [] },
-                  include: [
-                    {
-                      model: models.ProductCategory,
-                      as: "parent",
-                      required: false,
-                      attributes: ["id", "slug", "name", "name_ar", "parent_id"],
-                    },
-                    {
-                      model: models.ProductCategory,
-                      as: "children",
-                      required: false,
-                      attributes: ["id", "slug", "name", "name_ar", "parent_id"],
-                    },
-                  ],
                   required: false,
                 },
                 {
@@ -95,6 +81,9 @@ class CouponsController {
           ],
         });
       } else if (scope?.scope_type === "model") {
+        // Category is now on variants (M2M), not on product directly.
+        // Include the model's variants with their categories so the admin form
+        // can pre-populate the category cascade dropdowns in edit mode.
         data = await DataModel.findByPk(id, {
           include: [
             {
@@ -108,26 +97,19 @@ class CouponsController {
                   as: "product",
                   required: false,
                   attributes: ["id", "slug", "title"],
+                },
+                {
+                  model: models.ProductVariants,
+                  as: "variants",
+                  required: false,
+                  attributes: ["id"],
                   include: [
                     {
                       model: models.ProductCategory,
-                      as: "category",
-                      required: false,
+                      as: "categories",
                       attributes: ["id", "slug", "name", "name_ar", "parent_id"],
-                      include: [
-                        {
-                          model: models.ProductCategory,
-                          as: "parent",
-                          required: false,
-                          attributes: ["id", "slug", "name", "name_ar", "parent_id"],
-                        },
-                        {
-                          model: models.ProductCategory,
-                          as: "children",
-                          required: false,
-                          attributes: ["id", "slug", "name", "name_ar", "parent_id"],
-                        },
-                      ],
+                      through: { attributes: [] },
+                      required: false,
                     },
                   ],
                 },
@@ -136,6 +118,8 @@ class CouponsController {
           ],
         });
       } else if (scope?.scope_type === "product") {
+        // Category is now on variants (M2M). Include models → variants → categories
+        // so the admin form can pre-populate the category cascade in edit mode.
         data = await DataModel.findByPk(id, {
           include: [
             {
@@ -145,22 +129,25 @@ class CouponsController {
               attributes: ["id", "slug", "title"],
               include: [
                 {
-                  model: models.ProductCategory,
-                  as: "category",
+                  model: models.ProductModels,
+                  as: "models",
                   required: false,
-                  attributes: ["id", "slug", "name", "name_ar", "parent_id"],
+                  attributes: ["id"],
                   include: [
                     {
-                      model: models.ProductCategory,
-                      as: "parent",
+                      model: models.ProductVariants,
+                      as: "variants",
                       required: false,
-                      attributes: ["id", "slug", "name", "name_ar", "parent_id"],
-                    },
-                    {
-                      model: models.ProductCategory,
-                      as: "children",
-                      required: false,
-                      attributes: ["id", "slug", "name", "name_ar", "parent_id"],
+                      attributes: ["id"],
+                      include: [
+                        {
+                          model: models.ProductCategory,
+                          as: "categories",
+                          attributes: ["id", "slug", "name", "name_ar", "parent_id"],
+                          through: { attributes: [] },
+                          required: false,
+                        },
+                      ],
                     },
                   ],
                 },
@@ -358,10 +345,42 @@ class CouponsController {
         return sendErrorResponse(res, "Category id is required");
       }
 
+      // Category is now on variants (M2M via product_variant_categories).
+      // Find all product_model rows that have at least one variant in this category,
+      // then return the unique base products for those models.
+      const modelsWithCategory = await models.ProductModels.findAll({
+        attributes: ["product_id"],
+        include: [
+          {
+            model: models.ProductVariants,
+            as: "variants",
+            attributes: [],
+            required: true,
+            include: [
+              {
+                model: models.ProductCategory,
+                as: "categories",
+                attributes: [],
+                through: { attributes: [] },
+                where: { id },
+                required: true,
+              },
+            ],
+          },
+        ],
+        raw: true,
+      });
+
+      const productIds = [...new Set(modelsWithCategory.map((m) => m.product_id))];
+
+      if (productIds.length === 0) {
+        return sendSuccessResponse(res, [], "Data retrieved successfully");
+      }
+
       const result = await models.ProductBase.findAll({
         where: {
           status: true,
-          category_id: id,
+          id: productIds,
         },
         attributes: ["id", "title", "slug"],
       });
@@ -390,13 +409,67 @@ class CouponsController {
     }
   }
 
-  // get product variants
+  // get product variants (optional categoryId query param to filter by category)
   static async getAllProductVariants(req, res) {
     try {
       const { id } = req.params;
+      const { categoryId } = req.query;
+
+      const include = [];
+      if (categoryId) {
+        include.push({
+          model: models.ProductCategory,
+          as: "categories",
+          attributes: [],
+          through: { attributes: [] },
+          where: { id: categoryId },
+          required: true,
+        });
+      }
+
       const result = await models.ProductVariants.findAll({
         where: { product_model_id: id },
         attributes: ["id", "sku"],
+        include,
+      });
+      return sendSuccessResponse(res, result, "Data retrieved successfully");
+    } catch (error) {
+      console.error("Data index error:", error);
+      sendErrorResponse(res, error);
+    }
+  }
+
+  // Get all active base products (no category filter) — for product/model scope selection
+  static async getAllProductsAll(req, res) {
+    try {
+      const result = await models.ProductBase.findAll({
+        where: { status: true },
+        attributes: ["id", "title", "slug"],
+        order: [["title", "ASC"]],
+      });
+      return sendSuccessResponse(res, result, "Data retrieved successfully");
+    } catch (error) {
+      console.error("Data index error:", error);
+      sendErrorResponse(res, error);
+    }
+  }
+
+  // Get categories of variants in a model — for variant scope category step
+  static async getAllModelCategories(req, res) {
+    try {
+      const { id } = req.params;
+      const result = await models.ProductCategory.findAll({
+        attributes: ["id", "name", "name_ar", "slug"],
+        include: [
+          {
+            model: models.ProductVariants,
+            as: "variants",
+            attributes: [],
+            through: { attributes: [] },
+            where: { product_model_id: id },
+            required: true,
+          },
+        ],
       });
       return sendSuccessResponse(res, result, "Data retrieved successfully");
     } catch (error) {

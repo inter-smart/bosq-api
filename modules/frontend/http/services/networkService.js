@@ -144,8 +144,11 @@ class NetworkService {
     if (["SUCCESS", "CAPTURED", "AUTHORISED", "PARTIALLY_CAPTURED"].includes(status)) {
       return "paid";
     }
-    if (["FAILED", "REVERSED", "VOIDED", "CANCELLED", "DECLINED"].includes(status)) {
+    if (["FAILED", "VOIDED", "CANCELLED", "DECLINED"].includes(status)) {
       return "failed";
+    }
+    if (status === "REVERSED") {
+      return "refunded";
     }
     return "pending";
   }

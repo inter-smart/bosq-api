@@ -55,9 +55,19 @@ class PaymentService {
                 throw error;
             }
 
-            const clientBaseUrl = process.env.CLIENT_BASE_URL
-            const returnUrl = `${clientBaseUrl}/${locale}/order/payment-success?orderId=${orderId}`;
-            const cancelUrl = `${clientBaseUrl}/${locale}/products`;
+            // Idempotency: if payment already initiated, return the stored URL without hitting the gateway again
+            if (order.network_transaction_id && order.gateway_response?.payment_url) {
+                await transaction.rollback();
+                return {
+                    paymentUrl: order.gateway_response.payment_url,
+                    transactionId: order.network_transaction_id,
+                    orderReference: order.order_reference,
+                };
+            }
+
+            const clientBaseUrl = process.env.CLIENT_BASE_URL;
+            const returnUrl = `${clientBaseUrl}/${locale}/order/payment-callback?orderId=${orderId}`;
+            const cancelUrl  = `${clientBaseUrl}/${locale}/order/payment-callback?orderId=${orderId}`;
 
             // Call the gateway outside the DB lock — network I/O should not hold a row lock
             // Roll back the empty transaction first, then re-open after the API call
@@ -81,6 +91,7 @@ class PaymentService {
                     {
                         network_transaction_id: transactionId,
                         order_reference: order.order_id,
+                        gateway_response: { payment_url: paymentUrl },
                     },
                     saveTransaction,
                 );

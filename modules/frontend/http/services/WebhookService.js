@@ -31,14 +31,18 @@ class WebhookService {
             return { success: true, message: "Order not found, acknowledged" };
         }
 
-        // 3. Idempotency check — skip if already in a terminal state
-        if (order.payment_status === "paid" || order.payment_status === "failed") {
+        // 3. Map Network status to our internal payment_status
+        const resolvedStatus = NetworkService.mapStatus(status);
+
+        // 4. Idempotency check — skip if already in a terminal state.
+        //    Exception: allow REVERSED through even after "paid" so refunds can be processed.
+        const isTerminal = order.payment_status === "paid" || order.payment_status === "failed";
+        const isRefundOnPaidOrder = resolvedStatus === "refunded" && order.payment_status === "paid";
+
+        if (isTerminal && !isRefundOnPaidOrder) {
             Logger.info(`[Webhook] Duplicate webhook ignored for order ${reference} (status already ${order.payment_status})`);
             return { success: true, message: "Already processed" };
         }
-
-        // 4. Map Network status to our internal payment_status
-        const resolvedStatus = NetworkService.mapStatus(status);
 
         // 5. Atomically update payment status + trigger business logic in one transaction
         const transaction = await sequelize.transaction();
@@ -67,6 +71,14 @@ class WebhookService {
                 await OrderService.revertOrderStock(order.id, transaction);
                 await models.Orders.update(
                     { status: "cancelled" },
+                    { where: { id: order.id }, transaction },
+                );
+            }
+
+            // Business logic: mark order as returned when a previously captured payment is reversed (refund/chargeback)
+            if (resolvedStatus === "refunded") {
+                await models.Orders.update(
+                    { status: "returned", payment_status: "refunded" },
                     { where: { id: order.id }, transaction },
                 );
             }

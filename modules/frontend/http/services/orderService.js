@@ -545,7 +545,7 @@ class OrderService {
    * Update payment status and optionally store Network Gateway transaction details.
    *
    * @param {number} orderId
-   * @param {string} paymentStatus         - "pending" | "paid" | "failed"
+   * @param {string} paymentStatus         - "pending" | "paid" | "failed" | "refunded"
    * @param {object} [networkFields]       - Optional Network Gateway fields to persist
    * @param {string} [networkFields.network_transaction_id]
    * @param {string} [networkFields.order_reference]

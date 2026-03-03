@@ -2,6 +2,7 @@ const { redisClient } = require("../../../../config/redis");
 const { models } = require("../../../../database/models");
 const cacheDependencies = require("../../../redis/cacheDependency");
 const { invalidateCacheByModel } = require("../../../redis/redisService");
+const OrderService = require("../../../frontend/http/services/orderService");
 
 class CommonActionsController {
   static async updateStatus(req, res) {
@@ -27,6 +28,13 @@ class CommonActionsController {
       }
 
       const updatedContent = await Model.findByPk(row_id);
+
+      // Trigger order confirmation email if the status is updated to "confirmed" for an Order
+      if (model_name === "Orders" && status === "confirmed") {
+        OrderService.sendOrderConfirmationEmail(row_id).catch((err) =>
+          console.error(`Failed to trigger order confirmation email from admin for order ${row_id}: ${err.message}`)
+        );
+      }
 
       // Invalidate cache (pass updatedContent for dynamic cache keys)
       const cacheResult = await invalidateCacheByModel(redisClient, model_name, cacheDependencies, updatedContent);

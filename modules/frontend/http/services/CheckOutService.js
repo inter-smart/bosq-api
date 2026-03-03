@@ -150,8 +150,8 @@ class CheckOutService {
       items: cart.items.map((item) => ({
         id: item.id,
         variant_id: item.variant_id,
-        title: item.variant.title,
-        slug: item.variant.sku,
+        title: item.variant?.title || "",
+        slug: item.variant?.sku || "",
         price: item.price,
         media_path: generateImageUrl(item?.variant?.media_path),
         quantity: item.quantity,
@@ -250,8 +250,8 @@ class CheckOutService {
       items: cart.items.map((item) => ({
         id: item.id,
         variant_id: item.variant_id,
-        title: item.variant.title,
-        slug: item.variant.sku,
+        title: item.variant?.title || "",
+        slug: item.variant?.sku || "",
         price: item.price,
         media_path: generateImageUrl(item?.variant?.media_path),
         quantity: item.quantity,
@@ -309,6 +309,12 @@ class CheckOutService {
                         attributes: ["id"],
                       },
                     ],
+                  },
+                  {
+                    model: models.ProductCategory,
+                    as: "categories",
+                    attributes: ["id"],
+                    through: { attributes: [] },
                   },
                 ],
               },
@@ -391,7 +397,9 @@ class CheckOutService {
 
       return cartData;
     } catch (error) {
-      await transaction.rollback();
+      if (transaction && !transaction.finished) {
+        await transaction.rollback();
+      }
       throw error;
     }
   }
@@ -494,7 +502,9 @@ class CheckOutService {
 
       return updatedCart;
     } catch (error) {
-      await transaction.rollback();
+      if (transaction && !transaction.finished) {
+        await transaction.rollback();
+      }
       throw error;
     }
   }

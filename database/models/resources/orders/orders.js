@@ -71,6 +71,31 @@ module.exports = (sequelize) => {
         allowNull: false,
         defaultValue: 0,
       },
+
+      // Network Payment Gateway fields
+      network_transaction_id: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
+        defaultValue: null,
+      },
+
+      order_reference: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
+        defaultValue: null,
+      },
+
+      payment_method: {
+        type: DataTypes.STRING(100),
+        allowNull: true,
+        defaultValue: null,
+      },
+
+      gateway_response: {
+        type: DataTypes.JSONB,
+        allowNull: true,
+        defaultValue: null,
+      },
     },
     {
       tableName: "orders",

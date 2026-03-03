@@ -203,56 +203,102 @@ class OrderService {
       }
 
       await transaction.commit();
-
-      // ── Enqueue order confirmation email (fire & forget — non-blocking) ──
-      Promise.all([
-        cartBillingAddress.state_id ? models.State.findByPk(cartBillingAddress.state_id, { attributes: ["name"] }) : null,
-        cartShippingAddress?.state_id ? models.State.findByPk(cartShippingAddress.state_id, { attributes: ["name"] }) : null,
-      ])
-        .then(([billingState, shippingState]) => {
-          return addOrderConfirmationJob({
-            orderId: order.id,
-            orderCode: order.order_id,
-            email: cartBillingAddress.email,
-            name: cartBillingAddress.name,
-            paymentType,
-            subtotal: cart.subtotal,
-            discount_total: cart.discount_total,
-            tax_total: cart.tax_total,
-            grand_total: cart.grand_total,
-            estDelivery: order.est_delivery_details || null,
-            billingAddress: {
-              street_address: cartBillingAddress.street_address,
-              apartment: cartBillingAddress.apartment || null,
-              state_name: billingState?.name || null,
-              country: "UAE",
-            },
-            shippingAddress: cartShippingAddress
-              ? {
-                  street_address: cartShippingAddress.street_address,
-                  apartment: cartShippingAddress.apartment || null,
-                  state_name: shippingState?.name || null,
-                  country: "UAE",
-                }
-              : null,
-            items: cart.items.map((item) => ({
-              title: item.variant?.title || item.product?.title || "Product",
-              sku: item.variant?.sku || "",
-              quantity: item.quantity,
-              price: item.price,
-              line_total: (parseFloat(item.price) * item.quantity).toFixed(2),
-              image: generateImageUrl(item.variant?.media_path) || null,
-            })),
-          });
-        })
-        .catch((err) => Logger.error(`Failed to enqueue order confirmation email for order ${order.order_id}: ${err.message}`));
-
       return await this.getOrderById(userId, sessionId, order.id);
     } catch (error) {
       if (!transaction.finished) {
         await transaction.rollback();
       }
       throw error;
+    }
+  }
+
+  /**
+   * Send order confirmation email
+   */
+  static async sendOrderConfirmationEmail(orderId) {
+    try {
+      const order = await models.Orders.findOne({
+        where: { id: orderId },
+        include: [
+          {
+            model: models.OrderItem,
+            as: "items",
+            include: [
+              {
+                model: models.ProductBase,
+                as: "product",
+                attributes: ["id", "title", "slug"],
+              },
+              {
+                model: models.ProductVariants,
+                as: "variant",
+                attributes: ["id", "sku", "price", "media_path", "stock", "title"],
+              },
+            ],
+          },
+          {
+            model: models.OrderAddress,
+            as: "addresses",
+          },
+        ],
+      });
+
+      if (!order) {
+        Logger.error(`Order not found for email confirmation: ${orderId}`);
+        return;
+      }
+
+      const billingAddress = order.addresses.find((a) => a.address_type === "billing");
+      const shippingAddress = order.addresses.find((a) => a.address_type === "shipping");
+
+      if (!billingAddress) {
+        Logger.error(`Billing address not found for order email confirmation: ${orderId}`);
+        return;
+      }
+
+      const [billingState, shippingState] = await Promise.all([
+        billingAddress.state_id ? models.State.findByPk(billingAddress.state_id, { attributes: ["name"] }) : null,
+        shippingAddress?.state_id ? models.State.findByPk(shippingAddress.state_id, { attributes: ["name"] }) : null,
+      ]);
+
+      await addOrderConfirmationJob({
+        orderId: order.id,
+        orderCode: order.order_id,
+        email: billingAddress.email,
+        name: billingAddress.name,
+        paymentType: order.payment_type,
+        subtotal: order.subtotal,
+        discount_total: order.discount_total,
+        tax_total: order.tax_total,
+        grand_total: order.grand_total,
+        estDelivery: order.est_delivery_details || null,
+        billingAddress: {
+          street_address: billingAddress.street_address,
+          apartment: billingAddress.apartment || null,
+          state_name: billingState?.name || null,
+          country: "UAE",
+        },
+        shippingAddress: shippingAddress
+          ? {
+              street_address: shippingAddress.street_address,
+              apartment: shippingAddress.apartment || null,
+              state_name: shippingState?.name || null,
+              country: "UAE",
+            }
+          : null,
+        items: order.items.map((item) => ({
+          title: item.variant?.title || item.product?.title || "Product",
+          sku: item.variant?.sku || "",
+          quantity: item.quantity,
+          price: item.price,
+          line_total: (parseFloat(item.price) * item.quantity).toFixed(2),
+          image: generateImageUrl(item.variant?.media_path) || null,
+        })),
+      });
+
+      Logger.info(`Order confirmation email enqueued for order ${order.order_id}`);
+    } catch (err) {
+      Logger.error(`Failed to enqueue order confirmation email for order ${orderId}: ${err.message}`);
     }
   }
 
@@ -391,13 +437,7 @@ class OrderService {
       }
 
       // Restore stock for each order item
-      for (const item of order.items) {
-        await models.ProductVariants.increment("stock", {
-          by: item.quantity,
-          where: { id: item.variant_id },
-          transaction,
-        });
-      }
+      await this.revertOrderStock(order.id, transaction);
 
       await order.update({ status: "cancelled" }, { transaction });
 
@@ -499,6 +539,55 @@ class OrderService {
       month: "short",
       year: "numeric",
     });
+  }
+
+  /**
+   * Update payment status and optionally store Network Gateway transaction details.
+   *
+   * @param {number} orderId
+   * @param {string} paymentStatus         - "pending" | "paid" | "failed"
+   * @param {object} [networkFields]       - Optional Network Gateway fields to persist
+   * @param {string} [networkFields.network_transaction_id]
+   * @param {string} [networkFields.order_reference]
+   * @param {string} [networkFields.payment_method]
+   * @param {object} [networkFields.gateway_response]
+   * @param {object} [transaction]         - Optional Sequelize transaction to enlist in
+   */
+  static async updatePaymentStatus(orderId, paymentStatus, networkFields = null, transaction = null) {
+    const updateFields = { payment_status: paymentStatus };
+    if (networkFields) {
+      const { network_transaction_id, order_reference, payment_method, gateway_response } = networkFields;
+      if (network_transaction_id) updateFields.network_transaction_id = network_transaction_id;
+      if (order_reference) updateFields.order_reference = order_reference;
+      if (payment_method) updateFields.payment_method = payment_method;
+      if (gateway_response) updateFields.gateway_response = gateway_response;
+    }
+    const opts = { where: { id: orderId } };
+    if (transaction) opts.transaction = transaction;
+    await models.Orders.update(updateFields, opts);
+  }
+
+  /**
+   * Revert stock for all items in an order
+   *
+   * @param {number} orderId
+   * @param {object} transaction - Sequelize transaction
+   */
+  static async revertOrderStock(orderId, transaction) {
+    const orderItems = await models.OrderItem.findAll({
+      where: { order_id: orderId },
+      transaction,
+    });
+
+    for (const item of orderItems) {
+      await models.ProductVariants.increment("stock", {
+        by: item.quantity,
+        where: { id: item.variant_id },
+        transaction,
+      });
+    }
+
+    Logger.info(`Stock reverted for order ${orderId}`);
   }
 }
 

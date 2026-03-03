@@ -635,10 +635,14 @@ class CheckOutService {
       return { discountAmount, newDiscountTotal, newGrandTotal };
     } else {
       // Scoped coupon: discount applies only to matching items
+
       const matchingItems = this.getMatchingCartItems(coupon, cart.items);
 
       if (matchingItems.length === 0) {
-        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.COUPON_NOT_APPLICABLE, HTTP_STATUS.BAD_REQUEST);
+        throw ErrorHandler.createError(
+          RESPONSE_MESSAGES.ERROR.MINIMUM_ELIGIBLE_PRODUCTS_AMOUNT_REQUIRED(coupon.min_product_amount),
+          HTTP_STATUS.BAD_REQUEST,
+        );
       }
 
       // Calculate eligible subtotal from matching items only

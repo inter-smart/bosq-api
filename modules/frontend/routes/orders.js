@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const OrderController = require("../http/controllers/OrderController.js");
+const PaymentController = require("../http/controllers/PaymentController.js");
 const { optionalAuth } = require("../http/middleware/optionalAuthMiddleware.js");
 const { cartContext } = require("../http/middleware/cartMiddleware.js");
 const { addOrderConfirmationJob } = require("../../../queues/emailQueue.js");
@@ -20,5 +21,11 @@ router.put("/:orderId/cancel", optionalAuth(), cartContext, OrderController.canc
 
 // Reorder — add items from a past order to the active cart
 router.post("/:orderId/reorder", optionalAuth(), cartContext, OrderController.reorderOrder);
+
+// Initiate N-Genius payment for an online order — returns a payment_url to redirect the user to
+router.post("/:orderId/initiate-payment", optionalAuth(), cartContext, PaymentController.initiatePayment);
+
+// Check and update payment status after N-Genius callback
+router.get("/:orderId/payment-status", optionalAuth(), cartContext, PaymentController.getPaymentStatus);
 
 module.exports = router;

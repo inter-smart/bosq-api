@@ -150,10 +150,10 @@ class CheckOutService {
       items: cart.items.map((item) => ({
         id: item.id,
         variant_id: item.variant_id,
-        title: item.variant.title,
-        slug: item.variant.sku,
+        title: item.variant?.title || "",
+        slug: item.variant?.sku || "",
         price: item.price,
-        media_path: generateImageUrl(item.variant.media_path),
+        media_path: generateImageUrl(item.variant?.media_path),
         quantity: item.quantity,
         discount_amount: item.discount_amount,
         line_total: (parseFloat(item.price) * item.quantity).toFixed(2),
@@ -253,10 +253,10 @@ class CheckOutService {
       items: cart.items.map((item) => ({
         id: item.id,
         variant_id: item.variant_id,
-        title: item.variant.title,
-        slug: item.variant.sku,
+        title: item.variant?.title || "",
+        slug: item.variant?.sku || "",
         price: item.price,
-        media_path: generateImageUrl(item.variant.media_path),
+        media_path: generateImageUrl(item.variant?.media_path),
         quantity: item.quantity,
         discount_amount: item.discount_amount,
         line_total: (parseFloat(item.price) * item.quantity).toFixed(2),
@@ -303,9 +303,15 @@ class CheckOutService {
                       {
                         model: models.ProductBase,
                         as: "product",
-                        attributes: ["id", "category_id"],
+                        attributes: ["id"],
                       },
                     ],
+                  },
+                  {
+                    model: models.ProductCategory,
+                    as: "categories",
+                    attributes: ["id"],
+                    through: { attributes: [] },
                   },
                 ],
               },
@@ -388,7 +394,9 @@ class CheckOutService {
 
       return cartData;
     } catch (error) {
-      await transaction.rollback();
+      if (transaction && !transaction.finished) {
+        await transaction.rollback();
+      }
       throw error;
     }
   }
@@ -411,7 +419,7 @@ class CheckOutService {
           if (item.product_id === scopeId) return true;
           break;
         case "category":
-          if (item.variant?.productModel?.product?.category_id == scopeId) return true;
+          if (item.variant?.categories?.some((cat) => cat.id == scopeId)) return true;
           break;
       }
     }
@@ -490,7 +498,9 @@ class CheckOutService {
 
       return updatedCart;
     } catch (error) {
-      await transaction.rollback();
+      if (transaction && !transaction.finished) {
+        await transaction.rollback();
+      }
       throw error;
     }
   }
@@ -577,7 +587,7 @@ class CheckOutService {
         case "product":
           return item.product_id === scopeId;
         case "category":
-          return item.variant?.productModel?.product?.category_id === scopeId && item.final_price >= minimumProductAmount;
+          return item.variant?.categories?.some((cat) => cat.id === scopeId) && item.final_price >= minimumProductAmount;
         default:
           return false;
       }

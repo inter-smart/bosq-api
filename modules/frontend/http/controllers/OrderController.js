@@ -41,9 +41,14 @@ class OrderController {
 
       const order = await OrderService.placeOrder(cartOwner, payment_type, address, type);
 
+      const responseData = {
+        ...order,
+        requires_payment: payment_type === "online",
+      };
+
       return ApiResponse.success(res, {
-        message: "Order placed successfully",
-        data: order,
+        message: payment_type === "online" ? "Order created. Proceed to payment." : "Order placed successfully",
+        data: responseData,
         status: HTTP_STATUS.CREATED,
       });
     } catch (error) {

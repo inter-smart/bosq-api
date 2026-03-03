@@ -500,6 +500,32 @@ class OrderService {
       year: "numeric",
     });
   }
+
+  /**
+   * Update payment status and optionally store Network Gateway transaction details.
+   *
+   * @param {number} orderId
+   * @param {string} paymentStatus         - "pending" | "paid" | "failed"
+   * @param {object} [networkFields]       - Optional Network Gateway fields to persist
+   * @param {string} [networkFields.network_transaction_id]
+   * @param {string} [networkFields.order_reference]
+   * @param {string} [networkFields.payment_method]
+   * @param {object} [networkFields.gateway_response]
+   * @param {object} [transaction]         - Optional Sequelize transaction to enlist in
+   */
+  static async updatePaymentStatus(orderId, paymentStatus, networkFields = null, transaction = null) {
+    const updateFields = { payment_status: paymentStatus };
+    if (networkFields) {
+      const { network_transaction_id, order_reference, payment_method, gateway_response } = networkFields;
+      if (network_transaction_id) updateFields.network_transaction_id = network_transaction_id;
+      if (order_reference) updateFields.order_reference = order_reference;
+      if (payment_method) updateFields.payment_method = payment_method;
+      if (gateway_response) updateFields.gateway_response = gateway_response;
+    }
+    const opts = { where: { id: orderId } };
+    if (transaction) opts.transaction = transaction;
+    await models.Orders.update(updateFields, opts);
+  }
 }
 
 module.exports = OrderService;

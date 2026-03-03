@@ -153,7 +153,7 @@ class CheckOutService {
         title: item.variant.title,
         slug: item.variant.sku,
         price: item.price,
-        media_path: generateImageUrl(item.variant.media_path),
+        media_path: generateImageUrl(item?.variant?.media_path),
         quantity: item.quantity,
         discount_amount: item.discount_amount,
         line_total: (parseFloat(item.price) * item.quantity).toFixed(2),
@@ -196,8 +196,6 @@ class CheckOutService {
       ],
     });
 
-    console.log("CART 1111", JSON.stringify(cart, null, 2));
-
     if (!cart) {
       return {
         cart: [],
@@ -231,9 +229,8 @@ class CheckOutService {
         ],
       }));
 
-    console.log("CART 2222", JSON.stringify(cart, null, 2));
-
     const itemCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
+    const itemPriceTotal = cart.items.reduce((sum, item) => sum + parseFloat(item.price) * item.quantity, 0);
 
     let couponDiscountType = null;
     let couponDiscountValue = null;
@@ -256,16 +253,14 @@ class CheckOutService {
         title: item.variant.title,
         slug: item.variant.sku,
         price: item.price,
-        media_path: generateImageUrl(item.variant.media_path),
+        media_path: generateImageUrl(item?.variant?.media_path),
         quantity: item.quantity,
         discount_amount: item.discount_amount,
         line_total: (parseFloat(item.price) * item.quantity).toFixed(2),
         is_sold_out: item.variant ? item.variant.stock < item.quantity : false,
       })),
-      sub_total: cart.subtotal,
-      discount_total: cart.discount_total,
-      tax_total: cart.tax_total,
-      grand_total: cart.grand_total,
+      sub_total: itemPriceTotal.toFixed(2),
+      grand_total: itemPriceTotal.toFixed(2),
       applied_coupon_code: cart.applied_coupon_code,
       coupon_discount_type: couponDiscountType,
       coupon_discount_value: couponDiscountValue,

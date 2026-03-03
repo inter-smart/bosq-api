@@ -276,6 +276,27 @@ class CartController {
   }
 
   /**
+   * Get matching products based on the most repeated category in the cart
+   * GET /api/frontend/cart/matching-products
+   */
+  static async getMatchingProducts(req, res) {
+    try {
+      const userId = req.auth?.id || null;
+      const sessionId = CartController.getSessionId(req);
+
+      const data = await CartService.getMatchingProducts(userId, sessionId);
+
+      return ApiResponse.success(res, {
+        message: "Matching products fetched successfully",
+        data,
+        status: HTTP_STATUS.OK,
+      });
+    } catch (error) {
+      return ErrorHandler.handleControllerError(error, res, "CartController.getMatchingProducts");
+    }
+  }
+
+  /**
    * Get similar products based on the dominant model in the cart
    * GET /api/frontend/cart/similar-products
    */

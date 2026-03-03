@@ -803,6 +803,145 @@ class CartService {
   }
 
   /**
+   * Get matching products based on the most repeated category in the cart
+   * GET /api/frontend/cart/matching-products
+   */
+  static async getMatchingProducts(userId, sessionId) {
+    // 1. Find active cart with items and their variant categories
+    const whereClause = userId ? { user_id: userId, status: "active" } : { session_id: sessionId, status: "active", user_id: null };
+
+    const cart = await models.Cart.findOne({
+      where: whereClause,
+      include: [
+        {
+          model: models.CartItems,
+          as: "items",
+          attributes: ["id", "variant_id", "quantity"],
+          include: [
+            {
+              model: models.ProductVariants,
+              as: "variant",
+              attributes: ["id"],
+              include: [
+                {
+                  model: models.ProductCategory,
+                  as: "categories",
+                  attributes: ["id"],
+                  through: { attributes: [] },
+                  required: false,
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    if (!cart || !cart.items?.length) return [];
+
+    // 2. Count category occurrences weighted by quantity
+    const categoryCounts = {};
+    for (const item of cart.items) {
+      for (const cat of item.variant?.categories || []) {
+        categoryCounts[cat.id] = (categoryCounts[cat.id] || 0) + item.quantity;
+      }
+    }
+
+    if (!Object.keys(categoryCounts).length) return [];
+
+    // 3. Find the most repeated category
+    const dominantCategoryId = parseInt(Object.entries(categoryCounts).sort(([, a], [, b]) => b - a)[0][0]);
+
+    const cartVariantIds = cart.items.map((i) => i.variant_id);
+
+    // 4. Get variant IDs in the dominant category, excluding cart items
+    const junctionRows = await models.ProductVariantCategories.findAll({
+      where: { category_id: dominantCategoryId },
+      attributes: ["product_variant_id"],
+      raw: true,
+    });
+
+    const eligibleIds = junctionRows.map((r) => r.product_variant_id).filter((id) => !cartVariantIds.includes(id));
+
+    if (!eligibleIds.length) return [];
+
+    // 5. Fetch up to 3 matching variants with full details
+    const rawItems = await models.ProductVariants.findAll({
+      where: { id: { [Op.in]: eligibleIds }, status: true },
+      limit: 3,
+      attributes: ["id", "title", "title_ar", "media_path", "hover_media_path", "price", "stock", "product_code", "sku"],
+      include: [
+        {
+          model: models.ProductCategory,
+          as: "categories",
+          attributes: ["id", "name", "name_ar", "slug"],
+          through: { attributes: [] },
+          required: false,
+        },
+        {
+          model: models.ProductModels,
+          as: "productModel",
+          attributes: ["id", "slug"],
+          include: [
+            {
+              model: models.ProductBase,
+              as: "product",
+              attributes: ["id", "slug"],
+            },
+          ],
+        },
+        {
+          model: models.ProductVariantAttributes,
+          as: "variant_attributes",
+          attributes: ["id", "attribute_id", "attribute_value_id"],
+          include: [
+            {
+              model: models.ProductAttribute,
+              as: "ProductAttribute",
+              attributes: ["id", "name", "name_ar", "code", "slug"],
+            },
+            {
+              model: models.AttributeValues,
+              as: "AttributeValue",
+              attributes: ["id", "value", "value_ar", "slug"],
+            },
+          ],
+        },
+      ],
+    });
+
+    // 6. Format to standard product card shape
+    return rawItems.map((item) => {
+      const json = item.toJSON();
+
+      const formattedAttributes = (json?.variant_attributes || []).map((va) => ({
+        code: va?.ProductAttribute?.code,
+        slug: va?.ProductAttribute?.slug,
+        values: [{ slug: va?.AttributeValue?.slug, value: va?.AttributeValue?.value }],
+      }));
+
+      const baseSlug = json?.productModel?.product?.slug;
+      const modelSlug = json?.productModel?.slug;
+
+      return {
+        id: json?.id,
+        title: json?.title,
+        title_ar: json?.title_ar,
+        variant_image: generateImageUrl(json?.media_path),
+        hover_image: generateImageUrl(json?.hover_media_path),
+        slug: json?.sku,
+        base_slug: baseSlug,
+        model_slug: modelSlug,
+        product_code: json?.product_code,
+        price: json?.price,
+        stock: json?.stock,
+        categories: (json?.categories || []).map((c) => ({ id: c.id, name: c.name, name_ar: c.name_ar, slug: c.slug })),
+        query_params: generateQueryParams(json?.sku, formattedAttributes),
+      };
+    });
+  }
+
+  /**
    * Get similar products based on the dominant model in the cart
    * GET /api/frontend/cart/similar-products
    */

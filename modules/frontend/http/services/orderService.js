@@ -467,7 +467,7 @@ class OrderService {
         variant: item.variant
           ? {
               ...item.variant.toJSON(),
-              media_path: generateImageUrl(item.variant.media_path),
+              media_path: generateImageUrl(item?.variant?.media_path),
             }
           : null,
       })),

@@ -21,7 +21,7 @@ class NgeniusService {
         Authorization: `Basic ${API_KEY}`,
         "Content-Type": "application/vnd.ni-identity.v1+json",
       },
-      body: JSON.stringify({}),
+      body: JSON.stringify({ realmName: "ni" }),
     });
 
     if (!response.ok) {

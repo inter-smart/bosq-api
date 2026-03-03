@@ -77,7 +77,7 @@ class PaymentController {
 
         const clientBaseUrl = process.env.CLIENT_BASE_URL || process.env.APP_URL || "http://localhost:3000";
         const returnUrl = `${clientBaseUrl}/${locale}/order/payment-success?orderId=${orderId}`;
-        const cancelUrl = `${clientBaseUrl}/${locale}/order/payment-failed?orderId=${orderId}`;
+        const cancelUrl = `${clientBaseUrl}/${locale}/products`;
 
         // Call the gateway outside the DB lock — network I/O should not hold a row lock
         // Roll back the empty transaction first, then re-open after the API call

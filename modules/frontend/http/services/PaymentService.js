@@ -4,6 +4,7 @@ const NetworkService = require("./networkService.js");
 const OrderService = require("./orderService.js");
 const { models, sequelize } = require("../../../../database/models/index.js");
 const { HTTP_STATUS, ERROR_CODES } = require("../traits/constants.js");
+const Logger = require("../../../../config/logger.js");
 
 class PaymentService {
   /**

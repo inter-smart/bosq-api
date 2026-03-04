@@ -4,6 +4,7 @@ const PaymentService = require("../services/PaymentService.js");
 const { ApiResponse } = require("../traits/response.js");
 const { ErrorHandler } = require("../traits/errorHandler.js");
 const { HTTP_STATUS } = require("../traits/constants.js");
+const logger = require("../../../../config/logger.js");
 
 const GUEST_SESSION_COOKIE = "guest_cart_session";
 
@@ -65,7 +66,7 @@ class PaymentController {
       const result = await PaymentService.verifyAndUpdateOrder(ref);
       return res.status(200).json({ success: true, data: result });
     } catch (error) {
-      Logger.error(`[VerifyPayment] ${error.message}`);
+      logger.error(`[VerifyPayment] ${error.message}`);
       const status = error.status || 500;
       return res.status(status).json({ success: false, message: error.message });
     }

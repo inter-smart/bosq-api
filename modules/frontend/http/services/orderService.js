@@ -562,6 +562,9 @@ class OrderService {
       if (payment_method) updateFields.payment_method = payment_method;
       if (gateway_response) updateFields.gateway_response = gateway_response;
     }
+
+    console.log("Updating payment status with fields:", updateFields);
+
     const opts = { where: { id: orderId } };
     if (transaction) opts.transaction = transaction;
     await models.Orders.update(updateFields, opts);

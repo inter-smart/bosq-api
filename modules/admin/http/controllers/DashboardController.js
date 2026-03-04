@@ -7,6 +7,7 @@ class DashboardController {
         try {
             const {
                 ProductBase,
+                ProductModels,
                 Orders,
                 Users,
                 Blogs,
@@ -16,13 +17,17 @@ class DashboardController {
             } = models;
 
             const [
-                productCount,
+                baseProductCount,
+                modelCount,
+                variantCount,
                 orderCount,
                 userCount,
                 blogCount,
                 newsCount,
                 projectCount
             ] = await Promise.all([
+                ProductBase.count(),
+                ProductModels.count(),
                 ProductVariants.count(),
                 Orders.count(),
                 Users.count(),
@@ -32,7 +37,10 @@ class DashboardController {
             ]);
 
             const counts = {
-                totalProducts: productCount,
+                totalBaseProducts: baseProductCount,
+                totalModels: modelCount,
+                totalVariants: variantCount,
+                totalProducts: variantCount, // Backward compatibility
                 totalOrders: orderCount,
                 totalUsers: userCount,
                 totalBlogs: blogCount,

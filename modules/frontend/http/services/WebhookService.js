@@ -17,6 +17,7 @@ class WebhookService {
 
     const { event, transaction_id, reference, amount, currency, status, signature } = payload;
 
+    console.log("Received webhook payload: ======================>", payload);
     // 1. Verify HMAC-SHA256 signature — reject immediately if invalid
     const isValid = NetworkService.verifyWebhookSignature(transaction_id, amount, reference, signature);
     if (!isValid) {

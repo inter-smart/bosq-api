@@ -13,6 +13,7 @@ const upload = createUploadMiddleware("product-base", fields);
 router.use(authMiddleware(["admin"]));
 
 router.get("/", Controller.index);
+router.get("/export", Controller.export);
 router.get("/:id", Controller.show);
 
 // Protected routes (require admin auth)

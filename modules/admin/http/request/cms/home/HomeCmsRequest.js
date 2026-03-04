@@ -1,7 +1,6 @@
 const { body } = require("express-validator");
 
 exports.validationRequestPost = [
-
   // ABOUT
   body("about_media_path")
     .optional()
@@ -18,9 +17,7 @@ exports.validationRequestPost = [
     .isString()
     .withMessage("About media alt (Arabic) must be a string"),
 
-  body("about_title")
-    .isString()
-    .withMessage("About title must be a string"),
+  body("about_title").isString().withMessage("About title must be a string"),
 
   body("about_title_ar")
     .isString()
@@ -74,7 +71,6 @@ exports.validationRequestPost = [
     .isString()
     .withMessage("Journey media path must be a string"),
 
-
   body("journey_media_alt")
     .optional()
     .isString()
@@ -84,6 +80,13 @@ exports.validationRequestPost = [
     .optional()
     .isString()
     .withMessage("Journey media alt (Arabic) must be a string"),
+
+  // journey link
+  body("journey_link")
+    .notEmpty()
+    .withMessage("Journey link is required")
+    .isString()
+    .withMessage("Journey link must be a string"),
 
   // PROJECT
   body("project_title")
@@ -95,9 +98,7 @@ exports.validationRequestPost = [
     .withMessage("Project title (Arabic) must be a string"),
 
   // FITS
-  body("fits_title")
-    .isString()
-    .withMessage("Fits title must be a string"),
+  body("fits_title").isString().withMessage("Fits title must be a string"),
 
   body("fits_title_ar")
     .isString()
@@ -112,18 +113,14 @@ exports.validationRequestPost = [
     .withMessage("Fits description (Arabic) must be a string"),
 
   // BRANDS
-  body("brands_title")
-    .isString()
-    .withMessage("Brands title must be a string"),
+  body("brands_title").isString().withMessage("Brands title must be a string"),
 
   body("brands_title_ar")
     .isString()
     .withMessage("Brands title (Arabic) must be a string"),
 
   // FORM
-  body("form_title")
-    .isString()
-    .withMessage("Form title must be a string"),
+  body("form_title").isString().withMessage("Form title must be a string"),
 
   body("form_title_ar")
     .isString()

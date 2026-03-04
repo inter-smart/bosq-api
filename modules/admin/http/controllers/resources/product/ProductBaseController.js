@@ -48,12 +48,20 @@ class ProductBaseController {
 
   static async index(req, res) {
     try {
+      const { status } = req.query;
+      const where = {};
+
+      if (status && status !== "all") {
+        where.status = status === "active" || status === "true";
+      }
+
       const result = await paginate(DataModel, req, {
         order: [
           ["sort_order", "ASC"],
           ["createdAt", "DESC"],
         ],
         searchFields: ["title", "slug", "description"],
+        where,
         include: [
           { association: "sellingPoints", attributes: ["id", "name", "slug"], through: { attributes: [] } },
           { association: "models", attributes: ["id", "code", "title", "slug"] },
@@ -246,6 +254,78 @@ class ProductBaseController {
       sendSuccessResponse(res, { id }, "Product Base deleted successfully");
     } catch (error) {
       console.error("Product Base deletion error:", error);
+      sendErrorResponse(res, error);
+    }
+  }
+
+  static async export(req, res) {
+    try {
+      const { status, startDate, endDate, search, keyword } = req.query;
+      const searchTerm = search || keyword;
+      const where = {};
+
+      if (status && status !== "all") {
+        where.status = status === "active" || status === "true";
+      }
+
+      if (startDate || endDate) {
+        where.createdAt = {};
+        if (startDate) {
+          const start = new Date(startDate);
+          start.setHours(0, 0, 0, 0);
+          where.createdAt[Op.gte] = start;
+        }
+        if (endDate) {
+          const end = new Date(endDate);
+          end.setHours(23, 59, 59, 999);
+          where.createdAt[Op.lte] = end;
+        }
+      }
+
+      if (searchTerm) {
+        where[Op.or] = [
+          { title: { [Op.iLike]: `%${searchTerm}%` } },
+          { slug: { [Op.iLike]: `%${searchTerm}%` } },
+          { description: { [Op.iLike]: `%${searchTerm}%` } },
+        ];
+      }
+
+      const list = await DataModel.findAll({
+        where,
+        order: [["createdAt", "DESC"]],
+      });
+
+      const ExcelJS = require("exceljs");
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet("Base Products");
+
+      worksheet.columns = [
+        { header: "ID", key: "id", width: 10 },
+        { header: "Title", key: "title", width: 30 },
+        { header: "Slug", key: "slug", width: 30 },
+        { header: "Status", key: "status", width: 15 },
+        { header: "Sort Order", key: "sort_order", width: 15 },
+        { header: "Created At", key: "createdAt", width: 25 },
+      ];
+
+      list.forEach((item) => {
+        worksheet.addRow({
+          id: item.id,
+          title: item.title,
+          slug: item.slug,
+          status: item.status ? "Active" : "Inactive",
+          sort_order: item.sort_order || 0,
+          createdAt: item.createdAt,
+        });
+      });
+
+      res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+      res.setHeader("Content-Disposition", "attachment; filename=base-products.xlsx");
+
+      await workbook.xlsx.write(res);
+      res.end();
+    } catch (error) {
+      console.error("Product Base export error:", error);
       sendErrorResponse(res, error);
     }
   }

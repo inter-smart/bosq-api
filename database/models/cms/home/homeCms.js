@@ -92,6 +92,11 @@ module.exports = (sequelize) => {
         type: DataTypes.STRING,
         allowNull: true,
       },
+      // link
+      journey_link: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
 
       // PROJECT
       project_title: {

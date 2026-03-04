@@ -108,6 +108,7 @@ function buildJourneySection(cmsData, prefix, options = {}) {
     description: get("description"),
     description_ar: get("description_ar"),
     media_type: get("media_type", defaultMediaType),
+    link: get("link"),
   };
 
   if (includeMedia) {

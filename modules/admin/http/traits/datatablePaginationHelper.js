@@ -66,9 +66,10 @@ module.exports = {
       ...(includeSubQuery || hasAssociationWhere ? { subQuery: false } : {}),
     };
 
-    // Apply date range filter on createdAt
+    // Apply date range filter
     if (startDate || endDate) {
       const dateCondition = {};
+      const dateField = options.dateField || "createdAt";
 
       if (startDate && endDate) {
         // Both bounds: inclusive range (start of day → end of day)
@@ -76,15 +77,15 @@ module.exports = {
         start.setHours(0, 0, 0, 0);
         const end = new Date(endDate);
         end.setHours(23, 59, 59, 999);
-        dateCondition.createdAt = { [Op.between]: [start, end] };
+        dateCondition[dateField] = { [Op.between]: [start, end] };
       } else if (startDate) {
         const start = new Date(startDate);
         start.setHours(0, 0, 0, 0);
-        dateCondition.createdAt = { [Op.gte]: start };
+        dateCondition[dateField] = { [Op.gte]: start };
       } else if (endDate) {
         const end = new Date(endDate);
         end.setHours(23, 59, 59, 999);
-        dateCondition.createdAt = { [Op.lte]: end };
+        dateCondition[dateField] = { [Op.lte]: end };
       }
 
       queryOptions.where = {

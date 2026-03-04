@@ -52,6 +52,25 @@ class PaymentController {
     }
   }
 
+  // controllers/payment.controller.js
+
+  static async verifyPayment(req, res) {
+    try {
+      const { ref } = req.query;
+
+      if (!ref) {
+        return res.status(400).json({ success: false, message: "Missing ref" });
+      }
+
+      const result = await PaymentService.verifyAndUpdateOrder(ref);
+      return res.status(200).json({ success: true, data: result });
+    } catch (error) {
+      Logger.error(`[VerifyPayment] ${error.message}`);
+      const status = error.status || 500;
+      return res.status(status).json({ success: false, message: error.message });
+    }
+  }
+
   /**
    * GET /api/frontend/orders/:orderId/payment-status
    *

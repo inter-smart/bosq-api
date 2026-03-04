@@ -13,6 +13,7 @@ const upload = createUploadMiddleware("coupons", fields);
 router.use(authMiddleware(["admin"]));
 
 router.get("/", Controller.index);
+router.get("/stats", Controller.stats);
 router.get("/product-category", Controller.getAllProductCategories);
 
 router.get("/products", Controller.getAllProductsAll);

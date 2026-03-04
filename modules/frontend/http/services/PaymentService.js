@@ -155,7 +155,7 @@ class PaymentService {
     // 1. Fetch real order state from N-Genius using the UUID ref
     const token = await NetworkService.getAccessToken();
 
-    const response = await fetch(`${process.env.NGENIUS_BASE_URL}/transactions/outlets/${process.env.NGENIUS_OUTLET_REF}/orders/${ref}`, {
+    const response = await fetch(`${process.env.NETWORK_BASE_URL}/transactions/outlets/${process.env.NETWORK_MERCHANT_ID}/orders/${ref}`, {
       headers: {
         Authorization: `Bearer ${token}`,
         Accept: "application/vnd.ni-payment.v2+json",

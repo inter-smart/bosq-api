@@ -82,10 +82,7 @@ class NetworkService {
         signal: AbortSignal.timeout(15000),
       });
     } catch (err) {
-      const reason =
-        err.name === "TimeoutError"
-          ? "timed out after 15s"
-          : `network error – ${err.cause?.code ?? err.message}`;
+      const reason = err.name === "TimeoutError" ? "timed out after 15s" : `network error – ${err.cause?.code ?? err.message}`;
       Logger.error(`[Network] createPayment fetch failed: ${reason} (url=${url})`);
       throw new Error(`Payment gateway unreachable: ${reason}`);
     }
@@ -117,10 +114,7 @@ class NetworkService {
    */
   static verifyWebhookSignature(transactionId, amount, reference, receivedSignature) {
     const payload = `${transactionId}${amount}${reference}`;
-    const expectedSignature = crypto
-      .createHmac("sha256", WEBHOOK_SECRET)
-      .update(payload)
-      .digest("hex");
+    const expectedSignature = crypto.createHmac("sha256", WEBHOOK_SECRET).update(payload).digest("hex");
 
     // Use timingSafeEqual to prevent timing attacks
     try {
@@ -139,18 +133,23 @@ class NetworkService {
    * @param {string} networkStatus - Status from webhook or polling
    * @returns {"paid"|"failed"|"pending"}
    */
-  static mapStatus(networkStatus) {
-    const status = (networkStatus || "").toUpperCase();
-    if (["SUCCESS", "CAPTURED", "AUTHORISED", "PARTIALLY_CAPTURED"].includes(status)) {
-      return "paid";
+  static mapStatus(state) {
+    switch (state) {
+      case "CAPTURED":
+      case "PURCHASED":
+        return "paid";
+      case "FAILED":
+      case "DECLINED":
+        return "failed";
+      case "REFUNDED":
+      case "REVERSED":
+        return "refunded";
+      case "AUTHORISED":
+        return "pending";
+      default:
+        Logger.warn(`[Webhook] Unknown state: ${state}`);
+        return "pending";
     }
-    if (["FAILED", "VOIDED", "CANCELLED", "DECLINED"].includes(status)) {
-      return "failed";
-    }
-    if (status === "REVERSED") {
-      return "refunded";
-    }
-    return "pending";
   }
 }
 

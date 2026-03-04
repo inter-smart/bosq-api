@@ -11,11 +11,46 @@ const { handleFileUploadStore, handleFileUploadUpdate } = require("../middleware
 const DataModel = models.Coupons;
 
 class CouponsController {
+  static async stats(req, res) {
+    try {
+      const now = new Date();
+      const [totalCoupons, activeCoupons, expiredCoupons] = await Promise.all([
+        DataModel.count(),
+        DataModel.count({
+          where: {
+            status: true,
+            end_at: { [Op.gte]: now },
+          },
+        }),
+        DataModel.count({
+          where: {
+            end_at: { [Op.lt]: now },
+          },
+        }),
+      ]);
+
+      sendSuccessResponse(res, { totalCoupons, activeCoupons, expiredCoupons }, "Stats retrieved successfully");
+    } catch (error) {
+      console.error("Coupon stats error:", error);
+      sendErrorResponse(res, error);
+    }
+  }
+
   static async index(req, res) {
     try {
+      const { status } = req.query;
+
+      const where = {};
+      if (status === "active" || status === "true") {
+        where.status = true;
+      } else if (status === "inactive" || status === "false") {
+        where.status = false;
+      }
+
       const result = await paginate(DataModel, req, {
         order: [["createdAt", "DESC"]],
         searchFields: ["discount_type", "scope_type"],
+        where,
       });
 
       const response = {

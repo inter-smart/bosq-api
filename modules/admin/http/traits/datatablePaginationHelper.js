@@ -41,7 +41,7 @@ const createSearchCondition = (field, searchValue, Model) => {
 
 module.exports = {
   paginate: async (Model, req, options = {}) => {
-    const { limit, page = 1, search, keyword, searchFields } = req.query;
+    const { limit, page = 1, search, keyword, searchFields, startDate, endDate } = req.query;
 
     const parsedLimit = limit ? parseInt(limit, 10) : 10;
     const parsedPage = parseInt(page, 10) || 1;
@@ -65,6 +65,34 @@ module.exports = {
       distinct: true,
       ...(includeSubQuery || hasAssociationWhere ? { subQuery: false } : {}),
     };
+
+    // Apply date range filter
+    if (startDate || endDate) {
+      const dateCondition = {};
+      const dateField = options.dateField || "createdAt";
+
+      if (startDate && endDate) {
+        // Both bounds: inclusive range (start of day → end of day)
+        const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0);
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        dateCondition[dateField] = { [Op.between]: [start, end] };
+      } else if (startDate) {
+        const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0);
+        dateCondition[dateField] = { [Op.gte]: start };
+      } else if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        dateCondition[dateField] = { [Op.lte]: end };
+      }
+
+      queryOptions.where = {
+        ...(queryOptions.where || {}),
+        ...dateCondition,
+      };
+    }
 
     // Apply search logic if search term exists
     if (searchTerm) {

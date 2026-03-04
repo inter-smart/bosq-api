@@ -26,7 +26,16 @@ const cacheKey = cacheKeys.blog;
 class BlogController {
   static async index(req, res) {
     try {
+      const { status } = req.query;
+      const whereClause = {};
+
+      if (status !== undefined && status !== "" && status !== "all") {
+        whereClause.status = status === "true" || status === true;
+      }
+
       const result = await paginate(DataModel, req, {
+        where: whereClause,
+        dateField: "published_date",
         order: [
           ["updatedAt", "DESC"],
         ],

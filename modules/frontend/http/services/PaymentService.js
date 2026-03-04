@@ -65,23 +65,23 @@ class PaymentService {
       }
 
       const clientBaseUrl = process.env.CLIENT_BASE_URL;
-      const returnUrl = `${clientBaseUrl}/${locale}/order/success?orderId=${orderId}`;
-      const cancelUrl = `${clientBaseUrl}/${locale}/order/failed?orderId=${orderId}`;
-
-      // Call the gateway outside the DB lock — network I/O should not hold a row lock
-      // Roll back the empty transaction first, then re-open after the API call
       await transaction.rollback();
+
+      const tempReturnUrl = `${clientBaseUrl}/${locale}/order?orderId=${orderId}`;
+      const tempCancelUrl = `${clientBaseUrl}/${locale}/order?orderId=${orderId}`;
 
       const { transactionId, paymentUrl } = await NetworkService.createPayment({
         amount: order.grand_total,
         currency: "AED",
+        returnUrl: tempReturnUrl,
+        cancelUrl: tempCancelUrl,
         orderReference: order.order_id,
-        returnUrl,
-        cancelUrl,
-        description: `Order ${order.order_id}`,
       });
 
       console.log("Payment initiated with Network Gateway:", { transactionId, paymentUrl });
+
+      const returnUrl = `${clientBaseUrl}/${locale}/order?ref=${transactionId}&orderId=${orderId}`;
+      const cancelUrl = `${clientBaseUrl}/${locale}/order?ref=${transactionId}&orderId=${orderId}`;
 
       // ── Second transaction: persist the gateway transaction ID atomically ──
       const saveTransaction = await sequelize.transaction();
@@ -92,7 +92,12 @@ class PaymentService {
           {
             network_transaction_id: transactionId,
             order_reference: order.order_id,
-            gateway_response: { payment_url: paymentUrl },
+            gateway_response: {
+              payment_url: paymentUrl,
+              return_url: returnUrl,
+              cancel_url: cancelUrl,
+              transaction_id: transactionId,
+            },
           },
           saveTransaction,
         );

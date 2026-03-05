@@ -3,14 +3,7 @@ const { models, sequelize } = require("../../database/models");
 const { Op } = require("sequelize");
 const Logger = require("../../config/logger");
 
-const {
-  ProductBase,
-  ProductModels,
-  ProductVariants,
-  ProductVariantCategories,
-  ProductVariantAttributes,
-  ProductVariantImages,
-} = models;
+const { ProductBase, ProductModels, ProductVariants, ProductVariantCategories, ProductVariantAttributes, ProductVariantImages } = models;
 
 const BATCH_SIZE = 500;
 
@@ -329,9 +322,7 @@ async function processUpload(hierarchy) {
     allVariantRows.forEach((row, i) => {
       // sku is the primary identity key; product_code is the fallback
       const existing =
-        (row.sku && existingVariantsBySkuMap.get(row.sku)) ||
-        (row.product_code && existingVariantsByCodeMap.get(row.product_code)) ||
-        null;
+        (row.sku && existingVariantsBySkuMap.get(row.sku)) || (row.product_code && existingVariantsByCodeMap.get(row.product_code)) || null;
 
       if (existing) {
         variantsToUpdate.push({ row, existingId: existing.id });

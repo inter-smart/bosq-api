@@ -18,7 +18,7 @@ const VIDEO_EXTS = new Set([".mp4", ".webm", ".mov", ".avi", ".mkv"]);
 const BASE_REQUIRED = ["title", "title_ar", "description", "description_ar"];
 
 // base_slug → base_title; slug removed — auto-generated from title on insert
-const MODEL_REQUIRED = ["base_title", "title", "title_ar", "media_path", "base_price"];
+const MODEL_REQUIRED = ["base_title", "title", "title_ar", "base_price"];
 
 // base_slug → base_title; model_slug → model_title
 const VARIANT_REQUIRED = ["base_title", "model_title"];

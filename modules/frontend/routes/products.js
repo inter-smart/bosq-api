@@ -6,8 +6,7 @@ const { cartContext } = require("../http/middleware/cartMiddleware.js");
 
 router.get("/product", optionalAuth(), cartContext, Controller.getProductBySlug);
 router.get("/product-model", Controller.getProductModelData);
-router.get("/product-listing", optionalAuth(), cartContext, Controller.getInitialProductList);
-router.get("/initial-product-list", Controller.getInitialProductList);
+router.get("/product-listing", optionalAuth(), cartContext, Controller.getProductListing);
 router.get("/product-search", Controller.productSearchList);
 router.get("/product-search-by-keywords", Controller.productSearchListByKeywords);
 module.exports = router;

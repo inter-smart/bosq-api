@@ -35,20 +35,7 @@ class ProductsController {
       const params = req.query;
       const type = req?.cartOwner?.type || "guest";
       const userId = req?.cartOwner?.id || null;
-
       const { data, message } = await service.getProductListing(params, type, userId);
-      return sendSuccessResponse(res, data, message, 200);
-    } catch (error) {
-      return sendErrorResponse(res, error, "Internal Server Error", 500);
-    }
-  }
-
-  static async getInitialProductList(req, res) {
-    try {
-      const params = req.query;
-      const type = req?.cartOwner?.type || "guest";
-      const userId = req?.cartOwner?.id || null;
-      const { data, message } = await service.getInitialProductList(params, type, userId);
       return sendSuccessResponse(res, data, message, 200);
     } catch (error) {
       return sendErrorResponse(res, error, "Internal Server Error", 500);

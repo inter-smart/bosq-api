@@ -439,12 +439,14 @@ class AddressService {
 
       const { model: Model, field } = config;
 
+      const payload = req.body;
+      const addressType = payload.addressType || "billing";
+
       const where = {
-        address_type: "billing",
+        address_type: addressType,
         [field]: userId,
         id,
       };
-      const payload = req.body;
 
       // // ✅ Correct token key
       // const token = payload?.recaptcha_token;
@@ -464,13 +466,13 @@ class AddressService {
       //   throw error;
       // }
 
-      const billingAddress = await Model.findOne({
+      const address = await Model.findOne({
         where,
         transaction,
       });
 
-      if (!billingAddress) {
-        throw new Error("Billing address not found");
+      if (!address) {
+        throw new Error(`${addressType} address not found`);
       }
 
       let stateId = null;
@@ -485,8 +487,8 @@ class AddressService {
         }
       }
 
-      // 1️⃣ Update billing
-      await billingAddress.update(
+      // 1️⃣ Update address
+      await address.update(
         {
           name: payload.fullName,
           company_name: payload.companyName,
@@ -500,11 +502,11 @@ class AddressService {
         { transaction },
       );
 
-      // 2️⃣ Handle shipping
-      if (payload.shipToDifferentAddress === true) {
+      // 2️⃣ Handle shipping (only relevant when editing a billing address)
+      if (addressType === "billing" && payload.shipToDifferentAddress === true) {
         let shippingAddress = await Model.findOne({
           where: {
-            parent_address_id: billingAddress.id,
+            parent_address_id: address.id,
             address_type: "shipping",
           },
           transaction,
@@ -541,17 +543,17 @@ class AddressService {
             {
               [field]: userId,
               address_type: "shipping",
-              parent_address_id: billingAddress.id,
+              parent_address_id: address.id,
               ...shippingPayload,
             },
             { transaction },
           );
         }
-      } else {
-        // 🚫 If user unticks "Ship to different address"
+      } else if (addressType === "billing") {
+        // 🚫 If user unticks "Ship to different address" on a billing address
         await Model.destroy({
           where: {
-            parent_address_id: billingAddress.id,
+            parent_address_id: address.id,
             address_type: "shipping",
           },
           transaction,
@@ -560,7 +562,7 @@ class AddressService {
 
       await transaction.commit();
 
-      return billingAddress;
+      return address;
     } catch (error) {
       if (!transaction.finished) {
         await transaction.rollback();

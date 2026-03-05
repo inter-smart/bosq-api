@@ -74,6 +74,8 @@ function buildBannerSection(cmsData, prefix, options = {}) {
   const mediaType = get("media_type", defaultMediaType);
   const desktopPath = get("media_desktop_path");
   const mobilePath = get("media_mobile_path");
+  const desktopPath_ar = get("media_desktop_path_ar");
+  const mobilePath_ar = get("media_mobile_path_ar");
   const singlePath = get("media_path");
 
 
@@ -94,6 +96,8 @@ function buildBannerSection(cmsData, prefix, options = {}) {
       media_type: mediaType,
       desktopPath: generateImageUrl(desktopPath),
       mobilePath: generateImageUrl(mobilePath),
+      desktopPath_ar: generateImageUrl(desktopPath_ar),
+      mobilePath_ar: generateImageUrl(mobilePath_ar),
       media_alt: get("media_alt"),
       media_alt_ar: get("media_alt_ar"),
     };

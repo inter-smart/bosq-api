@@ -30,6 +30,16 @@ exports.validationRequestPost = [
     .isString()
     .withMessage("Banner media mobile path must be a string"),
 
+  body("banner_media_desktop_path_ar")
+    .optional()
+    .isString()
+    .withMessage("Banner media desktop path must be a string"),
+
+  body("banner_media_mobile_path_ar")
+    .optional()
+    .isString()
+    .withMessage("Banner media mobile path must be a string"),
+
   body("banner_media_alt")
     .optional()
     .isString()

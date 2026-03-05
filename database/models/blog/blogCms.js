@@ -18,11 +18,11 @@ module.exports = (sequelize) => {
         type: DataTypes.STRING,
         allowNull: false,
       },
-      banner_title:{
+      banner_title: {
         type: DataTypes.STRING,
         allowNull: false,
       },
-      banner_title_ar:{
+      banner_title_ar: {
         type: DataTypes.STRING,
         allowNull: false,
       },
@@ -42,11 +42,19 @@ module.exports = (sequelize) => {
         type: DataTypes.STRING,
         allowNull: true,
       },
-      media_alt:{
+      media_desktop_path_ar: {
         type: DataTypes.STRING,
         allowNull: true,
       },
-      media_alt_ar:{
+      media_mobile_path_ar: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      media_alt: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      media_alt_ar: {
         type: DataTypes.STRING,
         allowNull: true,
       },

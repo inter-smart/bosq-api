@@ -9,15 +9,15 @@ module.exports = (sequelize) => {
         primaryKey: true,
         autoIncrement: true,
       },
-      title:{
+      title: {
         type: DataTypes.STRING,
         allowNull: true,
       },
-      title_ar:{
+      title_ar: {
         type: DataTypes.STRING,
         allowNull: true,
       },
-      banner_media_type:{
+      banner_media_type: {
         type: DataTypes.ENUM("image", "video"),
         allowNull: true,
       },
@@ -42,6 +42,14 @@ module.exports = (sequelize) => {
         allowNull: true,
       },
       banner_media_mobile_path: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      banner_media_desktop_path_ar: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      banner_media_mobile_path_ar: {
         type: DataTypes.TEXT,
         allowNull: true,
       },

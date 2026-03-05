@@ -10,53 +10,61 @@ module.exports = (sequelize) => {
         autoIncrement: true,
       },
 
-      title:{
+      title: {
         type: DataTypes.STRING,
         allowNull: true,
       },
-      title_ar:{
+      title_ar: {
         type: DataTypes.STRING,
         allowNull: true,
       },
-      banner_title:{
-        type: DataTypes.STRING,
-        allowNull: false,
-      },
-      banner_title_ar:{
+      banner_title: {
         type: DataTypes.STRING,
         allowNull: false,
       },
-     
-      banner_media_desktop_path:{
+      banner_title_ar: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+
+      banner_media_desktop_path: {
         type: DataTypes.TEXT,
         allowNull: true,
       },
-        banner_media_mobile_path:{
+      banner_media_mobile_path: {
         type: DataTypes.TEXT,
         allowNull: true,
       },
-      banner_media_alt:{
+      banner_media_desktop_path_ar: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      banner_media_mobile_path_ar: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      banner_media_alt: {
         type: DataTypes.STRING,
         allowNull: true,
       },
-      banner_media_alt_ar:{
+      banner_media_alt_ar: {
         type: DataTypes.STRING,
         allowNull: true,
       },
 
-      question_title:{
+      question_title: {
         type: DataTypes.STRING,
         allowNull: false,
       },
-      question_title_ar:{
+      question_title_ar: {
         type: DataTypes.STRING,
         allowNull: false,
       },
-      question_description:{
+      question_description: {
         type: DataTypes.TEXT,
         allowNull: false,
       },
-      question_description_ar:{
+      question_description_ar: {
         type: DataTypes.TEXT,
         allowNull: false,
       },

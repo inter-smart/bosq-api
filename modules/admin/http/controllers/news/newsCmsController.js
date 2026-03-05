@@ -45,6 +45,8 @@ class NewsCmsController {
             const fileFields = [
                 "media_desktop_path",
                 "media_mobile_path",
+                "media_desktop_path_ar",
+                "media_mobile_path_ar",
             ];
 
             let data;

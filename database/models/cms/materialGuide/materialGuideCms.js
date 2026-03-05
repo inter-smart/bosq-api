@@ -11,11 +11,11 @@ module.exports = (sequelize) => {
       },
 
 
-      title:{
+      title: {
         type: DataTypes.STRING,
         allowNull: false,
       },
-      title_ar:{
+      title_ar: {
         type: DataTypes.STRING,
         allowNull: false,
       },
@@ -33,7 +33,15 @@ module.exports = (sequelize) => {
         type: DataTypes.TEXT,
         allowNull: true,
       },
+      banner_media_desktop_path_ar: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
       banner_media_mobile_path: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      banner_media_mobile_path_ar: {
         type: DataTypes.TEXT,
         allowNull: true,
       },

@@ -22,7 +22,15 @@ module.exports = (sequelize) => {
         type: DataTypes.TEXT,
         allowNull: true,
       },
+      banner_media_desktop_path_ar: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
       banner_media_mobile_path: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      banner_media_mobile_path_ar: {
         type: DataTypes.TEXT,
         allowNull: true,
       },
@@ -69,13 +77,13 @@ module.exports = (sequelize) => {
 
       process_description: {
         type: DataTypes.TEXT,
-        allowNull: true, 
+        allowNull: true,
       },
       process_description_ar: {
         type: DataTypes.TEXT,
         allowNull: true,
       },
-      
+
       process_media_path: {
         type: DataTypes.TEXT,
         allowNull: true,

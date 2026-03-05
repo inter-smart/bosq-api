@@ -59,10 +59,20 @@ exports.validationRequestPost = [
     .isString()
     .withMessage("Mobile banner media path must be a string"),
 
+  body("banner_media_mobile_path_ar")
+    .optional({ nullable: true })
+    .isString()
+    .withMessage("Mobile banner media path (AR) must be a string"),
+
   body("banner_media_desktop_path")
     .optional({ nullable: true })
     .isString()
     .withMessage("Desktop banner media path must be a string"),
+
+  body("banner_media_desktop_path_ar")
+    .optional({ nullable: true })
+    .isString()
+    .withMessage("Desktop banner media path (AR) must be a string"),
 
   // Optional banner alt text
   body("banner_media_alt")

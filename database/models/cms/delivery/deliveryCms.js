@@ -10,20 +10,28 @@ module.exports = (sequelize) => {
         autoIncrement: true,
       },
 
-      title:{
+      title: {
         type: DataTypes.STRING,
         allowNull: true,
       },
-      title_ar:{
+      title_ar: {
         type: DataTypes.STRING,
         allowNull: true,
       },
 
-      banner_media_desktop_path:{
+      banner_media_desktop_path: {
         type: DataTypes.TEXT,
         allowNull: true,
       },
-      banner_media_mobile_path:{
+      banner_media_desktop_path_ar: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      banner_media_mobile_path: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      banner_media_mobile_path_ar: {
         type: DataTypes.TEXT,
         allowNull: true,
       },
@@ -37,22 +45,22 @@ module.exports = (sequelize) => {
       },
 
 
-      banner_title:{
+      banner_title: {
         type: DataTypes.STRING,
         allowNull: true,
       },
 
-      banner_title_ar:{
-        type: DataTypes.STRING,
-        allowNull: true,
-      },    
-
-      delivery_time_title:{
+      banner_title_ar: {
         type: DataTypes.STRING,
         allowNull: true,
       },
 
-      delivery_time_title_ar:{
+      delivery_time_title: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+
+      delivery_time_title_ar: {
         type: DataTypes.STRING,
         allowNull: true,
       },

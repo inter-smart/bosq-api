@@ -7,6 +7,8 @@ function buildDeliveryData(cmsData, deliveryMethods) {
       type: "image",
       desktopPath: generateImageUrl(cmsData?.banner_media_desktop_path),
       mobilePath: generateImageUrl(cmsData?.banner_media_mobile_path),
+      desktopPath_ar: generateImageUrl(cmsData?.banner_media_desktop_path_ar),
+      mobilePath_ar: generateImageUrl(cmsData?.banner_media_mobile_path_ar),
       media_alt: cmsData?.banner_media_alt ?? "N/A",
       media_alt_ar: cmsData?.banner_media_alt_ar ?? "N/A",
     },

@@ -203,6 +203,10 @@ class OrderService {
       }
 
       await transaction.commit();
+
+      // Send order confirmation email
+      !isGuest && (await this.sendOrderConfirmationEmail(order.id));
+
       return await this.getOrderById(userId, sessionId, order.id);
     } catch (error) {
       if (!transaction.finished) {
@@ -217,6 +221,12 @@ class OrderService {
    */
   static async sendOrderConfirmationEmail(orderId) {
     try {
+      let user = null;
+
+      if (user) {
+        user = await models.Users.findByPk(order.user_id);
+      }
+
       const order = await models.Orders.findOne({
         where: { id: orderId },
         include: [
@@ -249,6 +259,7 @@ class OrderService {
       }
 
       const billingAddress = order.addresses.find((a) => a.address_type === "billing");
+
       const shippingAddress = order.addresses.find((a) => a.address_type === "shipping");
 
       if (!billingAddress) {
@@ -256,28 +267,53 @@ class OrderService {
         return;
       }
 
+      const customerEmail = user?.email || order.email || billingAddress.email;
+
+      const customerName = user?.name || billingAddress.name || "Customer";
+
+      if (!customerEmail) {
+        Logger.error(`No valid email found for order confirmation: ${orderId}`);
+        return;
+      }
+
       const [billingState, shippingState] = await Promise.all([
-        billingAddress.state_id ? models.State.findByPk(billingAddress.state_id, { attributes: ["name"] }) : null,
-        shippingAddress?.state_id ? models.State.findByPk(shippingAddress.state_id, { attributes: ["name"] }) : null,
+        billingAddress.state_id
+          ? models.State.findByPk(billingAddress.state_id, {
+              attributes: ["name"],
+            })
+          : null,
+        shippingAddress?.state_id
+          ? models.State.findByPk(shippingAddress.state_id, {
+              attributes: ["name"],
+            })
+          : null,
       ]);
+
+      /**
+       * ----------------------------------------
+       * Enqueue Email Job
+       * ----------------------------------------
+       */
 
       await addOrderConfirmationJob({
         orderId: order.id,
         orderCode: order.order_id,
-        email: billingAddress.email,
-        name: billingAddress.name,
+        email: customerEmail,
+        name: customerName,
         paymentType: order.payment_type,
         subtotal: order.subtotal,
         discount_total: order.discount_total,
         tax_total: order.tax_total,
         grand_total: order.grand_total,
         estDelivery: order.est_delivery_details || null,
+
         billingAddress: {
           street_address: billingAddress.street_address,
           apartment: billingAddress.apartment || null,
           state_name: billingState?.name || null,
           country: "UAE",
         },
+
         shippingAddress: shippingAddress
           ? {
               street_address: shippingAddress.street_address,
@@ -286,6 +322,7 @@ class OrderService {
               country: "UAE",
             }
           : null,
+
         items: order.items.map((item) => ({
           title: item.variant?.title || item.product?.title || "Product",
           sku: item.variant?.sku || "",

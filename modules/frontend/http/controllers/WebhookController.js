@@ -11,7 +11,7 @@ class WebhookController {
    */
   static async handleWebhook(req, res) {
     try {
-      const result = await WebhookService.handleWebhook(req.body);
+      const result = await WebhookService.handleWebhook(req.body, req.headers);
 
       return res.status(200).json(result);
     } catch (error) {

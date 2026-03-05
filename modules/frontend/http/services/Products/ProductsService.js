@@ -670,6 +670,8 @@ class ProductsService {
         limit = 12,
       } = params;
 
+      console.log("INIT", params);
+
       const isLoggedInUser = type === "user";
 
       const parseArrayParam = (param) => {
@@ -686,7 +688,9 @@ class ProductsService {
       const parsePriceRanges = (param) => {
         if (!param) return [];
         return param.split(",").map((range) => {
-          const [min, max] = range.split("-").map(Number);
+          const [minStr, maxStr] = range.split("-");
+          const min = Number(minStr);
+          const max = maxStr === "max" ? null : Number(maxStr);
           return { min, max };
         });
       };
@@ -723,6 +727,8 @@ class ProductsService {
       conditions.push(`pv."deletedAt" IS NULL`);
       conditions.push(`pv."status" = true`);
 
+      console.log(priceRanges);
+
       // Price
       if (priceMin) {
         conditions.push(`pv."price" >= :priceMin`);
@@ -737,8 +743,11 @@ class ProductsService {
         const rangeSQL = priceRanges
           .map((r, i) => {
             replacements[`priceRangeMin_${i}`] = r.min;
-            replacements[`priceRangeMax_${i}`] = r.max;
-            return `(pv."price" >= :priceRangeMin_${i} AND pv."price" <= :priceRangeMax_${i})`;
+            if (r.max !== null) {
+              replacements[`priceRangeMax_${i}`] = r.max;
+              return `(pv."price" >= :priceRangeMin_${i} AND pv."price" <= :priceRangeMax_${i})`;
+            }
+            return `(pv."price" >= :priceRangeMin_${i})`;
           })
           .join(" OR ");
 

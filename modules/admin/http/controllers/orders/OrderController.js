@@ -144,6 +144,37 @@ class OrderController {
             sendErrorResponse(res, error);
         }
     }
+
+    static async update(req, res) {
+        await Promise.all(validateId.map((validation) => validation.run(req)));
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return sendValidationError(res, errors.array());
+        }
+
+        try {
+            const { id } = req.params;
+            const { est_delivery_details, awb_number, order_url, partner_name } = req.body;
+
+            const order = await DataModel.findByPk(id);
+
+            if (!order) {
+                return sendNotFoundError(res, "Order");
+            }
+
+            await order.update({
+                est_delivery_details,
+                awb_number,
+                order_url,
+                partner_name
+            });
+
+            sendSuccessResponse(res, order, "Order updated successfully");
+        } catch (error) {
+            console.error("Order update error:", error);
+            sendErrorResponse(res, error);
+        }
+    }
 }
 
 module.exports = OrderController;

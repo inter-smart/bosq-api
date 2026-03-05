@@ -7,5 +7,6 @@ router.use(authMiddleware(["admin"]));
 
 router.get("/", Controller.index);
 router.get("/:id", Controller.show);
+router.put("/:id", Controller.update);
 
 module.exports = router;

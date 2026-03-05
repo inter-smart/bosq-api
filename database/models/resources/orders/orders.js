@@ -31,7 +31,15 @@ module.exports = (sequelize) => {
       },
 
       status: {
-        type: DataTypes.ENUM("pending", "confirmed", "packed", "shipped", "delivered", "cancelled", "returned"),
+        type: DataTypes.ENUM(
+          "pending",
+          "confirmed",
+          "packed",
+          "shipped",
+          "delivered",
+          "cancelled",
+          "returned",
+        ),
         allowNull: false,
         defaultValue: "pending",
       },
@@ -96,6 +104,26 @@ module.exports = (sequelize) => {
         allowNull: true,
         defaultValue: null,
       },
+      // awb_number : string
+      awb_number: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
+        default: null,
+      },
+      // order_url : string
+      order_url: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
+        default: null,
+      },
+
+      // partner_name : string
+      partner_name: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
+        default: null,
+      },
+
     },
     {
       tableName: "orders",

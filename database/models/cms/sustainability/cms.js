@@ -25,6 +25,14 @@ module.exports = (sequelize) => {
         type: DataTypes.TEXT,
         allowNull: true,
       },
+      banner_media_desktop_path_ar: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      banner_media_mobile_path_ar: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
       banner_media_alt: {
         type: DataTypes.STRING,
         allowNull: true,

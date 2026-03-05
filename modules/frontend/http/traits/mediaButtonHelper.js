@@ -11,20 +11,31 @@ const mediaWithType = (
   mobilePathKey,
   altKey,
   altArKey
-) => ({
-  desktop: {
-    type: data[typeKey] ?? "",
-    path: data[desktopPathKey] ? `${backendUrl}${data[desktopPathKey]}` : null,
-    alt: data[altKey] ?? "",
-    alt_ar: altArKey ? data[altArKey] ?? "" : "",
-  },
-  mobile: {
-    type: data[typeKey] ?? "",
-    path: data[mobilePathKey] ? `${backendUrl}${data[mobilePathKey]}` : null,
-    alt: data[altKey] ?? "",
-    alt_ar: altArKey ? data[altArKey] ?? "" : "",
-  },
-});
+) => {
+  const desktopPathArKey = `${desktopPathKey}_ar`;
+  const mobilePathArKey = `${mobilePathKey}_ar`;
+
+  return {
+    desktop: {
+      type: data[typeKey] ?? "",
+      path: data[desktopPathKey] ? `${backendUrl}${data[desktopPathKey]}` : null,
+      path_ar: data[desktopPathArKey]
+        ? `${backendUrl}${data[desktopPathArKey]}`
+        : null,
+      alt: data[altKey] ?? "",
+      alt_ar: altArKey ? data[altArKey] ?? "" : "",
+    },
+    mobile: {
+      type: data[typeKey] ?? "",
+      path: data[mobilePathKey] ? `${backendUrl}${data[mobilePathKey]}` : null,
+      path_ar: data[mobilePathArKey]
+        ? `${backendUrl}${data[mobilePathArKey]}`
+        : null,
+      alt: data[altKey] ?? "",
+      alt_ar: altArKey ? data[altArKey] ?? "" : "",
+    },
+  };
+};
 
 // Media object (desktop + mobile) WITHOUT type
 const mediaWithoutType = (

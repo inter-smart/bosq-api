@@ -67,6 +67,7 @@ function buildBlogDetailsData(blog, nextBlog, prevBlog) {
 
   return {
     media: mediaWithoutType(blog, "media_desktop_path", "media_mobile_path", "media_alt", "media_alt_ar") ?? null,
+    media_ar: mediaWithoutType(blog, "media_desktop_path_ar", "media_mobile_path_ar", "media_alt", "media_alt_ar") ?? null,
     title: blog.title ?? "N/A",
     title_ar: blog.title_ar ?? "N/A",
     publishedAt: dateFirst(blog.published_date) ?? "N/A",

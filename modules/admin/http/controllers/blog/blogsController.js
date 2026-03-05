@@ -18,7 +18,10 @@ const { paginate } = require("../../../http/traits/datatablePaginationHelper");
 const slugify = require("slugify");
 const { Op } = require("sequelize");
 const cacheKeys = require("../../../../redis/cacheKeys");
-const { invalidateCache, invalidateCacheByPattern } = require("../../../../redis/redisService");
+const {
+  invalidateCache,
+  invalidateCacheByPattern,
+} = require("../../../../redis/redisService");
 
 const DataModel = models.Blogs;
 const cacheKey = cacheKeys.blog;
@@ -36,9 +39,7 @@ class BlogController {
       const result = await paginate(DataModel, req, {
         where: whereClause,
         dateField: "published_date",
-        order: [
-          ["updatedAt", "DESC"],
-        ],
+        order: [["updatedAt", "DESC"]],
         searchFields: ["title", "slug"],
       });
 
@@ -70,7 +71,7 @@ class BlogController {
           res,
           "Title is required to generate slug",
           null,
-          400
+          400,
         );
 
       // Generate slug
@@ -87,7 +88,7 @@ class BlogController {
           res,
           `Slug "${baseSlug}" already exists`,
           { existing_id: existing.id },
-          409
+          409,
         );
       }
 
@@ -97,7 +98,9 @@ class BlogController {
       const fileFields = [
         "thumbnail",
         "media_desktop_path",
+        "media_desktop_path_ar",
         "media_mobile_path",
+        "media_mobile_path_ar",
       ];
       handleFileUploadStore(req, fileFields);
 
@@ -142,7 +145,7 @@ class BlogController {
   // ✅ Update blog
   static async update(req, res) {
     await Promise.all(
-      [...validateId, ...validationRequestPost].map((v) => v.run(req))
+      [...validateId, ...validationRequestPost].map((v) => v.run(req)),
     );
     const errors = validationResult(req);
     if (!errors.isEmpty()) return sendValidationError(res, errors.array());
@@ -180,7 +183,7 @@ class BlogController {
             res,
             `Slug "${bloglug}" already exists`,
             { existing_id: existing.id },
-            409
+            409,
           );
         }
 
@@ -193,7 +196,9 @@ class BlogController {
       const fileFields = [
         "thumbnail",
         "media_desktop_path",
+        "media_desktop_path_ar",
         "media_mobile_path",
+        "media_mobile_path_ar",
       ];
       await handleFileUploadUpdate(req, data, fileFields);
 

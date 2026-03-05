@@ -95,7 +95,9 @@ class NewsController {
       const fileFields = [
         "thumbnail",
         "media_desktop_path",
+        "media_desktop_path_ar",
         "media_mobile_path",
+        "media_mobile_path_ar",
       ];
       handleFileUploadStore(req, fileFields);
 

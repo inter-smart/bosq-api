@@ -41,6 +41,7 @@ function buildNewsDetailsData(news, nextNews, prevNews){
 
   return {
     media: mediaWithoutType(news, "media_desktop_path", "media_mobile_path", "media_alt", "media_alt_ar") ?? null,
+    media_ar: mediaWithoutType(news, "media_desktop_path_ar", "media_mobile_path_ar", "media_alt", "media_alt_ar") ?? null,
     title: news.title ?? "N/A",
     title_ar: news.title_ar ?? "N/A",
     publishedAt: dateFirst(news.published_date) ?? "N/A",

@@ -40,13 +40,32 @@ class OrderController {
                             ],
                         ],
                     },
+                    {
+                        model: models.OrderAddress,
+                        as: "addresses",
+                        where: { address_type: "billing" },
+                        required: false,
+                    }
                 ],
-                searchFields: ["order_id", "$user.name$"
-                ]
+                searchFields: ["order_id", "$user.name$", "$addresses.name$", "$addresses.email$", "$addresses.phone$"]
+            });
+
+            const list = result.data.map(order => {
+                const orderData = order.toJSON();
+                if (!orderData.user && orderData.addresses && orderData.addresses.length > 0) {
+                    const billing = orderData.addresses[0];
+                    orderData.user = {
+                        name: billing.name,
+                        email: billing.email,
+                        mobile: (billing.country_code || "") + " " + (billing.phone || ""),
+                        is_guest: true
+                    };
+                }
+                return orderData;
             });
 
             const response = {
-                list: result.data,
+                list: list,
                 pagination: result.pagination,
             };
 
@@ -108,7 +127,18 @@ class OrderController {
                 return sendNotFoundError(res, "Order");
             }
 
-            sendSuccessResponse(res, data, "Order retrieved successfully");
+            const orderData = data.toJSON();
+            if (!orderData.user && orderData.addresses && orderData.addresses.length > 0) {
+                const billing = orderData.addresses.find(a => a.address_type === "billing") || orderData.addresses[0];
+                orderData.user = {
+                    name: billing.name,
+                    email: billing.email,
+                    mobile: (billing.country_code || "") + " " + (billing.phone || ""),
+                    is_guest: true
+                };
+            }
+
+            sendSuccessResponse(res, orderData, "Order retrieved successfully");
         } catch (error) {
             console.error("Order show error:", error);
             sendErrorResponse(res, error);

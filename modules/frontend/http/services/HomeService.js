@@ -26,13 +26,13 @@ class HomeService {
   static async getData() {
     try {
       const cachedData = await getCache(cacheKey);
-      if (cachedData) {
-        return {
-          data: cachedData,
-          fromCache: true,
-          message: "Data fetched from cache",
-        };
-      }
+      // if (cachedData) {
+      //   return {
+      //     data: cachedData,
+      //     fromCache: true,
+      //     message: "Data fetched from cache",
+      //   };
+      // }
 
       const [
         homeCms,
@@ -58,6 +58,7 @@ class HomeService {
           attributes: ["id", "name", "name_ar", "media_path", "slug", "parent_id"],
           where: {
             status: true,
+            parent_id: null,
             id: {
               [Op.in]: sequelize.literal(`(
                 SELECT DISTINCT pvc."category_id"
@@ -106,7 +107,7 @@ class HomeService {
           },
           attributes: ["other_meta_ar", "other_meta"],
         }),
-       models.State.findAll({
+        models.State.findAll({
           attributes: ["id", "name", "slug"],
           include: [
             {
@@ -122,13 +123,13 @@ class HomeService {
             },
           ],
         }),
-           models.EnquiryDropdown.findAll({
-                  where: {
-                    status: true,
-                  },
-                  attributes:["id", "title", "title_ar"],
-                  order: [["sort_order", "ASC"]],
-                }),
+        models.EnquiryDropdown.findAll({
+          where: {
+            status: true,
+          },
+          attributes: ["id", "title", "title_ar"],
+          order: [["sort_order", "ASC"]],
+        }),
       ]);
 
       const sliders = buildHomeBannerSliders(banners);

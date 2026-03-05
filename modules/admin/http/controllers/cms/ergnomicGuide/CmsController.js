@@ -39,7 +39,7 @@ class ErgnomicGuideCmsController {
 
     try {
       const existingData = await DataModel.findOne();
-      const fileFields = ["media_desktop_path", "media_mobile_path"];
+      const fileFields = ["media_desktop_path", "media_mobile_path", "media_desktop_path_ar", "media_mobile_path_ar"];
 
       let data;
 

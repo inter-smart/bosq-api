@@ -6,8 +6,6 @@ const { buildTitleSection, buildBannerSection } = require("./common");
 
 function buildABoutBannerSection(aboutCms){
   const meta = buildBannerSection(aboutCms, "banner");
-
-
   return {
     ...meta,
     button: {

@@ -33,6 +33,14 @@ module.exports = (sequelize) => {
         type: DataTypes.STRING,
         allowNull: true,
       },
+      media_desktop_path_ar: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      media_mobile_path_ar: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
       media_alt: {
         type: DataTypes.STRING,
         allowNull: true,

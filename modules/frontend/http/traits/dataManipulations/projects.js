@@ -17,6 +17,8 @@ function buildProjectBannerSection(cmsData) {
       media_type: cmsData.media_type ?? null,
       desktop_path: generateImageUrl(cmsData.media_desktop_path) ?? null,
       mobile_path: generateImageUrl(cmsData.media_mobile_path) ?? null,
+      desktop_path_ar: generateImageUrl(cmsData.media_desktop_path_ar) ?? null,
+      mobile_path_ar: generateImageUrl(cmsData.media_mobile_path_ar) ?? null,
       media_alt: cmsData.media_alt ?? "",
       media_alt_ar: cmsData.media_alt_ar ?? "",
     },
@@ -66,7 +68,8 @@ function buildProjectDetailsSection(data) {
       media_type: data?.media_type ?? null,
       desktop_path: generateImageUrl(data?.section1_desktop_media_path) ?? null,
       mobile_path: generateImageUrl(data?.section1_mobile_media_path) ?? null,
-
+      // desktop_path_ar: generateImageUrl(data?.section1_desktop_media_path_ar) ?? null,
+      // mobile_path_ar: generateImageUrl(data?.section1_mobile_media_path_ar) ?? null,
       media_alt: data?.section1_media_alt ?? "",
       media_alt_ar: data?.section1_media_alt_ar ?? "",
     },

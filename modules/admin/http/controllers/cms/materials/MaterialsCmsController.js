@@ -56,7 +56,9 @@ class MaterialGuideCmsController {
       const existingData = await DataModel.findOne();
       const fileFields = [
         "banner_media_desktop_path",
+        "banner_media_desktop_path_ar",
         "banner_media_mobile_path",
+        "banner_media_mobile_path_ar",
       ];
 
       let data;

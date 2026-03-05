@@ -20,15 +20,19 @@ function buildHomeBannerSliders(banners) {
       media: {
         desktop: {
           path: generateImageUrl(banner?.media_desktop_path) ?? null,
+          path_ar: generateImageUrl(banner?.media_desktop_path_ar) ?? null,
           alt: banner?.media_alt ?? null,
           alt_ar: banner?.media_alt_ar ?? null,
         },
         mobile: {
           path: generateImageUrl(banner?.media_mobile_path) ?? null,
+          path_ar: generateImageUrl(banner?.media_mobile_path_ar) ?? null,
           alt: banner?.media_alt ?? null,
           alt_ar: banner?.media_alt_ar ?? null,
         },
       },
+
+
       button: {
         label: banner?.button_text ?? "N/A",
         label_ar: banner?.button_text_ar ?? "N/A",

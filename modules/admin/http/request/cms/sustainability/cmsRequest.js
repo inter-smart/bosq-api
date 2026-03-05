@@ -10,6 +10,10 @@ exports.validateRequest = [
 
   body("banner_media_mobile_path").optional().isString().withMessage("Banner mobile media path must be a string"),
 
+  body("banner_media_desktop_path_ar").optional().isString().withMessage("Arabic banner desktop media path must be a string"),
+
+  body("banner_media_mobile_path_ar").optional().isString().withMessage("Arabic banner mobile media path must be a string"),
+
   body("banner_media_alt").optional().isString().withMessage("Banner alt text must be a string"),
 
   body("banner_media_alt_ar").optional().isString().withMessage("Arabic banner alt text must be a string"),

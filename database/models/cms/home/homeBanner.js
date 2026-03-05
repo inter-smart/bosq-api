@@ -18,6 +18,15 @@ module.exports = (sequelize) => {
         type: DataTypes.TEXT,
         allowNull: true,
       },
+
+      media_desktop_path_ar: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      media_mobile_path_ar: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
       media_alt: {
         type: DataTypes.STRING,
         allowNull: true,
@@ -69,7 +78,7 @@ module.exports = (sequelize) => {
     },
     {
       tableName: "home_banner",
-    }
+    },
   );
 
   return HomeBanner;

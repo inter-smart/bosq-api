@@ -43,7 +43,7 @@ class HomeBannerController {
     }
 
     try {
-      const fileFields = ["media_desktop_path", "media_mobile_path"];
+      const fileFields = ["media_desktop_path", "media_mobile_path", "media_desktop_path_ar", "media_mobile_path_ar"];
       handleFileUploadStore(req, fileFields);
 
       const data = await sequelize.transaction(async (transaction) => {
@@ -101,7 +101,7 @@ class HomeBannerController {
         return sendNotFoundError(res, "Data");
       }
 
-      const fileFields = ["media_desktop_path", "media_mobile_path"];
+      const fileFields = ["media_desktop_path", "media_mobile_path", "media_desktop_path_ar", "media_mobile_path_ar"];
       await handleFileUploadUpdate(req, data, fileFields);
 
       await data.update(req.body, { transaction });

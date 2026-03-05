@@ -12,6 +12,15 @@ exports.validationRequestPost = [
     .isString()
     .withMessage("Mobile media path must be a string"),
 
+      body("media_desktop_path_ar")
+    .optional()
+    .isString()
+    .withMessage("Desktop media path must be a string"),
+
+  body("media_mobile_path_ar")
+    .optional()
+    .isString()
+    .withMessage("Mobile media path must be a string"),
   body("media_alt")
     .optional()
     .isString()

@@ -502,7 +502,7 @@ class ProductsService {
         "name-a-z": `pv."title" ASC`,
         "name-z-a": `pv."title" DESC`,
       };
-      const orderSQL = orderMap[sortBy] || `pv."createdAt" DESC`;
+      const orderSQL = orderMap[sortBy] || `pv."sort_order" ASC`; // default sorting
 
       // ─── MAIN QUERY ──────────────────────────────────────────────────────────
       const mainSQL = `

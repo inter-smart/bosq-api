@@ -1854,15 +1854,6 @@ static async sendProjectEnquiryAdmin(data) {
                                                                         ${paymentLabel}
                                                                     </span>
                                                                 </li>
-                                                                <li style="display:flex; list-style-type: none;">
-                                                                    <p
-                                                                    style="font-size: 16px; width: 45%; color: #282828; font-weight: 400; font-family:  'Open Sans', sans-serif; margin: 0px; margin-top: 0px; margin-bottom: 0; line-height: 23px; text-align: left;">
-                                                                        Est. Delivery :
-                                                                    </p>
-                                                                    <span style="font-size: 16px; width: 55%; color: #282828; font-weight: 500; font-family:  'Open Sans', sans-serif; margin: 0; margin-left: auto; line-height: 23px; text-align: right;">
-                                                                        ${deliveryText}
-                                                                    </span>
-                                                                </li>
                                                             </ul>
                                                         </div>    
                                                     </td>

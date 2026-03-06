@@ -4,7 +4,7 @@ const { sendValidationError, sendSuccessResponse, sendErrorResponse, sendNotFoun
 
 const { Op, literal } = require("sequelize");
 
-const { validateId } = require("../../request/orders/ordersRequest.js");
+const { validateId, validateUpdate } = require("../../request/orders/ordersRequest.js");
 const { paginate } = require("../../traits/datatablePaginationHelper.js");
 
 const DataModel = models.Orders;
@@ -134,7 +134,7 @@ class OrderController {
   }
 
   static async update(req, res) {
-    await Promise.all(validateId.map((validation) => validation.run(req)));
+    await Promise.all(validateUpdate.map((validation) => validation.run(req)));
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return sendValidationError(res, errors.array());
@@ -142,20 +142,119 @@ class OrderController {
 
     try {
       const { id } = req.params;
-      const { est_delivery_details, awb_number, order_url, partner_name } = req.body;
+      const { est_delivery_details, awb_number, order_url, partner_name, status } = req.body;
 
-      const order = await DataModel.findByPk(id);
+      const order = await DataModel.findByPk(id, {
+        include: [
+          {
+            model: models.Users,
+            as: "user",
+          },
+          {
+            model: models.Users,
+            as: "user",
+          },
+          {
+            model: models.OrderAddress,
+            as: "addresses",
+          },
+          {
+            model: models.OrderItem,
+            as: "items",
+            include: [
+              {
+                model: models.ProductBase,
+                as: "product",
+                attributes: ["id", "title", "media_path"],
+              },
+              {
+                model: models.ProductVariants,
+                as: "variant",
+                attributes: ["id", "sku", "title", "media_path", "price", "stock", "status"],
+              },
+            ],
+          },
+        ],
+      });
 
       if (!order) {
         return sendNotFoundError(res, "Order");
       }
+
+      if (status && status !== order.status) {
+        if (status === "delivered" && order.status !== "shipped") {
+          return sendErrorResponse(res, new Error("Order must be shipped before it can be delivered"));
+        }
+        if (status === "shipped" && order.status !== "packed") {
+          return sendErrorResponse(res, new Error("Order must be packed before it can be shipped"));
+        }
+      }
+
+      const oldStatus = order.status;
 
       await order.update({
         est_delivery_details,
         awb_number,
         order_url,
         partner_name,
+        ...(status ? { status } : {}),
       });
+
+      if (oldStatus === "pending" && status === "confirmed") {
+        const EmailService = require("../../../../../services/EmailService");
+
+        let userEmail = null;
+        let userName = "Customer";
+
+        if (order.user) {
+          userEmail = order.user.email;
+          userName = order.user.name || order.user.first_name;
+        } else if (order.addresses && order.addresses.length > 0) {
+          userEmail = order.addresses[0].email;
+          userName = order.addresses[0].name;
+        }
+
+        if (userEmail) {
+          const billingAddress = order.addresses?.find((a) => a.address_type === "billing");
+          const shippingAddress = order.addresses?.find((a) => a.address_type === "shipping");
+
+          const itemsData = (order.items || []).map((item) => {
+            const productTitle = item.variant?.title || item.product?.title || "Product";
+            const itemPriceStr = typeof item.price === "string" ? item.price : String(item.price);
+            const discountAmtStr = typeof item.discount_amount === "string" ? item.discount_amount : String(item.discount_amount || "0");
+
+            const p = parseFloat(itemPriceStr) || 0;
+            const q = item.quantity || 1;
+            const d = parseFloat(discountAmtStr) || 0;
+            const linetotal = (p * q) - d;
+
+            return {
+              title: productTitle,
+              sku: item.variant?.sku,
+              quantity: item.quantity,
+              price: itemPriceStr,
+              discount_amount: discountAmtStr,
+              line_total: String(linetotal),
+              image: item.variant?.media_path || item.product?.media_path
+            };
+          });
+
+          EmailService.sendOrderStatusUpdate(userEmail, {
+            name: userName,
+            orderCode: order.order_id,
+            status: status,
+            paymentType: order.payment_type,
+            subtotal: order.subtotal,
+            discount_total: order.discount_total,
+            tax_total: order.tax_total,
+            grand_total: order.grand_total,
+            estDelivery: order.est_delivery_details,
+            items: itemsData,
+            billingAddress: billingAddress,
+            shippingAddress: shippingAddress
+          }).catch(err => console.error("Error sending order status email:", err));
+        }
+      }
 
       sendSuccessResponse(res, order, "Order updated successfully");
     } catch (error) {

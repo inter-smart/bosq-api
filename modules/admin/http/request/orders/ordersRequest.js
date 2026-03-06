@@ -12,4 +12,9 @@ exports.validateUpdate = [
         .optional()
         .isIn(["pending", "confirmed", "packed", "shipped", "delivered", "cancelled", "returned"])
         .withMessage("Invalid status value"),
+    body("cancel_reason")
+        .optional()
+        .isString()
+        .isLength({ max: 500 })
+        .withMessage("Cancel reason must be less than 500 characters"),
 ];

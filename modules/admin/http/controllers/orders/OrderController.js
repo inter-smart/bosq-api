@@ -142,7 +142,7 @@ class OrderController {
 
     try {
       const { id } = req.params;
-      const { est_delivery_details, awb_number, order_url, partner_name, status } = req.body;
+      const { est_delivery_details, awb_number, order_url, partner_name, status, cancel_reason } = req.body;
 
       const order = await DataModel.findByPk(id, {
         include: [
@@ -188,6 +188,9 @@ class OrderController {
         if (status === "shipped" && order.status !== "packed") {
           return sendErrorResponse(res, new Error("Order must be packed before it can be shipped"));
         }
+        if (status === "packed" && order.status !== "confirmed") {
+          return sendErrorResponse(res, new Error("Order must be confirmed before it can be packed"));
+        }
       }
 
       const oldStatus = order.status;
@@ -200,7 +203,7 @@ class OrderController {
         ...(status ? { status } : {}),
       });
 
-      if (oldStatus === "pending" && status === "confirmed") {
+      if (status && oldStatus !== status) {
         const EmailService = require("../../../../../services/EmailService");
 
         let userEmail = null;
@@ -243,6 +246,7 @@ class OrderController {
             name: userName,
             orderCode: order.order_id,
             status: status,
+            cancel_reason: status === 'cancelled' ? cancel_reason : null,
             paymentType: order.payment_type,
             subtotal: order.subtotal,
             discount_total: order.discount_total,

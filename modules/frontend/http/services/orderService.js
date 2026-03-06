@@ -205,7 +205,7 @@ class OrderService {
       await transaction.commit();
 
       // Send order confirmation email
-      !isGuest && (await this.sendOrderConfirmationEmail(order.id));
+      (await this.sendOrderConfirmationEmail(order.id));
 
       return await this.getOrderById(userId, sessionId, order.id);
     } catch (error) {

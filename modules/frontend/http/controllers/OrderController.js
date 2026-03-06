@@ -75,13 +75,13 @@ class OrderController {
       if (!userId && !sessionId) {
         return ApiResponse.success(res, {
           message: "Orders retrieved successfully",
-          data: { orders: [], pagination: { total: 0, page: 1, limit: 10, total_pages: 0 } },
+          data: { orders: [], pagination: { total: 0, page: 1, limit: 12, total_pages: 0 } },
           status: HTTP_STATUS.OK,
         });
       }
 
       const page = parseInt(req.query.page) || 1;
-      const limit = parseInt(req.query.limit) || 10;
+      const limit = parseInt(req.query.limit) || 12;
 
       const result = await OrderService.getOrders(userId, sessionId, { page, limit });
 

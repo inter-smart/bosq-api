@@ -340,58 +340,95 @@ class OrderService {
   }
 
   /**
-   * Get all orders for a user
+   * Get all orders for a user (raw SQL — single query with window count + JSON_AGG)
    */
-  static async getOrders(userId, sessionId, { page = 1, limit = 10 } = {}) {
-    const whereClause = userId ? { user_id: userId } : { session_id: sessionId, user_id: null };
-
+  static async getOrders(userId, sessionId, { page = 1, limit = 12 } = {}) {
     const offset = (page - 1) * limit;
 
-    const { count, rows: orders } = await models.Orders.findAndCountAll({
-      where: whereClause,
-      include: [
-        {
-          model: models.OrderItem,
-          as: "items",
-          include: [
-            {
-              model: models.ProductBase,
-              as: "product",
-              attributes: ["id", "title", "slug"],
-            },
-            {
-              model: models.ProductVariants,
-              as: "variant",
-              attributes: ["id", "sku", "price", "media_path", "title", "title_ar"],
-            },
-          ],
-        },
-        {
-          model: models.OrderAddress,
-          as: "addresses",
-          include: [
-            {
-              model: models.State,
-              as: "state",
-              attributes: ["id", "name", "slug"],
-            },
-          ],
-        },
-      ],
-      order: [["createdAt", "DESC"]],
-      limit,
-      offset,
-      distinct: true,
+    const whereClause = userId ? `o.user_id = :ownerId` : `o.session_id = :ownerId AND o.user_id IS NULL`;
+
+    const sql = `
+      SELECT
+        o.id,
+        o.order_id,
+        o.status,
+        o.payment_status,
+        o.payment_type,
+        o.est_delivery_details,
+        o.subtotal,
+        o.discount_total,
+        o.tax_total,
+        o.grand_total,
+        o."createdAt",
+        COUNT(*) OVER() AS total_count,
+        COALESCE(
+          JSON_AGG(
+            DISTINCT JSONB_BUILD_OBJECT(
+              'id',             oi.id,
+              'product_id',     oi.product_id,
+              'variant_id',     oi.variant_id,
+              'quantity',       oi.quantity,
+              'price',          oi.price,
+              'discount_amount',oi.discount_amount,
+              'line_total',     (oi.price * oi.quantity)::TEXT,
+              'product',        JSONB_BUILD_OBJECT('id', pb.id, 'title', pb.title, 'slug', pb.slug),
+              'variant',        JSONB_BUILD_OBJECT(
+                                  'id',        pv.id,
+                                  'sku',       pv.sku,
+                                  'price',     pv.price,
+                                  'media_path',pv.media_path,
+                                  'title',     pv.title,
+                                  'title_ar',  pv.title_ar
+                                )
+            )
+          ) FILTER (WHERE oi.id IS NOT NULL),
+          '[]'::json
+        ) AS items,
+        (
+          SELECT JSONB_BUILD_OBJECT(
+            'street_address', oa_b.street_address,
+            'apartment',      oa_b.apartment,
+            'state_name',     st_b.name
+          )
+          FROM order_address oa_b
+          LEFT JOIN states st_b ON st_b.id = oa_b.state_id
+          WHERE oa_b.order_id = o.id AND oa_b.address_type = 'billing'
+          LIMIT 1
+        ) AS billing_address,
+        (
+          SELECT JSONB_BUILD_OBJECT(
+            'street_address', oa_s.street_address,
+            'apartment',      oa_s.apartment,
+            'state_name',     st_s.name
+          )
+          FROM order_address oa_s
+          LEFT JOIN states st_s ON st_s.id = oa_s.state_id
+          WHERE oa_s.order_id = o.id AND oa_s.address_type = 'shipping'
+          LIMIT 1
+        ) AS shipping_address
+      FROM orders o
+      LEFT JOIN order_items oi
+        ON oi.order_id = o.id 
+      LEFT JOIN product_base pb
+        ON pb.id = oi.product_id 
+      LEFT JOIN product_variants pv
+        ON pv.id = oi.variant_id 
+      WHERE ${whereClause}
+      GROUP BY o.id
+      ORDER BY o."createdAt" DESC
+      LIMIT :limit OFFSET :offset
+    `;
+
+    const rows = await sequelize.query(sql, {
+      replacements: { ownerId: userId ?? sessionId, limit, offset },
+      type: sequelize.QueryTypes.SELECT,
     });
 
+    const total = rows.length > 0 ? parseInt(rows[0].total_count, 10) : 0;
+
     return {
-      orders: orders.map((order) => this.formatOrder(order)),
-      pagination: {
-        total: count,
-        page,
-        limit,
-        total_pages: Math.ceil(count / limit),
-      },
+      orders: rows.map((row) => this.formatRawOrder(row)),
+      pagination: { total, page, limit, total_pages: Math.ceil(total / limit) },
     };
   }
 
@@ -557,6 +594,42 @@ class OrderService {
       item_count: itemCount,
       items_count: itemsCount,
       createdAt: this.formatDate(order.createdAt),
+      showCancelButton: Date.now() - new Date(order.createdAt).getTime() < 5 * 60 * 60 * 1000,
+    };
+  }
+
+  /**
+   * Format a raw SQL order row for response (used by getOrders)
+   */
+  static formatRawOrder(row) {
+    const FIVE_HOURS_MS = 5 * 60 * 60 * 1000;
+
+    const formatAddr = (addr) => (addr ? [addr.street_address, addr.apartment, addr.state_name].filter(Boolean).join(", ") : null);
+
+    const items = (row.items || []).map((item) => ({
+      ...item,
+      line_total: parseFloat(item.line_total).toFixed(2),
+      variant: item.variant ? { ...item.variant, media_path: generateImageUrl(item.variant.media_path) } : null,
+    }));
+
+    return {
+      id: row.id,
+      order_id: row.order_id,
+      status: this.formatEnums(row.status),
+      payment_status: this.formatEnums(row.payment_status),
+      payment_type: row.payment_type,
+      est_delivery_details: row.status === "delivered" ? "Delivered" : row.est_delivery_details,
+      items,
+      billing_address: formatAddr(row.billing_address),
+      shipping_address: formatAddr(row.shipping_address),
+      subtotal: row.subtotal,
+      discount_total: row.discount_total,
+      tax_total: row.tax_total,
+      grand_total: row.grand_total,
+      item_count: items.reduce((s, i) => s + i.quantity, 0),
+      items_count: items.length,
+      createdAt: this.formatDate(row.createdAt),
+      showCancelButton: Date.now() - new Date(row.createdAt).getTime() < FIVE_HOURS_MS,
     };
   }
 

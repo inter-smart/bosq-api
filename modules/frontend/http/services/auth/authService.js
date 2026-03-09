@@ -314,7 +314,7 @@ class UsersService {
   }
 
   static async login(req, res) {
-const transaction = await sequelize.transaction();
+    const transaction = await sequelize.transaction();
     try {
       const { email, password } = req.body;
       const user = await Users.findOne({
@@ -509,7 +509,7 @@ const transaction = await sequelize.transaction();
         },
         process.env.JWT_SECRET,
         {
-          expiresIn: "5m",
+          expiresIn: "15m",
           issuer: process.env.JWT_ISSUER || "BOSQ",
         },
       );

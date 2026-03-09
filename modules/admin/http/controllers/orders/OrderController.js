@@ -6,6 +6,7 @@ const { Op, literal } = require("sequelize");
 
 const { validateId, validateUpdate } = require("../../request/orders/ordersRequest.js");
 const { paginate } = require("../../traits/datatablePaginationHelper.js");
+const OrderService = require("../../../../frontend/http/services/orderService.js");
 
 const DataModel = models.Orders;
 
@@ -204,60 +205,9 @@ class OrderController {
       });
 
       if (status && oldStatus !== status) {
-        const EmailService = require("../../../../../services/EmailService");
-
-        let userEmail = null;
-        let userName = "Customer";
-
-        if (order.user) {
-          userEmail = order.user.email;
-          userName = order.user.name || order.user.first_name;
-        } else if (order.addresses && order.addresses.length > 0) {
-          userEmail = order.addresses[0].email;
-          userName = order.addresses[0].name;
-        }
-
-        if (userEmail) {
-          const billingAddress = order.addresses?.find((a) => a.address_type === "billing");
-          const shippingAddress = order.addresses?.find((a) => a.address_type === "shipping");
-
-          const itemsData = (order.items || []).map((item) => {
-            const productTitle = item.variant?.title || item.product?.title || "Product";
-            const itemPriceStr = typeof item.price === "string" ? item.price : String(item.price);
-            const discountAmtStr = typeof item.discount_amount === "string" ? item.discount_amount : String(item.discount_amount || "0");
-
-            const p = parseFloat(itemPriceStr) || 0;
-            const q = item.quantity || 1;
-            const d = parseFloat(discountAmtStr) || 0;
-            const linetotal = (p * q) - d;
-
-            return {
-              title: productTitle,
-              sku: item.variant?.sku,
-              quantity: item.quantity,
-              price: itemPriceStr,
-              discount_amount: discountAmtStr,
-              line_total: String(linetotal),
-              image: item.variant?.media_path || item.product?.media_path
-            };
-          });
-
-          EmailService.sendOrderStatusUpdate(userEmail, {
-            name: userName,
-            orderCode: order.order_id,
-            status: status,
-            cancel_reason: status === 'cancelled' ? cancel_reason : null,
-            paymentType: order.payment_type,
-            subtotal: order.subtotal,
-            discount_total: order.discount_total,
-            tax_total: order.tax_total,
-            grand_total: order.grand_total,
-            estDelivery: order.est_delivery_details,
-            items: itemsData,
-            billingAddress: billingAddress,
-            shippingAddress: shippingAddress
-          }).catch(err => console.error("Error sending order status email:", err));
-        }
+        OrderService.sendOrderStatusEmail(order.id, status, cancel_reason).catch((err) =>
+          console.error("Error sending order status email:", err)
+        );
       }
 
       sendSuccessResponse(res, order, "Order updated successfully");

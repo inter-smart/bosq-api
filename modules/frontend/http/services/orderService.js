@@ -6,6 +6,7 @@ const crypto = require("crypto");
 const { Op } = require("sequelize");
 const { addOrderConfirmationJob } = require("../../../../queues/emailQueue.js");
 const Logger = require("../../../../config/logger.js");
+const EmailService = require("../../../../services/EmailService");
 
 const modelsMap = {
   user: {
@@ -24,7 +25,10 @@ class OrderService {
    */
   static generateOrderId() {
     const date = new Date();
-    const dateStr = date.getFullYear().toString() + String(date.getMonth() + 1).padStart(2, "0") + String(date.getDate()).padStart(2, "0");
+    const dateStr =
+      date.getFullYear().toString() +
+      String(date.getMonth() + 1).padStart(2, "0") +
+      String(date.getDate()).padStart(2, "0");
     const suffix = crypto.randomBytes(4).toString("hex").toUpperCase();
     return `BOSQ-${dateStr}-${suffix}`;
   }
@@ -32,7 +36,12 @@ class OrderService {
   /**
    * Place a new order from the active cart
    */
-  static async placeOrder(cartOwner, paymentType = "cod", address = {}, type = "cart") {
+  static async placeOrder(
+    cartOwner,
+    paymentType = "cod",
+    address = {},
+    type = "cart",
+  ) {
     const transaction = await sequelize.transaction();
 
     const { type: userType, id: ownerId } = cartOwner;
@@ -44,26 +53,46 @@ class OrderService {
     const { model: Model, field } = config;
 
     try {
-      const whereClause = isGuest ? { session_id: ownerId, status: "active", user_id: null } : { user_id: ownerId, status: "active" };
+      const whereClause = isGuest
+        ? { session_id: ownerId, status: "active", user_id: null }
+        : { user_id: ownerId, status: "active" };
 
       const { billing, shipping } = address;
 
       if (!billing || !shipping) {
-        throw ErrorHandler.createError("Billing and shipping addresses are required", HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION_ERROR);
+        throw ErrorHandler.createError(
+          "Billing and shipping addresses are required",
+          HTTP_STATUS.BAD_REQUEST,
+          ERROR_CODES.VALIDATION_ERROR,
+        );
       }
 
       const cartBillingAddress = await Model.findOne({
-        where: { [field]: ownerId, status: "active", address_type: "billing", id: billing },
+        where: {
+          [field]: ownerId,
+          status: "active",
+          address_type: "billing",
+          id: billing,
+        },
         transaction,
       });
 
       const cartShippingAddress = await Model.findOne({
-        where: { [field]: ownerId, status: "active", address_type: "shipping", id: shipping },
+        where: {
+          [field]: ownerId,
+          status: "active",
+          address_type: "shipping",
+          id: shipping,
+        },
         transaction,
       });
 
       if (!cartBillingAddress) {
-        throw ErrorHandler.createError("Billing address not found", HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION_ERROR);
+        throw ErrorHandler.createError(
+          "Billing address not found",
+          HTTP_STATUS.BAD_REQUEST,
+          ERROR_CODES.VALIDATION_ERROR,
+        );
       }
 
       const cart = await models.Cart.findOne({
@@ -82,7 +111,14 @@ class OrderService {
               {
                 model: models.ProductVariants,
                 as: "variant",
-                attributes: ["id", "sku", "price", "media_path", "stock", "title"],
+                attributes: [
+                  "id",
+                  "sku",
+                  "price",
+                  "media_path",
+                  "stock",
+                  "title",
+                ],
               },
             ],
           },
@@ -91,17 +127,29 @@ class OrderService {
       });
 
       if (!cart) {
-        throw ErrorHandler.createError("Cart not found", HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
+        throw ErrorHandler.createError(
+          "Cart not found",
+          HTTP_STATUS.NOT_FOUND,
+          ERROR_CODES.NOT_FOUND_ERROR,
+        );
       }
 
       if (!cart.items || cart.items.length === 0) {
-        throw ErrorHandler.createError("Cart is empty", HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION_ERROR);
+        throw ErrorHandler.createError(
+          "Cart is empty",
+          HTTP_STATUS.BAD_REQUEST,
+          ERROR_CODES.VALIDATION_ERROR,
+        );
       }
 
       // Validate stock for all items
       for (const item of cart.items) {
         if (!item.variant) {
-          throw ErrorHandler.createError(`Product variant not found for item ${item.id}`, HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION_ERROR);
+          throw ErrorHandler.createError(
+            `Product variant not found for item ${item.id}`,
+            HTTP_STATUS.BAD_REQUEST,
+            ERROR_CODES.VALIDATION_ERROR,
+          );
         }
         if (item.variant.stock < item.quantity) {
           throw ErrorHandler.createError(
@@ -144,7 +192,10 @@ class OrderService {
         );
 
         // Reduce variant stock
-        await models.ProductVariants.update({ stock: item.variant.stock - item.quantity }, { where: { id: item.variant_id }, transaction });
+        await models.ProductVariants.update(
+          { stock: item.variant.stock - item.quantity },
+          { where: { id: item.variant_id }, transaction },
+        );
       }
 
       // Create order addresses (billing + shipping)
@@ -194,10 +245,16 @@ class OrderService {
         cartItemsWhere.is_buy_now = true;
       }
 
-      const deletedCount = await models.CartItems.destroy({ where: cartItemsWhere, transaction, force: true });
+      const deletedCount = await models.CartItems.destroy({
+        where: cartItemsWhere,
+        transaction,
+        force: true,
+      });
 
       if (deletedCount > 0) {
-        console.log(`✅ CartItems deleted successfully. Count: ${deletedCount}`);
+        console.log(
+          `✅ CartItems deleted successfully. Count: ${deletedCount}`,
+        );
       } else {
         console.warn("⚠️ No CartItems found to delete.");
       }
@@ -205,7 +262,9 @@ class OrderService {
       await transaction.commit();
 
       // Send order confirmation email
-      (await this.sendOrderConfirmationEmail(order.id));
+      this.sendOrderConfirmationEmail(order.id).catch((err) =>
+        Logger.error(`Order confirmation email failed: ${err.message}`),
+      );
 
       return await this.getOrderById(userId, sessionId, order.id);
     } catch (error) {
@@ -221,12 +280,6 @@ class OrderService {
    */
   static async sendOrderConfirmationEmail(orderId) {
     try {
-      let user = null;
-
-      if (user) {
-        user = await models.Users.findByPk(order.user_id);
-      }
-
       const order = await models.Orders.findOne({
         where: { id: orderId },
         include: [
@@ -242,7 +295,14 @@ class OrderService {
               {
                 model: models.ProductVariants,
                 as: "variant",
-                attributes: ["id", "sku", "price", "media_path", "stock", "title"],
+                attributes: [
+                  "id",
+                  "sku",
+                  "price",
+                  "media_path",
+                  "stock",
+                  "title",
+                ],
               },
             ],
           },
@@ -258,12 +318,24 @@ class OrderService {
         return;
       }
 
-      const billingAddress = order.addresses.find((a) => a.address_type === "billing");
+      const user = order.user_id
+        ? await models.Users.findByPk(order.user_id, {
+            attributes: ["id", "name", "email"],
+          })
+        : null;
 
-      const shippingAddress = order.addresses.find((a) => a.address_type === "shipping");
+      const billingAddress = order.addresses.find(
+        (a) => a.address_type === "billing",
+      );
+
+      const shippingAddress = order.addresses.find(
+        (a) => a.address_type === "shipping",
+      );
 
       if (!billingAddress) {
-        Logger.error(`Billing address not found for order email confirmation: ${orderId}`);
+        Logger.error(
+          `Billing address not found for order email confirmation: ${orderId}`,
+        );
         return;
       }
 
@@ -333,9 +405,13 @@ class OrderService {
         })),
       });
 
-      Logger.info(`Order confirmation email enqueued for order ${order.order_id}`);
+      Logger.info(
+        `Order confirmation email enqueued for order ${order.order_id}`,
+      );
     } catch (err) {
-      Logger.error(`Failed to enqueue order confirmation email for order ${orderId}: ${err.message}`);
+      Logger.error(
+        `Failed to enqueue order confirmation email for order ${orderId}: ${err.message}`,
+      );
     }
   }
 
@@ -345,7 +421,9 @@ class OrderService {
   static async getOrders(userId, sessionId, { page = 1, limit = 12 } = {}) {
     const offset = (page - 1) * limit;
 
-    const whereClause = userId ? `o.user_id = :ownerId` : `o.session_id = :ownerId AND o.user_id IS NULL`;
+    const whereClause = userId
+      ? `o.user_id = :ownerId`
+      : `o.session_id = :ownerId AND o.user_id IS NULL`;
 
     const sql = `
       SELECT
@@ -436,7 +514,9 @@ class OrderService {
    * Get a single order by ID
    */
   static async getOrderById(userId, sessionId, orderId) {
-    const whereClause = userId ? { id: orderId, user_id: userId } : { id: orderId, session_id: sessionId, user_id: null };
+    const whereClause = userId
+      ? { id: orderId, user_id: userId }
+      : { id: orderId, session_id: sessionId, user_id: null };
 
     const order = await models.Orders.findOne({
       where: whereClause,
@@ -453,7 +533,14 @@ class OrderService {
             {
               model: models.ProductVariants,
               as: "variant",
-              attributes: ["id", "sku", "price", "media_path", "title", "title_ar"],
+              attributes: [
+                "id",
+                "sku",
+                "price",
+                "media_path",
+                "title",
+                "title_ar",
+              ],
             },
           ],
         },
@@ -472,7 +559,11 @@ class OrderService {
     });
 
     if (!order) {
-      throw ErrorHandler.createError("Order not found", HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
+      throw ErrorHandler.createError(
+        "Order not found",
+        HTTP_STATUS.NOT_FOUND,
+        ERROR_CODES.NOT_FOUND_ERROR,
+      );
     }
 
     return this.formatOrder(order);
@@ -485,7 +576,9 @@ class OrderService {
     const transaction = await sequelize.transaction();
 
     try {
-      const whereClause = userId ? { id: orderId, user_id: userId } : { id: orderId, session_id: sessionId, user_id: null };
+      const whereClause = userId
+        ? { id: orderId, user_id: userId }
+        : { id: orderId, session_id: sessionId, user_id: null };
 
       const order = await models.Orders.findOne({
         where: whereClause,
@@ -499,7 +592,11 @@ class OrderService {
       });
 
       if (!order) {
-        throw ErrorHandler.createError("Order not found", HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
+        throw ErrorHandler.createError(
+          "Order not found",
+          HTTP_STATUS.NOT_FOUND,
+          ERROR_CODES.NOT_FOUND_ERROR,
+        );
       }
 
       if (order.status !== "pending") {
@@ -517,6 +614,11 @@ class OrderService {
 
       await transaction.commit();
 
+      // Send cancellation status email (fire-and-forget)
+      this.sendOrderStatusEmail(order.id, "cancelled").catch((err) =>
+        Logger.error(`Order cancellation email failed: ${err.message}`),
+      );
+
       return await this.getOrderById(userId, sessionId, orderId);
     } catch (error) {
       if (!transaction.finished) {
@@ -527,12 +629,109 @@ class OrderService {
   }
 
   /**
+   * Send order status update email (cancelled, returned, etc.)
+   */
+  static async sendOrderStatusEmail(orderId, status, cancelReason = null) {
+    try {
+      const order = await models.Orders.findOne({
+        where: { id: orderId },
+        include: [
+          {
+            model: models.OrderItem,
+            as: "items",
+            include: [
+              {
+                model: models.ProductBase,
+                as: "product",
+                attributes: ["id", "title"],
+              },
+              {
+                model: models.ProductVariants,
+                as: "variant",
+                attributes: ["id", "sku", "title", "media_path", "price"],
+              },
+            ],
+          },
+          { model: models.OrderAddress, as: "addresses" },
+          {
+            model: models.Users,
+            as: "user",
+            attributes: ["id", "name", "email"],
+          },
+        ],
+      });
+
+      if (!order) {
+        Logger.error(`Order not found for status email: ${orderId}`);
+        return;
+      }
+
+      const billingAddress = order.addresses?.find(
+        (a) => a.address_type === "billing",
+      );
+      const shippingAddress = order.addresses?.find(
+        (a) => a.address_type === "shipping",
+      );
+
+      const customerEmail = order.user?.email || billingAddress?.email;
+      const customerName =
+        order.user?.name || billingAddress?.name || "Customer";
+
+      if (!customerEmail) {
+        Logger.error(`No valid email found for order status email: ${orderId}`);
+        return;
+      }
+
+      const itemsData = (order.items || []).map((item) => {
+        const p = parseFloat(item.price) || 0;
+        const q = item.quantity || 1;
+        const d = parseFloat(item.discount_amount || "0") || 0;
+        return {
+          title: item.variant?.title || item.product?.title || "Product",
+          sku: item.variant?.sku,
+          quantity: q,
+          price: String(item.price),
+          discount_amount: String(item.discount_amount || "0"),
+          line_total: String(p * q - d),
+          image: generateImageUrl(item.variant?.media_path) || null,
+        };
+      });
+
+      await EmailService.sendOrderStatusUpdate(customerEmail, {
+        name: customerName,
+        orderCode: order.order_id,
+        status,
+        cancel_reason: cancelReason,
+        paymentType: order.payment_type,
+        subtotal: order.subtotal,
+        discount_total: order.discount_total,
+        tax_total: order.tax_total,
+        grand_total: order.grand_total,
+        estDelivery: order.est_delivery_details,
+        items: itemsData,
+        billingAddress,
+        shippingAddress,
+      });
+
+      Logger.info(
+        `Order status email (${status}) sent for order ${order.order_id}`,
+      );
+    } catch (err) {
+      Logger.error(
+        `Failed to send order status email (${status}) for order ${orderId}: ${err.message}`,
+      );
+    }
+  }
+
+  /**
    * Reorder — copy items from an existing order back into the active cart
    */
   static async reorderOrder(userId, sessionId, orderId) {
     const CartService = require("./cartService.js");
 
-    const whereClause = userId ? { id: orderId, user_id: userId } : { id: orderId, session_id: sessionId, user_id: null };
+    const whereClause = userId
+      ? { id: orderId, user_id: userId }
+      : { id: orderId, session_id: sessionId, user_id: null };
 
     const order = await models.Orders.findOne({
       where: whereClause,
@@ -540,11 +739,20 @@ class OrderService {
     });
 
     if (!order) {
-      throw ErrorHandler.createError("Order not found", HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
+      throw ErrorHandler.createError(
+        "Order not found",
+        HTTP_STATUS.NOT_FOUND,
+        ERROR_CODES.NOT_FOUND_ERROR,
+      );
     }
 
     for (const item of order.items) {
-      await CartService.addItem(userId, sessionId, item.variant_id, item.quantity);
+      await CartService.addItem(
+        userId,
+        sessionId,
+        item.variant_id,
+        item.quantity,
+      );
     }
 
     return CartService.getCart(userId, sessionId);
@@ -559,8 +767,10 @@ class OrderService {
 
     // Separate billing and shipping addresses
     const addresses = order.addresses || [];
-    const billingAddress = addresses.find((a) => a.address_type === "billing") || null;
-    const shippingAddress = addresses.find((a) => a.address_type === "shipping") || null;
+    const billingAddress =
+      addresses.find((a) => a.address_type === "billing") || null;
+    const shippingAddress =
+      addresses.find((a) => a.address_type === "shipping") || null;
 
     return {
       id: order.id,
@@ -568,7 +778,8 @@ class OrderService {
       status: this?.formatEnums(order.status),
       payment_status: this?.formatEnums(order.payment_status),
       payment_type: order.payment_type,
-      est_delivery_details: order?.status == "delivered" ? "Delivered" : order.est_delivery_details,
+      est_delivery_details:
+        order?.status == "delivered" ? "Delivered" : order.est_delivery_details,
       items: order.items.map((item) => ({
         id: item.id,
         product_id: item.product_id,
@@ -585,8 +796,12 @@ class OrderService {
             }
           : null,
       })),
-      billing_address: billingAddress ? this.formatAddress(billingAddress) : null,
-      shipping_address: shippingAddress ? this.formatAddress(shippingAddress) : null,
+      billing_address: billingAddress
+        ? this.formatAddress(billingAddress)
+        : null,
+      shipping_address: shippingAddress
+        ? this.formatAddress(shippingAddress)
+        : null,
       subtotal: order.subtotal,
       discount_total: order.discount_total,
       tax_total: order.tax_total,
@@ -594,7 +809,8 @@ class OrderService {
       item_count: itemCount,
       items_count: itemsCount,
       createdAt: this.formatDate(order.createdAt),
-      showCancelButton: Date.now() - new Date(order.createdAt).getTime() < 5 * 60 * 60 * 1000,
+      showCancelButton:
+        Date.now() - new Date(order.createdAt).getTime() < 5 * 60 * 60 * 1000,
     };
   }
 
@@ -604,12 +820,22 @@ class OrderService {
   static formatRawOrder(row) {
     const FIVE_HOURS_MS = 5 * 60 * 60 * 1000;
 
-    const formatAddr = (addr) => (addr ? [addr.street_address, addr.apartment, addr.state_name].filter(Boolean).join(", ") : null);
+    const formatAddr = (addr) =>
+      addr
+        ? [addr.street_address, addr.apartment, addr.state_name]
+            .filter(Boolean)
+            .join(", ")
+        : null;
 
     const items = (row.items || []).map((item) => ({
       ...item,
       line_total: parseFloat(item.line_total).toFixed(2),
-      variant: item.variant ? { ...item.variant, media_path: generateImageUrl(item.variant.media_path) } : null,
+      variant: item.variant
+        ? {
+            ...item.variant,
+            media_path: generateImageUrl(item.variant.media_path),
+          }
+        : null,
     }));
 
     return {
@@ -618,7 +844,8 @@ class OrderService {
       status: this.formatEnums(row.status),
       payment_status: this.formatEnums(row.payment_status),
       payment_type: row.payment_type,
-      est_delivery_details: row.status === "delivered" ? "Delivered" : row.est_delivery_details,
+      est_delivery_details:
+        row.status === "delivered" ? "Delivered" : row.est_delivery_details,
       items,
       billing_address: formatAddr(row.billing_address),
       shipping_address: formatAddr(row.shipping_address),
@@ -629,12 +856,18 @@ class OrderService {
       item_count: items.reduce((s, i) => s + i.quantity, 0),
       items_count: items.length,
       createdAt: this.formatDate(row.createdAt),
-      showCancelButton: Date.now() - new Date(row.createdAt).getTime() < FIVE_HOURS_MS,
+      showCancelButton:
+        Date.now() - new Date(row.createdAt).getTime() < FIVE_HOURS_MS,
     };
   }
 
   static formatAddress = (item) => {
-    const parts = [item?.street_address, item?.apartment, item?.state?.name, item?.state?.country?.name].filter(Boolean);
+    const parts = [
+      item?.street_address,
+      item?.apartment,
+      item?.state?.name,
+      item?.state?.country?.name,
+    ].filter(Boolean);
 
     return parts.join(", ");
   };
@@ -663,11 +896,22 @@ class OrderService {
    * @param {object} [networkFields.gateway_response]
    * @param {object} [transaction]         - Optional Sequelize transaction to enlist in
    */
-  static async updatePaymentStatus(orderId, paymentStatus, networkFields = null, transaction = null) {
+  static async updatePaymentStatus(
+    orderId,
+    paymentStatus,
+    networkFields = null,
+    transaction = null,
+  ) {
     const updateFields = { payment_status: paymentStatus };
     if (networkFields) {
-      const { network_transaction_id, order_reference, payment_method, gateway_response } = networkFields;
-      if (network_transaction_id) updateFields.network_transaction_id = network_transaction_id;
+      const {
+        network_transaction_id,
+        order_reference,
+        payment_method,
+        gateway_response,
+      } = networkFields;
+      if (network_transaction_id)
+        updateFields.network_transaction_id = network_transaction_id;
       if (order_reference) updateFields.order_reference = order_reference;
       if (payment_method) updateFields.payment_method = payment_method;
       if (gateway_response) updateFields.gateway_response = gateway_response;

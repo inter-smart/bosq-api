@@ -89,6 +89,18 @@ class WebhookService {
           Logger.error(`Failed to trigger order confirmation email from webhook for order ${order.id}: ${err.message}`),
         );
       }
+
+      if (resolvedStatus === "failed") {
+        OrderService.sendOrderStatusEmail(order.id, "cancelled").catch((err) =>
+          Logger.error(`[Webhook] Cancellation email failed for order ${order.id}: ${err.message}`),
+        );
+      }
+
+      if (resolvedStatus === "refunded") {
+        OrderService.sendOrderStatusEmail(order.id, "returned").catch((err) =>
+          Logger.error(`[Webhook] Refund email failed for order ${order.id}: ${err.message}`),
+        );
+      }
     } catch (err) {
       if (!transaction.finished) await transaction.rollback();
       throw err;

@@ -245,10 +245,22 @@ class PaymentService {
 
       await transaction.commit();
 
-      // 7. Send confirmation email after successful payment (non-blocking)
+      // 7. Send email after payment resolution (non-blocking)
       if (resolvedStatus === "paid") {
         OrderService.sendOrderConfirmationEmail(order.id).catch((err) =>
           Logger.error(`[VerifyPayment] Email failed for order ${order.id}: ${err.message}`),
+        );
+      }
+
+      if (resolvedStatus === "failed") {
+        OrderService.sendOrderStatusEmail(order.id, "cancelled").catch((err) =>
+          Logger.error(`[VerifyPayment] Cancellation email failed for order ${order.id}: ${err.message}`),
+        );
+      }
+
+      if (resolvedStatus === "refunded") {
+        OrderService.sendOrderStatusEmail(order.id, "returned").catch((err) =>
+          Logger.error(`[VerifyPayment] Refund email failed for order ${order.id}: ${err.message}`),
         );
       }
     } catch (err) {

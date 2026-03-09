@@ -2116,16 +2116,16 @@ class EmailService {
 
     const deliveryText = estDelivery || "To be confirmed";
 
-    let messageText = `This email is to notify you that the status of your recent Bosq order (#\${orderCode}) has been updated to <strong>\${statusFormatted}</strong>. We will keep you posted on any further updates regarding your shipment!\`;
-    
+    let messageText = `This email is to notify you that the status of your recent Bosq order (#${orderCode}) has been updated to <strong>${statusFormatted}</strong>. We will keep you posted on any further updates regarding your shipment!`;
+
     if (status === "cancelled") {
-        messageText = \`This email is to notify you that your recent Bosq order (#\${orderCode}) has been <strong>Cancelled</strong>.\`;
-        if (cancel_reason) {
-            messageText += \`<br><br><strong>Reason for Cancellation:</strong> \${cancel_reason}\`;
-        }
+      messageText = `This email is to notify you that your recent Bosq order (#${orderCode}) has been <strong>Cancelled</strong>.`;
+      if (cancel_reason) {
+        messageText += `<br><br><strong>Reason for Cancellation:</strong> ${cancel_reason}`;
+      }
     }
 
-    const html = \`
+    const html = `
 <!DOCTYPE html>
 <html>
 <head>
@@ -2166,7 +2166,7 @@ class EmailService {
                                             <tbody>
                                                 <td style="text-align:center;padding: 0;">
                                                     <h2 style="font-size: 22px; font-family:  'Open Sans', sans-serif; color: #282828; font-weight: 500; margin: 0px; margin-top: 27px; margin-bottom: 6px; line-height: 25px; text-align: center;">
-                                                        Order \${statusFormatted}
+                                                        Order ${statusFormatted}
                                                     </h2>
                                                 </td>
                                             </tbody>
@@ -2179,9 +2179,9 @@ class EmailService {
                                             <tbody>
                                                 <td style="text-align:center;padding: 0;">
                                                     <h2 style="font-size: 16px; font-family:  'Open Sans', sans-serif; color: #282828; font-weight: 500; text-align: center; margin: 0; margin-bottom: 22px;">
-                                                    Dear \${name}, </h2>
+                                                    Dear ${name}, </h2>
                                                     <p style="font-size: 16px; color: #282828; font-weight: 400; font-family:  'Open Sans', sans-serif; width: 90%; margin: 0 auto 24px; line-height: 25px; text-align: center;">
-                                                        \${messageText}
+                                                        ${messageText}
                                                     </p>
                                                 </td>
                                             </tbody>

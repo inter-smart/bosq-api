@@ -123,6 +123,21 @@ class UsersController {
       return ErrorHandler.handleControllerError(error, res, "UsersController.googleLogin");
     }
   }
+
+  static async refreshToken(req, res) {
+    try {
+      const result = await service.refreshToken(req, res);
+      if (result) {
+        return ApiResponse.success(res, {
+          message: RESPONSE_MESSAGES.SUCCESS.LOGIN_SUCCESSFUL,
+          data: result.data,
+          status: HTTP_STATUS.OK,
+        });
+      }
+    } catch (error) {
+      return ErrorHandler.handleControllerError(error, res, "UsersController.refreshToken");
+    }
+  }
 }
 
 module.exports = UsersController;

@@ -322,11 +322,22 @@ class UsersServices {
 
   static async logout(req, res) {
     try {
-      res.clearCookie("access_token", {
+      const refreshToken = req.cookies?.refresh_token;
+
+      if (refreshToken) {
+        await models.AuthSessions.destroy({ where: { refresh_token: refreshToken } });
+      }
+
+      const isProduction = process.env.NODE_ENV === "production";
+      const cookieOptions = {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-      });
+        secure: isProduction,
+        sameSite: isProduction ? "none" : "lax",
+        path: "/",
+      };
+
+      res.clearCookie("access_token", cookieOptions);
+      res.clearCookie("refresh_token", cookieOptions);
 
       return null;
     } catch (error) {

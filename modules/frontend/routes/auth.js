@@ -20,5 +20,6 @@ router.post("/google-login", Controller.googleLogin);
 router.post("/forgot-password", forgotPasswordRequest, handleValidationErrors, Controller.forgotPassword);
 router.post("/verify-reset-password-otp", verifyOtpValidation, handleValidationErrors, Controller.verifyForgotPasswordOtp);
 router.post("/reset-password", verifyTempToken, createPasswordRequest, handleValidationErrors, Controller.createNewPassword);
+router.post("/refresh-token", Controller.refreshToken);
 
 module.exports = router;

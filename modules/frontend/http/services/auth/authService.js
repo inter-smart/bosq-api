@@ -11,6 +11,7 @@ const isProduction = process.env.NODE_ENV === "production";
 
 const Users = models.Users;
 const Otps = models.Otps;
+const AuthSessions = models.AuthSessions;
 
 const generateOtp = () => {
   return Math.floor(1000 + Math.random() * 9000).toString();
@@ -342,16 +343,43 @@ class UsersService {
       }
 
       const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, {
-        expiresIn: process.env.JWT_EXPIRES_IN || "1d",
+        expiresIn: process.env.JWT_EXPIRES_IN || "15m",
         issuer: process.env.JWT_ISSUER || "BOSQ",
       });
+
+      const refreshToken = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, {
+        expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || "7d",
+        issuer: process.env.JWT_ISSUER || "BOSQ",
+      });
+
+      const refreshExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+      await AuthSessions.create(
+        {
+          user_id: user.id,
+          access_token: token,
+          refresh_token: refreshToken,
+          user_agent: req.headers["user-agent"] || null,
+          ip_address: req.ip || null,
+          expires_at: refreshExpiresAt,
+        },
+        { transaction },
+      );
 
       res.cookie("access_token", token, {
         httpOnly: true,
         secure: isProduction,
         sameSite: isProduction ? "none" : "lax",
         path: "/",
-        maxAge: 24 * 60 * 60 * 1000,
+        maxAge: 10 * 1000,
+      });
+
+      res.cookie("refresh_token", refreshToken, {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: isProduction ? "none" : "lax",
+        path: "/",
+        maxAge: 7 * 24 * 60 * 60 * 1000,
       });
 
       const mobileNumber = `${user.country_code} ${user.mobile}`;
@@ -680,16 +708,43 @@ class UsersService {
 
       // Sign JWT (same pattern as regular login)
       const jwtToken = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, {
-        expiresIn: process.env.JWT_EXPIRES_IN || "1d",
+        expiresIn: process.env.JWT_EXPIRES_IN || "15m",
         issuer: process.env.JWT_ISSUER || "BOSQ",
       });
+
+      const googleRefreshToken = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, {
+        expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || "7d",
+        issuer: process.env.JWT_ISSUER || "BOSQ",
+      });
+
+      const googleRefreshExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+      await AuthSessions.create(
+        {
+          user_id: user.id,
+          access_token: jwtToken,
+          refresh_token: googleRefreshToken,
+          user_agent: req.headers["user-agent"] || null,
+          ip_address: req.ip || null,
+          expires_at: googleRefreshExpiresAt,
+        },
+        { transaction },
+      );
 
       res.cookie("access_token", jwtToken, {
         httpOnly: true,
         secure: isProduction,
         sameSite: isProduction ? "none" : "lax",
         path: "/",
-        maxAge: 24 * 60 * 60 * 1000,
+        maxAge: 10 * 1000,
+      });
+
+      res.cookie("refresh_token", googleRefreshToken, {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: isProduction ? "none" : "lax",
+        path: "/",
+        maxAge: 7 * 24 * 60 * 60 * 1000,
       });
 
       await transaction.commit();
@@ -702,6 +757,71 @@ class UsersService {
         await transaction.rollback();
       }
       console.error("Google Login Error:", error);
+      throw error;
+    }
+  }
+  static async refreshToken(req, res) {
+    try {
+      const refreshToken = req.cookies?.refresh_token;
+
+      if (!refreshToken) {
+        throw ErrorHandler.createError(
+          RESPONSE_MESSAGES.ERROR.TOKEN_INVALID,
+          HTTP_STATUS.UNAUTHORIZED,
+          ERROR_CODES.AUTH_ERROR,
+        );
+      }
+
+      let decoded;
+      try {
+        decoded = jwt.verify(refreshToken, process.env.JWT_SECRET);
+      } catch (err) {
+        // Token is expired or invalid — revoke any matching session
+        await AuthSessions.destroy({ where: { refresh_token: refreshToken } });
+        throw ErrorHandler.createError(
+          RESPONSE_MESSAGES.ERROR.TOKEN_EXPIRED,
+          HTTP_STATUS.UNAUTHORIZED,
+          ERROR_CODES.AUTH_ERROR,
+        );
+      }
+
+      const session = await AuthSessions.findOne({ where: { refresh_token: refreshToken } });
+
+      if (!session) {
+        throw ErrorHandler.createError(
+          RESPONSE_MESSAGES.ERROR.TOKEN_INVALID,
+          HTTP_STATUS.UNAUTHORIZED,
+          ERROR_CODES.AUTH_ERROR,
+        );
+      }
+
+      if (new Date() > new Date(session.expires_at)) {
+        await session.destroy();
+        throw ErrorHandler.createError(
+          RESPONSE_MESSAGES.ERROR.TOKEN_EXPIRED,
+          HTTP_STATUS.UNAUTHORIZED,
+          ERROR_CODES.AUTH_ERROR,
+        );
+      }
+
+      const newAccessToken = jwt.sign({ id: decoded.id, email: decoded.email }, process.env.JWT_SECRET, {
+        expiresIn: process.env.JWT_EXPIRES_IN || "15m",
+        issuer: process.env.JWT_ISSUER || "BOSQ",
+      });
+
+      await session.update({ access_token: newAccessToken });
+
+      res.cookie("access_token", newAccessToken, {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: isProduction ? "none" : "lax",
+        path: "/",
+        maxAge: 10 * 1000,
+      });
+
+      return { data: {} };
+    } catch (error) {
+      console.error("Refresh Token Error:", error);
       throw error;
     }
   }

@@ -34,7 +34,7 @@ const verifyToken = () => {
 
     try {
       // Get token from Authorization header or cookie
-      const token = req.headers.authorization?.split(" ")[1] || req.cookies.access_token;
+      const token = req.headers.authorization?.split(" ")[1] || req.cookies.access_token || req.cookies.refresh_token;
 
 
       if (!token) {

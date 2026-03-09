@@ -67,11 +67,13 @@ class OrderService {
         );
       }
 
+      const isSameAddress = billing === shipping;
+
       const cartBillingAddress = await Model.findOne({
         where: {
           [field]: ownerId,
           status: "active",
-          address_type: "billing",
+          ...(isSameAddress ? {} : { address_type: "billing" }),
           id: billing,
         },
         transaction,

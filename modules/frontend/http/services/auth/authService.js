@@ -317,7 +317,11 @@ class UsersService {
   static async login(req, res) {
     const transaction = await sequelize.transaction();
     try {
-      const { email, password } = req.body;
+      const { email, password, rememberMe } = req.body;
+      const accessExpiry = rememberMe ? (process.env.JWT_EXPIRES_IN_EXTENDED || "1d") : (process.env.JWT_EXPIRES_IN || "15m");
+      const refreshExpiry = rememberMe ? (process.env.JWT_REFRESH_EXPIRES_IN_EXTENDED || "30d") : (process.env.JWT_REFRESH_EXPIRES_IN || "7d");
+      const accessMaxAge = rememberMe ? 24 * 60 * 60 * 1000 : 15 * 60 * 1000;
+      const refreshMaxAge = rememberMe ? 30 * 24 * 60 * 60 * 1000 : 7 * 24 * 60 * 60 * 1000;
       const user = await Users.findOne({
         where: { email },
         attributes: ["id", "email", "password", "name", "country_code", "mobile"],
@@ -343,16 +347,16 @@ class UsersService {
       }
 
       const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, {
-        expiresIn: process.env.JWT_EXPIRES_IN || "15m",
+        expiresIn: accessExpiry,
         issuer: process.env.JWT_ISSUER || "BOSQ",
       });
 
       const refreshToken = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, {
-        expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || "7d",
+        expiresIn: refreshExpiry,
         issuer: process.env.JWT_ISSUER || "BOSQ",
       });
 
-      const refreshExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+      const refreshExpiresAt = new Date(Date.now() + refreshMaxAge);
 
       await AuthSessions.create(
         {
@@ -371,7 +375,7 @@ class UsersService {
         secure: isProduction,
         sameSite: isProduction ? "none" : "lax",
         path: "/",
-        maxAge: 10 * 1000,
+        maxAge: accessMaxAge,
       });
 
       res.cookie("refresh_token", refreshToken, {
@@ -379,7 +383,7 @@ class UsersService {
         secure: isProduction,
         sameSite: isProduction ? "none" : "lax",
         path: "/",
-        maxAge: 7 * 24 * 60 * 60 * 1000,
+        maxAge: refreshMaxAge,
       });
 
       const mobileNumber = `${user.country_code} ${user.mobile}`;
@@ -736,7 +740,7 @@ class UsersService {
         secure: isProduction,
         sameSite: isProduction ? "none" : "lax",
         path: "/",
-        maxAge: 10 * 1000,
+        maxAge: 15 * 60 * 1000,
       });
 
       res.cookie("refresh_token", googleRefreshToken, {
@@ -816,7 +820,7 @@ class UsersService {
         secure: isProduction,
         sameSite: isProduction ? "none" : "lax",
         path: "/",
-        maxAge: 10 * 1000,
+        maxAge: 15 * 60 * 1000,
       });
 
       return { data: {} };

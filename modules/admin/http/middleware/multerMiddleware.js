@@ -47,14 +47,14 @@ const createUploadMiddleware = (subfolder, fields) => {
   const upload = multer({
     storage: getStorage(subfolder),
     fileFilter: (req, file, cb) => {
-      const allowedTypes = /jpeg|jpg|png|svg|webp|mp4|mov|avi|mkv|webm/;
+      const allowedTypes = /jpeg|jpg|png|svg|webp|mp4|mov|avi|mkv|webm|pdf/;
       const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
       const mimetype = allowedTypes.test(file.mimetype);
 
       if (extname && mimetype) {
         return cb(null, true);
       }
-      cb(new CustomError("Only image files (jpeg, jpg, png, svg, webp) are allowed", 400, "INVALID_FILE_TYPE"));
+      cb(new CustomError("Only image, video, or PDF files are allowed", 400, "INVALID_FILE_TYPE"));
     },
     limits: {
       fileSize: 10 * 1024 * 1024, // 5MB max size

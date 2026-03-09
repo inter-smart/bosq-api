@@ -38,7 +38,10 @@ module.exports = (sequelize) => {
         type: DataTypes.STRING(255),
         allowNull: false,
       },
-
+      brochure: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
+      },
       slug: {
         type: DataTypes.STRING(255),
         allowNull: false,

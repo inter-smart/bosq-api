@@ -66,6 +66,12 @@ exports.validationRequestPost = [
     .isString()
     .withMessage("Media path must be a string"),
 
+  /* ---------- BROCHURE ---------- */
+  body("brochure")
+    .optional()
+    .isString()
+    .withMessage("Brochure must be a string"),
+
   /* ---------- STATUS ---------- */
   body("status")
     .optional()

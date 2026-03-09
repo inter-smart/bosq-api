@@ -108,7 +108,7 @@ class ProductBaseController {
       const newSlug = await ProductBaseController.generateUniqueSlug(title);
       req.body.slug = newSlug;
 
-      const fileFields = ["media_path"];
+      const fileFields = ["media_path", "brochure"];
       handleFileUploadStore(req, fileFields);
 
       const { selling_points, sectors, ...productBaseData } = req.body;
@@ -203,7 +203,7 @@ class ProductBaseController {
         req.body.slug = newSlug;
       }
 
-      const fileFields = ["media_path"];
+      const fileFields = ["media_path", "brochure"];
       await handleFileUploadUpdate(req, data, fileFields);
 
       const { selling_points, sectors, ...productBaseData } = req.body;

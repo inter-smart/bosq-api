@@ -5,7 +5,10 @@ const { createUploadMiddleware } = require("../../http/middleware/multerMiddlewa
 const authMiddleware = require("../../http/middleware/authMiddleware");
 
 // Define upload fields
-const fields = [{ name: "media_path", maxCount: 1 }];
+const fields = [
+  { name: "media_path", maxCount: 1 },
+  { name: "brochure", maxCount: 1 },
+];
 
 // Create upload middleware with fields
 const upload = createUploadMiddleware("product-base", fields);

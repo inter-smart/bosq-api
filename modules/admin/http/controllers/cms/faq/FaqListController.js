@@ -26,15 +26,14 @@ class FaqListController {
     try {
 
       const whereClause = {};
-      const { product, type, faq_category } = req.query;
+      const { product_variant, type, faq_category } = req.query;
       // Build where clause for filtering
       if (faq_category) {
         whereClause.faq_category_id = parseInt(faq_category, 10);
       }
 
-
-      if(product){
-        whereClause.product_id = parseInt(product, 10);
+      if (product_variant) {
+        whereClause.product_variant_id = parseInt(product_variant, 10);
       }
 
       if (type) {
@@ -48,7 +47,6 @@ class FaqListController {
           ["createdAt", "DESC"],
         ],
         searchFields: ["question", "answer"],
-        
         include: [
           {
             model: FaqCategoryModel,
@@ -56,8 +54,9 @@ class FaqListController {
             attributes: ["id", "title", "status"],
           },
           {
-            association: "product", attributes: ["id", "title"]
-          }
+            association: "product_variant",
+            attributes: ["id", "title", "title_ar", "sku"],
+          },
         ],
       });
 
@@ -85,10 +84,9 @@ class FaqListController {
     const transaction = await sequelize.transaction();
 
     try {
-      const { type, faq_category_id, product_id, ...rest } = req.body;
+      const { type, faq_category_id, product_variant_id, ...rest } = req.body;
 
       // Verify category exists
-
       if (faq_category_id) {
         const categoryExists = await FaqCategoryModel.findByPk(faq_category_id);
         if (!categoryExists) {
@@ -104,20 +102,19 @@ class FaqListController {
         });
       }
 
-      if (type === "product" && !product_id) {
+      if (type === "product" && !product_variant_id) {
         return res.status(422).json({
           success: false,
-          message: "Product is required for product FAQs",
+          message: "Product variant is required for product FAQs",
         });
       }
 
-      if (type === "general" && product_id) {
+      if (type === "general" && product_variant_id) {
         return res.status(422).json({
           success: false,
-          message: "Product is not allowed for general FAQs",
+          message: "Product variant is not allowed for general FAQs",
         });
       }
-
 
       // Create data with transaction
       const data = await DataModel.create(
@@ -125,7 +122,7 @@ class FaqListController {
           ...rest,
           type,
           faq_category_id: type === "general" ? faq_category_id : null,
-          product_id: type === "product" ? product_id : null,
+          product_variant_id: type === "product" ? product_variant_id : null,
         },
         { transaction },
       );
@@ -205,9 +202,8 @@ class FaqListController {
         return sendNotFoundError(res, "Data");
       }
 
-      const { type, faq_category_id, product_id, ...rest } = req.body;
+      const { type, faq_category_id, product_variant_id, ...rest } = req.body;
 
-      // 🔐 SAME RULES APPLY
       if (type === "general" && !faq_category_id) {
         return res.status(422).json({
           success: false,
@@ -215,38 +211,18 @@ class FaqListController {
         });
       }
 
-      if (type === "product" && !product_id) {
+      if (type === "product" && !product_variant_id) {
         return res.status(422).json({
           success: false,
-          message: "Product is required for product FAQs",
+          message: "Product variant is required for product FAQs",
         });
       }
 
-      if (type === "general" && product_id) {
+      if (type === "general" && product_variant_id) {
         return res.status(422).json({
           success: false,
-          message: "Product not allowed for general FAQs",
+          message: "Product variant not allowed for general FAQs",
         });
-      }
-
-      const faq = await models.FaqList.findByPk(id);
-
-      if (!faq) {
-        return res.status(404).json({
-          success: false,
-          message: "FAQ not found",
-        });
-      }
-
-      // Verify category exists if category is being updated
-      if (req.body.category) {
-        const categoryExists = await FaqCategoryModel.findByPk(
-          req.body.category,
-        );
-        if (!categoryExists) {
-          await transaction.rollback();
-          return sendNotFoundError(res, "Category");
-        }
       }
 
       await data.update(
@@ -254,7 +230,7 @@ class FaqListController {
           ...rest,
           type,
           faq_category_id: type === "general" ? faq_category_id : null,
-          product_id: type === "product" ? product_id : null,
+          product_variant_id: type === "product" ? product_variant_id : null,
         },
         { transaction },
       );
@@ -305,31 +281,124 @@ class FaqListController {
     }
   }
 
-  static async getFaqDropDown(req,res){
+  static async getFaqDropDown(req, res) {
     try {
-
       const [products, category] = await Promise.all([
-        await models.ProductBase.findAll({
+        models.ProductBase.findAll({
           where: { status: true },
-          attributes: ['id', 'title'],
-          order: [['title', 'ASC']],
+          attributes: ["id", "title"],
+          order: [["title", "ASC"]],
         }),
-        await models.FaqCategory.findAll({
+        models.FaqCategory.findAll({
           where: { status: true },
-          attributes: ['id', 'title'],
-          order: [['title', 'ASC']],
-        })
-      ])
+          attributes: ["id", "title"],
+          order: [["title", "ASC"]],
+        }),
+      ]);
 
-      const result = {
-        products: products,
-        categories: category
+      sendSuccessResponse(res, { products, categories: category }, "Dropdown data retrieved successfully");
+    } catch (error) {
+      console.error("FAQ dropdown retrieval error:", error);
+      sendErrorResponse(res, error);
+    }
+  }
+
+  static async getFaqModelsDropdown(req, res) {
+    try {
+      const { base_id } = req.query;
+      if (!base_id) {
+        return res.status(422).json({ success: false, message: "base_id is required" });
       }
 
-      sendSuccessResponse(res, result, "Product list retrieved successfully");
+      const productModels = await models.ProductModels.findAll({
+        where: { product_id: parseInt(base_id, 10), status: true },
+        attributes: ["id", "title", "title_ar", "slug"],
+        order: [["title", "ASC"]],
+      });
+
+      sendSuccessResponse(res, { models: productModels }, "Models retrieved successfully");
+    } catch (error) {
+      console.error("FAQ models dropdown error:", error);
+      sendErrorResponse(res, error);
     }
-    catch (error) {
-      console.error("Product list retrieval error:", error);
+  }
+
+  static async getFaqCategoriesDropdown(req, res) {
+    try {
+      const { model_id } = req.query;
+      if (!model_id) {
+        return res.status(422).json({ success: false, message: "model_id is required" });
+      }
+
+      const variantIds = await models.ProductVariants.findAll({
+        where: { product_model_id: parseInt(model_id, 10), status: true },
+        attributes: ["id"],
+        raw: true,
+      });
+
+      const ids = variantIds.map((v) => v.id);
+      if (ids.length === 0) {
+        return sendSuccessResponse(res, { categories: [] }, "No variants found");
+      }
+
+      const { Op } = require("sequelize");
+
+      const junctionRows = await models.ProductVariantCategories.findAll({
+        where: { product_variant_id: { [Op.in]: ids } },
+        attributes: ["category_id"],
+        group: ["category_id"],
+        raw: true,
+      });
+
+      const categoryIds = junctionRows.map((r) => r.category_id);
+
+      const categories = categoryIds.length
+        ? await models.ProductCategory.findAll({
+            where: { id: { [Op.in]: categoryIds } },
+            attributes: ["id", "name", "name_ar", "slug"],
+            order: [["name", "ASC"]],
+          })
+        : [];
+
+      sendSuccessResponse(res, { categories }, "Categories retrieved successfully");
+    } catch (error) {
+      console.error("FAQ categories dropdown error:", error);
+      sendErrorResponse(res, error);
+    }
+  }
+
+  static async getFaqVariantsDropdown(req, res) {
+    try {
+      const { model_id, category_id } = req.query;
+      if (!model_id) {
+        return res.status(422).json({ success: false, message: "model_id is required" });
+      }
+
+      const whereClause = {
+        product_model_id: parseInt(model_id, 10),
+        status: true,
+      };
+
+      if (category_id) {
+        const { Op, literal } = require("sequelize");
+        whereClause[Op.and] = [
+          literal(`EXISTS (
+            SELECT 1 FROM "product_variant_categories" pvc
+            WHERE pvc."product_variant_id" = "ProductVariants"."id"
+              AND pvc."category_id" = ${parseInt(category_id, 10)}
+          )`),
+        ];
+      }
+
+      const variants = await models.ProductVariants.findAll({
+        where: whereClause,
+        attributes: ["id", "title", "title_ar", "sku", "design_title", "design_title_ar"],
+        order: [["sort_order", "ASC"], ["id", "ASC"]],
+      });
+
+      sendSuccessResponse(res, { variants }, "Variants retrieved successfully");
+    } catch (error) {
+      console.error("FAQ variants dropdown error:", error);
       sendErrorResponse(res, error);
     }
   }

@@ -9,7 +9,7 @@ const transformProductData = (productData, startFromVariant = false) => {
 
   // Handle case when query starts from variant
   if (startFromVariant) {
-    const { productModel, variant_images = [], attribute_values = [], categories = [], ...variant } = jsonData;
+    const { productModel, variant_images = [], attribute_values = [], categories = [], projectImages = [], faqs = [], ...variant } = jsonData;
     const initialModel = productModel || {};
 
     const attributesMap = {};
@@ -46,16 +46,40 @@ const transformProductData = (productData, startFromVariant = false) => {
 
     const variantData = {
       id: variant?.id,
-      title: variant?.title,
-      title_ar: variant?.title_ar,
-      design_title_ar: variant?.design_title_ar,
-      design_title: variant?.design_title,
+      title: {
+        title: variant?.title,
+        title_ar: variant?.title_ar,
+      },
+      design_title: {
+        design_title_ar: variant?.design_title_ar,
+        design_title: variant?.design_title,
+      },
       isWishlisted: false,
       variant_image: generateImageUrl(variant?.media_path),
       hover_image: generateImageUrl(variant?.hover_media_path),
       slug: variant?.sku,
       price: variant?.price,
       stock: variant?.stock,
+      is_featured: variant?.is_featured,
+      brochure: generateImageUrl(variant?.brochure),
+      enhance: {
+        enhance: variant?.enhance_title || "",
+        enhance_ar: variant?.enhance_title_ar || "",
+      },
+      description: {
+        description: variant?.description || "",
+        description_ar: variant?.description_ar || "",
+      },
+      details: {
+        details: variant?.details || "",
+        details_ar: variant?.details_ar || "",
+        details_points: variant?.details_points || "",
+        details_points_ar: variant?.details_points_ar || "",
+      },
+      additional_details: {
+        additional_details_en: variant?.additional_details || "",
+        additional_details_ar: variant?.additional_details_ar || "",
+      },
       model_id: initialModel?.id,
       model_media: generateImageUrl(initialModel?.media_path),
       model_slug: initialModel?.slug,
@@ -75,6 +99,19 @@ const transformProductData = (productData, startFromVariant = false) => {
         thumbnail_path: generateImageUrl(img?.thumbnail_path),
         is_primary: index === 0,
         sort_order: img?.sort_order,
+      })),
+      project_images: projectImages.map((img) => ({
+        id: img?.id,
+        media_path: generateImageUrl(img?.media_path),
+        media_alt: img?.media_alt,
+        media_alt_ar: img?.media_alt_ar,
+      })),
+      faqs: faqs.map((faq) => ({
+        id: faq?.id,
+        question: faq?.question,
+        answer: faq?.answer,
+        question_ar: faq?.question_ar,
+        answer_ar: faq?.answer_ar,
       })),
     };
 
@@ -136,16 +173,35 @@ const transformProductData = (productData, startFromVariant = false) => {
 
   const variantData = {
     id: variant?.id,
-    title: variant?.title,
-    title_ar: variant?.title_ar,
-    design_title_ar: variant?.design_title_ar,
-    design_title: variant?.design_title,
+    title: {
+      title: variant?.title || "",
+      title_ar: variant?.title_ar || "",
+    },
+    design_title: {
+      design_title_ar: variant?.design_title_ar || "",
+      design_title: variant?.design_title || "",
+    },
     isWishlisted: false,
     variant_image: generateImageUrl(variant?.media_path),
     hover_image: generateImageUrl(variant?.hover_media_path),
     slug: variant?.sku,
     price: variant?.price,
     stock: variant?.stock,
+    brochure: generateImageUrl(variant?.brochure),
+    description: {
+      description: variant?.description || "",
+      description_ar: variant?.description_ar || "",
+    },
+    details: {
+      details: variant?.details || "",
+      details_ar: variant?.details_ar || "",
+      details_points: variant?.details_points || "",
+      details_points_ar: variant?.details_points_ar || "",
+    },
+    additional_details: {
+      additional_details_en: variant?.additional_details || "",
+      additional_details_ar: variant?.additional_details_ar || "",
+    },
     model_id: initialModel?.id,
     model_media: generateImageUrl(initialModel?.media_path),
     model_slug: initialModel?.slug,
@@ -159,6 +215,19 @@ const transformProductData = (productData, startFromVariant = false) => {
       thumbnail_path: generateImageUrl(img?.thumbnail_path),
       is_primary: index === 0,
       sort_order: img?.sort_order,
+    })),
+    project_images: projectImages.map((img) => ({
+      id: img?.id,
+      media_path: generateImageUrl(img?.media_path),
+      media_alt: img?.media_alt,
+      media_alt_ar: img?.media_alt_ar,
+    })),
+    faqs: faqs.map((faq) => ({
+      id: faq?.id,
+      question: faq?.question,
+      answer: faq?.answer,
+      question_ar: faq?.question_ar,
+      answer_ar: faq?.answer_ar,
     })),
   };
 
@@ -218,16 +287,35 @@ const transformModelData = (model) => {
 
   const modelWiseData = {
     id: variant?.id,
-    title: variant?.title,
-    title_ar: variant?.title_ar,
-    design_title_ar: variant?.design_title_ar,
-    design_title: variant?.design_title,
+    title: {
+      title: variant?.title,
+      title_ar: variant?.title_ar,
+    },
+    design_title: {
+      design_title_ar: variant?.design_title_ar || "",
+      design_title: variant?.design_title || "",
+    },
     isWishlisted: false,
     slug: variant?.sku,
     variant_image: generateImageUrl(variant?.media_path),
     hover_image: generateImageUrl(variant?.hover_media_path),
     price: variant?.price,
     stock: variant?.stock,
+    brochure: generateImageUrl(variant?.brochure),
+    description: {
+      description: variant?.description || "",
+      description_ar: variant?.description_ar || "",
+    },
+    details: {
+      details: variant?.details || "",
+      details_ar: variant?.details_ar || "",
+      details_points: variant?.details_points || "",
+      details_points_ar: variant?.details_points_ar || "",
+    },
+    additional_details: {
+      additional_details_en: variant?.additional_details || "",
+      additional_details_ar: variant?.additional_details_ar || "",
+    },
     model_id: initialModel?.id,
     model_media: generateImageUrl(initialModel?.media_path),
     model_slug: initialModel?.slug,
@@ -247,6 +335,19 @@ const transformModelData = (model) => {
       thumbnail_path: generateImageUrl(img?.thumbnail_path),
       is_primary: index === 0,
       sort_order: img.sort_order,
+    })),
+    project_images: projectImages.map((img) => ({
+      id: img?.id,
+      media_path: generateImageUrl(img?.media_path),
+      media_alt: img?.media_alt,
+      media_alt_ar: img?.media_alt_ar,
+    })),
+    faqs: faqs.map((faq) => ({
+      id: faq?.id,
+      question: faq?.question,
+      answer: faq?.answer,
+      question_ar: faq?.question_ar,
+      answer_ar: faq?.answer_ar,
     })),
   };
 
@@ -325,24 +426,7 @@ const generateQueryParams = (variantSku, attributes = []) => {
 const generateProductBasedata = (productData) => {
   const data = productData?.toJSON?.() || {};
 
-  const { faqs = [], projectImages = [], sellingPoints = [], variants = [], category, ...product } = data;
-
-  const faqsData =
-    faqs?.map((faq) => ({
-      id: faq?.id,
-      question: faq?.question,
-      answer: faq?.answer,
-      question_ar: faq?.question_ar,
-      answer_ar: faq?.answer_ar,
-    })) || [];
-
-  const projectImagesData =
-    projectImages?.map((img) => ({
-      id: img?.id,
-      media_path: generateImageUrl?.(img?.media_path),
-      media_alt: img?.media_alt,
-      media_alt_ar: img?.media_alt_ar,
-    })) || [];
+  const { sellingPoints = [], variants = [], category, ...product } = data;
 
   const sellingPointsData =
     sellingPoints?.map((sp) => ({
@@ -357,23 +441,9 @@ const generateProductBasedata = (productData) => {
     title: product?.title,
     title_ar: product?.title_ar,
     slug: product?.slug,
-    description: product?.description,
-    description_ar: product?.description_ar,
-    enhance_title: product?.enhance_title,
-    enhance_title_ar: product?.enhance_title_ar,
-    details: {
-      details: product?.details,
-      details_ar: product?.details_ar,
-      details_points: product?.details_points,
-      details_points_ar: product?.details_points_ar,
-    },
-    additional_details: product?.additional_details,
-    additional_details_ar: product?.additional_details_ar,
     category_name: category?.name,
     category_name_ar: category?.name_ar,
     selling_points: sellingPointsData,
-    project_images: projectImagesData,
-    faqs: faqsData,
   };
 
   return productBaseData;

@@ -41,13 +41,13 @@ module.exports = (sequelize) => {
         },
       },
 
-      product_id: {
+      product_variant_id: {
         type: DataTypes.INTEGER,
         allowNull: true,
         references: {
-          model: "product_base",
+          model: "product_variants",
           key: "id",
-          onDelete: "CASECADE",
+          onDelete: "CASCADE",
         },
       },
 
@@ -80,9 +80,9 @@ module.exports = (sequelize) => {
       onDelete: "CASCADE",
     });
 
-    FaqLists.belongsTo(models.ProductBase, {
-      foreignKey: "product_id",
-      as: "product",
+    FaqLists.belongsTo(models.ProductVariants, {
+      foreignKey: "product_variant_id",
+      as: "product_variant",
       onDelete: "CASCADE",
     });
   };

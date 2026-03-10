@@ -10,25 +10,7 @@ const {
   isItemWishListed,
 } = require("./dataManipulations/product/product");
 
-const productAttributes = [
-  "id",
-  "title",
-  "title_ar",
-  "slug",
-  "description",
-  "description_ar",
-  "enhance_title",
-  "enhance_title_ar",
-  "details",
-  "details_ar",
-  "details_points",
-  "details_points_ar",
-  "additional_details",
-  "additional_details_ar",
-  "media_path",
-  "sort_order",
-  "status",
-];
+const productAttributes = ["id", "title", "title_ar", "slug", "media_path", "sort_order", "status"];
 
 class ProductServiceHelpers {
   static async getProductBaseData(slug) {
@@ -52,8 +34,6 @@ class ProductServiceHelpers {
           required: false,
           through: { attributes: [] },
         },
-        { association: "projectImages", attributes: ["id", "media_path", "media_alt", "media_alt_ar"] },
-        { association: "faqs", attributes: ["id", "question", "answer", "question_ar", "answer_ar"] },
       ],
     });
 

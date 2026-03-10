@@ -66,7 +66,6 @@ class ProductBaseController {
           { association: "sellingPoints", attributes: ["id", "name", "slug"], through: { attributes: [] } },
           { association: "models", attributes: ["id", "code", "title", "slug"] },
           { association: "sectors", attributes: ["id", "name", "slug"], through: { attributes: [] } },
-          { association: "projectImages", attributes: ["id", "media_path", "media_alt", "media_alt_ar"] },
         ],
       });
 
@@ -108,7 +107,7 @@ class ProductBaseController {
       const newSlug = await ProductBaseController.generateUniqueSlug(title);
       req.body.slug = newSlug;
 
-      const fileFields = ["media_path", "brochure"];
+      const fileFields = ["media_path"];
       handleFileUploadStore(req, fileFields);
 
       const { selling_points, sectors, ...productBaseData } = req.body;
@@ -203,7 +202,7 @@ class ProductBaseController {
         req.body.slug = newSlug;
       }
 
-      const fileFields = ["media_path", "brochure"];
+      const fileFields = ["media_path"];
       await handleFileUploadUpdate(req, data, fileFields);
 
       const { selling_points, sectors, ...productBaseData } = req.body;

@@ -20,9 +20,64 @@ module.exports = (sequelize) => {
         },
       },
 
-      is_primary: {
+      is_featured: {
         type: DataTypes.BOOLEAN,
         defaultValue: false,
+      },
+
+      brochure: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
+      },
+
+      description: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
+      },
+
+      description_ar: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
+      },
+
+      details: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+
+      details_ar: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+
+      details_points: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+
+      details_points_ar: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+
+      additional_details: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+
+      additional_details_ar: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+
+      enhance_title: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
+      },
+
+      enhance_title_ar: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
       },
 
       sku: {
@@ -185,6 +240,17 @@ module.exports = (sequelize) => {
       foreignKey: "variant_id",
       otherKey: "related_variant_id",
       as: "boughtTogetherVariants",
+    });
+
+    ProductVariants.hasMany(models.ProductProjectImage, {
+      foreignKey: "product_variant_id",
+      as: "projectImages",
+      onDelete: "CASCADE",
+    });
+
+    ProductVariants.hasMany(models.FaqList, {
+      foreignKey: "product_variant_id",
+      as: "faqs",
     });
   };
 

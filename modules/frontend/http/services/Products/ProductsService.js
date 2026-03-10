@@ -44,6 +44,18 @@ class ProductsService {
             "design_title_ar",
             "design_title",
             "hover_media_path",
+            "is_featured",
+            "brochure",
+            "description",
+            "description_ar",
+            "details",
+            "details_ar",
+            "details_points",
+            "details_points_ar",
+            "additional_details",
+            "additional_details_ar",
+            "enhance_title",
+            "enhance_title_ar",
           ],
           include: [
             {
@@ -61,17 +73,14 @@ class ProductsService {
               association: "attribute_values",
               attributes: ["id", "attribute_id", "value", "value_ar", "slug", "media_path"],
               through: { attributes: [] },
-              include: [
-                {
-                  association: "attribute",
-                  attributes: ["id", "name", "name_ar", "code", "slug"],
-                },
-              ],
+              include: [{ association: "attribute", attributes: ["id", "name", "name_ar", "code", "slug"] }],
             },
             {
               association: "productModel",
               attributes: ["id", "code", "title", "base_price", "slug", "media_path", "title_ar"],
             },
+            { association: "projectImages", attributes: ["id", "media_path", "media_alt", "media_alt_ar"], where: { status: true }, required: false },
+            { association: "faqs", attributes: ["id", "question", "answer", "question_ar", "answer_ar"], where: { status: true }, required: false },
           ],
         });
 
@@ -98,6 +107,18 @@ class ProductsService {
                   "hover_media_path",
                   "design_title_ar",
                   "design_title",
+                  "is_featured",
+                  "brochure",
+                  "description",
+                  "description_ar",
+                  "details",
+                  "details_ar",
+                  "details_points",
+                  "details_points_ar",
+                  "additional_details",
+                  "additional_details_ar",
+                  "enhance_title",
+                  "enhance_title_ar",
                 ],
                 required: true,
                 include: [
@@ -108,20 +129,24 @@ class ProductsService {
                     through: { attributes: [] },
                     required: false,
                   },
-                  {
-                    association: "variant_images",
-                    attributes: ["id", "media_path", "media_type", "is_primary", "sort_order"],
-                  },
+                  { association: "variant_images", attributes: ["id", "media_path", "media_type", "is_primary", "sort_order"] },
                   {
                     association: "attribute_values",
                     attributes: ["id", "attribute_id", "value", "value_ar", "slug", "media_path"],
                     through: { attributes: [] },
-                    include: [
-                      {
-                        association: "attribute",
-                        attributes: ["id", "name", "name_ar", "code", "slug"],
-                      },
-                    ],
+                    include: [{ association: "attribute", attributes: ["id", "name", "name_ar", "code", "slug"] }],
+                  },
+                  {
+                    association: "projectImages",
+                    attributes: ["id", "media_path", "media_alt", "media_alt_ar"],
+                    where: { status: true },
+                    required: false,
+                  },
+                  {
+                    association: "faqs",
+                    attributes: ["id", "question", "answer", "question_ar", "answer_ar"],
+                    where: { status: true },
+                    required: false,
                   },
                 ],
               },
@@ -186,6 +211,18 @@ class ProductsService {
               "hover_media_path",
               "design_title_ar",
               "design_title",
+              "is_featured",
+              "brochure",
+              "description",
+              "description_ar",
+              "details",
+              "details_ar",
+              "details_points",
+              "details_points_ar",
+              "additional_details",
+              "additional_details_ar",
+              "enhance_title",
+              "enhance_title_ar",
             ],
             include: [
               {
@@ -195,26 +232,25 @@ class ProductsService {
                 through: { attributes: [] },
                 required: false,
               },
-              {
-                association: "variant_images",
-                attributes: ["id", "media_path", "media_type", "is_primary", "sort_order", "thumbnail_path"],
-              },
+              { association: "variant_images", attributes: ["id", "media_path", "media_type", "is_primary", "sort_order", "thumbnail_path"] },
               {
                 association: "attribute_values",
                 attributes: ["id", "attribute_id", "value", "value_ar", "slug", "media_path"],
                 through: { attributes: [] },
-                include: [
-                  {
-                    association: "attribute",
-                    attributes: ["id", "name", "name_ar", "code", "slug"],
-                  },
-                ],
+                include: [{ association: "attribute", attributes: ["id", "name", "name_ar", "code", "slug"] }],
               },
               {
                 association: "productModel",
                 attributes: ["id", "code", "title", "base_price", "slug", "media_path"],
                 where: isModelAndFilters ? { product_id: baseData?.id, slug: model } : undefined,
               },
+              {
+                association: "projectImages",
+                attributes: ["id", "media_path", "media_alt", "media_alt_ar"],
+                where: { status: true },
+                required: false,
+              },
+              { association: "faqs", attributes: ["id", "question", "answer", "question_ar", "answer_ar"], where: { status: true }, required: false },
             ],
           });
 

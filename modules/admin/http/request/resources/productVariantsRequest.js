@@ -31,6 +31,24 @@ exports.validationRequestPost = [
   /* ---------- STATUS ---------- */
   body("status").optional({ nullable: true }).isBoolean().withMessage("Status must be true or false"),
 
+  /* ---------- IS FEATURED ---------- */
+  body("is_featured").optional({ nullable: true }).isBoolean().withMessage("is_featured must be true or false"),
+
+  /* ---------- BROCHURE ---------- */
+  body("brochure").optional({ nullable: true }).isString().withMessage("Brochure must be a string"),
+
+  /* ---------- DESCRIPTION ---------- */
+  body("description").optional({ nullable: true }).isString().withMessage("Description must be a string"),
+  body("description_ar").optional({ nullable: true }).isString().withMessage("Description (Arabic) must be a string"),
+
+  /* ---------- DETAILS ---------- */
+  body("details").optional({ nullable: true }).isString().withMessage("Details must be a string"),
+  body("details_ar").optional({ nullable: true }).isString().withMessage("Details (Arabic) must be a string"),
+  body("details_points").optional({ nullable: true }).isString().withMessage("Details points must be a string"),
+  body("details_points_ar").optional({ nullable: true }).isString().withMessage("Details points (Arabic) must be a string"),
+  body("additional_details").optional({ nullable: true }).isString().withMessage("Additional details must be a string"),
+  body("additional_details_ar").optional({ nullable: true }).isString().withMessage("Additional details (Arabic) must be a string"),
+
   /* ---------- CATEGORY IDS ---------- */
   body("category_ids")
     .optional({ nullable: true })

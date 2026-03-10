@@ -20,60 +20,9 @@ module.exports = (sequelize) => {
         allowNull: false,
       },
 
-      enhance_title: {
-        type: DataTypes.STRING(255),
-        allowNull: true,
-      },
-
-      enhance_title_ar: {
-        type: DataTypes.STRING(255),
-        allowNull: true,
-      },
-
-      description: {
-        type: DataTypes.STRING(255),
-        allowNull: false,
-      },
-      description_ar: {
-        type: DataTypes.STRING(255),
-        allowNull: false,
-      },
-      brochure: {
-        type: DataTypes.STRING(255),
-        allowNull: true,
-      },
       slug: {
         type: DataTypes.STRING(255),
         allowNull: false,
-      },
-
-      details: {
-        type: DataTypes.TEXT,
-        allowNull: true,
-      },
-
-      details_ar: {
-        type: DataTypes.TEXT,
-        allowNull: true,
-      },
-
-      details_points: {
-        type: DataTypes.TEXT,
-        allowNull: true,
-      },
-
-      details_points_ar: {
-        type: DataTypes.TEXT,
-        allowNull: true,
-      },
-
-      additional_details: {
-        type: DataTypes.TEXT,
-        allowNull: true,
-      },
-      additional_details_ar: {
-        type: DataTypes.TEXT,
-        allowNull: true,
       },
 
       media_path: {
@@ -126,16 +75,6 @@ module.exports = (sequelize) => {
     ProductBase.hasMany(models.ProductModels, {
       foreignKey: "product_id",
       as: "models",
-    });
-
-    ProductBase.hasMany(models.ProductProjectImage, {
-      foreignKey: "product_id",
-      as: "projectImages",
-    });
-
-    ProductBase.hasMany(models.FaqList, {
-      foreignKey: "product_id",
-      as: "faqs",
     });
 
     ProductBase.hasMany(models.Coupons, {

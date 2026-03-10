@@ -6,6 +6,9 @@ const authMiddleware = require("../../../http/middleware/authMiddleware");
 // router.use(authMiddleware(["admin"]));
 
 router.get("/dropdown", Controller.getFaqDropDown);
+router.get("/dropdown/models", Controller.getFaqModelsDropdown);
+router.get("/dropdown/categories", Controller.getFaqCategoriesDropdown);
+router.get("/dropdown/variants", Controller.getFaqVariantsDropdown);
 router.get("/", Controller.index);
 
 router.get("/:id", Controller.show);

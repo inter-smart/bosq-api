@@ -1,6 +1,9 @@
 const { body, param } = require("express-validator");
 
 exports.validationRequestPost = [
+  // PRODUCT VARIANT ID (for product FAQs)
+  body("product_variant_id").optional({ nullable: true }).isInt({ min: 1 }).withMessage("product_variant_id must be a positive integer"),
+
   // QUESTION
   body("question")
     .notEmpty()

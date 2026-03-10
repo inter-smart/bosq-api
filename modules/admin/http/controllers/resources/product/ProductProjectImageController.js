@@ -24,11 +24,11 @@ class ProductProjectImageController {
   static async index(req, res) {
     try {
 
-      const {product_id} = req.query;
+      const { product_variant_id } = req.query;
 
       const result = await paginate(DataModel, req, {
         where: {
-          product_id
+          product_variant_id,
         },
         order: [
           ["sort_order", "ASC"],

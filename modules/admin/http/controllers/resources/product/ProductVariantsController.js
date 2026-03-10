@@ -4,7 +4,7 @@ const { paginate } = require("../../../traits/datatablePaginationHelper");
 const { sendSuccessResponse, sendErrorResponse, sendValidationError, sendNotFoundError } = require("../../../traits/responseHandler");
 const { validationResult } = require("express-validator");
 const { Op } = require("sequelize");
-const { handleFileUploadStore } = require("../../../middleware/multerMiddleware");
+const { handleFileUploadStore, handleFileUploadUpdate } = require("../../../middleware/multerMiddleware");
 const { createOrUpdateVariantAttributes } = require("../../../traits/ProductVariantHelper");
 
 const DataModel = models.ProductVariants;
@@ -160,6 +160,17 @@ class ProductVariantsController {
           "design_title",
           "design_title_ar",
           "hover_media_path",
+          "is_featured",
+          "brochure",
+          "description",
+          "description_ar",
+          "details",
+          "details_ar",
+          "details_points",
+          "details_points_ar",
+          "additional_details",
+          "additional_details_ar",
+          "sort_order",
         ],
         include: [
           {
@@ -195,8 +206,14 @@ class ProductVariantsController {
       const { id } = req.params;
       const { product_model_id, attributes, category_ids } = req.body;
 
-      const fileFields = ["media_path", "hover_media_path"];
-      handleFileUploadStore(req, fileFields);
+      const existingVariant = await DataModel.findByPk(id, { transaction });
+      if (!existingVariant) {
+        await transaction.rollback();
+        return sendNotFoundError(res, "Product Variant");
+      }
+
+      const fileFields = ["media_path", "hover_media_path", "brochure"];
+      await handleFileUploadUpdate(req, existingVariant, fileFields);
 
       const meta = req.body;
 

@@ -37,14 +37,14 @@ class HomeService {
       const [
         homeCms,
         banners,
-        productCategories,
+        productVariants,
         projects,
         SmartSpaceCalculator,
         brands,
         fits,
         otherMeta,
         state,
-        enquiryDropdowns
+        enquiryDropdowns,
       ] = await Promise.all([
         models.HomeCms.findOne({}),
         models.HomeBanner.findAll({
@@ -54,27 +54,50 @@ class HomeService {
           order: [["sort_order", "ASC"]],
         }),
 
-        models.ProductCategory.findAll({
-          attributes: ["id", "name", "name_ar", "media_path", "slug", "parent_id"],
+        models.ProductVariants.findAll({
+          attributes: ["id", "title", "title_ar", "media_path", "sku"],
           where: {
             status: true,
-            parent_id: null,
-            id: {
-              [Op.in]: sequelize.literal(`(
-                SELECT DISTINCT pvc."category_id"
-                FROM "product_variant_categories" pvc
-                INNER JOIN "product_variants" pv ON pv."id" = pvc."product_variant_id"
-                  AND pv."status" = true AND pv."deletedAt" IS NULL
-                INNER JOIN "product_models" pm ON pm."id" = pv."product_model_id"
-                  AND pm."status" = true AND pm."deletedAt" IS NULL
-                INNER JOIN "product_base" pb ON pb."id" = pm."product_id"
-                  AND pb."status" = true AND pb."deletedAt" IS NULL
-              )`),
-            },
+            is_featured: true,
           },
-          order: [["sort_order", "ASC"]],
+          // order: [["sort_order", "ASC"]],
           limit: 6,
+
+          include: [
+            // base slug from productmodel
+            {
+              model: models.ProductModels,
+              as: "productModel",
+              attributes: ["id", "slug", "title"],
+              include: [
+                {
+                  model: models.ProductBase,
+                  as: "product",
+                  attributes: ["id", "slug"],
+                },
+              ],
+            },
+            {
+              model: models.ProductVariantAttributes,
+              as: "variant_attributes",
+              attributes: ["id", "attribute_id", "attribute_value_id"],
+              include: [
+                {
+                  model: models.ProductAttribute,
+                  as: "ProductAttribute",
+                  attributes: ["id", "name", "name_ar", "code", "slug"],
+                },
+                {
+                  model: models.AttributeValues,
+                  as: "AttributeValue",
+                  attributes: ["id", "value", "value_ar", "slug"],
+                },
+              ],
+            },
+          ],
         }),
+        // product variant
+
         models.Projects.findAll({
           attributes: ["id", "title", "title_ar", "thumbnail", "slug"],
           where: {
@@ -137,7 +160,7 @@ class HomeService {
       const journeySection = buildJourneySection(homeCms, "journey");
       const featuredSection = buildFeaturedProductSection(
         homeCms,
-        productCategories,
+        productVariants,
       );
       const projectSection = buildProjectsSection(projects, homeCms);
       const smartSpaceSection =
@@ -159,7 +182,7 @@ class HomeService {
         formSection,
         otherMetaTags,
         state,
-        enquiryDropdowns
+        enquiryDropdowns,
       };
       await setCache(cacheKey, result);
 

@@ -519,8 +519,6 @@ function buildHierarchy(baseRows, modelRows, resolvedVariants, modelImagePaths) 
     "title_ar",
     "description",
     "description_ar",
-    "enhance_title",
-    "enhance_title_ar",
     "details",
     "details_ar",
     "details_points",
@@ -543,6 +541,8 @@ function buildHierarchy(baseRows, modelRows, resolvedVariants, modelImagePaths) 
     "is_primary",
     "sort_order",
     "status",
+    "enhance_title",
+    "enhance_title_ar",
   ];
 
   const bases = baseRows.map((baseRow) => {

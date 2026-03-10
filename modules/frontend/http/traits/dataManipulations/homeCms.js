@@ -1,6 +1,7 @@
 const { generateImageUrl } = require("../../../traits/imageUrlHelper");
 const { buildTitleSection } = require("./common");
 const { singleMediaWithoutType } = require("../mediaButtonHelper");
+const { generateQueryParams } = require("./product/product");
 
 function buildHomeBannerSliders(banners) {
   if (!Array.isArray(banners) || banners.length === 0) {
@@ -31,7 +32,6 @@ function buildHomeBannerSliders(banners) {
           alt_ar: banner?.media_alt_ar ?? null,
         },
       },
-
 
       button: {
         label: banner?.button_text ?? "N/A",
@@ -141,13 +141,24 @@ function buildFeaturedProductSection(cms, data) {
   const titleSection = buildTitleSection(cms, "featured");
   const section = {
     ...titleSection,
-    list: data?.map((item) => ({
-      media: singleMediaWithoutType(item, "media_path", "name", "name_ar"),
-      name: item?.name ?? null,
-      name_ar: item?.name_ar ?? null,
-      slug: item?.slug ?? null,
-      parent_id: item?.parent_id ?? null,
-    })),
+    list: data?.map((item) => {
+      const variantAttrs = item?.variant_attributes ?? [];
+      const formattedAttributes = variantAttrs.map((va) => ({
+        code: va.ProductAttribute?.code,
+        slug: va.ProductAttribute?.slug,
+        values: [
+          { slug: va.AttributeValue?.slug, value: va.AttributeValue?.value },
+        ],
+      }));
+      return {
+        media: singleMediaWithoutType(item, "media_path", "title", "title_ar"),
+        name: item?.title ?? null,
+        name_ar: item?.title_ar ?? null,
+        slug: item?.sku ?? null,
+        base_slug: item?.productModel?.product?.slug ?? null,
+        queryParams: generateQueryParams(item?.sku, formattedAttributes),
+      };
+    }),
   };
 
   return section;

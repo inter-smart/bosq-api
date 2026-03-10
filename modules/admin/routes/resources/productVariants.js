@@ -12,6 +12,7 @@ const {
 const fields = [
   { name: "media_path", maxCount: 1 },
   { name: "hover_media_path", maxCount: 1 },
+  { name: "brochure", maxCount: 1 },
 ];
 
 // Create upload middleware with fields

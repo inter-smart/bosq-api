@@ -170,6 +170,8 @@ class ProductVariantsController {
           "details_points_ar",
           "additional_details",
           "additional_details_ar",
+          "enhance_title",
+          "enhance_title_ar",
           "sort_order",
         ],
         include: [

@@ -12,16 +12,6 @@ exports.validationRequestPost = [
     .withMessage("Title (Arabic) is required")
     .isString()
     .withMessage("Title (Arabic) must be a string"),
-
-  body("enhance_title")
-    .optional()
-    .isString()
-    .withMessage("enhance Title must be a string"),
-  body("enhance_title_ar")
-    .optional()
-    .isString()
-    .withMessage("enhance Title (Arabic) must be a string"),
-
   /* ---------- SLUG (AUTO-GENERATED) ---------- */
   body("slug").optional().isString().withMessage("Slug must be a string"),
 

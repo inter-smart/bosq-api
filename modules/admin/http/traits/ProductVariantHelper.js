@@ -89,7 +89,14 @@ const createOrUpdateVariantAttributes = async (transaction, attributes, product_
         throw new Error("Product Variant not found for update");
       }
 
-      const { sort_order, status, stock, media_path, design_title, design_title_ar, hover_media_path, title, title_ar } = meta;
+      const {
+        sort_order, status, stock, media_path, design_title, design_title_ar,
+        hover_media_path, title, title_ar,
+        is_featured, brochure, description, description_ar,
+        details, details_ar, details_points, details_points_ar,
+        additional_details, additional_details_ar,
+        enhance_title, enhance_title_ar
+      } = meta;
 
       // Delete existing variant attributes (hard delete to avoid unique constraint issues)
       await models.ProductVariantAttributes.destroy({
@@ -112,9 +119,21 @@ const createOrUpdateVariantAttributes = async (transaction, attributes, product_
           status: status ?? currentVariant.status,
           sort_order: sort_order ?? currentVariant.sort_order,
           media_path: media_path ?? currentVariant.media_path,
+          enhance_title: enhance_title ?? currentVariant.enhance_title,
+          enhance_title_ar: enhance_title_ar ?? currentVariant.enhance_title_ar,
           design_title: design_title ?? currentVariant.design_title,
           design_title_ar: design_title_ar ?? currentVariant.design_title_ar,
-          hover_media_path: hover_media_path ?? currentVariant.hover_media_path
+          hover_media_path: hover_media_path ?? currentVariant.hover_media_path,
+          is_featured: is_featured ?? currentVariant.is_featured,
+          brochure: brochure ?? currentVariant.brochure,
+          description: description ?? currentVariant.description,
+          description_ar: description_ar ?? currentVariant.description_ar,
+          details: details ?? currentVariant.details,
+          details_ar: details_ar ?? currentVariant.details_ar,
+          details_points: details_points ?? currentVariant.details_points,
+          details_points_ar: details_points_ar ?? currentVariant.details_points_ar,
+          additional_details: additional_details ?? currentVariant.additional_details,
+          additional_details_ar: additional_details_ar ?? currentVariant.additional_details_ar,
         },
         { transaction },
       );

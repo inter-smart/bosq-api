@@ -1,6 +1,7 @@
 const ExcelJS = require("exceljs");
 
 const REQUIRED_SHEETS = ["product_base", "product_models", "product_variants"];
+const OPTIONAL_SHEETS = ["product_faqs"];
 
 /**
  * Converts an ExcelJS row to a plain object using the header row as keys.
@@ -43,7 +44,8 @@ function rowToObject(headers, row, rowNumber) {
  * {
  *   product_base: [{ _rowNumber, title, title_ar, ... }],
  *   product_models: [{ _rowNumber, base_title, title, ... }],
- *   product_variants: [{ _rowNumber, base_title, model_title, cover_image, hover_image, images, video_thumbnails, ... }]
+ *   product_variants: [{ _rowNumber, base_title, model_title, cover_image, hover_image, images, video_thumbnails, ... }],
+ *   product_faqs: [{ _rowNumber, sku, question, question_ar, answer, answer_ar, sort_order, status }]  // optional sheet
  * }
  */
 async function parseExcelBuffer(buffer) {
@@ -52,13 +54,7 @@ async function parseExcelBuffer(buffer) {
 
   const result = {};
 
-  for (const sheetName of REQUIRED_SHEETS) {
-    const sheet = workbook.getWorksheet(sheetName);
-    if (!sheet) {
-      throw new Error(`Missing required sheet: "${sheetName}"`);
-    }
-
-    // First row is headers
+  const parseSheet = (sheet, sheetName) => {
     const headerRow = sheet.getRow(1);
     const headers = [];
     headerRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
@@ -77,7 +73,20 @@ async function parseExcelBuffer(buffer) {
       if (obj) rows.push(obj);
     });
 
-    result[sheetName] = rows;
+    return rows;
+  };
+
+  for (const sheetName of REQUIRED_SHEETS) {
+    const sheet = workbook.getWorksheet(sheetName);
+    if (!sheet) {
+      throw new Error(`Missing required sheet: "${sheetName}"`);
+    }
+    result[sheetName] = parseSheet(sheet, sheetName);
+  }
+
+  for (const sheetName of OPTIONAL_SHEETS) {
+    const sheet = workbook.getWorksheet(sheetName);
+    result[sheetName] = sheet ? parseSheet(sheet, sheetName) : [];
   }
 
   return result;

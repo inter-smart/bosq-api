@@ -1,6 +1,7 @@
 const ExcelJS = require("exceljs");
 
 const REQUIRED_SHEETS = ["product_base", "product_models", "product_variants"];
+const OPTIONAL_SHEETS = ["product_faqs"];
 
 /**
  * Converts an ExcelJS row to a plain object using the header row as keys.
@@ -37,13 +38,39 @@ function rowToObject(headers, row, rowNumber) {
 }
 
 /**
+ * Parse a single worksheet into an array of row objects.
+ */
+function parseSheet(sheet, sheetName) {
+  const headerRow = sheet.getRow(1);
+  const headers = [];
+  headerRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+    const val = cell.value ? String(cell.value).trim().toLowerCase().replace(/\s+/g, "_") : null;
+    headers[colNumber - 1] = val;
+  });
+
+  if (headers.length === 0 || headers.every((h) => !h)) {
+    throw new Error(`Sheet "${sheetName}" has no header row`);
+  }
+
+  const rows = [];
+  sheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
+    if (rowNumber === 1) return; // skip header
+    const obj = rowToObject(headers, row, rowNumber);
+    if (obj) rows.push(obj);
+  });
+
+  return rows;
+}
+
+/**
  * Parses an Excel buffer and returns raw rows for each sheet.
  *
  * Returns:
  * {
  *   product_base: [{ _rowNumber, title, title_ar, ... }],
  *   product_models: [{ _rowNumber, base_title, title, ... }],
- *   product_variants: [{ _rowNumber, base_title, model_title, cover_image, hover_image, images, video_thumbnails, ... }]
+ *   product_variants: [{ _rowNumber, base_title, model_title, cover_image, hover_image, images, video_thumbnails, ... }],
+ *   product_faqs: [{ _rowNumber, sku, question, answer, ... }]  // empty array if sheet absent
  * }
  */
 async function parseExcelBuffer(buffer) {
@@ -57,27 +84,12 @@ async function parseExcelBuffer(buffer) {
     if (!sheet) {
       throw new Error(`Missing required sheet: "${sheetName}"`);
     }
+    result[sheetName] = parseSheet(sheet, sheetName);
+  }
 
-    // First row is headers
-    const headerRow = sheet.getRow(1);
-    const headers = [];
-    headerRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
-      const val = cell.value ? String(cell.value).trim().toLowerCase().replace(/\s+/g, "_") : null;
-      headers[colNumber - 1] = val;
-    });
-
-    if (headers.length === 0 || headers.every((h) => !h)) {
-      throw new Error(`Sheet "${sheetName}" has no header row`);
-    }
-
-    const rows = [];
-    sheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
-      if (rowNumber === 1) return; // skip header
-      const obj = rowToObject(headers, row, rowNumber);
-      if (obj) rows.push(obj);
-    });
-
-    result[sheetName] = rows;
+  for (const sheetName of OPTIONAL_SHEETS) {
+    const sheet = workbook.getWorksheet(sheetName);
+    result[sheetName] = sheet ? parseSheet(sheet, sheetName) : [];
   }
 
   return result;

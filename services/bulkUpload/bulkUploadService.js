@@ -3,7 +3,7 @@ const { models, sequelize } = require("../../database/models");
 const { Op } = require("sequelize");
 const Logger = require("../../config/logger");
 
-const { ProductBase, ProductModels, ProductVariants, ProductVariantCategories, ProductVariantAttributes, ProductVariantImages } = models;
+const { ProductBase, ProductModels, ProductVariants, ProductVariantCategories, ProductVariantAttributes, ProductVariantImages, ProductProjectImage, FaqList } = models;
 
 const BATCH_SIZE = 500;
 
@@ -276,14 +276,18 @@ async function processUpload(hierarchy) {
             product_model_id: modelId,
             ...(variant.coverImage ? { media_path: variant.coverImage } : {}),
             ...(variant.hoverImage ? { hover_media_path: variant.hoverImage } : {}),
+            ...(variant.brochurePath ? { brochure: variant.brochurePath } : {}),
             status: variant.data.status ?? true,
             is_primary: variant.data.is_primary ?? false,
+            is_featured: variant.data.is_featured ?? false,
             sort_order: variant.data.sort_order ?? 1,
           });
           variantMeta.push({
             categoryIds: variant.categoryIds,
             attributeValueIds: variant.attributeValueIds,
             mediaRecords: variant.mediaRecords || [],
+            projectImageRecords: variant.projectImageRecords || [],
+            faqRecords: variant.faqRecords || [],
           });
         }
       }
@@ -460,6 +464,71 @@ async function processUpload(hierarchy) {
       }
     }
 
+    // ── Step 7: ProductProjectImage (add-only) ───────────────────────────────
+    const projectImageRows = [];
+
+    insertedVariants.forEach((variant, idx) => {
+      for (const record of variantsToCreateMeta[idx].projectImageRecords) {
+        projectImageRows.push({ ...record, product_variant_id: variant.id });
+      }
+    });
+
+    if (variantsToUpdate.length > 0) {
+      const updatedIds = variantsToUpdate.map(({ existingId }) => existingId);
+      const existingProjectImages = await ProductProjectImage.findAll({
+        attributes: ["product_variant_id", "media_path"],
+        where: { product_variant_id: { [Op.in]: updatedIds } },
+        transaction: t,
+      });
+      const existingProjectImageSet = new Set(existingProjectImages.map((img) => `${img.product_variant_id}:${img.media_path}`));
+
+      variantsToUpdate.forEach(({ existingId }, idx) => {
+        for (const record of variantsToUpdateMeta[idx].projectImageRecords) {
+          const key = `${existingId}:${record.media_path}`;
+          if (!existingProjectImageSet.has(key)) {
+            projectImageRows.push({ ...record, product_variant_id: existingId });
+          }
+        }
+      });
+    }
+
+    if (projectImageRows.length > 0) {
+      Logger.info(`[BulkUpload] Inserting ${projectImageRows.length} product_project_images rows`);
+      for (const batchRows of chunk(projectImageRows, BATCH_SIZE)) {
+        await ProductProjectImage.bulkCreate(batchRows, { transaction: t });
+      }
+    }
+
+    // ── Step 8: FaqList (full replace for updated variants) ──────────────────
+    if (updatedVariantIds.size > 0) {
+      await FaqList.destroy({
+        where: { product_variant_id: { [Op.in]: [...updatedVariantIds] }, type: "product" },
+        force: true,
+        transaction: t,
+      });
+    }
+
+    const faqRows = [];
+
+    insertedVariants.forEach((variant, idx) => {
+      for (const record of variantsToCreateMeta[idx].faqRecords) {
+        faqRows.push({ ...record, product_variant_id: variant.id, type: "product" });
+      }
+    });
+
+    variantsToUpdate.forEach(({ existingId }, idx) => {
+      for (const record of variantsToUpdateMeta[idx].faqRecords) {
+        faqRows.push({ ...record, product_variant_id: existingId, type: "product" });
+      }
+    });
+
+    if (faqRows.length > 0) {
+      Logger.info(`[BulkUpload] Inserting ${faqRows.length} faq_lists rows`);
+      for (const batchRows of chunk(faqRows, BATCH_SIZE)) {
+        await FaqList.bulkCreate(batchRows, { transaction: t });
+      }
+    }
+
     const summary = {
       bases_created: basesToCreate.length,
       bases_updated: basesToUpdate.length,
@@ -470,6 +539,8 @@ async function processUpload(hierarchy) {
       category_links: categoryJunctionRows.length,
       attribute_links: attributeJunctionRows.length,
       images_inserted: imageRows.length,
+      project_images_inserted: projectImageRows.length,
+      faqs_inserted: faqRows.length,
     };
 
     Logger.info(`[BulkUpload] Completed. Summary: ${JSON.stringify(summary)}`);

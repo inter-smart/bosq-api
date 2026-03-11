@@ -5,8 +5,6 @@ class ProductsController {
   static async getProductBySlug(req, res) {
     const params = req.query;
 
-    console.log(req.cartOwner);
-
     const type = req?.cartOwner?.type || "guest";
     const userId = req?.cartOwner?.id || null;
     try {

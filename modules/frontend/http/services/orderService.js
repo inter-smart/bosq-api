@@ -237,6 +237,21 @@ class OrderService {
         );
       }
 
+      // Record coupon usage if a coupon was applied
+      if (cart.coupon_id && cart.applied_coupon_code) {
+        await models.CouponUsage.create(
+          {
+            coupon_id: cart.coupon_id,
+            coupon_code: cart.applied_coupon_code,
+            user_id: userId,
+            order_id: order.id,
+            discount_amount: cart.discount_total,
+            used_at: new Date(),
+          },
+          { transaction },
+        );
+      }
+
       // Mark cart as ordered and clear items
       if (type === "cart") {
         await cart.update({ status: "ordered" }, { transaction });

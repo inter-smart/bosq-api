@@ -155,6 +155,10 @@ class ProductsService {
           const transformedData = transformModelData(productModelData);
           initialVariant = transformedData;
         } else {
+          console.log(model);
+          console.log(baseData?.id);
+          console.log(isModelAndFilters);
+
           // When filters are present without model, query variants directly with attribute filters
           // First, resolve attribute slugs and value slugs to their IDs
           const attributeFilterConditions = [];
@@ -254,6 +258,8 @@ class ProductsService {
             ],
           });
 
+          console.log(variantData);
+
           if (variantData) {
             const transformedData = transformProductData(variantData, true);
             initialVariant = transformedData?.data?.variantData;
@@ -266,7 +272,11 @@ class ProductsService {
       const currentVariantId = initialVariant?.id;
       const currentModelId = initialVariant?.model_id;
 
-      const data = await ProductServiceHelpers.getSimiliarProducts(currentModelId, currentVariantId, userId, isLoggedInUser);
+      let data = null;
+      if (currentModelId) {
+        data = await ProductServiceHelpers.getSimiliarProducts(currentModelId, currentVariantId, userId, isLoggedInUser);
+      }
+
       const similarVariants = data?.similarProducts || [];
       const isVariantWishListed = data?.isVariantWishListed || false;
 

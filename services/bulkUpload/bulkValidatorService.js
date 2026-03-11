@@ -15,6 +15,7 @@ const VIDEO_EXTS = new Set([".mp4", ".webm", ".mov", ".avi", ".mkv"]);
 // ─── Field Definitions ───────────────────────────────────────────────────────
 
 // slug removed — auto-generated from title on insert
+// description/details/enhance_title etc. moved to ProductVariants — no longer on ProductBase
 const BASE_REQUIRED = ["title", "title_ar"];
 
 // base_slug → base_title; slug removed — auto-generated from title on insert
@@ -23,6 +24,7 @@ const MODEL_REQUIRED = ["base_title", "title", "title_ar", "base_price"];
 // base_slug → base_title; model_slug → model_title
 const VARIANT_REQUIRED = ["base_title", "model_title"];
 
+// FAQ sheet required fields
 const FAQ_REQUIRED = ["sku", "question", "answer"];
 
 const DECIMAL_FIELDS = new Set(["base_price", "price"]);
@@ -447,6 +449,7 @@ async function resolveAndValidateLookups(variantRows, errors) {
 
     const imageFiles = parseCommaList(row.images);
     const thumbnailFiles = parseCommaList(row.video_thumbnails);
+    const projectFiles = parseCommaList(row.project_images);
 
     // Validate thumbnail count does not exceed video count
     const videoCount = imageFiles.filter((f) => VIDEO_EXTS.has(path.extname(f).toLowerCase())).length;
@@ -487,10 +490,9 @@ async function resolveAndValidateLookups(variantRows, errors) {
       }
     });
 
-    // ── Project images resolution ──────────────────────────────────────────────
-    parseCommaList(row.project_images).forEach((filename, sortIdx) => {
-      const fileValid = checkFile(filename, "project_images");
-      if (fileValid) {
+    // Project images — simple image records linked to the variant
+    projectFiles.forEach((filename, sortIdx) => {
+      if (checkFile(filename, "project_images")) {
         projectImageRecords.push({
           media_path: `uploads/bulk/${filename}`,
           sort_order: sortIdx + 1,
@@ -499,53 +501,68 @@ async function resolveAndValidateLookups(variantRows, errors) {
       }
     });
 
-    return { row, categoryIds, attributeValueIds, coverImage, hoverImage, mediaRecords, brochurePath, projectImageRecords };
+    return { row, categoryIds, attributeValueIds, coverImage, hoverImage, brochurePath, mediaRecords, projectImageRecords };
   });
 
   return resolvedVariants;
 }
 
-// ─── FAQ Validation ───────────────────────────────────────────────────────────
+// ─── Step 6: FAQ Validation ──────────────────────────────────────────────────
 
 /**
- * Validates the product_faqs sheet rows and builds a Map<sku, faqRecord[]>.
- * Returns the map; errors are pushed into the shared errors array.
+ * Validates product_faqs sheet rows.
+ * Each FAQ must reference a sku that exists in the product_variants sheet.
+ * Returns a Map<sku, faqRecord[]> for use in buildHierarchy.
  */
 function validateFaqs(faqRows, variantRows, errors) {
   const variantSkuSet = new Set(variantRows.map((r) => r.sku).filter(Boolean).map((s) => String(s).trim()));
+
   const faqsByVariantSku = new Map();
 
   for (const row of faqRows) {
     const rowNum = row._rowNumber;
 
+    // Required fields
     for (const field of FAQ_REQUIRED) {
       if (row[field] === null || row[field] === undefined || row[field] === "") {
         addError(errors, "product_faqs", rowNum, field, `Required field "${field}" is missing or empty`);
       }
     }
 
-    if (row.sku !== null && row.sku !== undefined) {
-      const sku = String(row.sku).trim();
-      if (!variantSkuSet.has(sku)) {
-        addError(errors, "product_faqs", rowNum, "sku", `SKU "${sku}" not found in the product_variants sheet`);
-        continue;
-      }
+    if (!row.sku) continue; // already reported above
 
-      const sortOrder = row.sort_order !== null && row.sort_order !== undefined ? parseInteger(row.sort_order) : 0;
-      const status = row.status !== null && row.status !== undefined ? parseBoolean(row.status) : true;
+    const sku = String(row.sku).trim();
 
-      const faqRecord = {
-        question: row.question ?? null,
-        question_ar: row.question_ar ?? null,
-        answer: row.answer ?? null,
-        answer_ar: row.answer_ar ?? null,
-        sort_order: sortOrder,
-        status: status ?? true,
-      };
-
-      if (!faqsByVariantSku.has(sku)) faqsByVariantSku.set(sku, []);
-      faqsByVariantSku.get(sku).push(faqRecord);
+    if (!variantSkuSet.has(sku)) {
+      addError(
+        errors,
+        "product_faqs",
+        rowNum,
+        "sku",
+        `SKU "${sku}" not found in the product_variants sheet — each FAQ must reference a valid variant SKU`,
+      );
+      continue;
     }
+
+    // Type validation
+    if (row.sort_order !== null && row.sort_order !== undefined && !isInteger(row.sort_order)) {
+      addError(errors, "product_faqs", rowNum, "sort_order", `"sort_order" must be an integer (got: ${row.sort_order})`);
+    }
+    if (row.status !== null && row.status !== undefined && !isBoolean(row.status)) {
+      addError(errors, "product_faqs", rowNum, "status", `"status" must be true/false (got: ${row.status})`);
+    }
+
+    const faqRecord = {
+      question: row.question ? String(row.question).trim() : null,
+      question_ar: row.question_ar ? String(row.question_ar).trim() : null,
+      answer: row.answer ? String(row.answer).trim() : null,
+      answer_ar: row.answer_ar ? String(row.answer_ar).trim() : null,
+      sort_order: row.sort_order !== null && row.sort_order !== undefined ? parseInteger(row.sort_order) : 0,
+      status: row.status !== null && row.status !== undefined ? parseBoolean(row.status) : true,
+    };
+
+    if (!faqsByVariantSku.has(sku)) faqsByVariantSku.set(sku, []);
+    faqsByVariantSku.get(sku).push(faqRecord);
   }
 
   return faqsByVariantSku;
@@ -561,12 +578,13 @@ function buildHierarchy(baseRows, modelRows, resolvedVariants, modelImagePaths, 
     modelsByBase.get(row.base_title).push(row);
   }
 
-  // Index variants by "base_title:model_title"
+  // Index variants by "base_title:model_title", attaching FAQ records by sku
   const variantsByModel = new Map();
   for (const resolved of resolvedVariants) {
     const { row } = resolved;
     const key = `${row.base_title}:${row.model_title}`;
     if (!variantsByModel.has(key)) variantsByModel.set(key, []);
+    resolved.faqRecords = row.sku ? (faqsByVariantSku.get(String(row.sku).trim()) || []) : [];
     variantsByModel.get(key).push(resolved);
   }
 
@@ -583,6 +601,7 @@ function buildHierarchy(baseRows, modelRows, resolvedVariants, modelImagePaths, 
   };
 
   // slug removed from both sheets — the upload service generates slugs from titles
+  // description/details/enhance_title fields now live on ProductVariants, not ProductBase
   const BASE_FIELDS = ["title", "title_ar", "sort_order", "status"];
   const MODEL_FIELDS = ["title", "title_ar", "code", "base_price", "sort_order", "status"];
   const VARIANT_FIELDS = [
@@ -608,27 +627,26 @@ function buildHierarchy(baseRows, modelRows, resolvedVariants, modelImagePaths, 
     "details_points_ar",
     "additional_details",
     "additional_details_ar",
+    // brochure filename is resolved to a full path in resolveAndValidateLookups;
+    // the raw cell value is intentionally excluded — brochurePath is used instead
   ];
 
   const bases = baseRows.map((baseRow) => {
     const baseModelRows = modelsByBase.get(baseRow.title) || [];
     const modelsList = baseModelRows.map((modelRow) => {
       const key = `${modelRow.base_title}:${modelRow.title}`;
-      const variantList = (variantsByModel.get(key) || []).map(({ row, categoryIds, attributeValueIds, coverImage, hoverImage, mediaRecords, brochurePath, projectImageRecords }) => {
-        const sku = row.sku ? String(row.sku).trim() : null;
-        return {
-          rowNum: row._rowNumber,
-          data: cleanRow(row, VARIANT_FIELDS),
-          categoryIds,
-          attributeValueIds,
-          coverImage,
-          hoverImage,
-          mediaRecords,
-          brochurePath,
-          projectImageRecords: projectImageRecords || [],
-          faqRecords: sku ? faqsByVariantSku.get(sku) || [] : [],
-        };
-      });
+      const variantList = (variantsByModel.get(key) || []).map(({ row, categoryIds, attributeValueIds, coverImage, hoverImage, brochurePath, mediaRecords, projectImageRecords, faqRecords }) => ({
+        rowNum: row._rowNumber,
+        data: cleanRow(row, VARIANT_FIELDS),
+        categoryIds,
+        attributeValueIds,
+        coverImage,
+        hoverImage,
+        brochurePath,
+        mediaRecords,
+        projectImageRecords,
+        faqRecords: faqRecords || [],
+      }));
 
       const resolvedMediaPath = modelImagePaths ? modelImagePaths.get(modelRow._rowNumber) : null;
       return {
@@ -668,7 +686,7 @@ async function validateBulkUpload(parsedSheets) {
   // Step 3: Internal duplicates
   validateInternalDuplicates(baseRows, modelRows, variantRows, errors);
 
-  // Step 3b: FAQ validation (sync — uses already-parsed rows)
+  // Step 5: FAQ sheet validation (runs sync before async lookups)
   const faqsByVariantSku = validateFaqs(faqRows, variantRows, errors);
 
   // Note: DB duplicate checks removed — service layer handles upsert (update-or-create)

@@ -464,7 +464,10 @@ async function processUpload(hierarchy) {
       }
     }
 
-    // ── Step 7: ProductProjectImage (add-only) ───────────────────────────────
+    // ── 7. ProductProjectImage ────────────────────────────────────────────────
+    // New variants: insert all project image records.
+    // Updated variants: add-only — skip media_paths that already exist.
+
     const projectImageRows = [];
 
     insertedVariants.forEach((variant, idx) => {
@@ -474,7 +477,7 @@ async function processUpload(hierarchy) {
     });
 
     if (variantsToUpdate.length > 0) {
-      const updatedIds = variantsToUpdate.map(({ existingId }) => existingId);
+      const updatedIds = variantsToUpdate.map((v) => v.existingId);
       const existingProjectImages = await ProductProjectImage.findAll({
         attributes: ["product_variant_id", "media_path"],
         where: { product_variant_id: { [Op.in]: updatedIds } },
@@ -499,7 +502,10 @@ async function processUpload(hierarchy) {
       }
     }
 
-    // ── Step 8: FaqList (full replace for updated variants) ──────────────────
+    // ── 8. FaqList ────────────────────────────────────────────────────────────
+    // Updated variants: full replace (delete existing product FAQs, insert new ones).
+    // New variants: insert all faq records.
+
     if (updatedVariantIds.size > 0) {
       await FaqList.destroy({
         where: { product_variant_id: { [Op.in]: [...updatedVariantIds] }, type: "product" },
@@ -515,7 +521,6 @@ async function processUpload(hierarchy) {
         faqRows.push({ ...record, product_variant_id: variant.id, type: "product" });
       }
     });
-
     variantsToUpdate.forEach(({ existingId }, idx) => {
       for (const record of variantsToUpdateMeta[idx].faqRecords) {
         faqRows.push({ ...record, product_variant_id: existingId, type: "product" });

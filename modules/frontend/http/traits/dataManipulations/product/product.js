@@ -1,8 +1,6 @@
 const { generateImageUrl } = require("../../../../traits/imageUrlHelper");
 
 const transformProductData = (productData, startFromVariant = false) => {
-  console.log(productData);
-
   if (!productData) {
     return null;
   }
@@ -13,8 +11,6 @@ const transformProductData = (productData, startFromVariant = false) => {
   if (startFromVariant) {
     const { productModel, variant_images = [], attribute_values = [], categories = [], projectImages = [], faqs = [], ...variant } = jsonData;
     const initialModel = productModel || {};
-
-    console.log(productModel);
 
     const attributesMap = {};
     attribute_values.forEach((item) => {

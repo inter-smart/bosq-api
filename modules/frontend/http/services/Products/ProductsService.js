@@ -155,10 +155,6 @@ class ProductsService {
           const transformedData = transformModelData(productModelData);
           initialVariant = transformedData;
         } else {
-          console.log(model);
-          console.log(baseData?.id);
-          console.log(isModelAndFilters);
-
           // When filters are present without model, query variants directly with attribute filters
           // First, resolve attribute slugs and value slugs to their IDs
           const attributeFilterConditions = [];
@@ -257,8 +253,6 @@ class ProductsService {
               { association: "faqs", attributes: ["id", "question", "answer", "question_ar", "answer_ar"], where: { status: true }, required: false },
             ],
           });
-
-          console.log(variantData);
 
           if (variantData) {
             const transformedData = transformProductData(variantData, true);

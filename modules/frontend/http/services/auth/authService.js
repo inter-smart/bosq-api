@@ -322,6 +322,7 @@ class UsersService {
       const refreshExpiry = rememberMe ? (process.env.JWT_REFRESH_EXPIRES_IN_EXTENDED || "30d") : (process.env.JWT_REFRESH_EXPIRES_IN || "7d");
       const accessMaxAge = rememberMe ? 24 * 60 * 60 * 1000 : 15 * 60 * 1000;
       const refreshMaxAge = rememberMe ? 30 * 24 * 60 * 60 * 1000 : 7 * 24 * 60 * 60 * 1000;
+
       const user = await Users.findOne({
         where: { email },
         attributes: ["id", "email", "password", "name", "country_code", "mobile"],

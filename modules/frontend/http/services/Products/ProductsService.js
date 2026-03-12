@@ -958,6 +958,23 @@ class ProductsService {
             required: false,
           },
           {
+            model: models.ProductVariantAttributes,
+            as: "variant_attributes",
+            attributes: ["id", "attribute_id", "attribute_value_id"],
+            include: [
+              {
+                model: models.ProductAttribute,
+                as: "ProductAttribute",
+                attributes: ["id", "name", "name_ar", "code", "slug"],
+              },
+              {
+                model: models.AttributeValues,
+                as: "AttributeValue",
+                attributes: ["id", "value", "value_ar", "slug"],
+              },
+            ],
+          },
+          {
             model: models.ProductModels,
             as: "productModel",
             attributes: ["id", "slug", "title", "title_ar"],
@@ -981,6 +998,18 @@ class ProductsService {
 
       const transformedData = products.map((item) => {
         const json = item.toJSON();
+        const formattedAttributes = (json?.variant_attributes || []).map((va) => ({
+          code: va?.ProductAttribute?.code,
+          slug: va?.ProductAttribute?.slug,
+          values: [
+            {
+              slug: va?.AttributeValue?.slug,
+              value: va?.AttributeValue?.value,
+            },
+          ],
+        }));
+
+        const variantSku = json?.sku;
         return {
           id: json?.id,
           title: json?.title,
@@ -997,6 +1026,7 @@ class ProductsService {
             slug: c?.slug,
             parent_id: c?.parent_id,
           })),
+          query_params: generateQueryParams(variantSku, formattedAttributes),
         };
       });
 

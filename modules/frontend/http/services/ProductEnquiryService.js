@@ -9,6 +9,7 @@ const {
   ERROR_CODES,
   HTTP_STATUS,
 } = require("../traits/constants");
+const EmailService = require("../../../../services/EmailService");
 
 class ProductEnquiryService {
   static async store(req, res) {
@@ -16,7 +17,6 @@ class ProductEnquiryService {
       const data = req.body;
       const token = data?.recaptcha_token;
 
-      console.log(data?.media_path);
 
       if (!token) {
         throw ErrorHandler.createError(
@@ -62,6 +62,8 @@ class ProductEnquiryService {
         media_path: data.media_path || null,
         message: data.message,
       });
+
+      await EmailService.sendQueryAcknowledgement(data.email, data.name)
 
       return enquiry;
     } catch (error) {

@@ -110,7 +110,7 @@ class WishListService {
                   {
                     model: models.ProductBase,
                     as: "product",
-                    attributes: ["id", "slug", "description", "description_ar", "details", "details_ar"],
+                    attributes: ["id", "slug"],
                     include: [
                       {
                         model: models.ProductSectors,

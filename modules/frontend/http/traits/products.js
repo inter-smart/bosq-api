@@ -35,6 +35,7 @@ class ProductServiceHelpers {
           through: { attributes: [] },
         },
       ],
+      order: [[{ model: models.ProductSellingPoints, as: "sellingPoints" }, "sort_order", "ASC"]],
     });
 
     const data = generateProductBasedata(productBaseData);
@@ -260,7 +261,7 @@ class ProductServiceHelpers {
         transaction,
       }),
       models.CartItems.findAll({
-        where: { cart_id: cartId },
+        where: { cart_id: cartId, is_buy_now: false },
         transaction,
       }),
     ]);

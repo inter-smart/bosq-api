@@ -35,6 +35,7 @@ class ProductServiceHelpers {
           through: { attributes: [] },
         },
       ],
+      order: [[{ model: models.ProductSellingPoints, as: "sellingPoints" }, "sort_order", "ASC"]],
     });
 
     const data = generateProductBasedata(productBaseData);

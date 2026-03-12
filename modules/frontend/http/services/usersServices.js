@@ -220,25 +220,28 @@ class UsersServices {
       const { currentPassword, newPassword, recaptcha_token } = req.body;
 
       const token = recaptcha_token;
+      const isDev = process.env.NODE_ENV !== "production";
 
-      if (!token) {
-        throw ErrorHandler.createError(
-          RESPONSE_MESSAGES.ERROR.RECAPTCHA_MISSING,
-          HTTP_STATUS.BAD_REQUEST,
-          ERROR_CODES.VALIDATION_ERROR,
-        );
-      }
+      if (!isDev) {
+        if (!token) {
+          throw ErrorHandler.createError(
+            RESPONSE_MESSAGES.ERROR.RECAPTCHA_MISSING,
+            HTTP_STATUS.BAD_REQUEST,
+            ERROR_CODES.VALIDATION_ERROR,
+          );
+        }
 
-      const { success, score, action } = await validateRecaptcha(token);
+        const { success, score, action } = await validateRecaptcha(token);
 
-      console.log("reCAPTCHA result:", { success, score, action });
+        console.log("reCAPTCHA result:", { success, score, action });
 
-      if (!success || score < 0.5) {
-        throw ErrorHandler.createError(
-          RESPONSE_MESSAGES.ERROR.RECAPTCHA_FAILED,
-          HTTP_STATUS.FORBIDDEN,
-          ERROR_CODES.VALIDATION_ERROR,
-        );
+        if (!success || score < 0.5) {
+          throw ErrorHandler.createError(
+            RESPONSE_MESSAGES.ERROR.RECAPTCHA_FAILED,
+            HTTP_STATUS.FORBIDDEN,
+            ERROR_CODES.VALIDATION_ERROR,
+          );
+        }
       }
 
       // 1. Fetch user with row lock

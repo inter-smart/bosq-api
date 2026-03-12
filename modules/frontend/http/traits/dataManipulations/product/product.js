@@ -1,8 +1,6 @@
 const { generateImageUrl } = require("../../../../traits/imageUrlHelper");
 
 const transformProductData = (productData, startFromVariant = false) => {
-  console.log(productData);
-
   if (!productData) {
     return null;
   }

@@ -260,7 +260,7 @@ class ProductServiceHelpers {
         transaction,
       }),
       models.CartItems.findAll({
-        where: { cart_id: cartId },
+        where: { cart_id: cartId, is_buy_now: false },
         transaction,
       }),
     ]);

@@ -82,6 +82,7 @@ class ProductsService {
             { association: "projectImages", attributes: ["id", "media_path", "media_alt", "media_alt_ar"], where: { status: true }, required: false },
             { association: "faqs", attributes: ["id", "question", "answer", "question_ar", "answer_ar"], where: { status: true }, required: false },
           ],
+          order: [[{ model: models.ProductProjectImage, as: "projectImages" }, "sort_order", "ASC"], [{ model: models.FaqList, as: "faqs" }, "sort_order", "ASC"]],
         });
 
         const transformedData = transformProductData(variantData, true);
@@ -141,12 +142,14 @@ class ProductsService {
                     attributes: ["id", "media_path", "media_alt", "media_alt_ar"],
                     where: { status: true },
                     required: false,
+                    order: [["sort_order", "ASC"]],
                   },
                   {
                     association: "faqs",
                     attributes: ["id", "question", "answer", "question_ar", "answer_ar"],
                     where: { status: true },
                     required: false,
+                    order: [["sort_order", "ASC"]],
                   },
                 ],
               },
@@ -250,8 +253,9 @@ class ProductsService {
                 attributes: ["id", "media_path", "media_alt", "media_alt_ar"],
                 where: { status: true },
                 required: false,
+                order: [["sort_order", "ASC"]],
               },
-              { association: "faqs", attributes: ["id", "question", "answer", "question_ar", "answer_ar"], where: { status: true }, required: false },
+              { association: "faqs", attributes: ["id", "question", "answer", "question_ar", "answer_ar"], where: { status: true }, required: false, order: [["sort_order", "ASC"]] },
             ],
           });
 

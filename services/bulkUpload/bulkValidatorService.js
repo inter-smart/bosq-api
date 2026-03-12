@@ -31,6 +31,21 @@ const DECIMAL_FIELDS = new Set(["base_price", "price"]);
 const INTEGER_FIELDS = new Set(["stock", "sort_order"]);
 const BOOLEAN_FIELDS = new Set(["status", "is_primary", "is_featured"]);
 
+const SMALLINT_MIN = -32768;
+const SMALLINT_MAX = 32767;
+
+// Per-sheet string max lengths matching DB column definitions
+const BASE_STRING_MAX = { title: 255, title_ar: 255 };
+const MODEL_STRING_MAX = { title: 255, title_ar: 255, code: 100 };
+const VARIANT_STRING_MAX = {
+  sku: 200, product_code: 200,
+  title: 200, title_ar: 200,
+  design_title: 200, design_title_ar: 200,
+  enhance_title: 255, enhance_title_ar: 255,
+  description: 255, description_ar: 255, // STRING(255) in DB — NOT TEXT
+};
+const FAQ_STRING_MAX = { question: 255, question_ar: 255 };
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function addError(errors, sheet, row, field, message) {
@@ -113,7 +128,7 @@ function parseCommaList(cell) {
 
 // ─── Step 1: Schema Validation ───────────────────────────────────────────────
 
-function validateSchema(rows, sheetName, requiredFields, errors) {
+function validateSchema(rows, sheetName, requiredFields, errors, stringMaxLengths = {}) {
   for (const row of rows) {
     const rowNum = row._rowNumber;
 
@@ -135,6 +150,35 @@ function validateSchema(rows, sheetName, requiredFields, errors) {
       }
       if (BOOLEAN_FIELDS.has(field) && !isBoolean(val)) {
         addError(errors, sheetName, rowNum, field, `"${field}" must be true/false (got: ${val})`);
+      }
+
+      // String length check
+      if (stringMaxLengths[field] !== undefined && val !== "") {
+        const strVal = String(val);
+        if (strVal.length > stringMaxLengths[field]) {
+          addError(errors, sheetName, rowNum, field, `"${field}" exceeds max length of ${stringMaxLengths[field]} characters (got: ${strVal.length})`);
+        }
+      }
+
+      // SMALLINT range check (sort_order is SMALLINT in all tables)
+      if (field === "sort_order" && val !== "" && isInteger(val)) {
+        const n = parseInt(val, 10);
+        if (n < SMALLINT_MIN || n > SMALLINT_MAX) {
+          addError(errors, sheetName, rowNum, field, `"sort_order" must be between ${SMALLINT_MIN} and ${SMALLINT_MAX} (got: ${n})`);
+        }
+      }
+
+      // DECIMAL(10,2) precision and range check
+      if (DECIMAL_FIELDS.has(field) && val !== "" && isDecimal(val)) {
+        const n = parseFloat(val);
+        if (Math.abs(n) > 99999999.99) {
+          addError(errors, sheetName, rowNum, field, `"${field}" exceeds DECIMAL(10,2) max value of 99999999.99 (got: ${n})`);
+        }
+        const str = String(val);
+        const dotIdx = str.indexOf(".");
+        if (dotIdx !== -1 && str.length - dotIdx - 1 > 2) {
+          addError(errors, sheetName, rowNum, field, `"${field}" has more than 2 decimal places and will be rounded by the DB (got: ${val})`);
+        }
       }
     }
   }
@@ -675,10 +719,11 @@ async function validateBulkUpload(parsedSheets) {
   const { product_base: baseRows, product_models: modelRows, product_variants: variantRows, product_faqs: faqRows = [] } = parsedSheets;
   const errors = [];
 
-  // Step 1: Schema validation
-  validateSchema(baseRows, "product_base", BASE_REQUIRED, errors);
-  validateSchema(modelRows, "product_models", MODEL_REQUIRED, errors);
-  validateSchema(variantRows, "product_variants", VARIANT_REQUIRED, errors);
+  // Step 1: Schema validation (required fields + type checks + DB length/range checks)
+  validateSchema(baseRows,    "product_base",     BASE_REQUIRED,    errors, BASE_STRING_MAX);
+  validateSchema(modelRows,   "product_models",   MODEL_REQUIRED,   errors, MODEL_STRING_MAX);
+  validateSchema(variantRows, "product_variants", VARIANT_REQUIRED, errors, VARIANT_STRING_MAX);
+  validateSchema(faqRows,     "product_faqs",     FAQ_REQUIRED,     errors, FAQ_STRING_MAX);
 
   // Step 2: Internal relational integrity
   validateRelations(baseRows, modelRows, variantRows, errors);

@@ -310,12 +310,6 @@ class CheckOutService {
                       },
                     ],
                   },
-                  {
-                    model: models.ProductCategory,
-                    as: "categories",
-                    attributes: ["id"],
-                    through: { attributes: [] },
-                  },
                 ],
               },
             ],
@@ -665,7 +659,11 @@ class CheckOutService {
 
       const round2 = (num) => Math.round((num + Number.EPSILON) * 100) / 100;
 
-      let remainingMaxDiscount = round2(parseFloat(coupon.max_discount_amount || 0));
+      const maxDiscountCap =
+        coupon.max_discount_amount && parseFloat(coupon.max_discount_amount) > 0
+          ? round2(parseFloat(coupon.max_discount_amount))
+          : Infinity;
+      let remainingMaxDiscount = maxDiscountCap;
       let finalDiscountAmount = 0.0;
 
       const isPercentage = coupon.discount_type === "percentage";

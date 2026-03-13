@@ -26,7 +26,7 @@ class FaqListController {
     try {
 
       const whereClause = {};
-      const { product_variant, type, faq_category } = req.query;
+      const { product_variant, type, faq_category, base_id, model_id } = req.query;
       // Build where clause for filtering
       if (faq_category) {
         whereClause.faq_category_id = parseInt(faq_category, 10);
@@ -34,9 +34,44 @@ class FaqListController {
 
       if (product_variant) {
         whereClause.product_variant_id = parseInt(product_variant, 10);
+      } else if (model_id) {
+        // Filter by model: find all variant IDs under that model
+        const { Op } = require("sequelize");
+        const variantRows = await models.ProductVariants.findAll({
+          where: { product_model_id: parseInt(model_id, 10) },
+          attributes: ["id"],
+          raw: true,
+        });
+        const variantIds = variantRows.map((v) => v.id);
+        whereClause.product_variant_id = variantIds.length
+          ? { [Op.in]: variantIds }
+          : { [Op.in]: [-1] }; // no results if no variants
+        whereClause.type = "product";
+      } else if (base_id) {
+        // Filter by base product: resolve base → models → variants
+        const { Op } = require("sequelize");
+        const modelRows = await models.ProductModels.findAll({
+          where: { product_id: parseInt(base_id, 10) },
+          attributes: ["id"],
+          raw: true,
+        });
+        const modelIds = modelRows.map((m) => m.id);
+        let variantIds = [];
+        if (modelIds.length) {
+          const variantRows = await models.ProductVariants.findAll({
+            where: { product_model_id: { [Op.in]: modelIds } },
+            attributes: ["id"],
+            raw: true,
+          });
+          variantIds = variantRows.map((v) => v.id);
+        }
+        whereClause.product_variant_id = variantIds.length
+          ? { [Op.in]: variantIds }
+          : { [Op.in]: [-1] };
+        whereClause.type = "product";
       }
 
-      if (type) {
+      if (type && !model_id && !base_id) {
         whereClause.type = type;
       }
 

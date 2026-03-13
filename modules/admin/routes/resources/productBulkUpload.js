@@ -29,4 +29,13 @@ router.post("/approve", Controller.approve);
 // GET /api/backend/resources/product-bulk-upload/status/:jobId
 router.get("/status/:jobId", Controller.getStatus);
 
+// POST /api/backend/resources/product-bulk-upload/faqs/validate
+router.post("/faqs/validate", upload.single("file"), Controller.validateFaqs);
+
+// POST /api/backend/resources/product-bulk-upload/faqs/approve
+router.post("/faqs/approve", Controller.approveFaqs);
+
+// GET /api/backend/resources/product-bulk-upload/faqs/status/:jobId
+router.get("/faqs/status/:jobId", Controller.getFaqStatus);
+
 module.exports = router;

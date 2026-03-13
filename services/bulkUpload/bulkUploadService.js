@@ -3,7 +3,7 @@ const { models, sequelize } = require("../../database/models");
 const { Op } = require("sequelize");
 const Logger = require("../../config/logger");
 
-const { ProductBase, ProductModels, ProductVariants, ProductVariantCategories, ProductVariantAttributes, ProductVariantImages, ProductProjectImage, FaqList } = models;
+const { ProductBase, ProductModels, ProductVariants, ProductVariantCategories, ProductVariantAttributes, ProductVariantImages, ProductProjectImage } = models;
 
 const BATCH_SIZE = 500;
 
@@ -110,7 +110,7 @@ async function assignModelSlugs(allModelRows, t) {
  * Identity keys:
  *   ProductBase     — title
  *   ProductModels   — (product_id, title)
- *   ProductVariants — sku (primary), then product_code (fallback)
+ *   ProductVariants — sku (auto-generated from model code + attribute slugs, always present), then product_code (fallback)
  *
  * Junction strategies:
  *   Categories / Attributes — full replace for updated variants
@@ -287,7 +287,6 @@ async function processUpload(hierarchy) {
             attributeValueIds: variant.attributeValueIds,
             mediaRecords: variant.mediaRecords || [],
             projectImageRecords: variant.projectImageRecords || [],
-            faqRecords: variant.faqRecords || [],
           });
         }
       }
@@ -502,38 +501,6 @@ async function processUpload(hierarchy) {
       }
     }
 
-    // ── 8. FaqList ────────────────────────────────────────────────────────────
-    // Updated variants: full replace (delete existing product FAQs, insert new ones).
-    // New variants: insert all faq records.
-
-    if (updatedVariantIds.size > 0) {
-      await FaqList.destroy({
-        where: { product_variant_id: { [Op.in]: [...updatedVariantIds] }, type: "product" },
-        force: true,
-        transaction: t,
-      });
-    }
-
-    const faqRows = [];
-
-    insertedVariants.forEach((variant, idx) => {
-      for (const record of variantsToCreateMeta[idx].faqRecords) {
-        faqRows.push({ ...record, product_variant_id: variant.id, type: "product" });
-      }
-    });
-    variantsToUpdate.forEach(({ existingId }, idx) => {
-      for (const record of variantsToUpdateMeta[idx].faqRecords) {
-        faqRows.push({ ...record, product_variant_id: existingId, type: "product" });
-      }
-    });
-
-    if (faqRows.length > 0) {
-      Logger.info(`[BulkUpload] Inserting ${faqRows.length} faq_lists rows`);
-      for (const batchRows of chunk(faqRows, BATCH_SIZE)) {
-        await FaqList.bulkCreate(batchRows, { transaction: t });
-      }
-    }
-
     const summary = {
       bases_created: basesToCreate.length,
       bases_updated: basesToUpdate.length,
@@ -545,7 +512,6 @@ async function processUpload(hierarchy) {
       attribute_links: attributeJunctionRows.length,
       images_inserted: imageRows.length,
       project_images_inserted: projectImageRows.length,
-      faqs_inserted: faqRows.length,
     };
 
     Logger.info(`[BulkUpload] Completed. Summary: ${JSON.stringify(summary)}`);

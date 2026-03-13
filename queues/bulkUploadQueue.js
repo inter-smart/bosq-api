@@ -25,4 +25,12 @@ const addBulkUploadJob = (token) => {
   return bulkUploadQueue.add("process_bulk_upload", { token });
 };
 
-module.exports = { bulkUploadQueue, addBulkUploadJob };
+/**
+ * Adds a FAQ upload job to the queue.
+ * @param {string} token - The Redis session token for the validated FAQ hierarchy.
+ */
+const addFaqUploadJob = (token) => {
+  return bulkUploadQueue.add("process_faq_upload", { token });
+};
+
+module.exports = { bulkUploadQueue, addBulkUploadJob, addFaqUploadJob };

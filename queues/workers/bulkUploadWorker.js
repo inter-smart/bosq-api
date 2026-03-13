@@ -1,6 +1,7 @@
 const { Worker } = require("bullmq");
 const { redisClient } = require("../../config/redis");
 const { processUpload } = require("../../services/bulkUpload/bulkUploadService");
+const { processFaqUpload } = require("../../services/bulkUpload/faqBulkUploadService");
 const Logger = require("../../config/logger");
 
 const connection = {
@@ -8,10 +9,11 @@ const connection = {
 };
 
 const SESSION_PREFIX = "bulk_upload_session:";
+const FAQ_SESSION_PREFIX = "bulk_faq_session:";
 
 let worker = null;
 
-const processJob = async (job) => {
+const processMainJob = async (job) => {
   const { token } = job.data;
 
   if (!token) {
@@ -19,24 +21,49 @@ const processJob = async (job) => {
   }
 
   const redisKey = `${SESSION_PREFIX}${token}`;
-  Logger.info(`[BulkUploadWorker] Processing job ${job.id}, token: ${token}`);
+  Logger.info(`[BulkUploadWorker] Processing main job ${job.id}, token: ${token}`);
 
-  // Retrieve validated hierarchy from Redis
   const raw = await redisClient.get(redisKey);
   if (!raw) {
     throw new Error(`Session token "${token}" not found or expired. Cannot process upload.`);
   }
 
   const hierarchy = JSON.parse(raw);
-
-  // Process DB inserts
   const summary = await processUpload(hierarchy);
 
-  // Delete session from Redis after successful processing (consumed once)
   await redisClient.del(redisKey);
 
-  Logger.info(`[BulkUploadWorker] Job ${job.id} completed. Summary: ${JSON.stringify(summary)}`);
+  Logger.info(`[BulkUploadWorker] Main job ${job.id} completed. Summary: ${JSON.stringify(summary)}`);
   return summary;
+};
+
+const processFaqJob = async (job) => {
+  const { token } = job.data;
+
+  if (!token) {
+    throw new Error("FAQ upload job is missing the session token");
+  }
+
+  const redisKey = `${FAQ_SESSION_PREFIX}${token}`;
+  Logger.info(`[BulkUploadWorker] Processing FAQ job ${job.id}, token: ${token}`);
+
+  const raw = await redisClient.get(redisKey);
+  if (!raw) {
+    throw new Error(`FAQ session token "${token}" not found or expired. Cannot process upload.`);
+  }
+
+  const hierarchy = JSON.parse(raw);
+  const summary = await processFaqUpload(hierarchy);
+
+  await redisClient.del(redisKey);
+
+  Logger.info(`[BulkUploadWorker] FAQ job ${job.id} completed. Summary: ${JSON.stringify(summary)}`);
+  return summary;
+};
+
+const processJob = async (job) => {
+  if (job.name === "process_faq_upload") return processFaqJob(job);
+  return processMainJob(job);
 };
 
 const startBulkUploadWorker = () => {
@@ -46,14 +73,12 @@ const startBulkUploadWorker = () => {
   });
 
   worker.on("completed", (job, result) => {
-    Logger.info(
-      `[BulkUploadWorker] Job ${job.id} completed. Bases: ${result.bases_inserted}, Models: ${result.models_inserted}, Variants: ${result.variants_inserted}`
-    );
+    Logger.info(`[BulkUploadWorker] Job ${job.id} (${job.name}) completed.`);
   });
 
   worker.on("failed", (job, err) => {
     Logger.error(
-      `[BulkUploadWorker] Job ${job?.id} failed [attempt ${job?.attemptsMade}/${job?.opts?.attempts}]: ${err.message}`
+      `[BulkUploadWorker] Job ${job?.id} (${job?.name}) failed [attempt ${job?.attemptsMade}/${job?.opts?.attempts}]: ${err.message}`
     );
   });
 

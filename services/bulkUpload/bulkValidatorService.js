@@ -24,9 +24,6 @@ const MODEL_REQUIRED = ["base_title", "title", "title_ar", "base_price"];
 // base_slug → base_title; model_slug → model_title
 const VARIANT_REQUIRED = ["base_title", "model_title"];
 
-// FAQ sheet required fields
-const FAQ_REQUIRED = ["sku", "question", "answer"];
-
 const DECIMAL_FIELDS = new Set(["base_price", "price"]);
 const INTEGER_FIELDS = new Set(["stock", "sort_order"]);
 const BOOLEAN_FIELDS = new Set(["status", "is_primary", "is_featured"]);
@@ -38,13 +35,12 @@ const SMALLINT_MAX = 32767;
 const BASE_STRING_MAX = { title: 255, title_ar: 255 };
 const MODEL_STRING_MAX = { title: 255, title_ar: 255, code: 100 };
 const VARIANT_STRING_MAX = {
-  sku: 200, product_code: 200,
+  product_code: 200,
   title: 200, title_ar: 200,
   design_title: 200, design_title_ar: 200,
   enhance_title: 255, enhance_title_ar: 255,
   description: 255, description_ar: 255, // STRING(255) in DB — NOT TEXT
 };
-const FAQ_STRING_MAX = { question: 255, question_ar: 255 };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -277,7 +273,7 @@ function validateInternalDuplicates(baseRows, modelRows, variantRows, errors) {
     }
   }
 
-  // Duplicate variant SKU
+  // Duplicate variant SKU (auto-generated — same model + attribute combo used twice)
   const skus = new Map();
   for (const row of variantRows) {
     if (!row.sku) continue;
@@ -287,7 +283,7 @@ function validateInternalDuplicates(baseRows, modelRows, variantRows, errors) {
         "product_variants",
         row._rowNumber,
         "sku",
-        `Duplicate SKU "${row.sku}" within product_variants sheet (first seen at row ${skus.get(row.sku)})`,
+        `Duplicate auto-generated SKU "${row.sku}" — same model code and attribute combination already used (first seen at row ${skus.get(row.sku)})`,
       );
     } else {
       skus.set(row.sku, row._rowNumber);
@@ -551,70 +547,9 @@ async function resolveAndValidateLookups(variantRows, errors) {
   return resolvedVariants;
 }
 
-// ─── Step 6: FAQ Validation ──────────────────────────────────────────────────
-
-/**
- * Validates product_faqs sheet rows.
- * Each FAQ must reference a sku that exists in the product_variants sheet.
- * Returns a Map<sku, faqRecord[]> for use in buildHierarchy.
- */
-function validateFaqs(faqRows, variantRows, errors) {
-  const variantSkuSet = new Set(variantRows.map((r) => r.sku).filter(Boolean).map((s) => String(s).trim()));
-
-  const faqsByVariantSku = new Map();
-
-  for (const row of faqRows) {
-    const rowNum = row._rowNumber;
-
-    // Required fields
-    for (const field of FAQ_REQUIRED) {
-      if (row[field] === null || row[field] === undefined || row[field] === "") {
-        addError(errors, "product_faqs", rowNum, field, `Required field "${field}" is missing or empty`);
-      }
-    }
-
-    if (!row.sku) continue; // already reported above
-
-    const sku = String(row.sku).trim();
-
-    if (!variantSkuSet.has(sku)) {
-      addError(
-        errors,
-        "product_faqs",
-        rowNum,
-        "sku",
-        `SKU "${sku}" not found in the product_variants sheet — each FAQ must reference a valid variant SKU`,
-      );
-      continue;
-    }
-
-    // Type validation
-    if (row.sort_order !== null && row.sort_order !== undefined && !isInteger(row.sort_order)) {
-      addError(errors, "product_faqs", rowNum, "sort_order", `"sort_order" must be an integer (got: ${row.sort_order})`);
-    }
-    if (row.status !== null && row.status !== undefined && !isBoolean(row.status)) {
-      addError(errors, "product_faqs", rowNum, "status", `"status" must be true/false (got: ${row.status})`);
-    }
-
-    const faqRecord = {
-      question: row.question ? String(row.question).trim() : null,
-      question_ar: row.question_ar ? String(row.question_ar).trim() : null,
-      answer: row.answer ? String(row.answer).trim() : null,
-      answer_ar: row.answer_ar ? String(row.answer_ar).trim() : null,
-      sort_order: row.sort_order !== null && row.sort_order !== undefined ? parseInteger(row.sort_order) : 0,
-      status: row.status !== null && row.status !== undefined ? parseBoolean(row.status) : true,
-    };
-
-    if (!faqsByVariantSku.has(sku)) faqsByVariantSku.set(sku, []);
-    faqsByVariantSku.get(sku).push(faqRecord);
-  }
-
-  return faqsByVariantSku;
-}
-
 // ─── Build Hierarchy ────────────────────────────────────────────────────────
 
-function buildHierarchy(baseRows, modelRows, resolvedVariants, modelImagePaths, faqsByVariantSku = new Map()) {
+function buildHierarchy(baseRows, modelRows, resolvedVariants, modelImagePaths) {
   // Index models by "base_title"
   const modelsByBase = new Map();
   for (const row of modelRows) {
@@ -622,13 +557,12 @@ function buildHierarchy(baseRows, modelRows, resolvedVariants, modelImagePaths, 
     modelsByBase.get(row.base_title).push(row);
   }
 
-  // Index variants by "base_title:model_title", attaching FAQ records by sku
+  // Index variants by "base_title:model_title"
   const variantsByModel = new Map();
   for (const resolved of resolvedVariants) {
     const { row } = resolved;
     const key = `${row.base_title}:${row.model_title}`;
     if (!variantsByModel.has(key)) variantsByModel.set(key, []);
-    resolved.faqRecords = row.sku ? (faqsByVariantSku.get(String(row.sku).trim()) || []) : [];
     variantsByModel.get(key).push(resolved);
   }
 
@@ -679,7 +613,7 @@ function buildHierarchy(baseRows, modelRows, resolvedVariants, modelImagePaths, 
     const baseModelRows = modelsByBase.get(baseRow.title) || [];
     const modelsList = baseModelRows.map((modelRow) => {
       const key = `${modelRow.base_title}:${modelRow.title}`;
-      const variantList = (variantsByModel.get(key) || []).map(({ row, categoryIds, attributeValueIds, coverImage, hoverImage, brochurePath, mediaRecords, projectImageRecords, faqRecords }) => ({
+      const variantList = (variantsByModel.get(key) || []).map(({ row, categoryIds, attributeValueIds, coverImage, hoverImage, brochurePath, mediaRecords, projectImageRecords }) => ({
         rowNum: row._rowNumber,
         data: cleanRow(row, VARIANT_FIELDS),
         categoryIds,
@@ -689,7 +623,6 @@ function buildHierarchy(baseRows, modelRows, resolvedVariants, modelImagePaths, 
         brochurePath,
         mediaRecords,
         projectImageRecords,
-        faqRecords: faqRecords || [],
       }));
 
       const resolvedMediaPath = modelImagePaths ? modelImagePaths.get(modelRow._rowNumber) : null;
@@ -713,26 +646,52 @@ function buildHierarchy(baseRows, modelRows, resolvedVariants, modelImagePaths, 
   return { bases };
 }
 
+// ─── SKU Auto-generation ─────────────────────────────────────────────────────
+
+/**
+ * Auto-generates the SKU for every variant row using the formula:
+ *   {model.code}-{attr_value_slug1}-{attr_value_slug2}... (uppercased, hyphen-joined)
+ *
+ * Mirrors the logic in ProductVariantHelper.js createProductVariants().
+ * Mutates variantRows in-place so all downstream steps (duplicate check,
+ * FAQ validation, buildHierarchy) see the generated SKU.
+ */
+function autoFillVariantSkus(modelRows, variantRows) {
+  const modelCodeMap = new Map();
+  for (const row of modelRows) {
+    if (row.base_title && row.title) {
+      modelCodeMap.set(`${row.base_title}:${row.title}`, row.code || "PROD");
+    }
+  }
+
+  for (const row of variantRows) {
+    const modelCode = modelCodeMap.get(`${row.base_title}:${row.model_title}`) || "PROD";
+    const valueSlugs = parseAttributePairs(row.attributes).map((p) => p.valueSlug);
+    row.sku = [modelCode, ...valueSlugs]
+      .map((v) => String(v).toUpperCase())
+      .join("-");
+  }
+}
+
 // ─── Main Validate Function ──────────────────────────────────────────────────
 
 async function validateBulkUpload(parsedSheets) {
-  const { product_base: baseRows, product_models: modelRows, product_variants: variantRows, product_faqs: faqRows = [] } = parsedSheets;
+  const { product_base: baseRows, product_models: modelRows, product_variants: variantRows } = parsedSheets;
   const errors = [];
 
   // Step 1: Schema validation (required fields + type checks + DB length/range checks)
   validateSchema(baseRows,    "product_base",     BASE_REQUIRED,    errors, BASE_STRING_MAX);
   validateSchema(modelRows,   "product_models",   MODEL_REQUIRED,   errors, MODEL_STRING_MAX);
   validateSchema(variantRows, "product_variants", VARIANT_REQUIRED, errors, VARIANT_STRING_MAX);
-  validateSchema(faqRows,     "product_faqs",     FAQ_REQUIRED,     errors, FAQ_STRING_MAX);
 
   // Step 2: Internal relational integrity
   validateRelations(baseRows, modelRows, variantRows, errors);
 
-  // Step 3: Internal duplicates
-  validateInternalDuplicates(baseRows, modelRows, variantRows, errors);
+  // Step 3: Auto-generate SKU for all variants — must run before duplicate check
+  autoFillVariantSkus(modelRows, variantRows);
 
-  // Step 5: FAQ sheet validation (runs sync before async lookups)
-  const faqsByVariantSku = validateFaqs(faqRows, variantRows, errors);
+  // Step 4: Internal duplicates (catches duplicate auto-generated SKUs)
+  validateInternalDuplicates(baseRows, modelRows, variantRows, errors);
 
   // Note: DB duplicate checks removed — service layer handles upsert (update-or-create)
   // Resolve model images and variant lookups in parallel
@@ -742,7 +701,7 @@ async function validateBulkUpload(parsedSheets) {
   ]);
 
   if (errors.length > 0) {
-    const totalRows = baseRows.length + modelRows.length + variantRows.length + faqRows.length;
+    const totalRows = baseRows.length + modelRows.length + variantRows.length;
     const errorRows = new Set(errors.map((e) => `${e.sheet}:${e.row}`)).size;
     return {
       valid: false,
@@ -756,12 +715,11 @@ async function validateBulkUpload(parsedSheets) {
   }
 
   // Build hierarchy for storage
-  const hierarchy = buildHierarchy(baseRows, modelRows, resolvedVariants, modelImagePaths, faqsByVariantSku);
+  const hierarchy = buildHierarchy(baseRows, modelRows, resolvedVariants, modelImagePaths);
   const summary = {
     total_bases: baseRows.length,
     total_models: modelRows.length,
     total_variants: variantRows.length,
-    total_faqs: faqRows.length,
   };
 
   return { valid: true, hierarchy, summary };

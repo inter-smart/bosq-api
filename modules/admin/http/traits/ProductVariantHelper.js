@@ -90,12 +90,27 @@ const createOrUpdateVariantAttributes = async (transaction, attributes, product_
       }
 
       const {
-        sort_order, status, stock, media_path, design_title, design_title_ar,
-        hover_media_path, title, title_ar,
-        is_featured, brochure, description, description_ar,
-        details, details_ar, details_points, details_points_ar,
-        additional_details, additional_details_ar,
-        enhance_title, enhance_title_ar
+        sort_order,
+        status,
+        stock,
+        media_path,
+        design_title,
+        design_title_ar,
+        hover_media_path,
+        title,
+        title_ar,
+        is_featured,
+        brochure,
+        description,
+        description_ar,
+        details,
+        details_ar,
+        details_points,
+        details_points_ar,
+        additional_details,
+        additional_details_ar,
+        enhance_title,
+        enhance_title_ar,
       } = meta;
 
       // Delete existing variant attributes (hard delete to avoid unique constraint issues)

@@ -42,16 +42,15 @@ app.use(
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "Cookie"], // ⭐ Added Cookie header
+    allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
   }),
 );
 
 app.use(express.json({ limit: "10mb" }));
-app.use(express.urlencoded({ extended: true })); // ⭐ Added for form data
+app.use(express.urlencoded({ extended: true }));
 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// ✅ Register routes BEFORE listing endpoints
 app.use("/api/backend", backendApi);
 app.use("/api/frontend", frontendApi);
 

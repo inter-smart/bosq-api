@@ -325,7 +325,7 @@ class UsersService {
 
       const user = await Users.findOne({
         where: { email },
-        attributes: ["id", "email", "password", "name", "country_code", "mobile"],
+        attributes: ["id", "email", "password", "auth_provider", "name", "country_code", "mobile"],
       });
 
       if (!user) {
@@ -336,15 +336,29 @@ class UsersService {
         );
       }
 
-      if (user.password) {
-        const isPasswordValid = await bcrypt.compare(password, user.password);
-        if (!isPasswordValid) {
-          throw ErrorHandler.createError(
-            RESPONSE_MESSAGES.ERROR.PASSWORD_INCORRECT,
-            HTTP_STATUS.UNAUTHORIZED,
-            ERROR_CODES.AUTH_ERROR,
-          );
-        }
+      if (user.auth_provider === "google" && !user.password) {
+        throw ErrorHandler.createError(
+          RESPONSE_MESSAGES.ERROR.GOOGLE_LOGIN_REQUIRED,
+          HTTP_STATUS.UNAUTHORIZED,
+          ERROR_CODES.AUTH_ERROR,
+        );
+      }
+
+      if (!user.password) {
+        throw ErrorHandler.createError(
+          RESPONSE_MESSAGES.ERROR.PASSWORD_INCORRECT,
+          HTTP_STATUS.UNAUTHORIZED,
+          ERROR_CODES.AUTH_ERROR,
+        );
+      }
+
+      const isPasswordValid = await bcrypt.compare(password, user.password);
+      if (!isPasswordValid) {
+        throw ErrorHandler.createError(
+          RESPONSE_MESSAGES.ERROR.PASSWORD_INCORRECT,
+          HTTP_STATUS.UNAUTHORIZED,
+          ERROR_CODES.AUTH_ERROR,
+        );
       }
 
       const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, {
@@ -704,6 +718,7 @@ class UsersService {
             email_verified: true,
             slug: baseSlug,
             profile_image: picture || null,
+            auth_provider: "google",
           },
           { transaction },
         );

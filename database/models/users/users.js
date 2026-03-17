@@ -52,6 +52,12 @@ module.exports = (sequelize) => {
         allowNull: true,
       },
 
+      auth_provider: {
+        type: DataTypes.STRING(20),
+        allowNull: false,
+        defaultValue: "local", // 'local' | 'google'
+      },
+
       email_verified: {
         type: DataTypes.BOOLEAN,
         defaultValue: false,

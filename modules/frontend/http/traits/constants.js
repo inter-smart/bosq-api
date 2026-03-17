@@ -344,6 +344,10 @@ const RESPONSE_MESSAGES = {
     PASSWORD_INCORRECT:{
       en: "Password is incorrect",
       ar: "كلمة المرور غير صحيحة",
+    },
+    GOOGLE_LOGIN_REQUIRED: {
+      en: "This account was created with Google Sign-In. Please log in with Google.",
+      ar: "تم إنشاء هذا الحساب باستخدام تسجيل الدخول من Google. يرجى تسجيل الدخول عبر Google.",
     }
   },
 };

@@ -243,15 +243,45 @@ class ProductBaseController {
     const errors = validationResult(req);
     if (!errors.isEmpty()) return sendValidationError(res, errors.array());
 
+    const transaction = await sequelize.transaction();
+
     try {
       const { id } = req.params;
 
-      const data = await DataModel.findByPk(id);
-      if (!data) return sendNotFoundError(res, "Product Base");
+      const data = await DataModel.findByPk(id, { transaction });
+      if (!data) {
+        await transaction.rollback();
+        return sendNotFoundError(res, "Product Base");
+      }
 
-      await data.destroy();
+      // Get all model IDs under this base product
+      const productModels = await models.ProductModels.findAll({
+        where: { product_id: id },
+        attributes: ["id"],
+        transaction,
+      });
+      const modelIds = productModels.map((m) => m.id);
+
+      // Soft-delete all variants under those models
+      if (modelIds.length > 0) {
+        await models.ProductVariants.destroy({
+          where: { product_model_id: modelIds },
+          transaction,
+        });
+      }
+
+      // Soft-delete all product models
+      await models.ProductModels.destroy({
+        where: { product_id: id },
+        transaction,
+      });
+
+      await data.destroy({ transaction });
+      await transaction.commit();
+
       sendSuccessResponse(res, { id }, "Product Base deleted successfully");
     } catch (error) {
+      await transaction.rollback();
       console.error("Product Base deletion error:", error);
       sendErrorResponse(res, error);
     }

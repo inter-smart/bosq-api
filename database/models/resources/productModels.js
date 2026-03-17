@@ -97,11 +97,13 @@ module.exports = (sequelize) => {
     ProductModels.hasMany(models.ProductVariants, {
       foreignKey: "product_model_id",
       as: "variants",
+      onDelete: "CASCADE",
     });
 
     ProductModels.belongsTo(models.ProductBase, {
       foreignKey: "product_id",
       as: "product",
+      onDelete: "CASCADE",
     });
 
     ProductModels.hasMany(models.Coupons, {
@@ -112,7 +114,6 @@ module.exports = (sequelize) => {
         scope_type: "model",
       },
     });
-
   };
 
   return ProductModels;

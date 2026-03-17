@@ -279,15 +279,29 @@ class ProductModelsController {
     const errors = validationResult(req);
     if (!errors.isEmpty()) return sendValidationError(res, errors.array());
 
+    const transaction = await sequelize.transaction();
+
     try {
       const { id } = req.params;
 
-      const data = await DataModel.findByPk(id);
-      if (!data) return sendNotFoundError(res, "Product model");
+      const data = await DataModel.findByPk(id, { transaction });
+      if (!data) {
+        await transaction.rollback();
+        return sendNotFoundError(res, "Product model");
+      }
 
-      await data.destroy();
+      // Soft-delete all variants under this model
+      await models.ProductVariants.destroy({
+        where: { product_model_id: id },
+        transaction,
+      });
+
+      await data.destroy({ transaction });
+      await transaction.commit();
+
       sendSuccessResponse(res, { id }, "Product model deleted successfully");
     } catch (error) {
+      await transaction.rollback();
       console.error("Product model deletion error:", error);
       sendErrorResponse(res, error);
     }

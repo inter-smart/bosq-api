@@ -14,7 +14,11 @@ class ProductVariantsController {
     try {
       const { product_id, product_model_id, category_id } = req.query;
 
-      const whereClause = {};
+      const whereClause = {
+        deletedAt:{
+          [Op.eq]: null
+        }
+      };
       if (product_model_id) {
         whereClause.product_model_id = product_model_id;
       }
@@ -34,6 +38,7 @@ class ProductVariantsController {
 
       const result = await paginate(DataModel, req, {
         where: whereClause,
+        paranoid: false,
         order: [
           ["sort_order", "ASC"],
           ["createdAt", "DESC"],

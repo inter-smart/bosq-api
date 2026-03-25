@@ -17,9 +17,13 @@ class WebhookService {
 
     // 1. ✅ Validate X-Webhook-Token header (N-Genius auth method — no HMAC signature)
     const webhookToken = headers["x-webhook-token"];
+
+    console.log(webhookToken);
+    console.log(process.env.NETWORK_WEBHOOK_SECRET);
+
     if (!webhookToken || webhookToken !== process.env.NETWORK_WEBHOOK_SECRET) {
       Logger.warn(`[Webhook] Invalid or missing X-Webhook-Token`);
-      const error = new Error("Unauthorized");
+      const error = new Error("Unauthorized request");
       error.status = 401;
       throw error;
     }

@@ -22,6 +22,7 @@ router.get("/", Controller.index);
 router.get("/:id", Controller.show);
 router.post("/", Controller.store);
 router.put("/:id", upload, Controller.update);
+router.delete("/all", Controller.destroyAll);
 router.delete("/:id", Controller.destroy);
 
 module.exports = router;

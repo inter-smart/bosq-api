@@ -13,10 +13,10 @@ module.exports = (sequelize) => {
       product_model_id: {
         type: DataTypes.INTEGER,
         allowNull: false,
+        onDelete: "CASCADE",
         references: {
           model: "product_models",
           key: "id",
-          onDelete: "CASCADE",
         },
       },
 

@@ -274,6 +274,39 @@ class ProductModelsController {
     }
   }
 
+  static async destroyAll(req, res) {
+    const transaction = await sequelize.transaction();
+
+    try {
+      const { ids } = req.body;
+
+      if (!Array.isArray(ids) || ids.length === 0) {
+        await transaction.rollback();
+        return sendValidationError(res, [{ msg: "IDs must be a non-empty array" }]);
+      }
+
+      // Permanently delete all variants under these models
+      await models.ProductVariants.destroy({
+        where: { product_model_id: ids },
+        force: true,
+        transaction,
+      });
+
+      await DataModel.destroy({
+        where: { id: ids },
+        transaction,
+      });
+
+      await transaction.commit();
+
+      sendSuccessResponse(res, { deleted_ids: ids }, "Product Models deleted successfully");
+    } catch (error) {
+      await transaction.rollback();
+      console.error("Product Model bulk deletion error:", error);
+      sendErrorResponse(res, error);
+    }
+  }
+
   static async destroy(req, res) {
     await Promise.all(validateId.map((v) => v.run(req)));
     const errors = validationResult(req);
@@ -290,9 +323,10 @@ class ProductModelsController {
         return sendNotFoundError(res, "Product model");
       }
 
-      // Soft-delete all variants under this model
+      // Permanently delete all variants under this model
       await models.ProductVariants.destroy({
         where: { product_model_id: id },
+        force: true,
         transaction,
       });
 

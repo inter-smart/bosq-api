@@ -238,6 +238,55 @@ class ProductBaseController {
     }
   }
 
+  static async destroyAll(req, res) {
+    const transaction = await sequelize.transaction();
+
+    try {
+      const { ids } = req.body;
+
+      if (!Array.isArray(ids) || ids.length === 0) {
+        await transaction.rollback();
+        return sendValidationError(res, [{ msg: "IDs must be a non-empty array" }]);
+      }
+
+      // Get all model IDs under these base products
+      const productModels = await models.ProductModels.findAll({
+        where: { product_id: ids },
+        attributes: ["id"],
+        transaction,
+      });
+      const modelIds = productModels.map((m) => m.id);
+
+      // Soft-delete all variants under those models
+      if (modelIds.length > 0) {
+        await models.ProductVariants.destroy({
+          where: { product_model_id: modelIds },
+          transaction,
+        });
+      }
+
+      // Soft-delete all product models
+      await models.ProductModels.destroy({
+        where: { product_id: ids },
+        transaction,
+      });
+
+      // Soft-delete all base products
+      await DataModel.destroy({
+        where: { id: ids },
+        transaction,
+      });
+
+      await transaction.commit();
+
+      sendSuccessResponse(res, { deleted_ids: ids }, "Product Base(s) deleted successfully");
+    } catch (error) {
+      await transaction.rollback();
+      console.error("Product Base bulk deletion error:", error);
+      sendErrorResponse(res, error);
+    }
+  }
+
   static async destroy(req, res) {
     await Promise.all(validateId.map((v) => v.run(req)));
     const errors = validationResult(req);

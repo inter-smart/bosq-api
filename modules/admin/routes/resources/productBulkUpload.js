@@ -38,4 +38,7 @@ router.post("/faqs/approve", Controller.approveFaqs);
 // GET /api/backend/resources/product-bulk-upload/faqs/status/:jobId
 router.get("/faqs/status/:jobId", Controller.getFaqStatus);
 
+// POST /api/backend/resources/product-bulk-upload/export-variant-data
+router.post("/export-variant-data", Controller.exportVariantData);
+
 module.exports = router;

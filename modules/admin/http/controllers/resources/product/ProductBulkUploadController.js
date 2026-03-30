@@ -4,6 +4,7 @@ const { parseExcelBuffer, parseFaqExcelBuffer } = require("../../../../../../ser
 const { validateBulkUpload } = require("../../../../../../services/bulkUpload/bulkValidatorService");
 const { validateFaqUpload } = require("../../../../../../services/bulkUpload/faqBulkValidatorService");
 const { addBulkUploadJob, addFaqUploadJob, bulkUploadQueue } = require("../../../../../../queues/bulkUploadQueue");
+const { getExportData } = require("../../../../../../services/bulkUpload/exportVariantDataService");
 const Logger = require("../../../../../../config/logger");
 
 const SESSION_PREFIX = "bulk_upload_session:";
@@ -313,4 +314,46 @@ const getFaqStatus = async (req, res) => {
   }
 };
 
-module.exports = { validate, approve, getStatus, validateFaqs, approveFaqs, getFaqStatus };
+// ─── POST /export-variant-data ────────────────────────────────────────────────
+
+const exportVariantData = async (req, res) => {
+  try {
+    const { variant_ids } = req.body;
+
+    if (!Array.isArray(variant_ids) || variant_ids.length === 0) {
+      return res.status(400).json({
+        status: "error",
+        message: "variant_ids must be a non-empty array of integers.",
+      });
+    }
+
+    if (variant_ids.length > 500) {
+      return res.status(400).json({
+        status: "error",
+        message: "Maximum 500 variants can be exported at once.",
+      });
+    }
+
+    const ids = variant_ids.map(Number).filter((n) => Number.isInteger(n) && n > 0);
+    if (ids.length !== variant_ids.length) {
+      return res.status(400).json({
+        status: "error",
+        message: "All variant_ids must be positive integers.",
+      });
+    }
+
+    const data = await getExportData(ids);
+
+    Logger.info(`[BulkUpload] Export variant data — ${ids.length} IDs requested, ${data.variants.length} rows returned`);
+
+    return res.status(200).json({ status: "success", data });
+  } catch (err) {
+    Logger.error(`[BulkUpload] ExportVariantData error: ${err.message}`);
+    return res.status(500).json({
+      status: "error",
+      message: "Internal server error while exporting variant data.",
+    });
+  }
+};
+
+module.exports = { validate, approve, getStatus, validateFaqs, approveFaqs, getFaqStatus, exportVariantData };

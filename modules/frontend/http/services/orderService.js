@@ -279,9 +279,12 @@ class OrderService {
       await transaction.commit();
 
       // Send order confirmation email
-      this.sendOrderConfirmationEmail(order.id).catch((err) =>
-        Logger.error(`Order confirmation email failed: ${err.message}`),
+
+      if(paymentType === "cod"){
+        this.sendOrderConfirmationEmail(order.id).catch((err) =>
+          Logger.error(`Order confirmation email failed: ${err.message}`),
       );
+    }
 
       return await this.getOrderById(userId, sessionId, order.id);
     } catch (error) {

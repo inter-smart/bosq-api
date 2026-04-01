@@ -82,6 +82,7 @@ async function getExportData(variantIds) {
     ],
     order: [
       ["id", "ASC"],
+      [{ model: models.ProductVariantAttributes, as: "variant_attributes" }, "id", "ASC"],
       [{ model: ProductVariantImages, as: "variant_images" }, "sort_order", "ASC"],
       [{ model: ProductProjectImage, as: "projectImages" }, "sort_order", "ASC"],
     ],

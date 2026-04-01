@@ -248,6 +248,8 @@ class ProductVariantsController {
   static async destroyAll(req, res) {
     try {
       const { ids } = req.body;
+      const { delete_type } = req.query;
+      const isForceDelete = delete_type === "force";
 
       if (!Array.isArray(ids) || ids.length === 0) {
         return sendValidationError(res, [{ msg: "IDs must be a non-empty array" }]);
@@ -255,7 +257,7 @@ class ProductVariantsController {
 
       await DataModel.destroy({
         where: { id: ids },
-        force: true,
+        force: isForceDelete,
       });
 
       sendSuccessResponse(res, { deleted_ids: ids }, "Product Variants deleted successfully");
@@ -272,11 +274,13 @@ class ProductVariantsController {
 
     try {
       const { id } = req.params;
+      const { delete_type } = req.query;
+      const forceDelete = delete_type === "force";
 
       const data = await DataModel.findByPk(id);
       if (!data) return sendNotFoundError(res, "Product Variant");
 
-      await data.destroy();
+      await data.destroy({ force: forceDelete });
       sendSuccessResponse(res, { id }, "Product Variant deleted successfully");
     } catch (error) {
       console.error("Product Variant deletion error:", error);

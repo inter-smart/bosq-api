@@ -8,6 +8,8 @@ const { handleFileUploadStore, handleFileUploadUpdate } = require("../../../midd
 const { Op } = require("sequelize");
 const { updateVariantsPrices } = require("../../../traits/ProductVariantHelper");
 
+const allowedDeleteTypes = ["soft", "force"];
+
 const DataModel = models.ProductBase;
 
 class ProductBaseController {
@@ -243,40 +245,47 @@ class ProductBaseController {
 
     try {
       const { ids } = req.body;
+      const { delete_type } = req.query;
+      const isForceDelete = delete_type === "force";
+
+      console.log("Bulk delete request received with IDs:", ids, "and delete_type:", delete_type);
 
       if (!Array.isArray(ids) || ids.length === 0) {
         await transaction.rollback();
         return sendValidationError(res, [{ msg: "IDs must be a non-empty array" }]);
       }
 
-      // Get all model IDs under these base products
+      // 1. Get product models
       const productModels = await models.ProductModels.findAll({
         where: { product_id: ids },
         attributes: ["id"],
         transaction,
       });
+
       const modelIds = productModels.map((m) => m.id);
 
-      // Soft-delete all variants under those models
+      // 2. Delete variants
       if (modelIds.length > 0) {
         await models.ProductVariants.destroy({
           where: { product_model_id: modelIds },
+          force: isForceDelete,
           transaction,
         });
       }
 
-      // Soft-delete all product models
+      // 3. Delete product models
       await models.ProductModels.destroy({
         where: { product_id: ids },
+        force: isForceDelete,
         transaction,
       });
 
-      // Soft-delete all base products
+      // 4. Delete main products
       await DataModel.destroy({
         where: { id: ids },
+        force: isForceDelete,
         transaction,
       });
-
       await transaction.commit();
 
       sendSuccessResponse(res, { deleted_ids: ids }, "Product Base(s) deleted successfully");
@@ -296,6 +305,8 @@ class ProductBaseController {
 
     try {
       const { id } = req.params;
+      const { delete_type } = req.query;
+      const forceDelete = delete_type === "force";
 
       const data = await DataModel.findByPk(id, { transaction });
       if (!data) {
@@ -311,21 +322,23 @@ class ProductBaseController {
       });
       const modelIds = productModels.map((m) => m.id);
 
-      // Soft-delete all variants under those models
+      // Delete all variants under those models
       if (modelIds.length > 0) {
         await models.ProductVariants.destroy({
           where: { product_model_id: modelIds },
+          force: forceDelete,
           transaction,
         });
       }
 
-      // Soft-delete all product models
+      // Delete all product models
       await models.ProductModels.destroy({
         where: { product_id: id },
+        force: forceDelete,
         transaction,
       });
 
-      await data.destroy({ transaction });
+      await data.destroy({ force: forceDelete, transaction });
       await transaction.commit();
 
       sendSuccessResponse(res, { id }, "Product Base deleted successfully");

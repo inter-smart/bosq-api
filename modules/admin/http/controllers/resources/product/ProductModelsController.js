@@ -279,26 +279,25 @@ class ProductModelsController {
 
     try {
       const { ids } = req.body;
+      const { delete_type } = req.query;
+      const isForceDelete = delete_type === "force";
 
       if (!Array.isArray(ids) || ids.length === 0) {
         await transaction.rollback();
         return sendValidationError(res, [{ msg: "IDs must be a non-empty array" }]);
       }
 
-      // Permanently delete all variants under these models
       const variantsDeleted = await models.ProductVariants.destroy({
         where: { product_model_id: ids },
-        force: true,
+        force: isForceDelete,
         transaction,
       });
-      console.log(`ProductVariants deleted count: ${variantsDeleted}`);
 
       const modelsDeleted = await DataModel.destroy({
         where: { id: ids },
-        force: true,
+        force: isForceDelete,
         transaction,
       });
-      console.log(`ProductModels deleted count: ${modelsDeleted}`);
 
       await transaction.commit();
 
@@ -319,6 +318,8 @@ class ProductModelsController {
 
     try {
       const { id } = req.params;
+      const { delete_type } = req.query;
+      const forceDelete = delete_type === "force";
 
       const data = await DataModel.findByPk(id, { transaction });
       if (!data) {
@@ -326,14 +327,13 @@ class ProductModelsController {
         return sendNotFoundError(res, "Product model");
       }
 
-      // Permanently delete all variants under this model
       await models.ProductVariants.destroy({
         where: { product_model_id: id },
-        force: true,
+        force: forceDelete,
         transaction,
       });
 
-      await data.destroy({ transaction });
+      await data.destroy({ force: forceDelete, transaction });
       await transaction.commit();
 
       sendSuccessResponse(res, { id }, "Product model deleted successfully");

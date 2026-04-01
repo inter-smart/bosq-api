@@ -286,16 +286,19 @@ class ProductModelsController {
       }
 
       // Permanently delete all variants under these models
-      await models.ProductVariants.destroy({
+      const variantsDeleted = await models.ProductVariants.destroy({
         where: { product_model_id: ids },
         force: true,
         transaction,
       });
+      console.log(`ProductVariants deleted count: ${variantsDeleted}`);
 
-      await DataModel.destroy({
+      const modelsDeleted = await DataModel.destroy({
         where: { id: ids },
+        force: true,
         transaction,
       });
+      console.log(`ProductModels deleted count: ${modelsDeleted}`);
 
       await transaction.commit();
 

@@ -15,9 +15,9 @@ class ProductVariantsController {
       const { product_id, product_model_id, category_id } = req.query;
 
       const whereClause = {
-        deletedAt:{
-          [Op.eq]: null
-        }
+        deletedAt: {
+          [Op.eq]: null,
+        },
       };
       if (product_model_id) {
         whereClause.product_model_id = product_model_id;
@@ -255,6 +255,7 @@ class ProductVariantsController {
 
       await DataModel.destroy({
         where: { id: ids },
+        force: true,
       });
 
       sendSuccessResponse(res, { deleted_ids: ids }, "Product Variants deleted successfully");

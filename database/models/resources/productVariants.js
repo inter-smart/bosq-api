@@ -251,6 +251,7 @@ module.exports = (sequelize) => {
     ProductVariants.hasMany(models.FaqList, {
       foreignKey: "product_variant_id",
       as: "faqs",
+      onDelete: "CASCADE",
     });
   };
 

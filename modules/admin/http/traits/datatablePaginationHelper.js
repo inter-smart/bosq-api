@@ -74,17 +74,17 @@ module.exports = {
       if (startDate && endDate) {
         // Both bounds: inclusive range (start of day → end of day)
         const start = new Date(startDate);
-        start.setHours(0, 0, 0, 0);
+        start.setUTCHours(0, 0, 0, 0);
         const end = new Date(endDate);
-        end.setHours(23, 59, 59, 999);
+        end.setUTCHours(23, 59, 59, 999);
         dateCondition[dateField] = { [Op.between]: [start, end] };
       } else if (startDate) {
         const start = new Date(startDate);
-        start.setHours(0, 0, 0, 0);
+        start.setUTCHours(0, 0, 0, 0);
         dateCondition[dateField] = { [Op.gte]: start };
       } else if (endDate) {
         const end = new Date(endDate);
-        end.setHours(23, 59, 59, 999);
+        end.setUTCHours(23, 59, 59, 999);
         dateCondition[dateField] = { [Op.lte]: end };
       }
 

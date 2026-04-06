@@ -11,13 +11,13 @@ class AboutService {
     try {
       const cachedData = await getCache(cacheKey);
 
-      if (cachedData) {
-        return {
-          data: cachedData,
-          fromCache: true,
-          message: "About page data fetched from cache",
-        };
-      }
+      // if (cachedData) {
+      //   return {
+      //     data: cachedData,
+      //     fromCache: true,
+      //     message: "About page data fetched from cache",
+      //   };
+      // }
 
       const [aboutCms, aboutJourneys, whyBosq, aboutTestimonials, aboutOurClients, news] = await Promise.all([
         models.AboutCms.findOne(),

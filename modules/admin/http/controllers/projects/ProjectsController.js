@@ -274,6 +274,23 @@ class ProjectsController {
       sendErrorResponse(res, error);
     }
   }
+
+
+  // get all project categories
+  static async getCategories(req, res) {
+    try {
+      const categories = await models.ProjectCategories.findAll({
+        where: { status: true },
+        attributes: ["id", "name", "name_ar"],
+        order: [["name", "ASC"]],
+      });
+
+      sendSuccessResponse(res, categories, "Project categories retrieved successfully");
+    } catch (error) {
+      console.error("Get project categories error:", error);
+      sendErrorResponse(res, error);
+    }
+  }
 }
 
 module.exports = ProjectsController;

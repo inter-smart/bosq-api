@@ -58,6 +58,8 @@ class AboutCmsController {
         "banner_media_mobile_path",
         "banner_media_desktop_path_ar",
         "banner_media_mobile_path_ar",
+        "banner_video_thumbnail_path",
+        "banner_video_thumbnail_path_ar",
         "journey_one_media_path",
         "journey_two_media_path",
         "journey_three_media_path",

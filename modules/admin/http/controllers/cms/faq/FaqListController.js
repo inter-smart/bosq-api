@@ -203,6 +203,16 @@ class FaqListController {
             as: "faq_category",
             attributes: ["id", "title", "status"],
           },
+          {
+            association: "product_variant",
+            attributes: ["id", "title", "title_ar", "sku", "product_model_id"],
+            include: [
+              {
+                association: "productModel",
+                attributes: ["id", "product_id"],
+              },
+            ],
+          },
         ],
       });
 

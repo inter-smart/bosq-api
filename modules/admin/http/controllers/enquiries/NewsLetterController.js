@@ -47,7 +47,7 @@ class NewsLetterController {
     try {
       const { id } = req.params;
 
-      const data = await DataModel.findOne();
+      const data = await DataModel.findOne({ where: { id } });
 
       if (!data) {
         return sendNotFoundError(res, "NewsLetter");
@@ -71,7 +71,7 @@ class NewsLetterController {
     try {
       const { id } = req.params;
 
-      const data = await DataModel.findOne();
+      const data = await DataModel.findOne({ where: { id } });
 
       if (!data) {
         return sendNotFoundError(res, "Data");

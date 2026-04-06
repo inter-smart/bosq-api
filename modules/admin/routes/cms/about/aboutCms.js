@@ -10,6 +10,7 @@ const authMiddleware = require("../../../http/middleware/authMiddleware");
 const fields = [
   { name: "banner_media_desktop_path", maxCount: 1 },
   { name: "banner_media_mobile_path", maxCount: 1 },
+  { name: "banner_video_thumbnail_path", maxCount: 1 },
   { name: "banner_media_desktop_path_ar", maxCount: 1 },
   { name: "banner_media_mobile_path_ar", maxCount: 1 },
   { name: "journey_one_media_path", maxCount: 1 },

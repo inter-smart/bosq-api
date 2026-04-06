@@ -22,6 +22,7 @@ const upload = createUploadMiddleware("projects", fields);
 
 router.get("/", Controller.index);
 
+router.get("/all-categories", Controller.getCategories);
 router.get("/:id", Controller.show);
 
 // Protected routes (require admin auth)

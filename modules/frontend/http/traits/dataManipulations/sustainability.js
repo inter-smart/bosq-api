@@ -15,7 +15,6 @@ function buildSustainabilityData(data, list) {
         "banner_media_alt_ar"
       ),
       thumbnail: data.banner_media_thumbnail ? `${backendUrl}${data.banner_media_thumbnail}` : null,
-      thumbnail_ar: data.banner_media_thumbnail_ar ? `${backendUrl}${data.banner_media_thumbnail_ar}` : null,
     },
     title: data.section1_title ?? "N/A",
     title_ar: data.section1_title_ar ?? "N/A",

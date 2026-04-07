@@ -77,11 +77,8 @@ function buildBannerSection(cmsData, prefix, options = {}) {
   const desktopPath_ar = get("media_desktop_path_ar");
   const mobilePath_ar = get("media_mobile_path_ar");
   const singlePath = get("media_path");
+  const thumbnailPath = get("media_thumbnail") || get('video_thumbnail_path');
 
-  const thumbnailPath = get("media_thumbnail");
-
-
-  console.log("thumbnail", thumbnailPath)
 
   const hasMedia =
     !!mediaType &&

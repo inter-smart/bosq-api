@@ -45,7 +45,6 @@ class SustainabilityCmsController {
         "banner_media_desktop_path_ar",
         "banner_media_mobile_path_ar",
         "banner_media_thumbnail",
-        "banner_media_thumbnail_ar",
         "section1_media_path",
       ];
 

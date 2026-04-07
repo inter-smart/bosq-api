@@ -11,6 +11,7 @@ const fields = [
     { name: "journey_media_mobile_path", maxCount: 1 },
     { name: "calculator_media_path", maxCount: 1 },
     { name: "customize_media_path", maxCount: 1 },
+    { name: "journey_thumbnail_path", maxCount: 1 },
     { name: "form_media_path", maxCount: 1 },
 ];
 

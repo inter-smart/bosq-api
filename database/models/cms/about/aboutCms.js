@@ -57,10 +57,6 @@ module.exports = (sequelize) => {
         type: DataTypes.TEXT,
         allowNull: true,
       },
-      banner_video_thumbnail_path_ar: {
-        type: DataTypes.TEXT,
-        allowNull: true,
-      },
       banner_media_alt: {
         type: DataTypes.STRING,
         allowNull: true,

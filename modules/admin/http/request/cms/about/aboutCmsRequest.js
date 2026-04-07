@@ -40,11 +40,6 @@ exports.validationRequestPost = [
     .isString()
     .withMessage("Banner video thumbnail path must be a string"),
 
-  body("banner_video_thumbnail_path_ar")
-    .optional()
-    .isString()
-    .withMessage("Banner video thumbnail path (Arabic) must be a string"),
-
   body("banner_media_alt")
     .optional()
     .isString()

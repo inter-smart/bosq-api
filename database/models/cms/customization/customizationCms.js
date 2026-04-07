@@ -38,10 +38,6 @@ module.exports = (sequelize) => {
         type: DataTypes.TEXT,
         allowNull: true,
       },
-      banner_media_thumbnail_ar: {
-        type: DataTypes.TEXT,
-        allowNull: true,
-      },
       banner_media_alt: {
         type: DataTypes.STRING,
         allowNull: true,

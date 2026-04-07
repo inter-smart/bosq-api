@@ -39,7 +39,7 @@ class CustomizationCmsController {
 
     try {
       const existingData = await DataModel.findOne();
-      const fileFields = ["banner_media_desktop_path", "banner_media_desktop_path_ar", "banner_media_mobile_path", "banner_media_mobile_path_ar", "banner_media_thumbnail", "banner_media_thumbnail_ar", "process_media_path", "form_media_path"];
+      const fileFields = ["banner_media_desktop_path", "banner_media_desktop_path_ar", "banner_media_mobile_path", "banner_media_mobile_path_ar", "banner_media_thumbnail", "process_media_path", "form_media_path"];
 
       let data;
 

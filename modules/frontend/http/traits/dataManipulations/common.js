@@ -78,8 +78,7 @@ function buildBannerSection(cmsData, prefix, options = {}) {
   const mobilePath_ar = get("media_mobile_path_ar");
   const singlePath = get("media_path");
 
-  const thumbnailPath = get("video_thumbnail_path");
-  const thumbnailPath_ar = get("video_thumbnail_path_ar");
+  const thumbnailPath = get("media_thumbnail");
 
 
   console.log("thumbnail", thumbnailPath)
@@ -104,7 +103,6 @@ function buildBannerSection(cmsData, prefix, options = {}) {
       desktopPath_ar: generateImageUrl(desktopPath_ar),
       mobilePath_ar: generateImageUrl(mobilePath_ar),
       thumbnailPath: generateImageUrl(thumbnailPath),
-      thumbnailPath_ar: generateImageUrl(thumbnailPath_ar),
       media_alt: get("media_alt"),
       media_alt_ar: get("media_alt_ar"),
     };

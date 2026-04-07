@@ -1,14 +1,6 @@
 const path = require("path");
 const { models } = require("../../database/models");
-const {
-  ProductVariants,
-  ProductModels,
-  ProductBase,
-  ProductAttribute,
-  AttributeValues,
-  ProductVariantImages,
-  ProductProjectImage,
-} = models;
+const { ProductVariants, ProductModels, ProductBase, ProductAttribute, AttributeValues, ProductVariantImages, ProductProjectImage } = models;
 
 const VIDEO_EXTENSIONS = new Set([".mp4", ".webm", ".mov", ".avi", ".mkv"]);
 
@@ -36,10 +28,7 @@ async function getExportData(variantIds) {
       {
         model: ProductModels,
         as: "productModel",
-        attributes: [
-          "id", "title", "title_ar", "code", "base_price",
-          "sort_order", "status", "media_path",
-        ],
+        attributes: ["id", "title", "title_ar", "code", "base_price", "sort_order", "status", "media_path"],
         include: [
           {
             model: ProductBase,
@@ -88,8 +77,8 @@ async function getExportData(variantIds) {
     ],
   });
 
-  const seenBases = new Map();   // base title → base row object
-  const seenModels = new Map();  // "base_title||model_title" → model row object
+  const seenBases = new Map(); // base title → base row object
+  const seenModels = new Map(); // "base_title||model_title" → model row object
   const variantRows = [];
 
   for (const v of rows) {
@@ -173,7 +162,6 @@ async function getExportData(variantIds) {
       design_title_ar: v.design_title_ar ?? "",
       price: v.price ?? "",
       stock: v.stock ?? "",
-      is_primary: v.is_primary ?? false,
       is_featured: v.is_featured ?? false,
       sort_order: v.sort_order ?? 1,
       status: v.status ?? true,

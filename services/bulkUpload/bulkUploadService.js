@@ -3,7 +3,8 @@ const { models, sequelize } = require("../../database/models");
 const { Op } = require("sequelize");
 const Logger = require("../../config/logger");
 
-const { ProductBase, ProductModels, ProductVariants, ProductVariantCategories, ProductVariantAttributes, ProductVariantImages, ProductProjectImage } = models;
+const { ProductBase, ProductModels, ProductVariants, ProductVariantCategories, ProductVariantAttributes, ProductVariantImages, ProductProjectImage } =
+  models;
 
 const BATCH_SIZE = 500;
 
@@ -509,9 +510,6 @@ async function processUpload(hierarchy) {
       variants_created: variantsToCreate.length,
       variants_updated: variantsToUpdate.length,
       category_links: categoryJunctionRows.length,
-      attribute_links: attributeJunctionRows.length,
-      images_inserted: imageRows.length,
-      project_images_inserted: projectImageRows.length,
     };
 
     Logger.info(`[BulkUpload] Completed. Summary: ${JSON.stringify(summary)}`);

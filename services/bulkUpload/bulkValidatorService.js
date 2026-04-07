@@ -26,7 +26,7 @@ const VARIANT_REQUIRED = ["base_title", "model_title"];
 
 const DECIMAL_FIELDS = new Set(["base_price", "price"]);
 const INTEGER_FIELDS = new Set(["stock", "sort_order"]);
-const BOOLEAN_FIELDS = new Set(["status", "is_primary", "is_featured"]);
+const BOOLEAN_FIELDS = new Set(["status", "is_featured"]);
 
 const SMALLINT_MIN = -32768;
 const SMALLINT_MAX = 32767;
@@ -36,10 +36,14 @@ const BASE_STRING_MAX = { title: 255, title_ar: 255 };
 const MODEL_STRING_MAX = { title: 255, title_ar: 255, code: 100 };
 const VARIANT_STRING_MAX = {
   product_code: 200,
-  title: 200, title_ar: 200,
-  design_title: 200, design_title_ar: 200,
-  enhance_title: 255, enhance_title_ar: 255,
-  description: 255, description_ar: 255, // STRING(255) in DB — NOT TEXT
+  title: 200,
+  title_ar: 200,
+  design_title: 200,
+  design_title_ar: 200,
+  enhance_title: 255,
+  enhance_title_ar: 255,
+  description: 255,
+  description_ar: 255, // STRING(255) in DB — NOT TEXT
 };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -152,7 +156,13 @@ function validateSchema(rows, sheetName, requiredFields, errors, stringMaxLength
       if (stringMaxLengths[field] !== undefined && val !== "") {
         const strVal = String(val);
         if (strVal.length > stringMaxLengths[field]) {
-          addError(errors, sheetName, rowNum, field, `"${field}" exceeds max length of ${stringMaxLengths[field]} characters (got: ${strVal.length})`);
+          addError(
+            errors,
+            sheetName,
+            rowNum,
+            field,
+            `"${field}" exceeds max length of ${stringMaxLengths[field]} characters (got: ${strVal.length})`,
+          );
         }
       }
 
@@ -591,7 +601,6 @@ function buildHierarchy(baseRows, modelRows, resolvedVariants, modelImagePaths) 
     "design_title_ar",
     "price",
     "stock",
-    "is_primary",
     "is_featured",
     "sort_order",
     "status",
@@ -613,17 +622,19 @@ function buildHierarchy(baseRows, modelRows, resolvedVariants, modelImagePaths) 
     const baseModelRows = modelsByBase.get(baseRow.title) || [];
     const modelsList = baseModelRows.map((modelRow) => {
       const key = `${modelRow.base_title}:${modelRow.title}`;
-      const variantList = (variantsByModel.get(key) || []).map(({ row, categoryIds, attributeValueIds, coverImage, hoverImage, brochurePath, mediaRecords, projectImageRecords }) => ({
-        rowNum: row._rowNumber,
-        data: cleanRow(row, VARIANT_FIELDS),
-        categoryIds,
-        attributeValueIds,
-        coverImage,
-        hoverImage,
-        brochurePath,
-        mediaRecords,
-        projectImageRecords,
-      }));
+      const variantList = (variantsByModel.get(key) || []).map(
+        ({ row, categoryIds, attributeValueIds, coverImage, hoverImage, brochurePath, mediaRecords, projectImageRecords }) => ({
+          rowNum: row._rowNumber,
+          data: cleanRow(row, VARIANT_FIELDS),
+          categoryIds,
+          attributeValueIds,
+          coverImage,
+          hoverImage,
+          brochurePath,
+          mediaRecords,
+          projectImageRecords,
+        }),
+      );
 
       const resolvedMediaPath = modelImagePaths ? modelImagePaths.get(modelRow._rowNumber) : null;
       return {
@@ -667,9 +678,7 @@ function autoFillVariantSkus(modelRows, variantRows) {
   for (const row of variantRows) {
     const modelCode = modelCodeMap.get(`${row.base_title}:${row.model_title}`) || "PROD";
     const valueSlugs = parseAttributePairs(row.attributes).map((p) => p.valueSlug);
-    row.sku = [modelCode, ...valueSlugs]
-      .map((v) => String(v).toUpperCase())
-      .join("-");
+    row.sku = [modelCode, ...valueSlugs].map((v) => String(v).toUpperCase()).join("-");
   }
 }
 
@@ -680,8 +689,8 @@ async function validateBulkUpload(parsedSheets) {
   const errors = [];
 
   // Step 1: Schema validation (required fields + type checks + DB length/range checks)
-  validateSchema(baseRows,    "product_base",     BASE_REQUIRED,    errors, BASE_STRING_MAX);
-  validateSchema(modelRows,   "product_models",   MODEL_REQUIRED,   errors, MODEL_STRING_MAX);
+  validateSchema(baseRows, "product_base", BASE_REQUIRED, errors, BASE_STRING_MAX);
+  validateSchema(modelRows, "product_models", MODEL_REQUIRED, errors, MODEL_STRING_MAX);
   validateSchema(variantRows, "product_variants", VARIANT_REQUIRED, errors, VARIANT_STRING_MAX);
 
   // Step 2: Internal relational integrity

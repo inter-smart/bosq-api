@@ -1,6 +1,6 @@
 const { default: slugify } = require("slugify");
 
-const backendUrl = `${process.env.BASE_URL}/`|| "http://localhost:4000/";
+const backendUrl = `${process.env.BASE_URL}/` || "http://localhost:4000/";
 
 
 // Media object (desktop + mobile) WITH type
@@ -94,24 +94,32 @@ function formatDate(dateInput) {
   if (!dateInput) return "N/A";
 
   const date = new Date(dateInput);
+  const months = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ];
 
-  return date.toLocaleDateString("en-US", {
-    month: "long",
-    day: "2-digit",
-    year: "numeric",
-  });
+  const day = String(date.getUTCDate()).padStart(2, '0');
+  const month = months[date.getUTCMonth()];
+  const year = date.getUTCFullYear();
+
+  return `${month} ${day}, ${year}`;
 }
 
 function dateFirst(dateInput) {
   if (!dateInput) return "N/A";
 
   const date = new Date(dateInput);
+  const months = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ];
 
-  return date.toLocaleDateString("en-GB", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  });
+  const day = String(date.getUTCDate()).padStart(2, '0');
+  const month = months[date.getUTCMonth()];
+  const year = date.getUTCFullYear();
+
+  return `${day} ${month} ${year}`;
 }
 
 

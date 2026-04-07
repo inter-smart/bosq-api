@@ -20,6 +20,10 @@ exports.validateRequest = [
 
   body("banner_media_type").optional().isIn(["image", "video"]).withMessage("Banner media type must be either 'image' or 'video'"),
 
+  body("banner_media_thumbnail").optional().isString().withMessage("Banner thumbnail must be a string"),
+
+  body("banner_media_thumbnail_ar").optional().isString().withMessage("Banner thumbnail (AR) must be a string"),
+
   /* ---------- SECTION 1 TITLE ---------- */
   body("section1_title").optional().isString().withMessage("Section 1 title must be a string"),
 

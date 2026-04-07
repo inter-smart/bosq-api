@@ -7,7 +7,11 @@ const authMiddleware = require("../../../http/middleware/authMiddleware");
 // Define upload fields
 const fields = [
   { name: "banner_media_desktop_path", maxCount: 1 },
+  { name: "banner_media_desktop_path_ar", maxCount: 1 },
   { name: "banner_media_mobile_path", maxCount: 1 },
+  { name: "banner_media_mobile_path_ar", maxCount: 1 },
+  { name: "banner_media_thumbnail", maxCount: 1 },
+  { name: "banner_media_thumbnail_ar", maxCount: 1 },
   { name: "process_media_path", maxCount: 1 },
   { name: "form_media_path", maxCount: 1 },
 ];

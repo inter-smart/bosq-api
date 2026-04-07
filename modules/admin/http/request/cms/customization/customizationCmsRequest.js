@@ -20,6 +20,8 @@ exports.validationRequestPost = [
   body("banner_media_mobile_path_ar").optional().isString().withMessage("Banner mobile media path (AR) must be a string"),
   body("banner_media_alt").optional().isString().withMessage("Banner media alt must be a string"),
   body("banner_media_alt_ar").optional().isString().withMessage("Banner media alt in Arabic must be a string"),
+  body("banner_media_thumbnail").optional().isString().withMessage("Banner thumbnail must be a string"),
+  body("banner_media_thumbnail_ar").optional().isString().withMessage("Banner thumbnail (AR) must be a string"),
 
   // Process Section
   body("process_title").optional().isString().withMessage("Process title must be a string"),

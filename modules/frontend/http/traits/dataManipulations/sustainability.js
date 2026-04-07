@@ -1,16 +1,22 @@
 const { generateImageUrl } = require("../../../traits/imageUrlHelper");
 const { singleMediaWithoutType, singleMediaWithType, mediaWithType, mediaWithoutType } = require("../mediaButtonHelper");
 
+const backendUrl = `${process.env.BASE_URL}/` || "http://localhost:4000/";
+
 function buildSustainabilityData(data, list) {
   return {
-    media: mediaWithType(
-      data,
-      "banner_media_type",
-      "banner_media_desktop_path",
-      "banner_media_mobile_path",
-      "banner_media_alt",
-      "banner_media_alt_ar"
-    ),
+    media: {
+      ...mediaWithType(
+        data,
+        "banner_media_type",
+        "banner_media_desktop_path",
+        "banner_media_mobile_path",
+        "banner_media_alt",
+        "banner_media_alt_ar"
+      ),
+      thumbnail: data.banner_media_thumbnail ? `${backendUrl}${data.banner_media_thumbnail}` : null,
+      thumbnail_ar: data.banner_media_thumbnail_ar ? `${backendUrl}${data.banner_media_thumbnail_ar}` : null,
+    },
     title: data.section1_title ?? "N/A",
     title_ar: data.section1_title_ar ?? "N/A",
     description: data.section1_description ?? "N/A",

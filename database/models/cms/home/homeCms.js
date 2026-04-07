@@ -71,10 +71,13 @@ module.exports = (sequelize) => {
         allowNull: true,
       },
 
+
       journey_media_type: {
         type: DataTypes.ENUM("image", "video"),
         allowNull: true,
       },
+
+      
 
       journey_media_desktop_path: {
         type: DataTypes.TEXT,
@@ -95,6 +98,15 @@ module.exports = (sequelize) => {
       // link
       journey_link: {
         type: DataTypes.STRING,
+        allowNull: true,
+      },
+
+      journey_thumbnail_path: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      journey_thumbnail_path_ar: {
+        type: DataTypes.TEXT,
         allowNull: true,
       },
 

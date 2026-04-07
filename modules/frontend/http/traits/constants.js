@@ -348,7 +348,11 @@ const RESPONSE_MESSAGES = {
     GOOGLE_LOGIN_REQUIRED: {
       en: "This account was created with Google Sign-In. Please log in with Google.",
       ar: "تم إنشاء هذا الحساب باستخدام تسجيل الدخول من Google. يرجى تسجيل الدخول عبر Google.",
-    }
+    },
+    ACCOUNT_DEACTIVATED: {
+      en: "Your account has been deactivated. Please contact the admin.",
+      ar: "تم تعطيل حسابك. يرجى التواصل مع المسؤول.",
+    },
   },
 };
 

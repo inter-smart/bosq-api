@@ -325,7 +325,7 @@ class UsersService {
 
       const user = await Users.findOne({
         where: { email },
-        attributes: ["id", "email", "password", "auth_provider", "name", "country_code", "mobile"],
+        attributes: ["id", "email", "password", "auth_provider", "name", "country_code", "mobile", "status"],
       });
 
       if (!user) {
@@ -333,6 +333,14 @@ class UsersService {
           RESPONSE_MESSAGES.ERROR.USER_NOT_FOUND,
           HTTP_STATUS.NOT_FOUND,
           ERROR_CODES.NOT_FOUND_ERROR,
+        );
+      }
+
+      if (user.status !== "active") {
+        throw ErrorHandler.createError(
+          RESPONSE_MESSAGES.ERROR.ACCOUNT_DEACTIVATED,
+          HTTP_STATUS.FORBIDDEN,
+          ERROR_CODES.AUTH_ERROR,
         );
       }
 

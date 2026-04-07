@@ -219,6 +219,7 @@ class newservice {
         models.News.findAll({
           where: {
             status: true,
+            id: { [Op.ne]: news.id },
           },
           attributes: [
             "slug",

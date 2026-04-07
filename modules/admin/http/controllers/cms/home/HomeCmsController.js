@@ -57,6 +57,8 @@ class HomeCmsController {
                 "about_media_path",
                 "journey_media_desktop_path",
                 "journey_media_mobile_path",
+                "journey_thumbnail_path",
+                "journey_thumbnail_path_ar",
                 "form_media_path",
             ];
 

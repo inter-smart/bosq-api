@@ -45,6 +45,14 @@ module.exports = (sequelize) => {
         type: DataTypes.ENUM("image", "video"),
         allowNull: true,
       },
+      banner_media_thumbnail: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      banner_media_thumbnail_ar: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
       section1_title: {
         type: DataTypes.STRING,
         allowNull: true,

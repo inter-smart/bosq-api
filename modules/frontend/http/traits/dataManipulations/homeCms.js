@@ -134,6 +134,15 @@ function buildJourneySection(cmsData, prefix, options = {}) {
     };
   }
 
+  section.thumbnail = {
+    path: cmsData[`${prefix}_thumbnail_path`]
+      ? generateImageUrl(cmsData[`${prefix}_thumbnail_path`])
+      : null,
+    path_ar: cmsData[`${prefix}_thumbnail_path_ar`]
+      ? generateImageUrl(cmsData[`${prefix}_thumbnail_path_ar`])
+      : null,
+  };
+
   return section;
 }
 

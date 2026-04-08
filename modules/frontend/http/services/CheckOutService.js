@@ -601,7 +601,9 @@ class CheckOutService {
       let discountAmount = 0;
       if (coupon.discount_type === "percentage") {
         discountAmount = (subtotal * parseFloat(coupon.discount_value)) / 100;
-        if (coupon.max_discount_amount && discountAmount > parseFloat(coupon.max_discount_amount)) {
+        console.log(coupon.max_discount_amount != 0.0);
+        console.log(coupon.max_discount_amount);
+        if (parseFloat(coupon.max_discount_amount) !== 0.0 && discountAmount > parseFloat(coupon.max_discount_amount)) {
           discountAmount = parseFloat(coupon.max_discount_amount);
         }
       } else {
@@ -610,8 +612,6 @@ class CheckOutService {
           discountAmount = subtotal;
         }
       }
-
-      console.log(discountAmount);
 
       const currentDiscount = parseFloat(cart.discount_total);
       const newDiscountTotal = currentDiscount + discountAmount;
@@ -660,9 +660,7 @@ class CheckOutService {
       const round2 = (num) => Math.round((num + Number.EPSILON) * 100) / 100;
 
       const maxDiscountCap =
-        coupon.max_discount_amount && parseFloat(coupon.max_discount_amount) > 0
-          ? round2(parseFloat(coupon.max_discount_amount))
-          : Infinity;
+        coupon.max_discount_amount && parseFloat(coupon.max_discount_amount) > 0 ? round2(parseFloat(coupon.max_discount_amount)) : Infinity;
       let remainingMaxDiscount = maxDiscountCap;
       let finalDiscountAmount = 0.0;
 

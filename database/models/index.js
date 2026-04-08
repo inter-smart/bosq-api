@@ -1,6 +1,7 @@
 const sequelize = require("../config/index");
 
 const defineAdminUser = require("./adminuser");
+const defineActivityLog = require("./activityLog/activityLog");
 
 // HOME
 const defineHomeCms = require("./cms/home/homeCms");
@@ -145,6 +146,7 @@ const defineLandingPage = require("./landingPage/landingPage");
 const defineProductTypes = require("./landingPage/productTypes");
 const models = {
   AdminUser: defineAdminUser(sequelize),
+  ActivityLog: defineActivityLog(sequelize),
 
   // HOME
   HomeCms: defineHomeCms(sequelize),

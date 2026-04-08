@@ -48,7 +48,6 @@ exports.validationRequestPost = [
 
   body("address_ar").isString().withMessage("Address Arabic must be a string"),
 
-  body("email").isEmail().withMessage("Email must be valid"),
 
   // SALES ENQUIRY
   body("sale_enquiry_title")
@@ -65,12 +64,6 @@ exports.validationRequestPost = [
 
   // sales phone
   body("sales_phone_number")
-    .isString()
-    .withMessage("Phone number must be a string")
-    .isLength({ max: 20 })
-    .withMessage("Phone number must not exceed 20 characters"),
-
-  body("phone_number")
     .isString()
     .withMessage("Phone number must be a string")
     .isLength({ max: 20 })

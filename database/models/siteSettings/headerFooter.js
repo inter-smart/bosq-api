@@ -48,13 +48,7 @@ module.exports = (sequelize) => {
         type: DataTypes.TEXT,
         allowNull: true,
       },
-
-
-      email:{
-        type: DataTypes.STRING,
-        allowNull: true,
-      },
-
+      
       sales_phone_number: {
         type: DataTypes.STRING,
         allowNull: true,
@@ -74,12 +68,6 @@ module.exports = (sequelize) => {
         type: DataTypes.STRING,
         allowNull: true,
       },
-
-      phone_number: {
-        type: DataTypes.STRING,
-        allowNull: true,
-      },
-
       support_enquiry_title: {
         type: DataTypes.STRING,
         allowNull: true,

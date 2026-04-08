@@ -82,6 +82,11 @@ const startServer = async () => {
     // await createAdminUser();
     // await seedMetaTags();
 
+    // Sync ActivityLog table (creates it if it doesn't exist; safe for all other tables)
+    await models.ActivityLog.sync({ alter: false });
+    const { registerActivityHooks } = require("./modules/activityLog/activityLogService");
+    registerActivityHooks(models);
+
     await connectRedis();
     app.set("redisClient", redisClient);
 

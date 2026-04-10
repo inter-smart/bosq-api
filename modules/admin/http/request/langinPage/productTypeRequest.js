@@ -17,6 +17,11 @@ exports.validationRequestPost = [
 
   body("description_ar").optional().isString().trim(),
 
+
+  body("features").optional().isString().trim(),
+
+  body("features_ar").optional().isString().trim(),
+
   body("slug")
     .optional()
     .isString()

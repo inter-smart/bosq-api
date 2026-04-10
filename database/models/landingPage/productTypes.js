@@ -25,6 +25,14 @@ module.exports = (sequelize) => {
         type: DataTypes.TEXT,
         allowNull: true,
       },
+       features: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      features_ar: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
       media_desktop_path: {
         type: DataTypes.TEXT,
         allowNull: true,

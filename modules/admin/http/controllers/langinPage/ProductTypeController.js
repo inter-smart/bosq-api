@@ -151,28 +151,6 @@ class ProductTypeController {
                       as: "product",
                       required: false,
                       attributes: ["id", "slug", "title"],
-                      include: [
-                        {
-                          model: models.ProductCategory,
-                          as: "category",
-                          required: false,
-                          attributes: ["id", "slug", "name", "name_ar", "parent_id"],
-                          include: [
-                            {
-                              model: models.ProductCategory,
-                              as: "parent",
-                              required: false,
-                              attributes: ["id", "slug", "name", "name_ar", "parent_id"],
-                            },
-                            {
-                              model: models.ProductCategory,
-                              as: "children",
-                              required: false,
-                              attributes: ["id", "slug", "name", "name_ar", "parent_id"],
-                            },
-                          ],
-                        },
-                      ],
                     },
                   ],
                 },
@@ -280,6 +258,31 @@ class ProductTypeController {
     }
   }
 
+  static async getVariantsByCategory(req, res) {
+    try {
+      const { id } = req.params;
+      if (!id) {
+        return sendErrorResponse(res, "Category id is required");
+      }
+      const result = await models.ProductVariants.findAll({
+        attributes: ["id", "sku", "title"],
+        include: [
+          {
+            model: models.ProductVariantCategories,
+            as: "variantCategories",
+            required: true,
+            attributes: [],
+            where: { category_id: id },
+          },
+        ],
+      });
+      return sendSuccessResponse(res, result, "Data retrieved successfully");
+    } catch (error) {
+      console.error("Data index error:", error);
+      sendErrorResponse(res, error);
+    }
+  }
+
   static async getAllProducts(req, res) {
     try {
       const { id } = req.params;
@@ -288,12 +291,38 @@ class ProductTypeController {
         return sendErrorResponse(res, "Category id is required");
       }
 
+      // ProductBase has no category_id — categories are linked via:
+      // ProductBase → ProductModels → ProductVariants → ProductVariantCategories
       const result = await models.ProductBase.findAll({
-        where: {
-          status: true,
-          category_id: id,
-        },
         attributes: ["id", "title", "slug"],
+        where: { status: true },
+        include: [
+          {
+            model: models.ProductModels,
+            as: "models",
+            required: true,
+            attributes: [],
+            where: { status: true },
+            include: [
+              {
+                model: models.ProductVariants,
+                as: "variants",
+                required: true,
+                attributes: [],
+                include: [
+                  {
+                    model: models.ProductVariantCategories,
+                    as: "variantCategories",
+                    required: true,
+                    attributes: [],
+                    where: { category_id: id },
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+        group: ["ProductBase.id"],
       });
 
       return sendSuccessResponse(res, result, "Data retrieved successfully");

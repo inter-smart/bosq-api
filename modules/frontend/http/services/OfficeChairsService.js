@@ -43,7 +43,7 @@ const buildVariantIncludes = () => [
 
 const transformVariant = (variant, variantsCount = 0) => {
   const colorValues = (variant.attribute_values ?? [])
-    .filter((av) => av.attribute?.code === "color")
+    .filter((av) => av.attribute?.code === "COLOR")
     .map((av) => av.value);
 
   const formattedAttributes = (variant.attribute_values ?? []).map((av) => ({

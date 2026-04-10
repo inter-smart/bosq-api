@@ -272,9 +272,13 @@ async function processUpload(hierarchy) {
         const modelId = modelKeyToId.get(modelKey);
 
         for (const variant of model.variants) {
+          const attrPriceSum = variant.attributeValueIds.reduce((sum, a) => sum + (Number(a.price) || 0), 0);
+          const computedPrice = Number(model.data.base_price || 0) + attrPriceSum;
+
           allVariantRows.push({
             ...variant.data,
             product_model_id: modelId,
+            price: computedPrice,
             ...(variant.coverImage ? { media_path: variant.coverImage } : {}),
             ...(variant.hoverImage ? { hover_media_path: variant.hoverImage } : {}),
             ...(variant.brochurePath ? { brochure: variant.brochurePath } : {}),
@@ -406,13 +410,13 @@ async function processUpload(hierarchy) {
     const attributeJunctionRows = [];
 
     insertedVariants.forEach((variant, idx) => {
-      for (const { attribute_id, attribute_value_id } of variantsToCreateMeta[idx].attributeValueIds) {
-        attributeJunctionRows.push({ product_variant_id: variant.id, attribute_id, attribute_value_id });
+      for (const { attribute_id, attribute_value_id, price } of variantsToCreateMeta[idx].attributeValueIds) {
+        attributeJunctionRows.push({ product_variant_id: variant.id, attribute_id, attribute_value_id, price: Number(price) || 0 });
       }
     });
     variantsToUpdate.forEach(({ existingId }, idx) => {
-      for (const { attribute_id, attribute_value_id } of variantsToUpdateMeta[idx].attributeValueIds) {
-        attributeJunctionRows.push({ product_variant_id: existingId, attribute_id, attribute_value_id });
+      for (const { attribute_id, attribute_value_id, price } of variantsToUpdateMeta[idx].attributeValueIds) {
+        attributeJunctionRows.push({ product_variant_id: existingId, attribute_id, attribute_value_id, price: Number(price) || 0 });
       }
     });
 

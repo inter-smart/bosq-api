@@ -24,7 +24,7 @@ const MODEL_REQUIRED = ["base_title", "title", "title_ar", "base_price"];
 // base_slug → base_title; model_slug → model_title
 const VARIANT_REQUIRED = ["base_title", "model_title"];
 
-const DECIMAL_FIELDS = new Set(["base_price", "price"]);
+const DECIMAL_FIELDS = new Set(["base_price"]);
 const INTEGER_FIELDS = new Set(["stock", "sort_order"]);
 const BOOLEAN_FIELDS = new Set(["status", "is_featured"]);
 
@@ -108,8 +108,11 @@ function parseAttributePairs(cell) {
   return String(cell)
     .split("|")
     .map((pair) => {
-      const [attrSlug, valueSlug] = pair.split(":").map((s) => s.trim());
-      return attrSlug && valueSlug ? { attrSlug, valueSlug } : null;
+      const parts = pair.split(":").map((s) => s.trim());
+      const [attrSlug, valueSlug, priceStr] = parts;
+      if (!attrSlug || !valueSlug) return null;
+      const price = priceStr != null && priceStr !== "" ? parseFloat(priceStr) : 0;
+      return { attrSlug, valueSlug, price: isNaN(price) ? 0 : price };
     })
     .filter(Boolean);
 }
@@ -436,7 +439,7 @@ async function resolveAndValidateLookups(variantRows, errors) {
       }
     }
 
-    for (const { attrSlug, valueSlug } of attributePairs) {
+    for (const { attrSlug, valueSlug, price } of attributePairs) {
       const attrId = attributeSlugToId.get(attrSlug);
       if (!attrId) {
         addError(errors, "product_variants", row._rowNumber, "attributes", `Attribute slug "${attrSlug}" not found in the database`);
@@ -454,7 +457,7 @@ async function resolveAndValidateLookups(variantRows, errors) {
         );
         continue;
       }
-      attributeValueIds.push({ attribute_id: attrId, attribute_value_id: valueId });
+      attributeValueIds.push({ attribute_id: attrId, attribute_value_id: valueId, price: Number(price) || 0 });
     }
 
     // ── Image validation & resolution ─────────────────────────────────────────
@@ -599,7 +602,6 @@ function buildHierarchy(baseRows, modelRows, resolvedVariants, modelImagePaths) 
     "title_ar",
     "design_title",
     "design_title_ar",
-    "price",
     "stock",
     "is_featured",
     "sort_order",

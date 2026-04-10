@@ -11,6 +11,9 @@ router.get('/activity/stream', ActivityLogController.streamActivity);
 router.use(authMiddleware(["admin"]));
 
 router.get('/counts', DashboardController.getCounts);
-router.get('/activity', ActivityLogController.getActivity);
+router.get('/order-stats', DashboardController.getOrderStats);
+router.get('/product-stats', DashboardController.getProductStats);
+router.get('/coupon-analytics', DashboardController.getCouponAnalytics);
+router.get('/user-stats', DashboardController.getUserStats);
 
 module.exports = router;

@@ -84,6 +84,24 @@ class WebhookService {
         await models.Orders.update({ status: "returned", payment_status: "refunded" }, { where: { id: dbOrder.id }, transaction });
       }
 
+      // Record payment transaction details
+      await models.PaymentTransaction.create({
+        order_id:                dbOrder.id,
+        transaction_type:        resolvedStatus === "refunded" ? "refund" : "charge",
+        provider:                "network_intl",
+        provider_transaction_id: transaction_id ?? null,
+        provider_order_id:       ngeniusOrderId ?? null,
+        amount:                  amount?.value != null ? (amount.value / 100).toFixed(2) : null,
+        currency:                amount?.currencyCode ?? "AED",
+        status:                  status ?? null,
+        resolved_status:         resolvedStatus,
+        payment_method:          payment?.paymentMethod?.name ?? null,
+        auth_code:               authResponse?.authCode ?? null,
+        result_code:             authResponse?.resultCode ?? null,
+        source:                  "webhook",
+        raw_response:            payload,
+      }, { transaction });
+
       await transaction.commit();
 
       // 7. ✅ Post-commit side effects (unchanged — fire-and-forget emails)

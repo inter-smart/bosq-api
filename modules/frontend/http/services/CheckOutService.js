@@ -413,7 +413,7 @@ class CheckOutService {
           if (item.variant?.product_model_id === scopeId) return true;
           break;
         case "product":
-          if (item.product_id === scopeId) return true;
+          if (item.variant?.productModel?.product?.id === scopeId) return true;
           break;
         case "category":
           // Category is now M2M on variants — check the variant's categories array
@@ -583,7 +583,7 @@ class CheckOutService {
         case "model":
           return item.variant?.product_model_id === scopeId && item.final_price >= minimumProductAmount;
         case "product":
-          return item.product_id === scopeId;
+          return item.variant?.productModel?.product?.id === scopeId;
         case "category":
           // Category is now M2M on variants — check the variant's categories array
           return (item.variant?.categories?.some((cat) => cat.id === scopeId) ?? false) && item.final_price >= minimumProductAmount;
@@ -673,6 +673,7 @@ class CheckOutService {
       }
 
       for (const item of matchingItems) {
+        console.log("Remaining max discount", remainingMaxDiscount);
         if (remainingMaxDiscount <= 0) break;
 
         const totalItems = item.quantity;

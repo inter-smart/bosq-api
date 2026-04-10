@@ -195,6 +195,9 @@ class OrderController {
       }
 
       const oldStatus = order.status;
+      const orderType = order.payment_type;
+
+      const isCodAndDelivered = orderType === "cod" && status === "delivered";
 
       await order.update({
         est_delivery_details,
@@ -202,13 +205,14 @@ class OrderController {
         order_url,
         partner_name,
         ...(status ? { status } : {}),
+        ...(isCodAndDelivered ? { payment_status: "paid" } : {}),
       });
 
-      if (status && oldStatus !== status) {
-        OrderService.sendOrderStatusEmail(order.id, status, cancel_reason).catch((err) =>
-          console.error("Error sending order status email:", err)
-        );
-      }
+      // if (status && oldStatus !== status) {
+      //   OrderService.sendOrderStatusEmail(order.id, status, cancel_reason).catch((err) =>
+      //     console.error("Error sending order status email:", err)
+      //   );
+      // }
 
       sendSuccessResponse(res, order, "Order updated successfully");
     } catch (error) {

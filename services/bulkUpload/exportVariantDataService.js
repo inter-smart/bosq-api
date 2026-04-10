@@ -46,7 +46,7 @@ async function getExportData(variantIds) {
       {
         model: models.ProductVariantAttributes,
         as: "variant_attributes",
-        attributes: ["id"],
+        attributes: ["id", "price"],
         include: [
           {
             model: ProductAttribute,
@@ -127,7 +127,8 @@ async function getExportData(variantIds) {
         const attrSlug = va.ProductAttribute?.slug;
         const valueSlug = va.AttributeValue?.slug;
         if (!attrSlug || !valueSlug) return null;
-        return `${attrSlug}:${valueSlug}`;
+        const price = Number(va.price) || 0;
+        return `${attrSlug}:${valueSlug}:${price}`;
       })
       .filter(Boolean)
       .join("|");
@@ -160,7 +161,6 @@ async function getExportData(variantIds) {
       title_ar: v.title_ar ?? "",
       design_title: v.design_title ?? "",
       design_title_ar: v.design_title_ar ?? "",
-      price: v.price ?? "",
       stock: v.stock ?? "",
       is_featured: v.is_featured ?? false,
       sort_order: v.sort_order ?? 1,

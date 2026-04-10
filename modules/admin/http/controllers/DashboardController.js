@@ -18,27 +18,9 @@ function getDateRange(year, month) {
 class DashboardController {
   static async getCounts(req, res) {
     try {
-      const {
-        ProductBase,
-        ProductModels,
-        Orders,
-        Users,
-        Blogs,
-        News,
-        Projects,
-        ProductVariants,
-      } = models;
+      const { ProductBase, ProductModels, Orders, Users, Blogs, News, Projects, ProductVariants } = models;
 
-      const [
-        baseProductCount,
-        modelCount,
-        variantCount,
-        orderCount,
-        userCount,
-        blogCount,
-        newsCount,
-        projectCount,
-      ] = await Promise.all([
+      const [baseProductCount, modelCount, variantCount, orderCount, userCount, blogCount, newsCount, projectCount] = await Promise.all([
         ProductBase.count(),
         ProductModels.count(),
         ProductVariants.count(),
@@ -79,6 +61,9 @@ class DashboardController {
 
       const truncUnit = month ? "day" : "month";
 
+      console.log("Order stats date range:", start, end);
+      console.dir(dateWhere, { depth: null });
+
       // Period bucketed revenue + order counts
       const periodRows = await Orders.findAll({
         where: { ...dateWhere, status: { [Op.ne]: "cancelled" } },
@@ -95,9 +80,7 @@ class DashboardController {
       // Build byPeriod array with proper labels
       const byPeriod = periodRows.map((r) => {
         const d = new Date(r.period);
-        const label = month
-          ? `${d.getDate()} ${MONTH_NAMES[d.getMonth()]}`
-          : MONTH_NAMES[d.getMonth()];
+        const label = month ? `${d.getDate()} ${MONTH_NAMES[d.getMonth()]}` : MONTH_NAMES[d.getMonth()];
         return {
           label,
           orders: parseInt(r.orders),
@@ -197,7 +180,7 @@ class DashboardController {
           [fn("SUM", col("quantity")), "totalQty"],
           [fn("SUM", literal('"OrderItem"."price" * "OrderItem"."quantity"')), "totalRevenue"],
         ],
-        group: ["variant_id"],
+        group: ["variant_id", "variant.id", "variant.title", "variant.sku"],
         order: [[fn("SUM", col("quantity")), "DESC"]],
         limit: 10,
         include: [
@@ -250,7 +233,7 @@ class DashboardController {
 
       // Scope breakdown
       const scopeRows = await Coupons.findAll({
-        attributes: ["scope_type", [fn("COUNT", col("Coupons.id")), "count"]],
+        attributes: ["scope_type", [fn("COUNT", col("id")), "count"]],
         group: ["scope_type"],
         raw: true,
       });
@@ -276,11 +259,7 @@ class DashboardController {
       // Top coupons by usage
       const topCouponRows = await CouponUsage.findAll({
         where: usageDateWhere,
-        attributes: [
-          "coupon_code",
-          [fn("COUNT", col("CouponUsage.id")), "usageCount"],
-          [fn("SUM", col("discount_amount")), "totalDiscount"],
-        ],
+        attributes: ["coupon_code", [fn("COUNT", col("CouponUsage.id")), "usageCount"], [fn("SUM", col("discount_amount")), "totalDiscount"]],
         group: ["coupon_code"],
         order: [[fn("COUNT", col("CouponUsage.id")), "DESC"]],
         limit: 10,
@@ -311,9 +290,7 @@ class DashboardController {
 
         byPeriod = periodRows.map((r) => {
           const d = new Date(r.period);
-          const label = month
-            ? `${d.getDate()} ${MONTH_NAMES[d.getMonth()]}`
-            : MONTH_NAMES[d.getMonth()];
+          const label = month ? `${d.getDate()} ${MONTH_NAMES[d.getMonth()]}` : MONTH_NAMES[d.getMonth()];
           return {
             label,
             usages: parseInt(r.usages) || 0,
@@ -370,22 +347,16 @@ class DashboardController {
 
         byPeriod = periodRows.map((r) => {
           const d = new Date(r.period);
-          const label = month
-            ? `${d.getDate()} ${MONTH_NAMES[d.getMonth()]}`
-            : MONTH_NAMES[d.getMonth()];
+          const label = month ? `${d.getDate()} ${MONTH_NAMES[d.getMonth()]}` : MONTH_NAMES[d.getMonth()];
           return { label, newUsers: parseInt(r.newUsers) || 0 };
         });
       }
 
       // Top customers by spend
       const topCustomerRows = await Orders.findAll({
-        attributes: [
-          "user_id",
-          [fn("COUNT", col("Orders.id")), "orderCount"],
-          [fn("SUM", col("grand_total")), "totalSpent"],
-        ],
+        attributes: ["user_id", [fn("COUNT", col("Orders.id")), "orderCount"], [fn("SUM", col("grand_total")), "totalSpent"]],
         where: { user_id: { [Op.ne]: null } },
-        group: ["user_id"],
+        group: ["user_id", "user.id", "user.first_name", "user.last_name", "user.name", "user.email"],
         order: [[fn("SUM", col("grand_total")), "DESC"]],
         limit: 10,
         include: [

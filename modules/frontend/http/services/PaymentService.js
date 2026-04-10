@@ -243,6 +243,25 @@ class PaymentService {
         await models.Orders.update({ status: "returned", payment_status: "refunded" }, { where: { id: order.id }, transaction });
       }
 
+      // Record payment transaction details
+      const payment0 = nGeniusOrder._embedded?.payment?.[0];
+      await models.PaymentTransaction.create({
+        order_id:                order.id,
+        transaction_type:        resolvedStatus === "refunded" ? "refund" : "charge",
+        provider:                "network_intl",
+        provider_transaction_id: payment0?.reference ?? null,
+        provider_order_id:       ref,
+        amount:                  amount != null ? (amount / 100).toFixed(2) : order.grand_total,
+        currency:                currency ?? "AED",
+        status:                  state ?? null,
+        resolved_status:         resolvedStatus,
+        payment_method:          payment0?.paymentMethod?.name ?? null,
+        auth_code:               payment0?.authResponse?.authCode ?? null,
+        result_code:             payment0?.authResponse?.resultCode ?? null,
+        source:                  "verify",
+        raw_response:            nGeniusOrder,
+      }, { transaction });
+
       await transaction.commit();
 
       // 7. Send email after payment resolution (non-blocking)

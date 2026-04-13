@@ -145,6 +145,9 @@ class NetworkService {
       case "REFUNDED":
       case "REVERSED":
         return "refunded";
+      case "INITIATED":
+      case "AWAIT_PAYMENT":
+      case "AWAIT_3DS":
       case "AUTHORISED":
         return "pending";
       default:

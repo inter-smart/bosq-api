@@ -139,6 +139,8 @@ class NetworkService {
         return "paid";
       case "FAILED":
       case "DECLINED":
+      case "GATEWAY_RISK_PRE_AUTH_REJECTED": // ✅ add this
+      case "GATEWAY_RISK_POST_AUTH_REJECTED": // ✅ also add post-auth rejection
         return "failed";
       case "REFUNDED":
       case "REVERSED":

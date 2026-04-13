@@ -17,9 +17,7 @@ router.use(authMiddleware(["admin"]));
 
 router.get("/", Controller.index);
 router.get("/product-category", Controller.getAllProductCategories);
-router.get("/product/:id", Controller.getAllProducts);
-router.get("/product-model/:id", Controller.getAllProductModels);
-router.get("/product-variant/:id", Controller.getAllProductVariants);
+router.get("/variants-by-category/:id", Controller.getVariantsByCategory);
 
 router.get("/:id", Controller.show);
 

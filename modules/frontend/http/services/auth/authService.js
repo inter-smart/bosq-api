@@ -734,6 +734,15 @@ class UsersService {
         await user.update({ email_verified: true }, { transaction });
       }
 
+      if (user.status !== "active") {
+        await transaction.rollback();
+        throw ErrorHandler.createError(
+          RESPONSE_MESSAGES.ERROR.ACCOUNT_DEACTIVATED,
+          HTTP_STATUS.FORBIDDEN,
+          ERROR_CODES.AUTH_ERROR,
+        );
+      }
+
       // Sign JWT (same pattern as regular login)
       const jwtToken = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, {
         expiresIn: process.env.JWT_EXPIRES_IN || "15m",

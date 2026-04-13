@@ -131,53 +131,31 @@ class ProductTypeController {
         data.product_variants.length > 0
       ) {
 
-          
-          productVariantsData = await models.ProductVariants.findAll({
-              where: {
-                  id: {
-                      [Op.in]: data.product_variants,
-                    },
-                },
-              attributes: ["id", "sku", "title"],
+
+        productVariantsData = await models.ProductVariants.findAll({
+          where: {
+            id: {
+              [Op.in]: data.product_variants,
+            },
+          },
+          attributes: ["id", "sku", "title"],
+          include: [
+            {
+              model: models.ProductModels,
+              as: "productModel",
+              required: false,
+              attributes: ["id", "title"],
               include: [
                 {
-                  model: models.ProductModels,
-                  as: "productModel",
+                  model: models.ProductBase,
+                  as: "product",
                   required: false,
-                  attributes: ["id", "title"],
-                  include: [
-                    {
-                      model: models.ProductBase,
-                      as: "product",
-                      required: false,
-                      attributes: ["id", "slug", "title"],
-                      include: [
-                        {
-                          model: models.ProductCategory,
-                          as: "category",
-                          required: false,
-                          attributes: ["id", "slug", "name", "name_ar", "parent_id"],
-                          include: [
-                            {
-                              model: models.ProductCategory,
-                              as: "parent",
-                              required: false,
-                              attributes: ["id", "slug", "name", "name_ar", "parent_id"],
-                            },
-                            {
-                              model: models.ProductCategory,
-                              as: "children",
-                              required: false,
-                              attributes: ["id", "slug", "name", "name_ar", "parent_id"],
-                            },
-                          ],
-                        },
-                      ],
-                    },
-                  ],
+                  attributes: ["id", "slug", "title"],
                 },
               ],
-            });
+            },
+          ],
+        });
       }
 
       const response = {
@@ -267,11 +245,13 @@ class ProductTypeController {
         attributes: ["id", "name", "slug"],
         include: [
           {
-            model: models.ProductCategory,
-            as: "children",
-            attributes: ["id", "name", "slug"],
+            model: models.ProductVariants,
+            as: "variants",
+            attributes: [],
+            required: true,
           },
         ],
+        group: ["ProductCategory.id"],
       });
       return sendSuccessResponse(res, result, "Data retrieved successfully");
     } catch (error) {
@@ -280,51 +260,23 @@ class ProductTypeController {
     }
   }
 
-  static async getAllProducts(req, res) {
+  static async getVariantsByCategory(req, res) {
     try {
       const { id } = req.params;
-
       if (!id) {
         return sendErrorResponse(res, "Category id is required");
       }
-
-      const result = await models.ProductBase.findAll({
-        where: {
-          status: true,
-          category_id: id,
-        },
-        attributes: ["id", "title", "slug"],
-      });
-
-      return sendSuccessResponse(res, result, "Data retrieved successfully");
-    } catch (error) {
-      console.error("Data index error:", error);
-      sendErrorResponse(res, error);
-    }
-  }
-
-  static async getAllProductModels(req, res) {
-    try {
-      const result = await models.ProductModels.findAll({
-        where: {
-          status: true,
-          product_id: req.params.id,
-        },
-        attributes: ["id", "title", "slug"],
-      });
-      return sendSuccessResponse(res, result, "Data retrieved successfully");
-    } catch (error) {
-      console.error("Data index error:", error);
-      sendErrorResponse(res, error);
-    }
-  }
-
-  static async getAllProductVariants(req, res) {
-    try {
-      const { id } = req.params;
       const result = await models.ProductVariants.findAll({
-        where: { product_model_id: id },
-        attributes: ["id", "sku"],
+        attributes: ["id", "sku", "title"],
+        include: [
+          {
+            model: models.ProductVariantCategories,
+            as: "variantCategories",
+            required: true,
+            attributes: [],
+            where: { category_id: id },
+          },
+        ],
       });
       return sendSuccessResponse(res, result, "Data retrieved successfully");
     } catch (error) {

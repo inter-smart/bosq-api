@@ -29,6 +29,11 @@ class CommonActionsController {
 
       const updatedContent = await Model.findByPk(row_id);
 
+      // Invalidate all sessions when a user is deactivated
+      if (model_name === "Users" && status !== "active") {
+        await models.AuthSessions.destroy({ where: { user_id: row_id } });
+      }
+
       // Trigger order status update email for any status change on an Order
       if (model_name === "Orders") {
         OrderService.sendOrderStatusEmail(row_id, status).catch((err) =>

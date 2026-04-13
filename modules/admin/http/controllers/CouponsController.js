@@ -116,9 +116,6 @@ class CouponsController {
           ],
         });
       } else if (scope?.scope_type === "model") {
-        // Category is now on variants (M2M), not on product directly.
-        // Include the model's variants with their categories so the admin form
-        // can pre-populate the category cascade dropdowns in edit mode.
         data = await DataModel.findByPk(id, {
           include: [
             {

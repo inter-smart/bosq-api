@@ -102,6 +102,7 @@ class CheckOutController {
   static async applyCoupon(req, res) {
     try {
       const coupon_code = req.body?.coupon_code;
+      const type = req.body?.type || "cart";
 
       const { id: userId } = req.auth;
 
@@ -119,7 +120,7 @@ class CheckOutController {
         });
       }
 
-      const result = await CheckOutService.applyCoupon(userId, coupon_code.trim().toUpperCase());
+      const result = await CheckOutService.applyCoupon(userId, coupon_code.trim().toUpperCase(), type);
 
       return ApiResponse.success(res, {
         message: "Coupon applied successfully",
@@ -135,6 +136,7 @@ class CheckOutController {
     try {
       const userId = req.auth?.id;
       const sessionId = req.cartOwner?.id;
+      const type = req.body?.type || "cart";
 
       if (!userId && !sessionId) {
         return ApiResponse.error(res, {
@@ -143,7 +145,7 @@ class CheckOutController {
         });
       }
 
-      const result = await CheckOutService.removeCoupon(userId, sessionId);
+      const result = await CheckOutService.removeCoupon(userId, sessionId, type);
 
       return ApiResponse.success(res, {
         message: "Coupon removed successfully",

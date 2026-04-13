@@ -253,7 +253,7 @@ class ProductServiceHelpers {
     return { products: finalisedProducts, totalItems, totalPrice };
   }
 
-  static async recalculateCartTotals(cartId, transaction = null) {
+  static async recalculateCartTotals(cartId, type = "cart", transaction = null) {
     const [cart, cartItems] = await Promise.all([
       models.Cart.findOne({
         where: { id: cartId },
@@ -261,7 +261,7 @@ class ProductServiceHelpers {
         transaction,
       }),
       models.CartItems.findAll({
-        where: { cart_id: cartId, is_buy_now: false },
+        where: { cart_id: cartId, is_buy_now: type === "buynow" },
         transaction,
       }),
     ]);

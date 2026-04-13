@@ -74,7 +74,7 @@ class CheckOutService {
   /**
    * Get cart with items
    */
-  static async getCartData(userId, sessionId) {
+  static async getCartData(userId, sessionId, type = "cart") {
     const whereClause = userId ? { user_id: userId, status: "active" } : { session_id: sessionId, status: "active", user_id: null };
 
     console.log(`Fetching cart data for ${userId ? "user" : "guest"} with ID ${userId || sessionId}`);
@@ -85,7 +85,7 @@ class CheckOutService {
         {
           model: models.CartItems,
           as: "items",
-          where: { is_buy_now: false },
+          where: { is_buy_now: type === "buynow" },
           include: [
             {
               model: models.ProductVariants,
@@ -103,6 +103,8 @@ class CheckOutService {
       };
     }
 
+    console.log("CART", JSON.stringify(cart, null, 2));
+
     const appliedCouponScope = cart.applied_coupon_scope;
 
     appliedCouponScope !== "common" && (await ProductServiceHelpers.validateCoupon(cart));
@@ -113,7 +115,7 @@ class CheckOutService {
           {
             model: models.CartItems,
             as: "items",
-            where: { is_buy_now: false },
+            where: { is_buy_now: type === "buynow" },
             include: [
               {
                 model: models.ProductBase,
@@ -271,7 +273,7 @@ class CheckOutService {
   /**
    * Apply a coupon code to the cart
    */
-  static async applyCoupon(userId, couponCode) {
+  static async applyCoupon(userId, couponCode, type = "cart") {
     const transaction = await sequelize.transaction();
 
     try {
@@ -284,7 +286,7 @@ class CheckOutService {
           {
             model: models.CartItems,
             as: "items",
-            where: { is_buy_now: false },
+            where: { is_buy_now: type === "buynow" },
             include: [
               {
                 model: models.ProductVariants,
@@ -384,11 +386,11 @@ class CheckOutService {
 
       // 8. Calculate discount amount
 
-      await this.couponWiseUpdates(coupon, cart, transaction);
+      await this.couponWiseUpdates(coupon, cart, type, transaction);
 
       await transaction.commit();
 
-      const cartData = await this.getCartData(userId, null);
+      const cartData = await this.getCartData(userId, null, type);
 
       return cartData;
     } catch (error) {
@@ -429,7 +431,7 @@ class CheckOutService {
   /**
    * Remove applied coupon from the cart
    */
-  static async removeCoupon(userId, sessionId) {
+  static async removeCoupon(userId, sessionId, type = "cart") {
     const transaction = await sequelize.transaction();
 
     try {
@@ -442,6 +444,12 @@ class CheckOutService {
 
       if (!cart) {
         throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.CART_NOT_FOUND, HTTP_STATUS.BAD_REQUEST);
+      }
+
+      const cartItemWhere = { cart_id: cart.id };
+
+      if (type === "buynow") {
+        cartItemWhere.is_buy_now = true;
       }
 
       if (!cart.applied_coupon_code) {
@@ -469,7 +477,7 @@ class CheckOutService {
           applied_coupon_scope: null,
         },
         {
-          where: { cart_id: cart.id },
+          where: cartItemWhere,
           transaction,
         },
       );
@@ -493,7 +501,7 @@ class CheckOutService {
       await transaction.commit();
 
       // Fetch updated cart
-      const updatedCart = await this.getCartData(userId, null);
+      const updatedCart = await this.getCartData(userId, null, type);
 
       return updatedCart;
     } catch (error) {
@@ -594,7 +602,7 @@ class CheckOutService {
     });
   }
 
-  static async couponWiseUpdates(coupon, cart, transaction) {
+  static async couponWiseUpdates(coupon, cart, type = "cart", transaction) {
     const subtotal = parseFloat(cart.subtotal);
 
     if (coupon.scope_type === "common") {
@@ -731,7 +739,7 @@ class CheckOutService {
         },
       );
 
-      await ProductServiceHelpers.recalculateCartTotals(cart.id, transaction);
+      await ProductServiceHelpers.recalculateCartTotals(cart.id, type, transaction);
 
       return { discountAmount, newDiscountTotal, newGrandTotal };
     }

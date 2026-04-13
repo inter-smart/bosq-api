@@ -52,26 +52,14 @@ exports.validationRequestPost = [
   body("min_product_amount")
     .optional({ nullable: true })
     .isDecimal({ decimal_digits: "0,2" })
-    .withMessage("Minimum product amount must be a valid decimal")
-    .custom((value, { req }) => {
-      if (req.body.discount_type === "flat" && value && Number(value) <= Number(req.body.discount_value)) {
-        throw new Error("Minimum product amount must be greater than discount value for flat discounts");
-      }
-      return true;
-    }),
+    .withMessage("Minimum product amount must be a valid decimal"),
 
   // MAX DISCOUNT AMOUNT
   body("max_discount_amount")
     .notEmpty()
     .withMessage("Maximum discount amount is required")
     .isDecimal({ decimal_digits: "0,2" })
-    .withMessage("Maximum discount amount must be a valid decimal")
-    .custom((value, { req }) => {
-      if (req.body.discount_type === "flat" && Number(value) < Number(req.body.discount_value)) {
-        throw new Error("Maximum discount must be greater than or equal to discount value for flat discounts");
-      }
-      return true;
-    }),
+    .withMessage("Maximum discount amount must be a valid decimal"),
 
   // SCOPE TYPE
   body("scope_type")

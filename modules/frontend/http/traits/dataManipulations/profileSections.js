@@ -22,7 +22,7 @@ function buildProfieSection(data) {
     last_name: userData.last_name ?? null,
     name: userData.name ?? null,
     profile_image: userData.profile_image ?? null,
-    phone: userData?.country_code && userData?.mobile ? `${userData.country_code} ${userData.mobile}` : null,
+    phone: userData?.country_code && userData?.mobile ? `${userData.country_code}${userData.mobile}` : null,
     email: userData.email ?? "N/A",
     address: formatAddress(billingAddress) ?? null,
     shipping_address: formatAddress(shippingAddress) ?? null,
@@ -39,7 +39,7 @@ function buildProfileEditSection(data) {
     displayName: userData.name ?? null,
     firstName: userData.first_name ?? null,
     lastName: userData.last_name ?? null,
-    phone: `${userData?.country_code} ${userData.mobile}` ?? null,
+    phone: userData?.country_code && userData?.mobile ? `${userData.country_code}${userData.mobile}` : null,
     email: userData.email ?? null,
   };
 }

@@ -5,7 +5,8 @@ const { Op } = require("sequelize");
 const { models, sequelize } = require("../database/models/index");
 const Logger = require("../config/logger");
 
-const STALE_THRESHOLD_MS = 45 * 60 * 1000; // 45 minutes
+// const STALE_THRESHOLD_MS = 45 * 60 * 1000; // 45 minutes
+const STALE_THRESHOLD_MS = 2 * 60 * 1000; // 45 minutes
 const BATCH_SIZE = 50;
 
 let isRunning = false;
@@ -60,10 +61,7 @@ const releaseStaleOrders = async () => {
               transaction: t,
             });
           }
-          await order.update(
-            { status: "cancelled", payment_status: "failed" },
-            { transaction: t },
-          );
+          await order.update({ status: "cancelled", payment_status: "failed" }, { transaction: t });
           await t.commit();
           released++;
           Logger.info(`[StaleOrderCleanup] Order #${order.id} cancelled and stock restored`);

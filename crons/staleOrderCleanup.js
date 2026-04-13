@@ -5,8 +5,7 @@ const { Op } = require("sequelize");
 const { models, sequelize } = require("../database/models/index");
 const Logger = require("../config/logger");
 
-// const STALE_THRESHOLD_MS = 45 * 60 * 1000; // 45 minutes
-const STALE_THRESHOLD_MS = 2 * 60 * 1000; // 45 minutes
+const STALE_THRESHOLD_MS = 30 * 60 * 1000; // 30 minutes
 const BATCH_SIZE = 50;
 
 let isRunning = false;
@@ -84,8 +83,8 @@ const releaseStaleOrders = async () => {
 
 const startStaleOrderCleanup = () => {
   // TODO: change back to "*/15 * * * *" after testing
-  cron.schedule("*/5 * * * *", releaseStaleOrders, { timezone: "UTC" });
-  Logger.info("[StaleOrderCleanup] Cron scheduled — every 5 minutes (TEST MODE)");
+  cron.schedule("*/15 * * * *", releaseStaleOrders, { timezone: "UTC" });
+  Logger.info("[StaleOrderCleanup] Cron scheduled — every 15 minutes (UTC)");
 };
 
 module.exports = { startStaleOrderCleanup };

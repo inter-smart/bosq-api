@@ -3,11 +3,12 @@
 const NetworkService = require("./networkService.js");
 const OrderService = require("./orderService.js");
 const { models, sequelize } = require("../../../../database/models/index.js");
+const { Op } = require("sequelize");
 const Logger = require("../../../../config/logger.js");
 
 class WebhookService {
   static async handleWebhook(payload, headers) {
-    console.log("Received webhook payload: ======================>", payload);
+    Logger.info(`[Webhook] Received event: ${payload?.eventName}`);
 
     // 1. ✅ Validate X-Webhook-Token header (unchanged — your logic is correct)
     const webhookToken = headers["x-webhook-token"];
@@ -35,10 +36,16 @@ class WebhookService {
 
     Logger.info(`[Webhook] Event "${status}" for N-Genius order ${ngeniusOrderId}`);
 
-    // 3. ✅ FIX: Look up by network_transaction_id (= data.reference saved at creation)
-    //    NOT by order_id — merchantOrderReference is never echoed back in the webhook
+    // 3. Look up by network_transaction_id OR order_reference.
+    //    AUTHORISED overwrites network_transaction_id from the order UUID to the payment UUID,
+    //    so subsequent events (CAPTURED, etc.) must also check order_reference.
     const dbOrder = await models.Orders.findOne({
-      where: { network_transaction_id: ngeniusOrderId },
+      where: {
+        [Op.or]: [
+          { network_transaction_id: ngeniusOrderId },
+          { order_reference: ngeniusOrderId },
+        ],
+      },
     });
     if (!dbOrder) {
       Logger.warn(`[Webhook] Order not found for N-Genius ref ${ngeniusOrderId}`);

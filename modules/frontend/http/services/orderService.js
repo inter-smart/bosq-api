@@ -212,7 +212,6 @@ class OrderService {
         );
       }
 
-      // Mark cart as ordered and clear items
       if (type === "cart") {
         await cart.update({ status: "ordered" }, { transaction });
       }

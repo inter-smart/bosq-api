@@ -284,6 +284,7 @@ class CheckOutService {
           {
             model: models.CartItems,
             as: "items",
+            where: { is_buy_now: false },
             include: [
               {
                 model: models.ProductVariants,

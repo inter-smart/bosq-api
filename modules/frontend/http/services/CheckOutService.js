@@ -35,11 +35,20 @@ class CheckOutService {
       throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.CART_IS_EMPTY, HTTP_STATUS.BAD_REQUEST, ERROR_CODES.BAD_REQUEST_ERROR);
     }
 
-    if (checkInvalidProducts(cart.items)) {
-      throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.ITEMS_OUT_OF_STOCK, HTTP_STATUS.BAD_REQUEST, ERROR_CODES.BAD_REQUEST_ERROR);
+    const invalidItems = cart.items
+      .filter((item) => {
+        if (!item.variant) return true;
+        if (item.variant.stock != null && item.variant.stock <= 0) return true;
+        if (item.variant.stock != null && item.variant.stock < item.quantity) return true;
+        return false;
+      })
+      .map((item) => ({ id: item.id, variant_id: item.variant_id }));
+
+    if (invalidItems.length > 0) {
+      return { is_valid: false, invalid_items: invalidItems };
     }
 
-    return cart;
+    return { is_valid: true };
   }
 
   static async getCartData(userId, sessionId) {

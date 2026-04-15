@@ -1,6 +1,6 @@
 const { models, sequelize } = require("../../../../database/models/index.js");
 const { ErrorHandler } = require("../traits/errorHandler.js");
-const { HTTP_STATUS, ERROR_CODES } = require("../traits/constants.js");
+const { HTTP_STATUS, ERROR_CODES, RESPONSE_MESSAGES } = require("../traits/constants.js");
 const CheckOutService = require("./CheckOutService.js");
 const { generateImageUrl } = require("../../traits/imageUrlHelper.js");
 const crypto = require("crypto");
@@ -125,23 +125,35 @@ class OrderService {
       });
 
       if (!cart) {
-        throw ErrorHandler.createError("Cart not found", HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.CART_NOT_FOUND, HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
       }
 
       if (!cart.items || cart.items.length === 0) {
-        throw ErrorHandler.createError("Cart is empty", HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION_ERROR);
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.CART_IS_EMPTY, HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION_ERROR);
       }
 
       // Validate stock for all items
       for (const item of cart.items) {
         if (!item.variant) {
-          throw ErrorHandler.createError(`Product variant not found for item ${item.id}`, HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION_ERROR);
+          throw ErrorHandler.createError(RESPONSE_MESSAGES.PRODUCT_VARIANT_NOT_FOUND, HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION_ERROR);
+        }
+        if (item.variant.stock === null || item.variant.stock === undefined) {
+          // null stock means no stock tracking for this variant — allow through
+          continue;
         }
         if (item.variant.stock < item.quantity) {
+          const productTitle = item.product?.title || item.product?.title_ar || "";
           throw ErrorHandler.createError(
-            `Insufficient stock for "${item.product?.title || "product"}" (available: ${item.variant.stock}, requested: ${item.quantity})`,
+            {
+              en: productTitle
+                ? `"${productTitle}" has only ${item.variant.stock} unit(s) left. Please update your cart.`
+                : `One of your items has only ${item.variant.stock} unit(s) left. Please update your cart.`,
+              ar: productTitle
+                ? `المنتج "${productTitle}" متوفر بـ ${item.variant.stock} وحدة فقط. يرجى تحديث سلة التسوق.`
+                : `أحد منتجاتك متوفر بـ ${item.variant.stock} وحدة فقط. يرجى تحديث سلة التسوق.`,
+            },
             HTTP_STATUS.BAD_REQUEST,
-            ERROR_CODES.VALIDATION_ERROR,
+            ERROR_CODES.STOCK_VALIDATION_ERROR,
           );
         }
       }

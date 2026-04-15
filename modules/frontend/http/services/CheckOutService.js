@@ -8,40 +8,11 @@ const ProductServiceHelpers = require("../traits/products.js");
 const { checkInvalidProducts } = require("../traits/dataManipulations/product/product.js");
 
 class CheckOutService {
-  /**
-   * Get or create cart for user/guest
-   */
-  static async getOrCreateCart(userId, sessionId, transaction = null) {
-    const whereClause = userId ? { user_id: userId, status: "active" } : { session_id: sessionId, status: "active", user_id: null };
-
-    let cart = await models.Cart.findOne({
-      where: whereClause,
-      transaction,
-    });
-
-    if (!cart) {
-      cart = await models.Cart.create(
-        {
-          user_id: userId || null,
-          session_id: userId ? null : sessionId,
-          status: "active",
-          currency: "AED",
-          subtotal: 0,
-          discount_total: 0,
-          tax_total: 0,
-          grand_total: 0,
-        },
-        { transaction },
-      );
-    }
-
-    return cart;
-  }
-
   static async validateCheckout(user) {
     const { type, id: userId } = user;
 
-    const whereClause = type == "user" ? { user_id: userId, status: "active" } : { session_id: userId, status: "active", user_id: null };
+    const whereClause =
+      type == "user" ? { user_id: userId, status: "active", type: "cart" } : { session_id: userId, status: "active", user_id: null, type: "cart" };
 
     const cart = await models.Cart.findOne({
       where: whereClause,
@@ -71,11 +42,10 @@ class CheckOutService {
     return cart;
   }
 
-  /**
-   * Get cart with items
-   */
   static async getCartData(userId, sessionId) {
-    const whereClause = userId ? { user_id: userId, status: "active" } : { session_id: sessionId, status: "active", user_id: null };
+    const whereClause = userId
+      ? { user_id: userId, status: "active", type: "cart" }
+      : { session_id: sessionId, status: "active", user_id: null, type: "cart" };
 
     console.log(`Fetching cart data for ${userId ? "user" : "guest"} with ID ${userId || sessionId}`);
 
@@ -85,7 +55,6 @@ class CheckOutService {
         {
           model: models.CartItems,
           as: "items",
-          where: { is_buy_now: false },
           include: [
             {
               model: models.ProductVariants,
@@ -103,47 +72,47 @@ class CheckOutService {
       };
     }
 
-    const appliedCouponScope = cart.applied_coupon_scope;
+    // const appliedCouponScope = cart.applied_coupon_scope;
 
-    appliedCouponScope !== "common" && (await ProductServiceHelpers.validateCoupon(cart));
+    // appliedCouponScope !== "common" && (await ProductServiceHelpers.validateCoupon(cart));
 
-    appliedCouponScope !== "common" &&
-      (await cart.reload({
-        include: [
-          {
-            model: models.CartItems,
-            as: "items",
-            where: { is_buy_now: false },
-            include: [
-              {
-                model: models.ProductBase,
-                as: "product",
-                attributes: ["id", "title", "slug"],
-              },
-              {
-                model: models.ProductVariants,
-                as: "variant",
-                attributes: ["id", "sku", "price", "media_path", "stock", "title", "title_ar"],
-              },
-            ],
-          },
-        ],
-      }));
+    // appliedCouponScope !== "common" &&
+    //   (await cart.reload({
+    //     include: [
+    //       {
+    //         model: models.CartItems,
+    //         as: "items",
+    //         where: { is_buy_now: false },
+    //         include: [
+    //           {
+    //             model: models.ProductBase,
+    //             as: "product",
+    //             attributes: ["id", "title", "slug"],
+    //           },
+    //           {
+    //             model: models.ProductVariants,
+    //             as: "variant",
+    //             attributes: ["id", "sku", "price", "media_path", "stock", "title", "title_ar"],
+    //           },
+    //         ],
+    //       },
+    //     ],
+    //   }));
 
     const itemCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
 
-    let couponDiscountType = null;
-    let couponDiscountValue = null;
-    if (cart.coupon_id) {
-      const coupon = await models.Coupons.findOne({
-        where: { id: cart.coupon_id },
-        attributes: ["discount_type", "discount_value"],
-      });
-      if (coupon) {
-        couponDiscountType = coupon.discount_type;
-        couponDiscountValue = coupon.discount_value;
-      }
-    }
+    // let couponDiscountType = null;
+    // let couponDiscountValue = null;
+    // if (cart.coupon_id) {
+    //   const coupon = await models.Coupons.findOne({
+    //     where: { id: cart.coupon_id },
+    //     attributes: ["discount_type", "discount_value"],
+    //   });
+    //   if (coupon) {
+    //     couponDiscountType = coupon.discount_type;
+    //     couponDiscountValue = coupon.discount_value;
+    //   }
+    // }
 
     return {
       id: cart.id,
@@ -160,12 +129,12 @@ class CheckOutService {
         is_sold_out: item.variant ? item.variant.stock < item.quantity : false,
       })),
       sub_total: cart.subtotal,
-      discount_total: cart.discount_total,
+      // discount_total: cart.discount_total,
       tax_total: cart.tax_total,
       grand_total: cart.grand_total,
-      applied_coupon_code: cart.applied_coupon_code,
-      coupon_discount_type: couponDiscountType,
-      coupon_discount_value: couponDiscountValue,
+      // applied_coupon_code: cart.applied_coupon_code,
+      // coupon_discount_type: couponDiscountType,
+      // coupon_discount_value: couponDiscountValue,
       item_count: itemCount,
     };
   }
@@ -174,7 +143,9 @@ class CheckOutService {
    * Get cart with  buy now items
    */
   static async getBuyNowCartData(userId, sessionId) {
-    const whereClause = userId ? { user_id: userId } : { session_id: sessionId, user_id: null };
+    const whereClause = userId
+      ? { user_id: userId, status: "active", type: "buynow" }
+      : { session_id: sessionId, status: "active", user_id: null, type: "buynow" };
 
     console.log(`Fetching buy now cart data for ${userId ? "user" : "guest"} with ID ${userId || sessionId}`);
 
@@ -184,7 +155,6 @@ class CheckOutService {
         {
           model: models.CartItems,
           as: "items",
-          where: { is_buy_now: true },
           include: [
             {
               model: models.ProductVariants,
@@ -202,48 +172,34 @@ class CheckOutService {
       };
     }
 
-    const appliedCouponScope = cart.applied_coupon_scope;
+    await ProductServiceHelpers.syncCartItemPrices(cart);
 
-    appliedCouponScope !== "common" && (await ProductServiceHelpers.validateCoupon(cart));
+    // const appliedCouponScope = cart.applied_coupon_scope;
 
-    appliedCouponScope !== "common" &&
-      (await cart.reload({
-        include: [
-          {
-            model: models.CartItems,
-            as: "items",
-            where: { is_buy_now: true },
-            include: [
-              {
-                model: models.ProductBase,
-                as: "product",
-                attributes: ["id", "title", "slug"],
-              },
-              {
-                model: models.ProductVariants,
-                as: "variant",
-                attributes: ["id", "sku", "price", "media_path", "stock", "title", "title_ar"],
-              },
-            ],
-          },
-        ],
-      }));
+    // appliedCouponScope !== "common" && (await ProductServiceHelpers.validateCoupon(cart));
+
+    await cart.reload({
+      include: [
+        {
+          model: models.CartItems,
+          as: "items",
+          include: [
+            {
+              model: models.ProductBase,
+              as: "product",
+              attributes: ["id", "title", "slug"],
+            },
+            {
+              model: models.ProductVariants,
+              as: "variant",
+              attributes: ["id", "sku", "price", "media_path", "stock", "title", "title_ar"],
+            },
+          ],
+        },
+      ],
+    });
 
     const itemCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
-    const itemPriceTotal = cart.items.reduce((sum, item) => sum + parseFloat(item.price) * item.quantity, 0);
-
-    let couponDiscountType = null;
-    let couponDiscountValue = null;
-    if (cart.coupon_id) {
-      const coupon = await models.Coupons.findOne({
-        where: { id: cart.coupon_id },
-        attributes: ["discount_type", "discount_value"],
-      });
-      if (coupon) {
-        couponDiscountType = coupon.discount_type;
-        couponDiscountValue = coupon.discount_value;
-      }
-    }
 
     return {
       id: cart.id,
@@ -259,11 +215,13 @@ class CheckOutService {
         line_total: (parseFloat(item.price) * item.quantity).toFixed(2),
         is_sold_out: item.variant ? item.variant.stock < item.quantity : false,
       })),
-      sub_total: itemPriceTotal.toFixed(2),
-      grand_total: itemPriceTotal.toFixed(2),
-      applied_coupon_code: cart.applied_coupon_code,
-      coupon_discount_type: couponDiscountType,
-      coupon_discount_value: couponDiscountValue,
+      sub_total: cart.subtotal,
+      // discount_total: cart.discount_total,
+      tax_total: cart.tax_total,
+      grand_total: cart.grand_total,
+      // applied_coupon_code: cart.applied_coupon_code,
+      // coupon_discount_type: couponDiscountType,
+      // coupon_discount_value: couponDiscountValue,
       item_count: itemCount,
     };
   }
@@ -271,12 +229,12 @@ class CheckOutService {
   /**
    * Apply a coupon code to the cart
    */
-  static async applyCoupon(userId, couponCode) {
+  static async applyCoupon(userId, couponCode, cartType = "cart") {
     const transaction = await sequelize.transaction();
 
     try {
       // 1. Find the active cart
-      const whereClause = { user_id: userId, status: "active" };
+      const whereClause = { user_id: userId, status: "active", type: cartType };
 
       const cart = await models.Cart.findOne({
         where: whereClause,
@@ -344,6 +302,10 @@ class CheckOutService {
 
       // 4. Check minimum order amount
       const subtotal = parseFloat(cart.subtotal);
+
+      console.log(subtotal);
+      console.log(coupon.min_order_amount);
+
       // 5. Check minimum order amount if it exists
       if (coupon.min_order_amount && subtotal < parseFloat(coupon.min_order_amount)) {
         const message = RESPONSE_MESSAGES.ERROR.MINIMUM_ORDER_AMOUNT_REQUIRED(coupon.min_order_amount);
@@ -383,11 +345,16 @@ class CheckOutService {
 
       // 8. Calculate discount amount
 
-      await this.couponWiseUpdates(coupon, cart, transaction);
+      const { discountAmount, newDiscountTotal, newGrandTotal } = await this.couponWiseUpdates(coupon, cart, transaction);
 
       await transaction.commit();
 
-      const cartData = await this.getCartData(userId, null);
+      const cartData = {
+        coupon_discount_value: discountAmount,
+        grand_total: newGrandTotal,
+        discount_total: newDiscountTotal,
+        applied_coupon_code: coupon.code,
+      };
 
       return cartData;
     } catch (error) {
@@ -428,11 +395,13 @@ class CheckOutService {
   /**
    * Remove applied coupon from the cart
    */
-  static async removeCoupon(userId, sessionId) {
+  static async removeCoupon(userId, sessionId, cartType = "cart") {
     const transaction = await sequelize.transaction();
 
     try {
-      const whereClause = userId ? { user_id: userId, status: "active" } : { session_id: sessionId, status: "active", user_id: null };
+      const whereClause = userId
+        ? { user_id: userId, status: "active", type: cartType }
+        : { session_id: sessionId, status: "active", user_id: null, type: cartType };
 
       const cart = await models.Cart.findOne({
         where: whereClause,
@@ -443,56 +412,56 @@ class CheckOutService {
         throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.CART_NOT_FOUND, HTTP_STATUS.BAD_REQUEST);
       }
 
-      if (!cart.applied_coupon_code) {
-        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.NO_COUPON_APPLIED, HTTP_STATUS.BAD_REQUEST);
-      }
+      // if (!cart.applied_coupon_code) {
+      //   throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.NO_COUPON_APPLIED, HTTP_STATUS.BAD_REQUEST);
+      // }
 
-      const applliedCoupon = await models.Coupons.findOne({
-        attributes: ["id", "scope_type", "scope_id"],
-        where: {
-          code: cart.applied_coupon_code,
-        },
-        transaction,
-      });
+      // const applliedCoupon = await models.Coupons.findOne({
+      //   attributes: ["id", "scope_type", "scope_id"],
+      //   where: {
+      //     code: cart.applied_coupon_code,
+      //   },
+      //   transaction,
+      // });
 
-      if (!applliedCoupon) {
-        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.INVALID_OR_EXPIRED_COUPON, HTTP_STATUS.BAD_REQUEST);
-      }
+      // if (!applliedCoupon) {
+      //   throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.INVALID_OR_EXPIRED_COUPON, HTTP_STATUS.BAD_REQUEST);
+      // }
 
-      await models.CartItems.update(
-        {
-          discount_amount: 0,
-          final_price: sequelize.literal("ROUND(price * quantity, 2)"),
-          coupon_id: null,
-          applied_coupon_code: null,
-          applied_coupon_scope: null,
-        },
-        {
-          where: { cart_id: cart.id },
-          transaction,
-        },
-      );
+      // await models.CartItems.update(
+      //   {
+      //     discount_amount: 0,
+      //     final_price: sequelize.literal("ROUND(price * quantity, 2)"),
+      //     coupon_id: null,
+      //     applied_coupon_code: null,
+      //     applied_coupon_scope: null,
+      //   },
+      //   {
+      //     where: { cart_id: cart.id },
+      //     transaction,
+      //   },
+      // );
 
       // Recalculate totals without coupon discount
-      await ProductServiceHelpers.recalculateCartTotals(cart.id, transaction);
+      // await ProductServiceHelpers.recalculateCartTotals(cart.id, transaction);
 
       // Clear the coupon code from cart
-      await models.Cart.update(
-        {
-          applied_coupon_code: null,
-          coupon_id: null,
-          applied_coupon_scope: null,
-        },
-        {
-          where: { id: cart.id },
-          transaction,
-        },
-      );
+      // await models.Cart.update(
+      //   {
+      //     applied_coupon_code: null,
+      //     coupon_id: null,
+      //     applied_coupon_scope: null,
+      //   },
+      //   {
+      //     where: { id: cart.id },
+      //     transaction,
+      //   },
+      // );
 
       await transaction.commit();
 
       // Fetch updated cart
-      const updatedCart = await this.getCartData(userId, null);
+      const updatedCart = cartType === "buynow" ? await this.getBuyNowCartData(userId, null) : await this.getCartData(userId, null);
 
       return updatedCart;
     } catch (error) {
@@ -593,7 +562,7 @@ class CheckOutService {
     });
   }
 
-  static async couponWiseUpdates(coupon, cart, transaction) {
+  static async couponWiseUpdates(coupon, cart, transaction, persist = false) {
     const subtotal = parseFloat(cart.subtotal);
 
     if (coupon.scope_type === "common") {
@@ -601,8 +570,6 @@ class CheckOutService {
       let discountAmount = 0;
       if (coupon.discount_type === "percentage") {
         discountAmount = (subtotal * parseFloat(coupon.discount_value)) / 100;
-        console.log(coupon.max_discount_amount != 0.0);
-        console.log(coupon.max_discount_amount);
         if (parseFloat(coupon.max_discount_amount) !== 0.0 && discountAmount > parseFloat(coupon.max_discount_amount)) {
           discountAmount = parseFloat(coupon.max_discount_amount);
         }
@@ -617,25 +584,29 @@ class CheckOutService {
       const newDiscountTotal = currentDiscount + discountAmount;
       const newGrandTotal = subtotal - newDiscountTotal;
 
-      await models.Cart.update(
-        {
-          applied_coupon_code: coupon.code,
-          coupon_id: coupon.id,
-          applied_coupon_scope: coupon.scope_type,
-          discount_total: newDiscountTotal.toFixed(2),
-          grand_total: Math.max(0, newGrandTotal).toFixed(2),
-        },
-        {
-          where: { id: cart.id },
-          transaction,
-        },
-      );
+      if (persist) {
+        await models.Cart.update(
+          {
+            applied_coupon_code: coupon.code,
+            coupon_id: coupon.id,
+            applied_coupon_scope: coupon.scope_type,
+            discount_total: newDiscountTotal.toFixed(2),
+            grand_total: Math.max(0, newGrandTotal).toFixed(2),
+          },
+          {
+            where: { id: cart.id },
+            transaction,
+          },
+        );
+      }
 
-      return { discountAmount, newDiscountTotal, newGrandTotal };
+      return { discountAmount, newDiscountTotal, newGrandTotal, itemDiscounts: null };
     } else {
       // Scoped coupon: discount applies only to matching items
 
       const matchingItems = this.getMatchingCartItems(coupon, cart.items);
+
+      console.log("Matching items for coupon:", matchingItems.length);
 
       if (matchingItems.length === 0) {
         throw ErrorHandler.createError(
@@ -672,6 +643,8 @@ class CheckOutService {
         discountAmount = round2(eligibleSubtotal);
       }
 
+      const itemDiscounts = new Map();
+
       for (const item of matchingItems) {
         console.log("Remaining max discount", remainingMaxDiscount);
         if (remainingMaxDiscount <= 0) break;
@@ -693,19 +666,26 @@ class CheckOutService {
 
         const finalPrice = round2(itemTotalPrice - itemDiscount);
 
-        await models.CartItems.update(
-          {
-            discount_amount: itemDiscount.toFixed(2),
-            final_price: Math.max(0, finalPrice).toFixed(2),
-            coupon_id: coupon.id,
-            applied_coupon_code: coupon.code,
-            applied_coupon_scope: coupon.scope_type,
-          },
-          {
-            where: { id: item.id },
-            transaction,
-          },
-        );
+        console.log(itemDiscount);
+        console.log(finalPrice);
+
+        itemDiscounts.set(item.id, itemDiscount);
+
+        if (persist) {
+          await models.CartItems.update(
+            {
+              discount_amount: itemDiscount.toFixed(2),
+              final_price: Math.max(0, finalPrice).toFixed(2),
+              coupon_id: coupon.id,
+              applied_coupon_code: coupon.code,
+              applied_coupon_scope: coupon.scope_type,
+            },
+            {
+              where: { id: item.id },
+              transaction,
+            },
+          );
+        }
 
         remainingMaxDiscount = round2(remainingMaxDiscount - itemDiscount);
         finalDiscountAmount = round2(finalDiscountAmount + itemDiscount);
@@ -716,23 +696,25 @@ class CheckOutService {
 
       const newGrandTotal = round2(subtotal - newDiscountTotal);
 
-      await models.Cart.update(
-        {
-          applied_coupon_code: coupon.code,
-          coupon_id: coupon.id,
-          applied_coupon_scope: coupon.scope_type,
-          discount_total: newDiscountTotal.toFixed(2),
-          grand_total: Math.max(0, newGrandTotal).toFixed(2),
-        },
-        {
-          where: { id: cart.id },
-          transaction,
-        },
-      );
+      if (persist) {
+        await models.Cart.update(
+          {
+            applied_coupon_code: coupon.code,
+            coupon_id: coupon.id,
+            applied_coupon_scope: coupon.scope_type,
+            discount_total: newDiscountTotal.toFixed(2),
+            grand_total: Math.max(0, newGrandTotal).toFixed(2),
+          },
+          {
+            where: { id: cart.id },
+            transaction,
+          },
+        );
+      }
 
-      await ProductServiceHelpers.recalculateCartTotals(cart.id, transaction);
+      console.log(discountAmount, newDiscountTotal, newGrandTotal);
 
-      return { discountAmount, newDiscountTotal, newGrandTotal };
+      return { discountAmount: newDiscountTotal, newDiscountTotal, newGrandTotal, itemDiscounts };
     }
   }
 }

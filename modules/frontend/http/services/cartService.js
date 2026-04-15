@@ -6,13 +6,14 @@ const { generateImageUrl } = require("../../traits/imageUrlHelper.js");
 const ProductServiceHelpers = require("../traits/products.js");
 const { isItemWishListed, generateQueryParams } = require("../traits/dataManipulations/product/product.js");
 const { Op } = require("sequelize");
+const { type } = require("os");
 
 class CartService {
   /**
    * Get or create cart for user/guest
    */
-  static async getOrCreateCart(userId, sessionId, transaction = null) {
-    const whereClause = userId ? { user_id: userId, status: "active" } : { session_id: sessionId, status: "active", user_id: null };
+  static async getOrCreateCart(userId, sessionId, type, transaction = null) {
+    const whereClause = userId ? { user_id: userId, status: "active", type } : { session_id: sessionId, status: "active", user_id: null, type };
 
     let cart = await models.Cart.findOne({
       where: whereClause,
@@ -30,6 +31,7 @@ class CartService {
           discount_total: 0,
           tax_total: 0,
           grand_total: 0,
+          type,
         },
         { transaction },
       );
@@ -69,7 +71,9 @@ class CartService {
   static async getCart(userId, sessionId) {
     const transaction = await sequelize.transaction();
     try {
-      const whereClause = userId ? { user_id: userId, status: "active" } : { session_id: sessionId, status: "active", user_id: null };
+      const whereClause = userId
+        ? { user_id: userId, status: "active", type: "cart" }
+        : { session_id: sessionId, status: "active", user_id: null, type: "cart" };
 
       const cart = await models.Cart.findOne(
         {
@@ -78,7 +82,6 @@ class CartService {
             {
               model: models.CartItems,
               as: "items",
-              where: { is_buy_now: false },
               include: [
                 {
                   model: models.ProductBase,
@@ -128,7 +131,7 @@ class CartService {
         };
       }
 
-      await ProductServiceHelpers.validateCoupon(cart);
+      await ProductServiceHelpers.syncCartItemPrices(cart, transaction);
 
       // Reload cart with fresh data after price sync
       await cart.reload({
@@ -136,7 +139,6 @@ class CartService {
           {
             model: models.CartItems,
             as: "items",
-            where: { is_buy_now: false },
             include: [
               {
                 model: models.ProductVariants,
@@ -258,7 +260,7 @@ class CartService {
 
       let price = variant.price;
 
-      const cart = await this.getOrCreateCart(userId, sessionId, transaction);
+      const cart = await this.getOrCreateCart(userId, sessionId, "cart", transaction);
 
       const existingItem = await models.CartItems.findOne({
         where: {
@@ -302,10 +304,8 @@ class CartService {
 
       await transaction.commit();
 
-      return;
-
       // Return updated cart
-      // return await this.getCart(userId, sessionId);
+      return await this.getCart(userId, sessionId);
     } catch (error) {
       if (!transaction.finished) {
         await transaction.rollback();
@@ -321,7 +321,7 @@ class CartService {
     const transaction = await sequelize.transaction();
 
     try {
-      const cart = await this.getOrCreateCart(userId, sessionId, transaction);
+      const cart = await this.getOrCreateCart(userId, sessionId, "cart", transaction);
 
       for (const variantId of variantIds) {
         const variant = await models.ProductVariants.findOne({
@@ -408,7 +408,7 @@ class CartService {
 
       let price = variant.price;
 
-      const cart = await this.getOrCreateCart(userId, sessionId, transaction);
+      const cart = await this.getOrCreateCart(userId, sessionId, "buynow", transaction);
 
       if (quantity > variant.stock) {
         throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.OUT_OF_STOCK, HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
@@ -433,8 +433,10 @@ class CartService {
 
       await transaction.commit();
 
+      return;
+
       // Return updated cart
-      return await this.getCart(userId, sessionId, "buynow");
+      // return await this.getCart(userId, sessionId, "buynow");
     } catch (error) {
       if (!transaction.finished) {
         await transaction.rollback();
@@ -450,7 +452,9 @@ class CartService {
     const transaction = await sequelize.transaction();
 
     try {
-      const whereClause = userId ? { user_id: userId, status: "active" } : { session_id: sessionId, status: "active", user_id: null };
+      const whereClause = userId
+        ? { user_id: userId, status: "active", type: "cart" }
+        : { session_id: sessionId, status: "active", user_id: null, type: "cart" };
 
       const cart = await models.Cart.findOne(
         {
@@ -535,7 +539,9 @@ class CartService {
     const transaction = await sequelize.transaction();
 
     try {
-      const whereClause = userId ? { user_id: userId, status: "active" } : { session_id: sessionId, status: "active", user_id: null };
+      const whereClause = userId
+        ? { user_id: userId, status: "active", type: "cart" }
+        : { session_id: sessionId, status: "active", user_id: null, type: "cart" };
 
       const cart = await models.Cart.findOne({
         where: whereClause,
@@ -556,22 +562,6 @@ class CartService {
       }
 
       await cartItem.destroy({ transaction });
-
-      // For scoped coupons: if no remaining items carry a discount, the coupon no
-      // longer applies to anything — clear it so the badge doesn't stay showing.
-      if (cart.applied_coupon_code && cart.applied_coupon_scope !== "common") {
-        const remainingDiscountedItems = await models.CartItems.count({
-          where: { cart_id: cart.id, discount_amount: { [require("sequelize").Op.gt]: 0 } },
-          transaction,
-        });
-
-        if (remainingDiscountedItems === 0) {
-          await models.Cart.update(
-            { applied_coupon_code: null, coupon_id: null, applied_coupon_scope: null },
-            { where: { id: cart.id }, transaction },
-          );
-        }
-      }
 
       // Recalculate totals
       await ProductServiceHelpers.recalculateCartTotals(cart.id, transaction);
@@ -595,7 +585,9 @@ class CartService {
     const transaction = await sequelize.transaction();
 
     try {
-      const whereClause = userId ? { user_id: userId, status: "active" } : { session_id: sessionId, status: "active", user_id: null };
+      const whereClause = userId
+        ? { user_id: userId, status: "active", type: "cart" }
+        : { session_id: sessionId, status: "active", user_id: null, type: "cart" };
 
       const cart = await models.Cart.findOne({
         where: whereClause,
@@ -658,6 +650,7 @@ class CartService {
           session_id: sessionId,
           status: "active",
           user_id: null,
+          type: "cart",
         },
         include: [{ model: models.CartItems, as: "items" }],
         transaction,
@@ -673,7 +666,7 @@ class CartService {
         return;
       }
 
-      const userCart = await this.getOrCreateCart(userId, null, transaction);
+      const userCart = await this.getOrCreateCart(userId, null, "cart", transaction);
 
       for (const guestItem of guestCart.items) {
         const existingItem = await models.CartItems.findOne({
@@ -732,7 +725,7 @@ class CartService {
 
     try {
       const userCart = await models.Cart.findOne({
-        where: { user_id: userId, status: "active" },
+        where: { user_id: userId, status: "active", type: "cart" },
         include: [{ model: models.CartItems, as: "items", where: { is_buy_now: false }, required: false }],
         transaction,
       });
@@ -754,6 +747,7 @@ class CartService {
           discount_total: 0,
           tax_total: 0,
           grand_total: 0,
+          type: "cart",
         },
         { transaction },
       );
@@ -790,7 +784,9 @@ class CartService {
    */
   static async getMatchingProducts(userId, sessionId) {
     // 1. Find active cart with items and their variant categories
-    const whereClause = userId ? { user_id: userId, status: "active" } : { session_id: sessionId, status: "active", user_id: null };
+    const whereClause = userId
+      ? { user_id: userId, status: "active", type: "cart" }
+      : { session_id: sessionId, status: "active", user_id: null, type: "cart" };
 
     const cart = await models.Cart.findOne({
       where: whereClause,
@@ -929,7 +925,9 @@ class CartService {
    */
   static async getSimilarFromCart(userId, sessionId) {
     // 1. Find the active cart
-    const whereClause = userId ? { user_id: userId, status: "active" } : { session_id: sessionId, status: "active", user_id: null };
+    const whereClause = userId
+      ? { user_id: userId, status: "active", type: "cart" }
+      : { session_id: sessionId, status: "active", user_id: null, type: "cart" };
 
     const cart = await models.Cart.findOne({
       where: whereClause,

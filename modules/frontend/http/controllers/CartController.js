@@ -43,6 +43,9 @@ class CartController {
       const userId = req.auth?.id || null;
       const sessionId = CartController.getSessionId(req);
 
+      console.log(userId);
+      console.log(sessionId);
+
       if (!userId && !sessionId) {
         return ApiResponse.success(res, {
           message: "Cart retrieved successfully",

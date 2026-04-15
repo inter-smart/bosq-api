@@ -26,6 +26,12 @@ module.exports = (sequelize) => {
         defaultValue: "active",
       },
 
+      type: {
+        type: DataTypes.ENUM("cart", "buynow"),
+        allowNull: false,
+        defaultValue: "cart",
+      },
+
       currency: {
         type: DataTypes.STRING(10),
         allowNull: false,

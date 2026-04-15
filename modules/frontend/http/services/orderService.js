@@ -1,6 +1,7 @@
 const { models, sequelize } = require("../../../../database/models/index.js");
 const { ErrorHandler } = require("../traits/errorHandler.js");
 const { HTTP_STATUS, ERROR_CODES } = require("../traits/constants.js");
+const CheckOutService = require("./CheckOutService.js");
 const { generateImageUrl } = require("../../traits/imageUrlHelper.js");
 const crypto = require("crypto");
 const { Op } = require("sequelize");
@@ -33,7 +34,7 @@ class OrderService {
   /**
    * Place a new order from the active cart
    */
-  static async placeOrder(cartOwner, paymentType = "cod", address = {}, type = "cart") {
+  static async placeOrder(cartOwner, paymentType = "cod", address = {}, type = "cart", couponCode = null) {
     const transaction = await sequelize.transaction();
 
     const { type: userType, id: ownerId } = cartOwner;
@@ -45,7 +46,7 @@ class OrderService {
     const { model: Model, field } = config;
 
     try {
-      const whereClause = isGuest ? { session_id: ownerId, status: "active", user_id: null } : { user_id: ownerId, status: "active" };
+      const whereClause = isGuest ? { session_id: ownerId, status: "active", user_id: null, type } : { user_id: ownerId, status: "active", type };
 
       const { billing, shipping } = address;
 
@@ -85,7 +86,6 @@ class OrderService {
           {
             model: models.CartItems,
             as: "items",
-            where: type === "buynow" ? { is_buy_now: true } : {},
             include: [
               {
                 model: models.ProductBase,
@@ -95,7 +95,28 @@ class OrderService {
               {
                 model: models.ProductVariants,
                 as: "variant",
-                attributes: ["id", "sku", "price", "media_path", "stock", "title"],
+                attributes: ["id", "sku", "price", "media_path", "stock", "title", "product_model_id"],
+                include: [
+                  {
+                    model: models.ProductCategory,
+                    as: "categories",
+                    attributes: ["id"],
+                    through: { attributes: [] },
+                    required: false,
+                  },
+                  {
+                    model: models.ProductModels,
+                    as: "productModel",
+                    attributes: ["id"],
+                    include: [
+                      {
+                        model: models.ProductBase,
+                        as: "product",
+                        attributes: ["id"],
+                      },
+                    ],
+                  },
+                ],
               },
             ],
           },
@@ -125,7 +146,64 @@ class OrderService {
         }
       }
 
-      // Create the order record
+      // Apply coupon if provided — re-validate and persist to DB within this transaction
+      let appliedCoupon = null;
+      let orderDiscountTotal = parseFloat(cart.discount_total);
+      let orderGrandTotal = parseFloat(cart.grand_total);
+      let itemDiscounts = null;
+
+      console.log("CPN CODE", couponCode);
+
+      if (couponCode) {
+        const coupon = await models.Coupons.findOne({
+          where: {
+            code: couponCode,
+            status: true,
+            start_at: { [Op.lte]: new Date() },
+            end_at: { [Op.gte]: new Date() },
+          },
+          transaction,
+        });
+
+        if (!coupon) {
+          throw ErrorHandler.createError("Coupon is invalid or expired", HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION_ERROR);
+        }
+
+        if (coupon.min_order_amount && parseFloat(cart.subtotal) < parseFloat(coupon.min_order_amount)) {
+          throw ErrorHandler.createError(
+            `Minimum order amount of ${coupon.min_order_amount} required for this coupon`,
+            HTTP_STATUS.BAD_REQUEST,
+            ERROR_CODES.VALIDATION_ERROR,
+          );
+        }
+
+        const totalUsageCount = await models.CouponUsage.count({ where: { coupon_id: coupon.id }, transaction });
+        if (totalUsageCount >= coupon.usage_limit_total) {
+          throw ErrorHandler.createError("Coupon usage limit has been reached", HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION_ERROR);
+        }
+
+        if (userId) {
+          const userUsageCount = await models.CouponUsage.count({ where: { coupon_id: coupon.id, user_id: userId }, transaction });
+          if (userUsageCount >= coupon.usage_limit_per_user) {
+            throw ErrorHandler.createError(
+              "You have already used this coupon the maximum number of times",
+              HTTP_STATUS.BAD_REQUEST,
+              ERROR_CODES.VALIDATION_ERROR,
+            );
+          }
+        }
+
+        if (coupon.scope_type !== "common" && !CheckOutService.isCouponApplicableToCart(coupon, cart.items)) {
+          throw ErrorHandler.createError("Coupon is not applicable to items in your cart", HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION_ERROR);
+        }
+
+        const result = await CheckOutService.couponWiseUpdates(coupon, cart, transaction, true);
+        appliedCoupon = coupon;
+        orderDiscountTotal = result.newDiscountTotal;
+        orderGrandTotal = result.newGrandTotal;
+        itemDiscounts = result.itemDiscounts;
+      }
+
       const order = await models.Orders.create(
         {
           order_id: this.generateOrderId(),
@@ -135,15 +213,16 @@ class OrderService {
           payment_status: "pending",
           payment_type: paymentType,
           subtotal: cart.subtotal,
-          discount_total: cart.discount_total,
+          discount_total: orderDiscountTotal.toFixed(2),
           tax_total: cart.tax_total,
-          grand_total: cart.grand_total,
+          grand_total: Math.max(0, orderGrandTotal).toFixed(2),
         },
         { transaction },
       );
 
-      // Create order items and reduce stock
       for (const item of cart.items) {
+        const itemDiscount = itemDiscounts?.get(item.id) ?? parseFloat(item.discount_amount ?? 0);
+
         await models.OrderItem.create(
           {
             order_id: order.id,
@@ -151,7 +230,7 @@ class OrderService {
             variant_id: item.variant_id,
             quantity: item.quantity,
             price: item.price,
-            discount_amount: item.discount_amount,
+            discount_amount: itemDiscount.toFixed(2),
           },
           { transaction },
         );
@@ -160,7 +239,6 @@ class OrderService {
         await models.ProductVariants.update({ stock: item.variant.stock - item.quantity }, { where: { id: item.variant_id }, transaction });
       }
 
-      // Create order addresses (billing + shipping)
       await models.OrderAddress.create(
         {
           order_id: order.id,
@@ -198,34 +276,44 @@ class OrderService {
       }
 
       // Record coupon usage if a coupon was applied
-      if (cart.coupon_id && cart.applied_coupon_code) {
+      const couponForUsage = appliedCoupon ?? (cart.coupon_id ? { id: cart.coupon_id, code: cart.applied_coupon_code } : null);
+      console.log("CPN", couponForUsage);
+      if (couponForUsage) {
         await models.CouponUsage.create(
           {
-            coupon_id: cart.coupon_id,
-            coupon_code: cart.applied_coupon_code,
+            coupon_id: couponForUsage.id,
+            coupon_code: couponForUsage.code,
             user_id: userId,
             order_id: order.id,
-            discount_amount: cart.discount_total,
+            discount_amount: appliedCoupon ? orderDiscountTotal.toFixed(2) : cart.discount_total,
             used_at: new Date(),
           },
           { transaction },
         );
       }
 
-      if (type === "cart") {
-        await cart.update({ status: "ordered" }, { transaction });
-      }
+      await cart.update({ status: "ordered" }, { transaction });
 
       const cartItemsWhere = { cart_id: cart.id };
-      if (type === "buynow") {
-        cartItemsWhere.is_buy_now = true;
-      }
 
       const deletedCount = await models.CartItems.destroy({
         where: cartItemsWhere,
         transaction,
         force: true,
       });
+
+      if (type == "cart") {
+        const activeBuyNowCart = await models.Cart.findOne({
+          where: userId
+            ? { user_id: userId, status: "active", type: "buynow" }
+            : { session_id: sessionId, user_id: null, status: "active", type: "buynow" },
+          transaction,
+        });
+
+        if (activeBuyNowCart) {
+          await activeBuyNowCart.destroy({ force: true, transaction });
+        }
+      }
 
       if (deletedCount > 0) {
         console.log(`✅ CartItems deleted successfully. Count: ${deletedCount}`);

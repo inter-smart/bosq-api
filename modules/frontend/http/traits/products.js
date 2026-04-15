@@ -253,10 +253,10 @@ class ProductServiceHelpers {
     return { products: finalisedProducts, totalItems, totalPrice };
   }
 
-  static async recalculateCartTotals(cartId, type = "cart", transaction = null) {
+  static async recalculateCartTotals(cartId, transaction = null, type = "cart") {
     const [cart, cartItems] = await Promise.all([
       models.Cart.findOne({
-        where: { id: cartId },
+        where: { id: cartId, type: type },
         attributes: ["id", "applied_coupon_scope", "discount_total", "applied_coupon_code"],
         transaction,
       }),
@@ -277,30 +277,30 @@ class ProductServiceHelpers {
 
     // Common scope coupons store the discount at cart level only — CartItems have no
     // discount_amount — so we must derive the correct discount from the coupon itself.
-    if (cart?.applied_coupon_scope === "common" && cart?.applied_coupon_code) {
-      const coupon = await models.Coupons.findOne({
-        where: { code: cart.applied_coupon_code },
-        attributes: ["discount_type", "discount_value", "max_discount_amount"],
-        transaction,
-      });
+    // if (cart?.applied_coupon_scope === "common" && cart?.applied_coupon_code) {
+    //   const coupon = await models.Coupons.findOne({
+    //     where: { code: cart.applied_coupon_code },
+    //     attributes: ["discount_type", "discount_value", "max_discount_amount"],
+    //     transaction,
+    //   });
 
-      if (coupon) {
-        if (coupon.discount_type === "percentage") {
-          // Percentage discount must be recalculated against the NEW subtotal
-          let pctDiscount = (subtotal * parseFloat(coupon.discount_value)) / 100;
-          if (coupon.max_discount_amount && pctDiscount > parseFloat(coupon.max_discount_amount)) {
-            pctDiscount = parseFloat(coupon.max_discount_amount);
-          }
+    //   if (coupon) {
+    //     if (coupon.discount_type === "percentage") {
+    //       // Percentage discount must be recalculated against the NEW subtotal
+    //       let pctDiscount = (subtotal * parseFloat(coupon.discount_value)) / 100;
+    //       if (coupon.max_discount_amount && pctDiscount > parseFloat(coupon.max_discount_amount)) {
+    //         pctDiscount = parseFloat(coupon.max_discount_amount);
+    //       }
 
-          discountTotal = pctDiscount;
-          // Keep cart.discount_total in sync
-          await models.Cart.update({ discount_total: pctDiscount.toFixed(2) }, { where: { id: cartId }, transaction });
-        } else {
-          // Fixed discount: the amount doesn't change with subtotal
-          discountTotal = Math.min(parseFloat(cart.discount_total || 0), subtotal);
-        }
-      }
-    }
+    //       discountTotal = pctDiscount;
+    //       // Keep cart.discount_total in sync
+    //       await models.Cart.update({ discount_total: pctDiscount.toFixed(2) }, { where: { id: cartId }, transaction });
+    //     } else {
+    //       // Fixed discount: the amount doesn't change with subtotal
+    //       discountTotal = Math.min(parseFloat(cart.discount_total || 0), subtotal);
+    //     }
+    //   }
+    // }
 
     const grandTotal = Math.max(0, subtotal - discountTotal);
 
@@ -311,7 +311,7 @@ class ProductServiceHelpers {
         grand_total: grandTotal.toFixed(2),
       },
       {
-        where: { id: cartId },
+        where: { id: cartId, type: type },
         returning: true,
         transaction,
       },
@@ -345,24 +345,12 @@ class ProductServiceHelpers {
       }
     }
 
-    await this.recalculateCartTotals(cart.id, transaction);
+    await this.recalculateCartTotals(cart.id, transaction, cart.type);
 
     return { priceChanged };
   }
 
   static async validateCoupon(cart, transaction = null) {
-    const couponCode = cart.applied_coupon_code;
-
-    const coupon = await models.Coupons.findOne({
-      where: { code: couponCode },
-      transaction,
-    });
-
-    if (!coupon) {
-      const priceChanged = await this.syncCartItemPrices(cart, transaction);
-      return { priceChanged };
-    }
-
     const now = new Date();
     const isExpired = coupon.end_at < now || coupon.start_at > now;
     const isInactive = !coupon.status;

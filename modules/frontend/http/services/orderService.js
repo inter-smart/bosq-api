@@ -505,6 +505,8 @@ class OrderService {
               'price',          oi.price,
               'discount_amount',oi.discount_amount,
               'line_total',     (oi.price * oi.quantity)::TEXT,
+               'final_amount',     ((oi.price * oi.quantity) - COALESCE(oi.discount_amount, 0))::TEXT,
+  'is_coupon_applied', COALESCE(oi.discount_amount, 0) <> 0,
               'product',        JSONB_BUILD_OBJECT('id', pb.id, 'title', pb.title, 'slug', pb.slug),
               'variant',        JSONB_BUILD_OBJECT(
                                   'id',        pv.id,

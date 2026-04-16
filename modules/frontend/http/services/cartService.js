@@ -7,6 +7,7 @@ const ProductServiceHelpers = require("../traits/products.js");
 const { isItemWishListed, generateQueryParams } = require("../traits/dataManipulations/product/product.js");
 const { Op } = require("sequelize");
 const { type } = require("os");
+const { console } = require("inspector");
 
 class CartService {
   /**
@@ -638,9 +639,13 @@ class CartService {
    * Merge guest cart into user cart after login
    */
   static async mergeGuestCart(userId, sessionId) {
+    console.log("Attempting to merge guest cart for user:", userId, "with session:", sessionId);
+
     if (!sessionId) {
       return;
     }
+
+    console.log("Starting cart merge transaction...");
 
     const transaction = await sequelize.transaction();
 
@@ -656,6 +661,8 @@ class CartService {
         transaction,
       });
 
+      console.log("GUEST CART TO MERGE:", guestCart?.toJSON?.());
+
       if (!guestCart) {
         await transaction.commit();
         return;
@@ -665,6 +672,8 @@ class CartService {
         await transaction.commit();
         return;
       }
+
+      console.log("Merging cart with", guestCart.items.length, "items");
 
       const userCart = await this.getOrCreateCart(userId, null, "cart", transaction);
 
@@ -702,8 +711,19 @@ class CartService {
       }
 
       await guestCart.destroy({ force: true, transaction });
+      const activeBuyNowCart = await models.Cart.findOne({
+        where: { session_id: sessionId, user_id: null, status: "active", type: "buynow" },
+        transaction,
+      });
+
+      if (activeBuyNowCart) {
+        console.log("ACTIVE CART FOUND FOR BUY NOW - DELETING");
+        await activeBuyNowCart.destroy({ force: true, transaction });
+      }
 
       await ProductServiceHelpers.recalculateCartTotals(userCart.id, transaction);
+
+      console.log("CART MERGE SUCCESSFUL");
 
       // 6️⃣ Commit
       await transaction.commit();

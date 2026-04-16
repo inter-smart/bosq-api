@@ -1,7 +1,5 @@
 const cartContext = async (req, res, next) => {
   try {
-    console.log("req.auth", req.auth);
-
     if (req.auth) {
       req.cartOwner = {
         type: "user",

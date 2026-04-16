@@ -5,6 +5,7 @@ const { ApiResponse } = require("../traits/response.js");
 const { ErrorHandler } = require("../traits/errorHandler.js");
 const { HTTP_STATUS, RESPONSE_MESSAGES } = require("../traits/constants.js");
 const { addToCartRequest, updateCartItemRequest, removeCartItemRequest } = require("../request/cartRequest.js");
+const { console } = require("inspector");
 
 const GUEST_SESSION_COOKIE = "guest_cart_session";
 const COOKIE_MAX_AGE = 30 * 24 * 60 * 60 * 1000; // 30 days
@@ -366,6 +367,8 @@ class CartController {
       const userId = req.auth?.id;
       const sessionId = req.cookies?.guest_cart_session;
 
+      console.log("Merging cart for user:", userId, "with session:", sessionId);
+
       if (!userId) {
         return ApiResponse.error(res, {
           message: "User must be logged in to merge cart",
@@ -374,9 +377,12 @@ class CartController {
       }
 
       if (sessionId) {
+        console.log("Guest cart session found, merging cart...");
         await CartService.mergeGuestCart(userId, sessionId);
         res.clearCookie(GUEST_SESSION_COOKIE);
       }
+
+      console.log("Cart merge completed, fetching updated cart...");
 
       const cart = await CartService.getCart(userId, null);
 

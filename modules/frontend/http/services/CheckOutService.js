@@ -309,19 +309,14 @@ class CheckOutService {
         throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.INVALID_OR_EXPIRED_COUPON, HTTP_STATUS.BAD_REQUEST);
       }
 
-      // 4. Check minimum order amount
-      const subtotal = parseFloat(cart.subtotal);
+      if (coupon.scope_type !== "common") {
+        const isApplicable = this.isCouponApplicableToCart(coupon, cart.items);
 
-      console.log(subtotal);
-      console.log(coupon.min_order_amount);
-
-      // 5. Check minimum order amount if it exists
-      if (coupon.min_order_amount && subtotal < parseFloat(coupon.min_order_amount)) {
-        const message = RESPONSE_MESSAGES.ERROR.MINIMUM_ORDER_AMOUNT_REQUIRED(coupon.min_order_amount);
-        throw ErrorHandler.createError(message, HTTP_STATUS.BAD_REQUEST);
+        if (!isApplicable) {
+          throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.COUPON_NOT_APPLICABLE, HTTP_STATUS.BAD_REQUEST);
+        }
       }
 
-      // 5. Check total usage limit
       const totalUsageCount = await models.CouponUsage.count({
         where: { coupon_id: coupon.id },
         transaction,
@@ -331,7 +326,6 @@ class CheckOutService {
         throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.COUPON_USAGE_LIMIT_REACHED, HTTP_STATUS.BAD_REQUEST);
       }
 
-      // 6. Check per-user usage limit (only for logged-in users)
       if (userId) {
         const userUsageCount = await models.CouponUsage.count({
           where: { coupon_id: coupon.id, user_id: userId },
@@ -343,18 +337,16 @@ class CheckOutService {
         }
       }
 
-      // 7. Validate scope - check if coupon applies to items in cart
-      if (coupon.scope_type !== "common") {
-        const isApplicable = this.isCouponApplicableToCart(coupon, cart.items);
+      const subtotal = parseFloat(cart.subtotal);
 
-        if (!isApplicable) {
-          throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.COUPON_NOT_APPLICABLE, HTTP_STATUS.BAD_REQUEST);
-        }
+      if (coupon.min_order_amount && subtotal < parseFloat(coupon.min_order_amount)) {
+        const message = RESPONSE_MESSAGES.ERROR.MINIMUM_ORDER_AMOUNT_REQUIRED(coupon.min_order_amount);
+        throw ErrorHandler.createError(message, HTTP_STATUS.BAD_REQUEST);
       }
 
       // 8. Calculate discount amount
 
-      const { discountAmount, newDiscountTotal, newGrandTotal } = await this.couponWiseUpdates(coupon, cart, transaction);
+      const { discountAmount, newDiscountTotal, newGrandTotal, itemDiscounts } = await this.couponWiseUpdates(coupon, cart, transaction);
 
       await transaction.commit();
 
@@ -363,6 +355,13 @@ class CheckOutService {
         grand_total: newGrandTotal,
         discount_total: newDiscountTotal,
         applied_coupon_code: coupon.code,
+        coupon_scope_type: coupon.scope_type,
+        item_discounts: itemDiscounts
+          ? Array.from(itemDiscounts.entries()).map(([id, amount]) => ({
+              id,
+              amount: parseFloat(amount.toFixed(2)),
+            }))
+          : null,
       };
 
       return cartData;

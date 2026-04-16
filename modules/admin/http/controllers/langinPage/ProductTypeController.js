@@ -1,23 +1,9 @@
 const { validationResult } = require("express-validator");
-const {
-  sequelize,
-  models,
-} = require("../../../../../database/models/index.js");
-const {
-  sendValidationError,
-  sendSuccessResponse,
-  sendErrorResponse,
-  sendNotFoundError,
-} = require("../../traits/responseHandler.js");
-const {
-  handleFileUploadStore,
-  handleFileUploadUpdate,
-} = require("../../middleware/multerMiddleware.js");
+const { sequelize, models } = require("../../../../../database/models/index.js");
+const { sendValidationError, sendSuccessResponse, sendErrorResponse, sendNotFoundError } = require("../../traits/responseHandler.js");
+const { handleFileUploadStore, handleFileUploadUpdate } = require("../../middleware/multerMiddleware.js");
 const { paginate } = require("../../traits/datatablePaginationHelper.js");
-const {
-  validateId,
-  validationRequestPost,
-} = require("../../request/langinPage/productTypeRequest.js");
+const { validateId, validationRequestPost } = require("../../request/langinPage/productTypeRequest.js");
 const { default: slugify } = require("slugify");
 const { Op } = require("sequelize");
 
@@ -48,9 +34,7 @@ class ProductTypeController {
   }
 
   static async store(req, res) {
-    await Promise.all(
-      validationRequestPost.map((validation) => validation.run(req)),
-    );
+    await Promise.all(validationRequestPost.map((validation) => validation.run(req)));
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return sendValidationError(res, errors.array());
@@ -70,10 +54,7 @@ class ProductTypeController {
       let variantIds = [];
 
       if (req.body.product_variants) {
-        variantIds =
-          typeof req.body.product_variants === "string"
-            ? JSON.parse(req.body.product_variants)
-            : req.body.product_variants;
+        variantIds = typeof req.body.product_variants === "string" ? JSON.parse(req.body.product_variants) : req.body.product_variants;
 
         // Ensure integers
         variantIds = variantIds.map(Number).filter(Boolean);
@@ -126,12 +107,7 @@ class ProductTypeController {
 
       let productVariantsData = [];
 
-      if (
-        Array.isArray(data.product_variants) &&
-        data.product_variants.length > 0
-      ) {
-
-
+      if (Array.isArray(data.product_variants) && data.product_variants.length > 0) {
         productVariantsData = await models.ProductVariants.findAll({
           where: {
             id: {
@@ -170,9 +146,7 @@ class ProductTypeController {
   }
 
   static async update(req, res) {
-    await Promise.all(
-      [...validateId, ...validationRequestPost].map((v) => v.run(req)),
-    );
+    await Promise.all([...validateId, ...validationRequestPost].map((v) => v.run(req)));
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return sendValidationError(res, errors.array());
@@ -190,10 +164,7 @@ class ProductTypeController {
       let variantIds = [];
 
       if (req.body.product_variants) {
-        variantIds =
-          typeof req.body.product_variants === "string"
-            ? JSON.parse(req.body.product_variants)
-            : req.body.product_variants;
+        variantIds = typeof req.body.product_variants === "string" ? JSON.parse(req.body.product_variants) : req.body.product_variants;
 
         // Ensure integers
         variantIds = variantIds.map(Number).filter(Boolean);
@@ -251,7 +222,7 @@ class ProductTypeController {
             required: true,
           },
         ],
-        group: ["ProductCategory.id"],
+        group: ["ProductCategory.id", "variants.id"],
       });
       return sendSuccessResponse(res, result, "Data retrieved successfully");
     } catch (error) {
@@ -303,7 +274,6 @@ class ProductTypeController {
 
       // Soft delete
       await data.destroy();
-
 
       sendSuccessResponse(res, { id }, "Data deleted successfully");
     } catch (error) {

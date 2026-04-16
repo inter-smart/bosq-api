@@ -8,6 +8,7 @@ const { isItemWishListed, generateQueryParams } = require("../traits/dataManipul
 const { Op } = require("sequelize");
 const { type } = require("os");
 const { console } = require("inspector");
+const logger = require("../../../../config/logger.js");
 
 class CartService {
   /**
@@ -244,12 +245,16 @@ class CartService {
   static async addItem(userId, sessionId, variantId, quantity = 1) {
     const transaction = await sequelize.transaction();
 
+    console.log("Adding item to cart - userId:", userId, "sessionId:", sessionId, "variantId:", variantId, "quantity:", quantity);
+
     try {
       const variant = await models.ProductVariants.findOne({
         attributes: ["id", "price", "status", "stock"],
         where: { id: variantId, status: true },
         transaction,
       });
+
+      console.log("Product variant found:", variant?.toJSON?.());
 
       if (!variant) {
         throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.PRODUCT_VARIANT_NOT_FOUND, HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
@@ -273,6 +278,10 @@ class CartService {
       });
 
       const currentQuantityInCart = existingItem ? existingItem.quantity : 0;
+
+      logger.info(`STOCK ----- ${variant.stock}`);
+      logger.info(`QUANTITY ----- ${quantity}`);
+      logger.info(`CURRENT QTY IN CART ----- ${currentQuantityInCart}`);
 
       if (currentQuantityInCart + quantity > variant.stock) {
         throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.OUT_OF_STOCK, HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
@@ -562,7 +571,7 @@ class CartService {
         throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.CART_ITEM_NOT_FOUND, HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
       }
 
-      await cartItem.destroy({ transaction });
+      await cartItem.destroy({ force: true, transaction });
 
       // Recalculate totals
       await ProductServiceHelpers.recalculateCartTotals(cart.id, transaction);

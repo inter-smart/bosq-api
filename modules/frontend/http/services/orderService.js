@@ -485,6 +485,9 @@ class OrderService {
       SELECT
         o.id,
         o.order_id,
+        o.order_url,
+        o.awb_number,
+        o.partner_name,
         o.status,
         o.payment_status,
         o.payment_type,
@@ -845,6 +848,9 @@ class OrderService {
     return {
       id: row.id,
       order_id: row.order_id,
+      order_url: row.order_url,
+      awb_number: row.awb_number,
+      partner_name: row.partner_name,
       status: this.formatEnums(row.status),
       payment_status: this.formatEnums(row.payment_status),
       payment_type: row.payment_type,

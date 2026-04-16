@@ -299,11 +299,11 @@ async function processUpload(hierarchy) {
 
     // Batch-fetch existing variants by sku and product_code
     const allSkus = allVariantRows.map((r) => r.sku).filter(Boolean);
-    const allProductCodes = allVariantRows.map((r) => r.product_code).filter(Boolean);
+    // const allProductCodes = allVariantRows.map((r) => r.product_code).filter(Boolean);
 
     const orConditions = [];
     if (allSkus.length > 0) orConditions.push({ sku: { [Op.in]: allSkus } });
-    if (allProductCodes.length > 0) orConditions.push({ product_code: { [Op.in]: allProductCodes } });
+    // if (allProductCodes.length > 0) orConditions.push({ product_code: { [Op.in]: allProductCodes } });
 
     const existingVariantsBySkuMap = new Map();
     const existingVariantsByCodeMap = new Map();
@@ -317,7 +317,7 @@ async function processUpload(hierarchy) {
       });
       existingVariants.forEach((v) => {
         if (v.sku) existingVariantsBySkuMap.set(v.sku, v);
-        if (v.product_code) existingVariantsByCodeMap.set(v.product_code, v);
+        // if (v.product_code) existingVariantsByCodeMap.set(v.product_code, v);
       });
     }
 
@@ -330,7 +330,8 @@ async function processUpload(hierarchy) {
     allVariantRows.forEach((row, i) => {
       // sku is the primary identity key; product_code is the fallback
       const existing =
-        (row.sku && existingVariantsBySkuMap.get(row.sku)) || (row.product_code && existingVariantsByCodeMap.get(row.product_code)) || null;
+        // (row.sku && existingVariantsBySkuMap.get(row.sku)) || (row.product_code && existingVariantsByCodeMap.get(row.product_code)) || null;
+        (row.sku && existingVariantsBySkuMap.get(row.sku)) || null;
 
       if (existing) {
         variantsToUpdate.push({ row, existingId: existing.id });

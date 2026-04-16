@@ -15,6 +15,23 @@ function basename(filePath) {
 }
 
 /**
+ * Returns the value to write into the export sheet for an image field.
+ *
+ * - Bulk images (`uploads/bulk/…`) and bare filenames → just the basename,
+ *   so the sheet stays consistent with "drop a file into /uploads/bulk" workflow.
+ * - Images stored in any other directory (manually uploaded via the admin UI)
+ *   → the full relative path, so the validator can locate them without copying.
+ */
+function imageExportPath(filePath) {
+  if (!filePath) return "";
+  const normalized = filePath.replace(/\\/g, "/");
+  if (!normalized.includes("/") || normalized.startsWith("uploads/bulk/")) {
+    return path.basename(normalized);
+  }
+  return normalized;
+}
+
+/**
  * Fetches full export data for a list of variant IDs.
  * Returns { bases, models, variants } structured for client-side Excel generation.
  *
@@ -111,7 +128,7 @@ async function getExportData(variantIds) {
         base_price: model.base_price ?? "",
         sort_order: model.sort_order ?? 1,
         status: model.status ?? true,
-        media_path: basename(model.media_path),
+        media_path: imageExportPath(model.media_path),
       });
     }
 
@@ -136,27 +153,27 @@ async function getExportData(variantIds) {
     // ── Gallery images (ProductVariantImages) ───────────────────────────────
     const galleryImages = v.variant_images || [];
     const imagesStr = galleryImages
-      .map((img) => basename(img.media_path))
+      .map((img) => imageExportPath(img.media_path))
       .filter(Boolean)
       .join(",");
 
     // Video thumbnails: one per video, in order of appearance in gallery
     const videoThumbnails = galleryImages
       .filter((img) => isVideo(img.media_path) || img.media_type === "video")
-      .map((img) => basename(img.thumbnail_path))
+      .map((img) => imageExportPath(img.thumbnail_path))
       .filter(Boolean)
       .join(",");
 
     // ── Project images ──────────────────────────────────────────────────────
     const projectImages = (v.projectImages || [])
-      .map((img) => basename(img.media_path))
+      .map((img) => imageExportPath(img.media_path))
       .filter(Boolean)
       .join(",");
 
     variantRows.push({
       base_title: baseTitle,
       model_title: modelTitle,
-      product_code: v.product_code ?? "",
+      sku: v.sku ?? "",
       title: v.title ?? "",
       title_ar: v.title_ar ?? "",
       design_title: v.design_title ?? "",
@@ -177,14 +194,16 @@ async function getExportData(variantIds) {
       details_points_ar: v.details_points_ar ?? "",
       additional_details: v.additional_details ?? "",
       additional_details_ar: v.additional_details_ar ?? "",
-      cover_image: basename(v.media_path),
-      hover_image: basename(v.hover_media_path),
-      brochure: basename(v.brochure),
+      cover_image: imageExportPath(v.media_path),
+      hover_image: imageExportPath(v.hover_media_path),
+      brochure: imageExportPath(v.brochure),
       images: imagesStr,
       video_thumbnails: videoThumbnails,
       project_images: projectImages,
     });
   }
+
+  console.log(variantRows);
 
   return {
     bases: Array.from(seenBases.values()),

@@ -10,6 +10,32 @@ const { ProductCategory, ProductAttribute, AttributeValues } = models;
 // Images uploaded via the bulk image upload endpoint land here
 const BULK_DIR = path.join(__dirname, "../../uploads/bulk");
 
+// Root of all uploads (parent of /uploads/bulk, /uploads/product-variant-images, etc.)
+const UPLOADS_ROOT = path.join(__dirname, "../../");
+
+/**
+ * Given a raw image value from the sheet, returns:
+ *   diskPath     – absolute path to check for file existence
+ *   relativePath – DB-storable relative path (e.g. "uploads/bulk/foo.jpg")
+ *
+ * Two formats are supported:
+ *   - Bare filename ("foo.jpg")             → looked up in BULK_DIR
+ *   - Relative path ("uploads/xyz/foo.jpg") → looked up from UPLOADS_ROOT
+ */
+function resolveFilePath(value) {
+  const v = value.replace(/\\/g, "/");
+  if (v.includes("/")) {
+    return {
+      diskPath: path.join(UPLOADS_ROOT, v),
+      relativePath: v,
+    };
+  }
+  return {
+    diskPath: path.join(BULK_DIR, v),
+    relativePath: `uploads/bulk/${v}`,
+  };
+}
+
 const VIDEO_EXTS = new Set([".mp4", ".webm", ".mov", ".avi", ".mkv"]);
 
 // ─── Field Definitions ───────────────────────────────────────────────────────
@@ -35,7 +61,6 @@ const SMALLINT_MAX = 32767;
 const BASE_STRING_MAX = { title: 255, title_ar: 255 };
 const MODEL_STRING_MAX = { title: 255, title_ar: 255, code: 100 };
 const VARIANT_STRING_MAX = {
-  product_code: 200,
   title: 200,
   title_ar: 200,
   design_title: 200,
@@ -305,20 +330,20 @@ function validateInternalDuplicates(baseRows, modelRows, variantRows, errors) {
 
   // Duplicate variant product_code
   const productCodes = new Map();
-  for (const row of variantRows) {
-    if (!row.product_code) continue;
-    if (productCodes.has(row.product_code)) {
-      addError(
-        errors,
-        "product_variants",
-        row._rowNumber,
-        "product_code",
-        `Duplicate product_code "${row.product_code}" within product_variants sheet (first seen at row ${productCodes.get(row.product_code)})`,
-      );
-    } else {
-      productCodes.set(row.product_code, row._rowNumber);
-    }
-  }
+  // for (const row of variantRows) {
+  //   if (!row.product_code) continue;
+  //   if (productCodes.has(row.product_code)) {
+  //     addError(
+  //       errors,
+  //       "product_variants",
+  //       row._rowNumber,
+  //       "product_code",
+  //       `Duplicate product_code "${row.product_code}" within product_variants sheet (first seen at row ${productCodes.get(row.product_code)})`,
+  //     );
+  //   } else {
+  //     productCodes.set(row.product_code, row._rowNumber);
+  //   }
+  // }
 }
 
 // ─── Step 4 (removed): DB duplicate checks are no longer performed here.
@@ -338,9 +363,9 @@ async function resolveModelImages(modelRows, errors) {
 
   const missingFiles = new Set();
   for (const filename of allModelImageFiles) {
-    const fullPath = path.join(BULK_DIR, filename);
+    const { diskPath } = resolveFilePath(filename);
     const exists = await fs
-      .access(fullPath)
+      .access(diskPath)
       .then(() => true)
       .catch(() => false);
     if (!exists) missingFiles.add(filename);
@@ -351,9 +376,9 @@ async function resolveModelImages(modelRows, errors) {
     if (!row.media_path) continue;
     const filename = String(row.media_path).trim();
     if (missingFiles.has(filename)) {
-      addError(errors, "product_models", row._rowNumber, "media_path", `Image file "${filename}" not found in the bulk upload directory`);
+      addError(errors, "product_models", row._rowNumber, "media_path", `Image file "${filename}" not found`);
     } else {
-      resolvedPaths.set(row._rowNumber, `uploads/bulk/${filename}`);
+      resolvedPaths.set(row._rowNumber, resolveFilePath(filename).relativePath);
     }
   }
   return resolvedPaths;
@@ -413,12 +438,12 @@ async function resolveAndValidateLookups(variantRows, errors) {
     }
   }
 
-  // Batch-check image file existence in BULK_DIR
+  // Batch-check image file existence (bulk dir for bare filenames, exact path otherwise)
   const missingFiles = new Set();
   for (const filename of allImageFiles) {
-    const fullPath = path.join(BULK_DIR, filename);
+    const { diskPath } = resolveFilePath(filename);
     const exists = await fs
-      .access(fullPath)
+      .access(diskPath)
       .then(() => true)
       .catch(() => false);
     if (!exists) missingFiles.add(filename);
@@ -472,7 +497,7 @@ async function resolveAndValidateLookups(variantRows, errors) {
 
     const checkFile = (filename, field) => {
       if (missingFiles.has(filename)) {
-        addError(errors, "product_variants", row._rowNumber, field, `Image file "${filename}" not found in the bulk upload directory`);
+        addError(errors, "product_variants", row._rowNumber, field, `Image file "${filename}" not found`);
         return false;
       }
       return true;
@@ -489,15 +514,15 @@ async function resolveAndValidateLookups(variantRows, errors) {
     const brochureFilename = row.brochure ? String(row.brochure).trim() : null;
 
     if (coverFilename && checkFile(coverFilename, "cover_image")) {
-      coverImage = `uploads/bulk/${coverFilename}`;
+      coverImage = resolveFilePath(coverFilename).relativePath;
     }
 
     if (hoverFilename && checkFile(hoverFilename, "hover_image")) {
-      hoverImage = `uploads/bulk/${hoverFilename}`;
+      hoverImage = resolveFilePath(hoverFilename).relativePath;
     }
 
     if (brochureFilename && checkFile(brochureFilename, "brochure")) {
-      brochurePath = `uploads/bulk/${brochureFilename}`;
+      brochurePath = resolveFilePath(brochureFilename).relativePath;
     }
 
     const imageFiles = parseCommaList(row.images);
@@ -526,14 +551,14 @@ async function resolveAndValidateLookups(variantRows, errors) {
       if (isVideo) {
         const thumbFilename = thumbnailFiles[thumbIdx] || null;
         if (thumbFilename && checkFile(thumbFilename, "video_thumbnails")) {
-          thumbnailPath = `uploads/bulk/${thumbFilename}`;
+          thumbnailPath = resolveFilePath(thumbFilename).relativePath;
         }
         thumbIdx++;
       }
 
       if (fileValid) {
         mediaRecords.push({
-          media_path: `uploads/bulk/${filename}`,
+          media_path: resolveFilePath(filename).relativePath,
           media_type: isVideo ? "video" : "image",
           sort_order: sortIdx + 1,
           status: true,
@@ -547,7 +572,7 @@ async function resolveAndValidateLookups(variantRows, errors) {
     projectFiles.forEach((filename, sortIdx) => {
       if (checkFile(filename, "project_images")) {
         projectImageRecords.push({
-          media_path: `uploads/bulk/${filename}`,
+          media_path: resolveFilePath(filename).relativePath,
           sort_order: sortIdx + 1,
           status: true,
         });
@@ -597,7 +622,6 @@ function buildHierarchy(baseRows, modelRows, resolvedVariants, modelImagePaths) 
   const MODEL_FIELDS = ["title", "title_ar", "code", "base_price", "sort_order", "status"];
   const VARIANT_FIELDS = [
     "sku",
-    "product_code",
     "title",
     "title_ar",
     "design_title",

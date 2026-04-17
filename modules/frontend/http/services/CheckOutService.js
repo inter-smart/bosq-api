@@ -612,9 +612,9 @@ class CheckOutService {
     } else {
       // Scoped coupon: discount applies only to matching items
 
-      const matchingItems = this.getMatchingCartItems(coupon, cart.items);
+      const matchingItems = this.getMatchingCartItems(coupon, cart.items).sort((a, b) => b.quantity * b.price - a.quantity * a.price);
 
-      console.log("Matching items for coupon:", matchingItems.length);
+      console.log("Matching items for coupon:", JSON.stringify(matchingItems, null, 2));
 
       if (matchingItems.length === 0) {
         throw ErrorHandler.createError(

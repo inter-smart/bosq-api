@@ -73,6 +73,13 @@ class UsersServices {
         ],
       });
 
+
+
+      //  if (data.status !== "active") {
+      //   // redirect to login page
+      //   return res.redirect("/login");
+      // }
+
       const profileData = buildProfieSection(data);
 
       return profileData;
@@ -281,7 +288,7 @@ class UsersServices {
         secure: isProduction,
         sameSite: isProduction ? "none" : "lax",
         path: "/",
-      };
+      };``
 
       res.clearCookie("access_token", cookieOptions);
       res.clearCookie("refresh_token", cookieOptions);

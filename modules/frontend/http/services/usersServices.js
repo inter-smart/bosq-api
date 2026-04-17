@@ -75,10 +75,10 @@ class UsersServices {
 
 
 
-       if (data.status !== "active") {
-        // redirect to login page
-        return res.redirect("/login");
-      }
+      //  if (data.status !== "active") {
+      //   // redirect to login page
+      //   return res.redirect("/login");
+      // }
 
       const profileData = buildProfieSection(data);
 

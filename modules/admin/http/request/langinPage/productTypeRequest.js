@@ -17,6 +17,12 @@ exports.validationRequestPost = [
 
   body("description_ar").optional().isString().trim(),
 
+  body("button").optional().isString().trim(),
+
+  body("button_ar").optional().isString().trim(),
+
+  body("link").optional().isString().trim(),
+
 
   body("features").optional().isString().trim(),
 

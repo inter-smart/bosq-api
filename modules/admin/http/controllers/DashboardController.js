@@ -1,4 +1,4 @@
-const { Op, fn, col, literal } = require("sequelize");
+const { Op, fn, col, literal, Sequelize } = require("sequelize");
 const { models, sequelize } = require("../../../../database/models/index.js");
 const { sendSuccessResponse, sendErrorResponse } = require("../traits/responseHandler.js");
 
@@ -57,12 +57,9 @@ class DashboardController {
       const month = req.query.month ? parseInt(req.query.month) : null;
 
       const { start, end } = getDateRange(year, month);
-      const dateWhere = { createdAt: { [Op.gte]: start, [Op.lt]: end } };
+      const dateWhere = { createdAt: { [Op.gte]: start, [Op.lt]: end }, status: { [Op.ne]: "cancelled" } };
 
       const truncUnit = month ? "day" : "month";
-
-      console.log("Order stats date range:", start, end);
-      console.dir(dateWhere, { depth: null });
 
       // Period bucketed revenue + order counts
       const periodRows = await Orders.findAll({
@@ -123,16 +120,38 @@ class DashboardController {
         where: dateWhere,
         attributes: [
           [fn("COUNT", col("Orders.id")), "totalOrders"],
-          [fn("SUM", col("grand_total")), "totalRevenue"],
           [fn("AVG", col("grand_total")), "avgOrderValue"],
+        ],
+        raw: true,
+      });
+
+      const totalRevenue = await Orders.findOne({
+        where: {
+          ...dateWhere,
+          status: { [Op.ne]: "cancelled" },
+        },
+        attributes: [
+          [
+            fn(
+              "SUM",
+              Sequelize.literal(`
+        CASE 
+          WHEN "payment_type" = 'online' AND "status" = 'confirmed' THEN "grand_total"
+          WHEN "payment_type" = 'cod' AND "status" = 'delivered' THEN "grand_total"
+          ELSE 0 
+        END
+      `),
+            ),
+            "totalRevenue",
+          ],
         ],
         raw: true,
       });
 
       sendSuccessResponse(res, {
         totalOrders: parseInt(totalsRow.totalOrders) || 0,
-        totalRevenue: parseFloat(totalsRow.totalRevenue) || 0,
-        avgOrderValue: parseFloat(totalsRow.avgOrderValue) || 0,
+        totalRevenue: parseFloat(totalRevenue.totalRevenue) || 0,
+        // avgOrderValue: parseFloat(totalsRow.avgOrderValue) || 0,
         byPeriod,
         byStatus,
         byPaymentStatus,

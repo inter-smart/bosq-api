@@ -25,6 +25,7 @@ function buildProfieSection(data) {
     phone: userData?.country_code && userData?.mobile ? `${userData.country_code}${userData.mobile}` : null,
     email: userData.email ?? "N/A",
     address: formatAddress(billingAddress) ?? null,
+    status: userData.status ?? null,
     shipping_address: formatAddress(shippingAddress) ?? null,
   };
 }

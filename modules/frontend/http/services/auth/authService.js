@@ -31,11 +31,7 @@ class UsersService {
 
       // Required field check (handles empty strings & spaces)
       if (!name || !countryCode || !mobile || !email) {
-        throw ErrorHandler.createError(
-          RESPONSE_MESSAGES.ERROR.ALL_FIELDS_REQUIRED,
-          HTTP_STATUS.BAD_REQUEST,
-          ERROR_CODES.VALIDATION_ERROR,
-        );
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.ALL_FIELDS_REQUIRED, HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION_ERROR);
       }
 
       // Check if user already exists
@@ -54,11 +50,7 @@ class UsersService {
       if (existingUser) {
         // If already verified → block
         if (existingUser.email_verified) {
-          throw ErrorHandler.createError(
-            RESPONSE_MESSAGES.ERROR.USER_ALREADY_EXISTS,
-            HTTP_STATUS.CONFLICT,
-            ERROR_CODES.DUPLICATE_ERROR,
-          );
+          throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.USER_ALREADY_EXISTS, HTTP_STATUS.CONFLICT, ERROR_CODES.DUPLICATE_ERROR);
         }
 
         await Otps.create(
@@ -79,11 +71,7 @@ class UsersService {
           await EmailService.sendOtp(email, otp);
         } catch (emailError) {
           console.error("Failed to send OTP email:", emailError);
-          throw ErrorHandler.createError(
-            RESPONSE_MESSAGES.ERROR.OTP_EMAIL_FAILED,
-            HTTP_STATUS.INTERNAL_SERVER_ERROR,
-            ERROR_CODES.INTERNAL_ERROR,
-          );
+          throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.OTP_EMAIL_FAILED, HTTP_STATUS.INTERNAL_SERVER_ERROR, ERROR_CODES.INTERNAL_ERROR);
         }
 
         return {
@@ -133,11 +121,7 @@ class UsersService {
 
       // Handle race condition (duplicate email)
       if (error.name === "SequelizeUniqueConstraintError") {
-        throw ErrorHandler.createError(
-          RESPONSE_MESSAGES.ERROR.USER_ALREADY_EXISTS,
-          HTTP_STATUS.CONFLICT,
-          ERROR_CODES.DUPLICATE_ERROR,
-        );
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.USER_ALREADY_EXISTS, HTTP_STATUS.CONFLICT, ERROR_CODES.DUPLICATE_ERROR);
       }
 
       console.error("Register Error:", error);
@@ -169,21 +153,13 @@ class UsersService {
 
       if (!otpRecord) {
         await transaction.rollback();
-        throw ErrorHandler.createError(
-          RESPONSE_MESSAGES.ERROR.INVALID_OTP,
-          HTTP_STATUS.BAD_REQUEST,
-          ERROR_CODES.VALIDATION_ERROR,
-        );
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.INVALID_OTP, HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION_ERROR);
       }
 
       // Check expiration
       if (new Date() > new Date(otpRecord.expires_at)) {
         await transaction.rollback();
-        throw ErrorHandler.createError(
-          RESPONSE_MESSAGES.ERROR.OTP_EXPIRED,
-          HTTP_STATUS.BAD_REQUEST,
-          ERROR_CODES.VALIDATION_ERROR,
-        );
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.OTP_EXPIRED, HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION_ERROR);
       }
 
       // Mark OTP as used (no delete)
@@ -238,11 +214,7 @@ class UsersService {
       }
 
       if (!password || !password.trim()) {
-        throw ErrorHandler.createError(
-          RESPONSE_MESSAGES.ERROR.VALIDATION_FAILED,
-          HTTP_STATUS.BAD_REQUEST,
-          ERROR_CODES.VALIDATION_ERROR,
-        );
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.VALIDATION_FAILED, HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION_ERROR);
       }
 
       const redisKey = `register-temp-token:${email}`;
@@ -250,21 +222,13 @@ class UsersService {
 
       if (!redisData) {
         await transaction.rollback();
-        throw ErrorHandler.createError(
-          RESPONSE_MESSAGES.ERROR.TOKEN_EXPIRED,
-          HTTP_STATUS.UNAUTHORIZED,
-          ERROR_CODES.AUTH_ERROR,
-        );
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.TOKEN_EXPIRED, HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.AUTH_ERROR);
       }
 
       const { tempToken } = JSON.parse(redisData);
 
       if (tempToken !== token) {
-        throw ErrorHandler.createError(
-          RESPONSE_MESSAGES.ERROR.TOKEN_INVALID,
-          HTTP_STATUS.UNAUTHORIZED,
-          ERROR_CODES.AUTH_ERROR,
-        );
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.TOKEN_INVALID, HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.AUTH_ERROR);
       }
 
       // Find user
@@ -276,21 +240,13 @@ class UsersService {
 
       if (!user) {
         await transaction.rollback();
-        throw ErrorHandler.createError(
-          RESPONSE_MESSAGES.ERROR.USER_NOT_FOUND,
-          HTTP_STATUS.NOT_FOUND,
-          ERROR_CODES.NOT_FOUND_ERROR,
-        );
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.USER_NOT_FOUND, HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
       }
 
       // Password already set
       if (user.password) {
         await transaction.rollback();
-        throw ErrorHandler.createError(
-          RESPONSE_MESSAGES.ERROR.PASSWORD_ALREADY_SET,
-          HTTP_STATUS.CONFLICT,
-          ERROR_CODES.DUPLICATE_ERROR,
-        );
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.PASSWORD_ALREADY_SET, HTTP_STATUS.CONFLICT, ERROR_CODES.DUPLICATE_ERROR);
       }
 
       // Hash password
@@ -318,8 +274,8 @@ class UsersService {
     const transaction = await sequelize.transaction();
     try {
       const { email, password, rememberMe } = req.body;
-      const accessExpiry = rememberMe ? (process.env.JWT_EXPIRES_IN_EXTENDED || "1d") : (process.env.JWT_EXPIRES_IN || "15m");
-      const refreshExpiry = rememberMe ? (process.env.JWT_REFRESH_EXPIRES_IN_EXTENDED || "30d") : (process.env.JWT_REFRESH_EXPIRES_IN || "7d");
+      const accessExpiry = rememberMe ? process.env.JWT_EXPIRES_IN_EXTENDED || "1d" : process.env.JWT_EXPIRES_IN || "15m";
+      const refreshExpiry = rememberMe ? process.env.JWT_REFRESH_EXPIRES_IN_EXTENDED || "30d" : process.env.JWT_REFRESH_EXPIRES_IN || "7d";
       const accessMaxAge = rememberMe ? 24 * 60 * 60 * 1000 : 15 * 60 * 1000;
       const refreshMaxAge = rememberMe ? 30 * 24 * 60 * 60 * 1000 : 7 * 24 * 60 * 60 * 1000;
 
@@ -329,52 +285,32 @@ class UsersService {
       });
 
       if (!user) {
-        throw ErrorHandler.createError(
-          RESPONSE_MESSAGES.ERROR.USER_NOT_FOUND,
-          HTTP_STATUS.NOT_FOUND,
-          ERROR_CODES.NOT_FOUND_ERROR,
-        );
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.USER_NOT_FOUND, HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
       }
 
       if (user.status !== "active") {
-        throw ErrorHandler.createError(
-          RESPONSE_MESSAGES.ERROR.ACCOUNT_DEACTIVATED,
-          HTTP_STATUS.FORBIDDEN,
-          ERROR_CODES.AUTH_ERROR,
-        );
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.ACCOUNT_DEACTIVATED, HTTP_STATUS.FORBIDDEN, ERROR_CODES.AUTH_ERROR);
       }
 
       if (user.auth_provider === "google" && !user.password) {
-        throw ErrorHandler.createError(
-          RESPONSE_MESSAGES.ERROR.GOOGLE_LOGIN_REQUIRED,
-          HTTP_STATUS.UNAUTHORIZED,
-          ERROR_CODES.AUTH_ERROR,
-        );
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.GOOGLE_LOGIN_REQUIRED, HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.AUTH_ERROR);
       }
 
       if (!user.password) {
-        throw ErrorHandler.createError(
-          RESPONSE_MESSAGES.ERROR.PASSWORD_INCORRECT,
-          HTTP_STATUS.UNAUTHORIZED,
-          ERROR_CODES.AUTH_ERROR,
-        );
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.PASSWORD_INCORRECT, HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.AUTH_ERROR);
       }
 
       const isPasswordValid = await bcrypt.compare(password, user.password);
       if (!isPasswordValid) {
-        throw ErrorHandler.createError(
-          RESPONSE_MESSAGES.ERROR.PASSWORD_INCORRECT,
-          HTTP_STATUS.UNAUTHORIZED,
-          ERROR_CODES.AUTH_ERROR,
-        );
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.PASSWORD_INCORRECT, HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.AUTH_ERROR);
       }
 
-      const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, {
+      const token = jwt.sign({ id: user.id, email: user.email, status: user.status }, process.env.JWT_SECRET, {
         expiresIn: accessExpiry,
         issuer: process.env.JWT_ISSUER || "BOSQ",
       });
 
-      const refreshToken = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, {
+      const refreshToken = jwt.sign({ id: user.id, email: user.email, status: user.status }, process.env.JWT_SECRET, {
         expiresIn: refreshExpiry,
         issuer: process.env.JWT_ISSUER || "BOSQ",
       });
@@ -438,11 +374,7 @@ class UsersService {
 
       if (!user) {
         await transaction.rollback();
-        throw ErrorHandler.createError(
-          RESPONSE_MESSAGES.ERROR.USER_NOT_FOUND,
-          HTTP_STATUS.NOT_FOUND,
-          ERROR_CODES.NOT_FOUND_ERROR,
-        );
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.USER_NOT_FOUND, HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
       }
 
       const lastOtp = await Otps.findOne({
@@ -459,11 +391,7 @@ class UsersService {
 
       if (lastOtp) {
         await transaction.rollback();
-        throw ErrorHandler.createError(
-          RESPONSE_MESSAGES.ERROR.OTP_RATE_LIMITED,
-          HTTP_STATUS.TOO_MANY_REQUESTS,
-          ERROR_CODES.RATE_LIMIT_ERROR,
-        );
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.OTP_RATE_LIMITED, HTTP_STATUS.TOO_MANY_REQUESTS, ERROR_CODES.RATE_LIMIT_ERROR);
       }
 
       // Invalidate old OTPs
@@ -533,21 +461,13 @@ class UsersService {
 
       if (!otpRecord) {
         await transaction.rollback();
-        throw ErrorHandler.createError(
-          RESPONSE_MESSAGES.ERROR.INVALID_OTP,
-          HTTP_STATUS.BAD_REQUEST,
-          ERROR_CODES.VALIDATION_ERROR,
-        );
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.INVALID_OTP, HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION_ERROR);
       }
 
       // Check expiration
       if (new Date() > new Date(otpRecord.expires_at)) {
         await transaction.rollback();
-        throw ErrorHandler.createError(
-          RESPONSE_MESSAGES.ERROR.OTP_EXPIRED,
-          HTTP_STATUS.BAD_REQUEST,
-          ERROR_CODES.VALIDATION_ERROR,
-        );
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.OTP_EXPIRED, HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION_ERROR);
       }
 
       // Mark OTP as used (no delete)
@@ -602,11 +522,7 @@ class UsersService {
       }
 
       if (!password || !password.trim()) {
-        throw ErrorHandler.createError(
-          RESPONSE_MESSAGES.ERROR.VALIDATION_FAILED,
-          HTTP_STATUS.BAD_REQUEST,
-          ERROR_CODES.VALIDATION_ERROR,
-        );
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.VALIDATION_FAILED, HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION_ERROR);
       }
 
       const redisKey = `forgot-password-temp-token:${email}`;
@@ -614,21 +530,13 @@ class UsersService {
 
       if (!redisData) {
         await transaction.rollback();
-        throw ErrorHandler.createError(
-          RESPONSE_MESSAGES.ERROR.TOKEN_EXPIRED,
-          HTTP_STATUS.UNAUTHORIZED,
-          ERROR_CODES.AUTH_ERROR,
-        );
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.TOKEN_EXPIRED, HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.AUTH_ERROR);
       }
 
       const { resetToken } = JSON.parse(redisData);
 
       if (resetToken !== token) {
-        throw ErrorHandler.createError(
-          RESPONSE_MESSAGES.ERROR.TOKEN_INVALID,
-          HTTP_STATUS.UNAUTHORIZED,
-          ERROR_CODES.AUTH_ERROR,
-        );
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.TOKEN_INVALID, HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.AUTH_ERROR);
       }
 
       // Find user
@@ -640,11 +548,7 @@ class UsersService {
 
       if (!user) {
         await transaction.rollback();
-        throw ErrorHandler.createError(
-          RESPONSE_MESSAGES.ERROR.USER_NOT_FOUND,
-          HTTP_STATUS.NOT_FOUND,
-          ERROR_CODES.NOT_FOUND_ERROR,
-        );
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.USER_NOT_FOUND, HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
       }
 
       // Hash password
@@ -676,11 +580,7 @@ class UsersService {
 
       if (!token) {
         await transaction.rollback();
-        throw ErrorHandler.createError(
-          RESPONSE_MESSAGES.ERROR.GOOGLE_TOKEN_REQUIRED,
-          HTTP_STATUS.BAD_REQUEST,
-          ERROR_CODES.VALIDATION_ERROR,
-        );
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.GOOGLE_TOKEN_REQUIRED, HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION_ERROR);
       }
 
       // Verify the access token and get user info from Google
@@ -690,11 +590,7 @@ class UsersService {
 
       if (!googleRes.ok) {
         await transaction.rollback();
-        throw ErrorHandler.createError(
-          RESPONSE_MESSAGES.ERROR.GOOGLE_TOKEN_INVALID,
-          HTTP_STATUS.UNAUTHORIZED,
-          ERROR_CODES.AUTH_ERROR,
-        );
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.GOOGLE_TOKEN_INVALID, HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.AUTH_ERROR);
       }
 
       const googleUser = await googleRes.json();
@@ -702,11 +598,7 @@ class UsersService {
 
       if (!email) {
         await transaction.rollback();
-        throw ErrorHandler.createError(
-          RESPONSE_MESSAGES.ERROR.GOOGLE_EMAIL_MISSING,
-          HTTP_STATUS.BAD_REQUEST,
-          ERROR_CODES.VALIDATION_ERROR,
-        );
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.GOOGLE_EMAIL_MISSING, HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION_ERROR);
       }
 
       const normalizedEmail = email.trim().toLowerCase();
@@ -736,11 +628,7 @@ class UsersService {
 
       if (user.status !== "active") {
         await transaction.rollback();
-        throw ErrorHandler.createError(
-          RESPONSE_MESSAGES.ERROR.ACCOUNT_DEACTIVATED,
-          HTTP_STATUS.FORBIDDEN,
-          ERROR_CODES.AUTH_ERROR,
-        );
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.ACCOUNT_DEACTIVATED, HTTP_STATUS.FORBIDDEN, ERROR_CODES.AUTH_ERROR);
       }
 
       // Sign JWT (same pattern as regular login)
@@ -802,11 +690,7 @@ class UsersService {
       const refreshToken = req.cookies?.refresh_token;
 
       if (!refreshToken) {
-        throw ErrorHandler.createError(
-          RESPONSE_MESSAGES.ERROR.TOKEN_INVALID,
-          HTTP_STATUS.UNAUTHORIZED,
-          ERROR_CODES.AUTH_ERROR,
-        );
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.TOKEN_INVALID, HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.AUTH_ERROR);
       }
 
       let decoded;
@@ -815,30 +699,18 @@ class UsersService {
       } catch (err) {
         // Token is expired or invalid — revoke any matching session
         await AuthSessions.destroy({ where: { refresh_token: refreshToken } });
-        throw ErrorHandler.createError(
-          RESPONSE_MESSAGES.ERROR.TOKEN_EXPIRED,
-          HTTP_STATUS.UNAUTHORIZED,
-          ERROR_CODES.AUTH_ERROR,
-        );
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.TOKEN_EXPIRED, HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.AUTH_ERROR);
       }
 
       const session = await AuthSessions.findOne({ where: { refresh_token: refreshToken } });
 
       if (!session) {
-        throw ErrorHandler.createError(
-          RESPONSE_MESSAGES.ERROR.TOKEN_INVALID,
-          HTTP_STATUS.UNAUTHORIZED,
-          ERROR_CODES.AUTH_ERROR,
-        );
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.TOKEN_INVALID, HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.AUTH_ERROR);
       }
 
       if (new Date() > new Date(session.expires_at)) {
         await session.destroy();
-        throw ErrorHandler.createError(
-          RESPONSE_MESSAGES.ERROR.TOKEN_EXPIRED,
-          HTTP_STATUS.UNAUTHORIZED,
-          ERROR_CODES.AUTH_ERROR,
-        );
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.TOKEN_EXPIRED, HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.AUTH_ERROR);
       }
 
       const newAccessToken = jwt.sign({ id: decoded.id, email: decoded.email }, process.env.JWT_SECRET, {

@@ -4,6 +4,7 @@ const cartContext = async (req, res, next) => {
       req.cartOwner = {
         type: "user",
         id: req?.auth?.id,
+        status: req?.auth?.status,
       };
       return next();
     }

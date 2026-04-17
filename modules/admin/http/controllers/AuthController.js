@@ -3,13 +3,7 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { validationResult } = require("express-validator");
 const { sequelize, models } = require("../../../../database/models/index");
-const {
-  sendValidationError,
-  sendSuccessResponse,
-  sendErrorResponse,
-  sendUnauthorizedError,
-  sendCustomError,
-} = require("../traits/responseHandler");
+const { sendValidationError, sendSuccessResponse, sendErrorResponse, sendUnauthorizedError, sendCustomError } = require("../traits/responseHandler");
 const {
   validationRequestPost,
   validationLogin,
@@ -59,18 +53,10 @@ class AuthController {
       const hashedPassword = await bcrypt.hash(password, 12);
 
       const user = await sequelize.transaction(async (t) =>
-        AdminUser.create(
-          { username, email, password: hashedPassword, role: role || "user" },
-          { transaction: t },
-        ),
+        AdminUser.create({ username, email, password: hashedPassword, role: role || "user" }, { transaction: t }),
       );
 
-      return sendSuccessResponse(
-        res,
-        { user },
-        "User registered successfully",
-        201,
-      );
+      return sendSuccessResponse(res, { user }, "User registered successfully", 201);
     } catch (error) {
       console.error("Register error:", error);
       return sendErrorResponse(res, error);
@@ -86,22 +72,13 @@ class AuthController {
       const { email, password } = req.body;
       const user = await AdminUser.findOne({
         where: { email, status: true },
-        attributes: [
-          "id",
-          "username",
-          "email",
-          "role",
-          "password",
-          "createdAt",
-          "updatedAt",
-        ],
+        attributes: ["id", "username", "email", "role", "password", "createdAt", "updatedAt"],
       });
 
       if (!user) return sendUnauthorizedError(res, "Invalid email or password");
 
       const isPasswordValid = await bcrypt.compare(password, user.password);
-      if (!isPasswordValid)
-        return sendUnauthorizedError(res, "Invalid email or password");
+      if (!isPasswordValid) return sendUnauthorizedError(res, "Invalid email or password");
 
       const tokenPayload = { id: user.id, email: user.email, role: user.role };
       const expiresIn = process.env.JWT_EXPIRES_IN || "1d";
@@ -141,10 +118,7 @@ class AuthController {
 
       if (!redisClient) {
         console.error("Redis client not available");
-        return sendErrorResponse(
-          res,
-          new Error("Service temporarily unavailable"),
-        );
+        return sendErrorResponse(res, new Error("Service temporarily unavailable"));
       }
 
       // Check rate limiting (3 requests per hour per email)
@@ -152,11 +126,7 @@ class AuthController {
       const attempts = await redisClient.get(rateLimitKey);
 
       if (attempts && parseInt(attempts) >= 3) {
-        return sendCustomError(
-          res,
-          "Too many password reset requests. Please try again in 1 hour",
-          429,
-        );
+        return sendCustomError(res, "Too many password reset requests. Please try again in 1 hour", 429);
       }
 
       // Increment rate limit counter
@@ -173,15 +143,8 @@ class AuthController {
 
       // Always return success message (prevent email enumeration)
       if (!user) {
-        console.log(
-          `Password reset requested for non-existent/inactive email: ${email}`,
-        );
-        return sendSuccessResponse(
-          res,
-          null,
-          "If your email is registered, you will receive a password reset code",
-          200,
-        );
+        console.log(`Password reset requested for non-existent/inactive email: ${email}`);
+        return sendSuccessResponse(res, null, "If your email is registered, you will receive a password reset code", 200);
       }
 
       // Generate 6-digit OTP
@@ -212,19 +175,11 @@ class AuthController {
 
         console.info(`Password reset OTP sent to: ${user.email}`);
       } catch (emailError) {
-        console.error(
-          `Failed to send password reset email to ${user.email}:`,
-          emailError,
-        );
+        console.error(`Failed to send password reset email to ${user.email}:`, emailError);
         // Don't fail the request if email fails
       }
 
-      return sendSuccessResponse(
-        res,
-        null,
-        "If your email is registered, you will receive a password reset code",
-        200,
-      );
+      return sendSuccessResponse(res, null, "If your email is registered, you will receive a password reset code", 200);
     } catch (error) {
       console.error("Request password reset error:", error);
       return sendErrorResponse(res, error);
@@ -245,11 +200,7 @@ class AuthController {
 
       const isVerified = await redisClient.get(verifiedKey);
       if (!isVerified) {
-        return sendCustomError(
-          res,
-          "OTP verification required before resetting password",
-          403,
-        );
+        return sendCustomError(res, "OTP verification required before resetting password", 403);
       }
 
       const user = await AdminUser.findOne({
@@ -271,12 +222,7 @@ class AuthController {
       await redisClient.del(verifiedKey);
       await redisClient.del(otpKey);
 
-      return sendSuccessResponse(
-        res,
-        null,
-        "Password has been reset successfully",
-        200,
-      );
+      return sendSuccessResponse(res, null, "Password has been reset successfully", 200);
     } catch (error) {
       return sendErrorResponse(res, error);
     }
@@ -304,11 +250,7 @@ class AuthController {
       // Max 5 attempts
       if (otpData.attempts >= 5) {
         await redisClient.del(otpKey);
-        return sendCustomError(
-          res,
-          "Too many failed attempts. Request a new OTP",
-          429,
-        );
+        return sendCustomError(res, "Too many failed attempts. Request a new OTP", 429);
       }
 
       // OTP mismatch
@@ -317,22 +259,13 @@ class AuthController {
         const ttl = await redisClient.ttl(otpKey);
         await redisClient.setEx(otpKey, ttl, JSON.stringify(otpData));
 
-        return sendCustomError(
-          res,
-          `Invalid OTP. ${5 - otpData.attempts} attempts remaining`,
-          400,
-        );
+        return sendCustomError(res, `Invalid OTP. ${5 - otpData.attempts} attempts remaining`, 400);
       }
 
       // OTP verified → mark verified for 5 minutes
       await redisClient.setEx(verifiedKey, 300, "true");
 
-      return sendSuccessResponse(
-        res,
-        null,
-        "OTP verified successfully. You may now reset your password",
-        200,
-      );
+      return sendSuccessResponse(res, null, "OTP verified successfully. You may now reset your password", 200);
     } catch (error) {
       return sendErrorResponse(res, error);
     }
@@ -349,10 +282,7 @@ class AuthController {
 
       if (!redisClient) {
         console.error("Redis client not available");
-        return sendErrorResponse(
-          res,
-          new Error("Service temporarily unavailable"),
-        );
+        return sendErrorResponse(res, new Error("Service temporarily unavailable"));
       }
 
       // Check rate limiting (3 requests per hour per email for resends too)
@@ -360,11 +290,7 @@ class AuthController {
       const attempts = await redisClient.get(rateLimitKey);
 
       if (attempts && parseInt(attempts) >= 3) {
-        return sendCustomError(
-          res,
-          "Too many password reset requests. Please try again in 1 hour",
-          429,
-        );
+        return sendCustomError(res, "Too many password reset requests. Please try again in 1 hour", 429);
       }
 
       // Increment rate limit counter
@@ -381,15 +307,8 @@ class AuthController {
 
       // Always return success message (prevent email enumeration)
       if (!user) {
-        console.log(
-          `OTP resend requested for non-existent/inactive email: ${email}`,
-        );
-        return sendSuccessResponse(
-          res,
-          null,
-          "If your email is registered, you will receive a new password reset code",
-          200,
-        );
+        console.log(`OTP resend requested for non-existent/inactive email: ${email}`);
+        return sendSuccessResponse(res, null, "If your email is registered, you will receive a new password reset code", 200);
       }
 
       // Generate new 6-digit OTP
@@ -420,19 +339,11 @@ class AuthController {
 
         console.info(`Password reset OTP resent to: ${user.email}`);
       } catch (emailError) {
-        console.error(
-          `Failed to resend password reset email to ${user.email}:`,
-          emailError,
-        );
+        console.error(`Failed to resend password reset email to ${user.email}:`, emailError);
         // Don't fail the request if email fails
       }
 
-      return sendSuccessResponse(
-        res,
-        null,
-        "If your email is registered, you will receive a new password reset code",
-        200,
-      );
+      return sendSuccessResponse(res, null, "If your email is registered, you will receive a new password reset code", 200);
     } catch (error) {
       console.error("Resend OTP error:", error);
       return sendErrorResponse(res, error);
@@ -464,10 +375,7 @@ class AuthController {
       }
 
       // Verify current password
-      const isPasswordValid = await bcrypt.compare(
-        currentPassword,
-        user.password,
-      );
+      const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
       if (!isPasswordValid) {
         return sendCustomError(res, "Current password is incorrect", 400);
       }
@@ -482,12 +390,7 @@ class AuthController {
 
       console.info(`Password changed successfully for user: ${user.email}`);
 
-      return sendSuccessResponse(
-        res,
-        null,
-        "Password has been changed successfully",
-        200,
-      );
+      return sendSuccessResponse(res, null, "Password has been changed successfully", 200);
     } catch (error) {
       console.error("Change password error:", error);
       return sendErrorResponse(res, error);

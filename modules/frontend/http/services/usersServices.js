@@ -14,7 +14,7 @@ class UsersServices {
       const { id } = req.auth;
       const data = await models.Users.findOne({
         where: { id },
-        attributes: ["name", "first_name", "last_name", "profile_image", "country_code", "mobile", "email"],
+        attributes: ["name", "first_name", "last_name", "profile_image", "country_code", "mobile", "email", "status"],
         include: [
           {
             model: models.Address,
@@ -78,11 +78,7 @@ class UsersServices {
       return profileData;
     } catch (error) {
       console.error("Error getting profile data:", error);
-      throw ErrorHandler.createError(
-        RESPONSE_MESSAGES.ERROR.DATA_FETCH_FAILED,
-        HTTP_STATUS.INTERNAL_SERVER_ERROR,
-        ERROR_CODES.DATA_FETCH_ERROR,
-      );
+      throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.DATA_FETCH_FAILED, HTTP_STATUS.INTERNAL_SERVER_ERROR, ERROR_CODES.DATA_FETCH_ERROR);
     }
   }
 
@@ -98,11 +94,7 @@ class UsersServices {
       });
 
       if (!user) {
-        throw ErrorHandler.createError(
-          RESPONSE_MESSAGES.ERROR.USER_NOT_FOUND,
-          HTTP_STATUS.NOT_FOUND,
-          ERROR_CODES.NOT_FOUND_ERROR,
-        );
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.USER_NOT_FOUND, HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
       }
 
       const profileData = buildProfileEditSection(user);
@@ -111,11 +103,7 @@ class UsersServices {
     } catch (error) {
       if (error.isOperational) throw error;
       console.error("Error fetching profile data:", error);
-      throw ErrorHandler.createError(
-        RESPONSE_MESSAGES.ERROR.DATA_FETCH_FAILED,
-        HTTP_STATUS.INTERNAL_SERVER_ERROR,
-        ERROR_CODES.DATA_FETCH_ERROR,
-      );
+      throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.DATA_FETCH_FAILED, HTTP_STATUS.INTERNAL_SERVER_ERROR, ERROR_CODES.DATA_FETCH_ERROR);
     }
   }
 
@@ -135,11 +123,7 @@ class UsersServices {
       const token = recaptcha_token;
 
       if (!token) {
-        throw ErrorHandler.createError(
-          RESPONSE_MESSAGES.ERROR.RECAPTCHA_MISSING,
-          HTTP_STATUS.BAD_REQUEST,
-          ERROR_CODES.VALIDATION_ERROR,
-        );
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.RECAPTCHA_MISSING, HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION_ERROR);
       }
 
       const { success, score, action } = await validateRecaptcha(token);
@@ -147,11 +131,7 @@ class UsersServices {
       console.log("reCAPTCHA result:", { success, score, action });
 
       if (!success || score < 0.5) {
-        throw ErrorHandler.createError(
-          RESPONSE_MESSAGES.ERROR.RECAPTCHA_FAILED,
-          HTTP_STATUS.FORBIDDEN,
-          ERROR_CODES.VALIDATION_ERROR,
-        );
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.RECAPTCHA_FAILED, HTTP_STATUS.FORBIDDEN, ERROR_CODES.VALIDATION_ERROR);
       }
 
       const user = await models.Users.findOne({
@@ -167,11 +147,7 @@ class UsersServices {
         });
 
         if (isEmailTaken) {
-          throw ErrorHandler.createError(
-            RESPONSE_MESSAGES.ERROR.EMAIL_ALREADY_IN_USE,
-            HTTP_STATUS.BAD_REQUEST,
-            ERROR_CODES.DUPLICATE_ERROR,
-          );
+          throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.EMAIL_ALREADY_IN_USE, HTTP_STATUS.BAD_REQUEST, ERROR_CODES.DUPLICATE_ERROR);
         }
       }
 
@@ -197,11 +173,7 @@ class UsersServices {
       await transaction.rollback();
       console.error("Error updating profile data:", error);
       if (error.isOperational) throw error;
-      throw ErrorHandler.createError(
-        RESPONSE_MESSAGES.ERROR.INTERNAL_SERVER,
-        HTTP_STATUS.INTERNAL_SERVER_ERROR,
-        ERROR_CODES.INTERNAL_ERROR,
-      );
+      throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.INTERNAL_SERVER, HTTP_STATUS.INTERNAL_SERVER_ERROR, ERROR_CODES.INTERNAL_ERROR);
     }
   }
 
@@ -224,11 +196,7 @@ class UsersServices {
 
       if (!isDev) {
         if (!token) {
-          throw ErrorHandler.createError(
-            RESPONSE_MESSAGES.ERROR.RECAPTCHA_MISSING,
-            HTTP_STATUS.BAD_REQUEST,
-            ERROR_CODES.VALIDATION_ERROR,
-          );
+          throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.RECAPTCHA_MISSING, HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION_ERROR);
         }
 
         const { success, score, action } = await validateRecaptcha(token);
@@ -236,11 +204,7 @@ class UsersServices {
         console.log("reCAPTCHA result:", { success, score, action });
 
         if (!success || score < 0.5) {
-          throw ErrorHandler.createError(
-            RESPONSE_MESSAGES.ERROR.RECAPTCHA_FAILED,
-            HTTP_STATUS.FORBIDDEN,
-            ERROR_CODES.VALIDATION_ERROR,
-          );
+          throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.RECAPTCHA_FAILED, HTTP_STATUS.FORBIDDEN, ERROR_CODES.VALIDATION_ERROR);
         }
       }
 
@@ -252,41 +216,25 @@ class UsersServices {
       });
 
       if (!user) {
-        throw ErrorHandler.createError(
-          RESPONSE_MESSAGES.ERROR.USER_NOT_FOUND,
-          HTTP_STATUS.NOT_FOUND,
-          ERROR_CODES.NOT_FOUND_ERROR,
-        );
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.USER_NOT_FOUND, HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
       }
 
       // 2. Handle users without password (social login)
       if (!user.password) {
-        throw ErrorHandler.createError(
-          RESPONSE_MESSAGES.ERROR.USER_NO_PASSWORD,
-          HTTP_STATUS.UNAUTHORIZED,
-          ERROR_CODES.AUTH_ERROR,
-        );
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.USER_NO_PASSWORD, HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.AUTH_ERROR);
       }
 
       // 3. Verify old password
       const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
 
       if (!isPasswordValid) {
-        throw ErrorHandler.createError(
-          RESPONSE_MESSAGES.ERROR.CURRENT_PASSWORD_INCORRECT,
-          HTTP_STATUS.UNAUTHORIZED,
-          ERROR_CODES.AUTH_ERROR,
-        );
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.CURRENT_PASSWORD_INCORRECT, HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.AUTH_ERROR);
       }
 
       // 4. Prevent reusing same password
       const isSamePassword = await bcrypt.compare(newPassword, user.password);
       if (isSamePassword) {
-        throw ErrorHandler.createError(
-          RESPONSE_MESSAGES.ERROR.PASSWORD_SAME_AS_OLD,
-          HTTP_STATUS.BAD_REQUEST,
-          ERROR_CODES.VALIDATION_ERROR,
-        );
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.PASSWORD_SAME_AS_OLD, HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION_ERROR);
       }
 
       // 5. Hash new password
@@ -315,11 +263,7 @@ class UsersServices {
       await transaction.rollback();
       console.error("Change password error:", error);
       if (error.isOperational) throw error;
-      throw ErrorHandler.createError(
-        RESPONSE_MESSAGES.ERROR.INTERNAL_SERVER,
-        HTTP_STATUS.INTERNAL_SERVER_ERROR,
-        ERROR_CODES.INTERNAL_ERROR,
-      );
+      throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.INTERNAL_SERVER, HTTP_STATUS.INTERNAL_SERVER_ERROR, ERROR_CODES.INTERNAL_ERROR);
     }
   }
 
@@ -345,11 +289,7 @@ class UsersServices {
       return null;
     } catch (error) {
       console.error("Logout Error:", error);
-      throw ErrorHandler.createError(
-        RESPONSE_MESSAGES.ERROR.INTERNAL_SERVER,
-        HTTP_STATUS.INTERNAL_SERVER_ERROR,
-        ERROR_CODES.INTERNAL_ERROR,
-      );
+      throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.INTERNAL_SERVER, HTTP_STATUS.INTERNAL_SERVER_ERROR, ERROR_CODES.INTERNAL_ERROR);
     }
   }
 }

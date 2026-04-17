@@ -87,7 +87,7 @@ class OrderController {
 
       return ApiResponse.paginated(res, {
         message: "Orders retrieved successfully",
-        data: { orders: result.orders, pagination: result.pagination },
+        data: { orders: result.orders, status: req.auth?.status, pagination: result.pagination },
         status: HTTP_STATUS.OK,
       });
     } catch (error) {

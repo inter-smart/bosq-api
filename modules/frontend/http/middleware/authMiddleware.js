@@ -45,6 +45,9 @@ const verifyToken = () => {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
       req.auth = decoded;
+
+
+      console.log("auth data: ",req.auth)
       next();
     } catch (error) {
       console.error("Auth middleware error:", {

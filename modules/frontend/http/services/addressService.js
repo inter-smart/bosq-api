@@ -21,6 +21,7 @@ const { validateRecaptcha } = require("../../../../services/RecaptchaValidation.
 class AddressService {
   static async index(req, res) {
     try {
+
       if (!req.cartOwner) {
         throw new Error("Cart owner not found");
       }

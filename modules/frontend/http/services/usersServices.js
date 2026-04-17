@@ -14,7 +14,7 @@ class UsersServices {
       const { id } = req.auth;
       const data = await models.Users.findOne({
         where: { id },
-        attributes: ["name", "first_name", "last_name", "profile_image", "country_code", "mobile", "email"],
+        attributes: ["name", "first_name", "last_name", "profile_image", "country_code", "mobile", "email", "status"],
         include: [
           {
             model: models.Address,
@@ -72,6 +72,13 @@ class UsersServices {
           },
         ],
       });
+
+
+
+       if (data.status !== "active") {
+        // redirect to login page
+        return res.redirect("/login");
+      }
 
       const profileData = buildProfieSection(data);
 
@@ -337,7 +344,7 @@ class UsersServices {
         secure: isProduction,
         sameSite: isProduction ? "none" : "lax",
         path: "/",
-      };
+      };``
 
       res.clearCookie("access_token", cookieOptions);
       res.clearCookie("refresh_token", cookieOptions);

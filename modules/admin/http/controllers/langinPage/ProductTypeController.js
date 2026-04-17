@@ -220,9 +220,11 @@ class ProductTypeController {
             as: "variants",
             attributes: [],
             required: true,
+            through: { attributes: [] },
           },
         ],
-        group: ["ProductCategory.id", "variants.id"],
+        subQuery: false,
+        group: ["ProductCategory.id"],
       });
       return sendSuccessResponse(res, result, "Data retrieved successfully");
     } catch (error) {

@@ -13,8 +13,15 @@ const DataModel = models.Orders;
 class OrderController {
   static async index(req, res) {
     try {
+      const { status } = req.query;
+      const where = {};
+      if (status && status !== "all") {
+        where.status = status;
+      }
+
       const result = await paginate(DataModel, req, {
         order: [["createdAt", "DESC"]],
+        where,
         include: [
           {
             model: models.Users,

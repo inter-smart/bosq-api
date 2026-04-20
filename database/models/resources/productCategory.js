@@ -29,6 +29,11 @@ module.exports = (sequelize) => {
         allowNull: false,
       },
 
+      description: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+
       media_path: {
         type: DataTypes.TEXT,
         allowNull: true,

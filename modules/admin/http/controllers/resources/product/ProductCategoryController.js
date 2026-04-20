@@ -97,6 +97,10 @@ class ProductCategoryController {
         req.body.parent_id = null;
       }
 
+      if (req.body.description === "" || req.body.description === undefined) {
+        req.body.description = null;
+      }
+
       const newSlug = await ProductCategoryController.generateUniqueSlug(name);
       req.body.slug = newSlug;
 
@@ -166,6 +170,10 @@ class ProductCategoryController {
       // Handle parent_id clearing (FormData sends empty string for null)
       if (req.body.parent_id === "" || req.body.parent_id === "null" || req.body.parent_id === "undefined") {
         req.body.parent_id = null;
+      }
+
+      if (req.body.description === "" || req.body.description === undefined) {
+        req.body.description = null;
       }
 
       const data = await DataModel.findByPk(id, { transaction });

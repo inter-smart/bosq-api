@@ -15,6 +15,9 @@ exports.validationRequestPost = [
   /* ---------- IMAGE ---------- */
   body("media_path").optional().isString().withMessage("Image URL must be a string"),
 
+  /* ---------- DESCRIPTION ---------- */
+  body("description").optional().isString().withMessage("Description must be a string"),
+
   /* ---------- STATUS ---------- */
   body("status").optional().isBoolean().withMessage("Status must be true or false"),
 

@@ -19,7 +19,7 @@ class CommonActionsController {
       const [categories, sectors, attributes] = await Promise.all([
         models.ProductCategory.findAll({
           where: { status: true },
-          attributes: ["id", "name", "name_ar", "parent_id", "media_path", "slug", "description"],
+          attributes: ["id", "name", "name_ar", "parent_id", "media_path", "slug", "description", "description_ar"],
           order: [["sort_order", "ASC"]],
           raw: true,
         }),

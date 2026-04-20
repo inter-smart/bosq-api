@@ -100,6 +100,9 @@ class ProductCategoryController {
       if (req.body.description === "" || req.body.description === undefined) {
         req.body.description = null;
       }
+      if (req.body.description_ar === "" || req.body.description_ar === undefined) {
+        req.body.description_ar = null;
+      }
 
       const newSlug = await ProductCategoryController.generateUniqueSlug(name);
       req.body.slug = newSlug;
@@ -174,6 +177,9 @@ class ProductCategoryController {
 
       if (req.body.description === "" || req.body.description === undefined) {
         req.body.description = null;
+      }
+      if (req.body.description_ar === "" || req.body.description_ar === undefined) {
+        req.body.description_ar = null;
       }
 
       const data = await DataModel.findByPk(id, { transaction });

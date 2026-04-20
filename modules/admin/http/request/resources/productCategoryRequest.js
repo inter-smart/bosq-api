@@ -17,6 +17,7 @@ exports.validationRequestPost = [
 
   /* ---------- DESCRIPTION ---------- */
   body("description").optional().isString().withMessage("Description must be a string"),
+  body("description_ar").optional().isString().withMessage("Arabic description must be a string"),
 
   /* ---------- STATUS ---------- */
   body("status").optional().isBoolean().withMessage("Status must be true or false"),

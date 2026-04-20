@@ -34,6 +34,11 @@ module.exports = (sequelize) => {
         allowNull: true,
       },
 
+      description_ar: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+
       media_path: {
         type: DataTypes.TEXT,
         allowNull: true,

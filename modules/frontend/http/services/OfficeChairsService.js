@@ -134,8 +134,7 @@ const transformListingData = (pt, lp, variantsMap, variantCountsMap = {}) => {
     .map((v) => transformVariant(v, variantCountsMap[v.product_model_id] || 0));
 
   return {
-    heroImage: generateImageUrl(pt.media_desktop_path) ?? null,
-    heroImage_mobile: generateImageUrl(pt.media_mobile_path) ?? null,
+    heroImage: generateImageUrl(pt.media_path) ?? null,
     heroTitle: pt.title,
     heroTitle_ar: pt.title_ar,
     description: pt.description ?? "",

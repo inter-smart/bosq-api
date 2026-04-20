@@ -2,6 +2,7 @@ const { Op } = require("sequelize");
 const { models, sequelize } = require("../../../../database/models");
 const { generateImageUrl } = require("../../traits/imageUrlHelper");
 const { generateQueryParams } = require("../traits/dataManipulations/product/product");
+const { buildOtherMetaData } = require("../traits/dataManipulations/common");
 
 const buildVariantIncludes = () => [
   {
@@ -167,9 +168,11 @@ class OfficeChairsService {
             as: "productTypes",
             where: { status: true },
             required: false,
-            order: [["sort_order", "ASC"]],
           },
         ],
+        order:[
+          [{model: models.ProductTypes, as: "productTypes"}, "sort_order", "ASC"]
+        ]
       });
 
       if (!landingPageInstance) {
@@ -204,6 +207,7 @@ class OfficeChairsService {
       }
 
       const heroData = transformHeroData(lp);
+      const metaData = buildOtherMetaData(lp);
       const productModelIds = [
         ...new Set(
           Object.values(variantsMap)
@@ -239,7 +243,7 @@ class OfficeChairsService {
       return {
         fromCache: false,
         message: "Data fetched successfully",
-        data: { heroData, listingData },
+        data: { heroData, listingData, metaData },
       };
     } catch (error) {
       console.error("OfficeChairsService error:", error);

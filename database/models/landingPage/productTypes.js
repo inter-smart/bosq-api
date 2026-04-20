@@ -21,6 +21,18 @@ module.exports = (sequelize) => {
         type: DataTypes.TEXT,
         allowNull: true,
       },
+      button:{
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      button_ar:{
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      link:{
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
       description_ar: {
         type: DataTypes.TEXT,
         allowNull: true,

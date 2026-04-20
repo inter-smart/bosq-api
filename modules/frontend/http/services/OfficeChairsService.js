@@ -71,7 +71,7 @@ const transformVariant = (variant, variantsCount = 0) => {
     name: variant.title ?? "",
     name_ar: variant.title_ar ?? "",
     slug: variant.productModel?.product?.slug
-      ? `/products/${variant.productModel.product.slug}?sku=${variant.sku}`
+      ? `/products/${variant.productModel.product.slug}`
       : null,
     price: parseFloat(variant.price) ?? 0,
     category: variant.categories?.[0]?.name ?? null,
@@ -143,9 +143,9 @@ const transformListingData = (pt, lp, variantsMap, variantCountsMap = {}) => {
     features: pt.features ?? "",
     features_ar: pt.features_ar ?? "",
     cta: {
-      label: lp.button_label ?? "",
-      label_ar: lp.button_label_ar ?? "",
-      href: lp.link ?? `/${lp.slug}`,
+      label: pt.button ?? "",
+      label_ar: pt.button_ar ?? "",
+      href: pt.link ?? null,
     },
     product: products,
   };

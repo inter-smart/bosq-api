@@ -1963,37 +1963,24 @@ class EmailService {
                                                         style="width: 50%; height: 100%; margin-top: 0px; padding-right: 10px; vertical-align: middle; border-radius: 4px;">
                                                         <div style="background:#F2F2F2; border:1px solid #e5e5e5; padding:20px; height: 100%; min-height: 245px;">
                                                             <h2
-                                                                style="font-size: 16px; font-family:  'Open Sans', sans-serif; color: #282828; font-weight: 500; margin: 0; margin-bottom: 20px;">
+                                                                style="font-size: 16px; font-family: 'Open Sans', sans-serif; color: #282828; font-weight: 500; margin: 0; margin-bottom: 20px;">
                                                             Order Information </h2>
-                                                            <ul style="padding: 0; margin: 0">
-                                                                <li style="display:flex; margin-bottom: 25px; list-style-type: none;">
-                                                                    <p
-                                                                    style="font-size: 16px; width: 45%; color: #282828; font-weight: 400; font-family:  'Open Sans', sans-serif; margin: 0px; margin-top: 0px; margin-bottom: 0; line-height: 23px; text-align: left;">
-                                                                    Order ID:
-                                                                    </p>
-                                                                    <span style="font-size: 16px; width: 55%; color: #282828; font-weight: 500; font-family:  'Open Sans', sans-serif; margin: 0; margin-left: auto; line-height: 23px; text-align: right;">
-                                                                        #${orderCode}
-                                                                    </span>
-                                                                </li>
-                                                                <li style="display:flex; margin-bottom: 25px; list-style-type: none;">
-                                                                    <p
-                                                                    style="font-size: 16px; width: 45%; color: #282828; font-weight: 400; font-family:  'Open Sans', sans-serif; margin: 0px; margin-top: 0px; margin-bottom: 0; line-height: 23px; text-align: left;">
-                                                                    Order Date:
-                                                                    </p>
-                                                                    <span style="font-size: 16px; width: 55%; color: #282828; font-weight: 500; font-family:  'Open Sans', sans-serif; margin: 0; margin-left: auto; line-height: 23px; text-align: right;">
-                                                                        ${orderDate}
-                                                                    </span>
-                                                                </li>
-                                                                <li style="display:flex; margin-bottom: 25px; list-style-type: none;">
-                                                                    <p
-                                                                    style="font-size: 16px; width: 45%; color: #282828; font-weight: 400; font-family:  'Open Sans', sans-serif; margin: 0px; margin-top: 0px; margin-bottom: 0; line-height: 23px; text-align: left;">
-                                                                        Payment :
-                                                                    </p>
-                                                                    <span style="font-size: 16px; width: 55%; color: #282828; font-weight: 500; font-family:  'Open Sans', sans-serif; margin: 0; margin-left: auto; line-height: 23px; text-align: right;">
-                                                                        ${paymentLabel}
-                                                                    </span>
-                                                                </li>
-                                                            </ul>
+                                                            <table style="width: 100%; border-collapse: collapse;">
+                                                                <tbody>
+                                                                    <tr>
+                                                                        <td style="font-size: 16px; font-family: 'Open Sans', sans-serif; color: #282828; font-weight: 400; line-height: 23px; padding-bottom: 25px; width: 45%; vertical-align: top; text-align: left;">Order ID:</td>
+                                                                        <td style="font-size: 16px; font-family: 'Open Sans', sans-serif; color: #282828; font-weight: 500; line-height: 23px; padding-bottom: 25px; width: 55%; vertical-align: top; text-align: right; word-break: break-word;">#${orderCode}</td>
+                                                                    </tr>
+                                                                    <tr>
+                                                                        <td style="font-size: 16px; font-family: 'Open Sans', sans-serif; color: #282828; font-weight: 400; line-height: 23px; padding-bottom: 25px; width: 45%; vertical-align: top; text-align: left;">Order Date:</td>
+                                                                        <td style="font-size: 16px; font-family: 'Open Sans', sans-serif; color: #282828; font-weight: 500; line-height: 23px; padding-bottom: 25px; width: 55%; vertical-align: top; text-align: right;">${orderDate}</td>
+                                                                    </tr>
+                                                                    <tr>
+                                                                        <td style="font-size: 16px; font-family: 'Open Sans', sans-serif; color: #282828; font-weight: 400; line-height: 23px; width: 45%; vertical-align: top; text-align: left;">Payment :</td>
+                                                                        <td style="font-size: 16px; font-family: 'Open Sans', sans-serif; color: #282828; font-weight: 500; line-height: 23px; width: 55%; vertical-align: top; text-align: right;">${paymentLabel}</td>
+                                                                    </tr>
+                                                                </tbody>
+                                                            </table>
                                                         </div>    
                                                     </td>
                                                     <td

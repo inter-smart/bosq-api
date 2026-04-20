@@ -160,10 +160,9 @@ class newservice {
         throw new Error("No news found");
       }
 
-      const keywords = extractKeywords(news?.title || news?.title_ar).slice(
-        0,
-        3,
-      );
+      const enKeywords = extractKeywords(news?.title || "");
+      const arKeywords = extractKeywords(news?.title_ar || "");
+      const keywords = [...new Set([...enKeywords, ...arKeywords])].slice(0, 5);
 
       const [prevnews, nextnews, relatednews, popularnews] = await Promise.all([
         models.News.findOne({
@@ -200,7 +199,7 @@ class newservice {
               [Op.and]: [
                 literal(`
             to_tsvector('simple', title || ' ' || coalesce(title_ar, ''))
-            @@ plainto_tsquery('simple', '${keywords.join(" ")}')
+            @@ to_tsquery('simple', '${keywords.join(" | ")}')
           `),
                 {
                   id: { [Op.ne]: news.id },

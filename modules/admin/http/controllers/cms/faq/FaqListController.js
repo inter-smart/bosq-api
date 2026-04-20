@@ -211,6 +211,11 @@ class FaqListController {
                 association: "productModel",
                 attributes: ["id", "product_id"],
               },
+              {
+                association: "categories",
+                attributes: ["id"],
+                through: { attributes: [] },
+              },
             ],
           },
         ],

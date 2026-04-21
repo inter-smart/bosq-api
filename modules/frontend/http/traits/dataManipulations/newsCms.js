@@ -1,5 +1,5 @@
 const { Op } = require("sequelize");
-const { formatDate, singleMediaWithoutType, mediaWithoutType, dateFirst } = require("../mediaButtonHelper");
+const { formatDate, singleMediaWithoutType, mediaWithoutType } = require("../mediaButtonHelper");
 const { buildTitleSection } = require("./common");
 
 
@@ -44,7 +44,7 @@ function buildNewsDetailsData(news, nextNews, prevNews){
     media_ar: mediaWithoutType(news, "media_desktop_path_ar", "media_mobile_path_ar", "media_alt", "media_alt_ar") ?? null,
     title: news.title ?? "N/A",
     title_ar: news.title_ar ?? "N/A",
-    publishedAt: dateFirst(news.published_date) ?? "N/A",
+    publishedAt: formatDate(news.published_date) ?? "N/A",
     description: news.description ?? "N/A",
     description_ar: news.description_ar ?? "N/A",
     nextData: nextNews?.slug ?? null,
@@ -63,7 +63,7 @@ function buildRelatedNewsSection(cms, news, titleData){
       id: item.id,
       media: singleMediaWithoutType(item, "thumbnail", "thumbnail_alt", "thumbnail_alt_ar"),
       slug: item.slug ?? "N/A",
-      publishedAt: dateFirst(item.published_date) ?? "N/A",
+      publishedAt: formatDate(item.published_date) ?? "N/A",
       isPopular: true,
       readTime: 4,
       title: item.title ?? "N/A",

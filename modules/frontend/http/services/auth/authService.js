@@ -8,7 +8,7 @@ const { generateSlugWithTimestamp } = require("../../traits/mediaButtonHelper.js
 const { Op } = require("sequelize");
 
 const isProduction = process.env.NODE_ENV === "production";
-const COOKIEAGE = 2 * 60 * 1000;
+const COOKIEAGE = 1 * 60 * 1000; // 1 minute for testing
 
 const Users = models.Users;
 const Otps = models.Otps;
@@ -350,6 +350,7 @@ class UsersService {
 
       await transaction.commit();
 
+      console.log(`[AuthService] Login successful for user: ${user.email}. Access token expiry: ${accessExpiry}, Refresh token expiry: ${refreshExpiry}`);
       return {
         data: { user: { id: user.id, name: user.name, phone: mobileNumber, email: user.email } },
       };
@@ -731,6 +732,7 @@ class UsersService {
         maxAge: COOKIEAGE,
       });
 
+      console.log(`[AuthService] Refresh token successful for user: ${decoded.email}. New access token issued.`);
       return { data: {} };
     } catch (error) {
       console.error("Refresh Token Error:", error);

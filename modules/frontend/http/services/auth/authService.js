@@ -8,7 +8,7 @@ const { generateSlugWithTimestamp } = require("../../traits/mediaButtonHelper.js
 const { Op } = require("sequelize");
 
 const isProduction = process.env.NODE_ENV === "production";
-const COOKIEAGE = 1 * 60 * 1000; // 1 minute for testing
+const COOKIEAGE = 15 * 60 * 1000; // 15 minutes for testing
 
 const Users = models.Users;
 const Otps = models.Otps;

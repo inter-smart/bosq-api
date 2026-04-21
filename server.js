@@ -24,10 +24,7 @@ dotenv.config();
 const app = express();
 app.use(cookieParser());
 app.use((req, res, next) => {
-  res.setHeader(
-    "Strict-Transport-Security",
-    "max-age=31536000; includeSubDomains; preload",
-  );
+  res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
   res.setHeader("X-Frame-Options", "SAMEORIGIN");
   res.setHeader("X-XSS-Protection", "1; mode=block");
   res.setHeader("X-Content-Type-Options", "nosniff");
@@ -42,6 +39,7 @@ const allowedOrigins = [
   "https://bosq-admin-staging.netlify.app",
   "https://bosq-staging.netlify.app",
   "https://dev-bosq.netlify.app",
+  "https://admin-bosq.netlify.app",
 ];
 
 app.use(

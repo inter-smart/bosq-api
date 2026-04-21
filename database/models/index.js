@@ -85,6 +85,7 @@ const defineErgonomicFeatures = require("./cms/ergnomicGuide/features");
 const defineHeaderFooter = require("./siteSettings/headerFooter");
 const defineMetaTags = require("./siteSettings/metaTags");
 const definePaymentMethods = require("./siteSettings/paymentMethods");
+const defineMailerSettings = require("./siteSettings/mailerSettings");
 
 // AUTH PAGE
 const defineAuthCms = require("./cms/auth/cms");
@@ -231,6 +232,7 @@ const models = {
   HeaderFooter: defineHeaderFooter(sequelize),
   MetaTags: defineMetaTags(sequelize),
   PaymentMethods: definePaymentMethods(sequelize),
+  MailerSettings: defineMailerSettings(sequelize),
 
   // AUTH PAGE
   AuthCms: defineAuthCms(sequelize),

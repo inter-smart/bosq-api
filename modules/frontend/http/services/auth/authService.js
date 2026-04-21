@@ -8,7 +8,7 @@ const { generateSlugWithTimestamp } = require("../../traits/mediaButtonHelper.js
 const { Op } = require("sequelize");
 
 const isProduction = process.env.NODE_ENV === "production";
-const COOKIEAGE = 2 * 60 * 1000;
+const COOKIEAGE = 15 * 60 * 1000;
 
 const Users = models.Users;
 const Otps = models.Otps;
@@ -342,7 +342,7 @@ class UsersService {
         httpOnly: true,
         secure: isProduction,
         sameSite: isProduction ? "none" : "lax",
-        path: "/api/auth/refresh",
+        path: "/",
         maxAge: refreshMaxAge,
       });
 
@@ -671,7 +671,7 @@ class UsersService {
         httpOnly: true,
         secure: isProduction,
         sameSite: isProduction ? "none" : "lax",
-        path: "/api/auth/refresh",
+        path: "/",
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });
 

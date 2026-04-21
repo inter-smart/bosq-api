@@ -669,7 +669,7 @@ class ProductsService {
         const val = Array.isArray(value) ? `(${value.join(",")})` : `'${value}'`;
         debugQuery = debugQuery.replace(new RegExp(`:${key}\\b`, "g"), val);
       });
-      console.log("FINAL QUERY:\n", debugQuery);
+      // console.log("FINAL QUERY:\n", debugQuery);
 
       const rawResults = await sequelize.query(mainSQL, {
         replacements,

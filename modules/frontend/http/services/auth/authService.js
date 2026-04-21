@@ -342,7 +342,7 @@ class UsersService {
         httpOnly: true,
         secure: isProduction,
         sameSite: isProduction ? "none" : "lax",
-        path: "/",
+        path: "/api/auth/refresh",
         maxAge: refreshMaxAge,
       });
 
@@ -671,7 +671,7 @@ class UsersService {
         httpOnly: true,
         secure: isProduction,
         sameSite: isProduction ? "none" : "lax",
-        path: "/",
+        path: "/api/auth/refresh",
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });
 

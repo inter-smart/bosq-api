@@ -8,40 +8,40 @@ class EmailService {
   /**
    * Get or create nodemailer transporter (lazy initialization)
    */
-  // static getTransporter() {
-  //   if (!this.transporter) {
-  //     this.transporter = nodemailer.createTransport({
-  //       host: process.env.SMTP_HOST,
-  //       port: parseInt(process.env.SMTP_PORT) || 587,
-  //       secure: process.env.SMTP_SECURE === "true",
-  //       auth: {
-  //         user: process.env.SMTP_USER,
-  //         pass: process.env.SMTP_PASS,
-  //       },
-  //     });
-  //   }
-  //   return this.transporter;
-  // }
-
   static getTransporter() {
     if (!this.transporter) {
       this.transporter = nodemailer.createTransport({
-        host: "email-smtp.ap-south-1.amazonaws.com",
-        port: 587, // STARTTLS port
-        secure: false, // false for STARTTLS
-        requireTLS: true, // enforce TLS
+        host: process.env.SMTP_HOST,
+        port: parseInt(process.env.SMTP_PORT) || 587,
+        secure: process.env.SMTP_SECURE === "true",
         auth: {
-          user: process.env.BREVO_SMTP_USER,
-          pass: process.env.BREVO_SMTP_PASS,
-        },
-        tls: {
-          rejectUnauthorized: false, // optional for some environments
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS,
         },
       });
     }
-
     return this.transporter;
   }
+
+  // static getTransporter() {
+  //   if (!this.transporter) {
+  //     this.transporter = nodemailer.createTransport({
+  //       host: "email-smtp.ap-south-1.amazonaws.com",
+  //       port: 587, // STARTTLS port
+  //       secure: false, // false for STARTTLS
+  //       requireTLS: true, // enforce TLS
+  //       auth: {
+  //         user: process.env.BREVO_SMTP_USER,
+  //         pass: process.env.BREVO_SMTP_PASS,
+  //       },
+  //       tls: {
+  //         rejectUnauthorized: false, // optional for some environments
+  //       },
+  //     });
+  //   }
+
+  //   return this.transporter;
+  // }
 
   /**
    * Send an email

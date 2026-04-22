@@ -106,21 +106,21 @@ function formatDate(dateInput) {
   return `${month} ${day}, ${year}`;
 }
 
-function dateFirst(dateInput) {
-  if (!dateInput) return "N/A";
+// function dateFirst(dateInput) {
+//   if (!dateInput) return "N/A";
 
-  const date = new Date(dateInput);
-  const months = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
-  ];
+//   const date = new Date(dateInput);
+//   const months = [
+//     "January", "February", "March", "April", "May", "June",
+//     "July", "August", "September", "October", "November", "December"
+//   ];
 
-  const day = String(date.getUTCDate()).padStart(2, '0');
-  const month = months[date.getUTCMonth()];
-  const year = date.getUTCFullYear();
+//   const day = String(date.getUTCDate()).padStart(2, '0');
+//   const month = months[date.getUTCMonth()];
+//   const year = date.getUTCFullYear();
 
-  return `${day} ${month} ${year}`;
-}
+//   return `${day} ${month} ${year}`;
+// }
 
 
 const generateSlugWithTimestamp = (name) => {
@@ -145,6 +145,5 @@ module.exports = {
   singleMediaWithoutType,
   button,
   formatDate,
-  dateFirst,
   generateSlugWithTimestamp
 };

@@ -8,6 +8,52 @@ class EmailService {
   /**
    * Get or create nodemailer transporter (lazy initialization)
    */
+  // static getTransporter() {
+  //   if (!this.transporter) {
+  //     this.transporter = nodemailer.createTransport({
+  //       host: process.env.SMTP_HOST,
+  //       port: parseInt(process.env.SMTP_PORT) || 587,
+  //       secure: process.env.SMTP_SECURE === "true",
+  //       auth: {
+  //         user: process.env.SMTP_USER,
+  //         pass: process.env.SMTP_PASS,
+  //       },
+  //     });
+  //   }
+  //   return this.transporter;
+  // }
+
+  static async getMailerSettings(type) {
+    try {
+      const setting = await models.models.MailerSettings.findOne({
+        where: { type },
+      });
+
+      if (setting?.to_email) {
+        console.log("to_email", setting.to_email);
+        console.log("cc_emails", setting.cc_emails);
+
+        return {
+          from: setting.to_email,
+          to: setting.to_email,
+          cc: setting.cc_emails ? setting.cc_emails.split(",").map((e) => e.trim()) : [],
+        };
+      }
+    } catch (_) {}
+
+    const defaultFrom = `"${process.env.EMAIL_FROM_NAME || "BOSQ"}" <${process.env.EMAIL_FROM || process.env.SMTP_USER}>`;
+    return {
+      from: defaultFrom,
+      to: process.env.ADMIN_EMAIL || process.env.EMAIL_FROM || process.env.SMTP_USER,
+      cc: [],
+    };
+  }
+
+  static async getMailerSender(type) {
+    const settings = await this.getMailerSettings(type);
+    return settings.from;
+  }
+
   static getTransporter() {
     if (!this.transporter) {
       this.transporter = nodemailer.createTransport({
@@ -51,16 +97,18 @@ class EmailService {
    * @param {string} options.html - HTML content
    * @param {string} [options.text] - Plain text content (optional)
    */
-  static async sendEmail({ to, subject, html, text }) {
+  static async sendEmail({ to, subject, html, text, type = "orders" }) {
     const transporter = this.getTransporter();
+    const settings = await this.getMailerSettings(type);
 
     const mailOptions = {
-      // from: `"${process.env.EMAIL_FROM_NAME || "BOSQ"}" <${process.env.EMAIL_FROM || process.env.SMTP_USER}>`,
-      from: "admin@bosq.ae",
+      from: settings.from,
       to,
+      cc: settings.cc,
       subject,
       html,
       text: text || html.replace(/<[^>]*>/g, ""),
+      emailtype: type,
     };
 
     return transporter.sendMail(mailOptions);
@@ -105,6 +153,7 @@ class EmailService {
       to: email,
       subject: `${data.otp} is your password reset code`,
       html,
+      type: "auth",
     });
   }
 
@@ -197,13 +246,7 @@ class EmailService {
    * @param {string} options.otp - 6-digit OTP
    */
   static async sendOtp(to, otp) {
-    const transporter = this.getTransporter();
-
-    return transporter.sendMail({
-      from: `"${process.env.EMAIL_FROM_NAME || "BOSQ"}" <${process.env.EMAIL_FROM || process.env.SMTP_USER}>`,
-      to,
-      subject: "Your OTP for Registration",
-      html: `
+    const html = `
         <div style="font-family: Arial, sans-serif;">
           <h2>Email Verification</h2>
           <p>Your OTP is:</p>
@@ -211,7 +254,13 @@ class EmailService {
           <p>This OTP is valid for <strong>5 minutes</strong>.</p>
           <p>If you did not request this, please ignore this email.</p>
         </div>
-      `,
+      `;
+
+    return this.sendEmail({
+      to,
+      subject: "Your OTP for Registration",
+      html,
+      type: "auth",
     });
   }
 
@@ -219,10 +268,12 @@ class EmailService {
   static async sendContactEnquiry(data) {
     const transporter = this.getTransporter();
     const socialIconsHtml = await EmailService.getSocialIconsHtml();
+    const settings = await this.getMailerSettings("enquiries");
 
     return transporter.sendMail({
-      from: `"${process.env.EMAIL_FROM_NAME || "BOSQ"}" <${process.env.EMAIL_FROM || process.env.SMTP_USER}>`,
+      from: settings.from,
       to: data.email,
+      cc: settings.cc,
       subject: "Thank You For Your Enquiry – BOSQ",
       html: `
 <!DOCTYPE html>
@@ -378,11 +429,13 @@ class EmailService {
 
   static async sendContactEnquiryAdmin(data) {
     const transporter = this.getTransporter();
+    const settings = await this.getMailerSettings("enquiries");
 
     return transporter.sendMail({
-      from: `"${process.env.EMAIL_FROM_NAME || "BOSQ"}" <${process.env.EMAIL_FROM || process.env.SMTP_USER}>`,
-      to: process.env.ADMIN_EMAIL,
-      subject: `New ${data.type.capitalize()} Enquiry – ${data.name}`,
+      from: settings.from,
+      to: settings.to,
+      cc: settings.cc,
+      subject: `New ${data.type.charAt(0).toUpperCase() + data.type.slice(1)} Enquiry – ${data.name}`,
       html: `
 <!DOCTYPE html>
 <html lang="en">
@@ -584,10 +637,12 @@ class EmailService {
   static async sendQueryAcknowledgement(email, name) {
     const transporter = this.getTransporter();
     const socialIconsHtml = await EmailService.getSocialIconsHtml();
+    const settings = await this.getMailerSettings("enquiries");
 
     return transporter.sendMail({
-      from: `"${process.env.EMAIL_FROM_NAME || "BOSQ"}" <${process.env.EMAIL_FROM || process.env.SMTP_USER}>`,
+      from: settings.from,
       to: email,
+      cc: settings.cc,
       subject: "We've Received Your Query – BOSQ",
       html: `
 <!DOCTYPE html>
@@ -693,10 +748,12 @@ class EmailService {
   static async sendGeneralEnquiry(data) {
     const transporter = this.getTransporter();
     const socialIconsHtml = await EmailService.getSocialIconsHtml();
+    const settings = await this.getMailerSettings("enquiries");
 
     return transporter.sendMail({
-      from: `"${process.env.EMAIL_FROM_NAME || "BOSQ"}" <${process.env.EMAIL_FROM || process.env.SMTP_USER}>`,
+      from: settings.from,
       to: data.email,
+      cc: settings.cc,
       subject: "We've Received Your General Enquiry – BOSQ",
       html: `
 <!DOCTYPE html>
@@ -893,10 +950,12 @@ class EmailService {
   // ─────────────────────────────────────────────
   static async sendGeneralEnquiryAdmin(data) {
     const transporter = this.getTransporter();
+    const settings = await this.getMailerSettings("enquiries");
 
     return transporter.sendMail({
-      from: `"${process.env.EMAIL_FROM_NAME || "BOSQ"}" <${process.env.EMAIL_FROM || process.env.SMTP_USER}>`,
-      to: process.env.ADMIN_EMAIL,
+      from: settings.from,
+      to: settings.to,
+      cc: settings.cc,
       subject: `New General Enquiry – ${data.first_name} ${data.last_name}`,
       html: `
 <!DOCTYPE html>
@@ -1140,15 +1199,429 @@ class EmailService {
   }
 
   // ─────────────────────────────────────────────
+  //  PROJECT ENQUIRY — User Confirmation
+  // ─────────────────────────────────────────────
+  static async sendProjectEnquiry(data) {
+    const transporter = this.getTransporter();
+    const socialIconsHtml = await EmailService.getSocialIconsHtml();
+    const settings = await this.getMailerSettings("enquiries");
+
+    return transporter.sendMail({
+      from: settings.from,
+      to: data.email,
+      cc: settings.cc,
+      subject: "We've Received Your Project Enquiry – BOSQ",
+      html: `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Project Enquiry Confirmation</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f0ede8;font-family:Georgia,'Times New Roman',serif;">
+
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f0ede8;padding:40px 0;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:4px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08);">
+
+          <!-- HEADER -->
+          <tr>
+            <td align="center" style="background-color:#1c1c1c;padding:36px 40px;">
+              <table role="presentation" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="vertical-align:middle;padding-right:10px;">
+                    <div style="display:inline-block;background-color:#c9a96e;border-radius:3px;padding:6px 8px;font-size:16px;font-weight:700;color:#1c1c1c;font-family:Georgia,serif;line-height:1;">b</div>
+                  </td>
+                  <td style="vertical-align:middle;">
+                    <span style="font-size:26px;font-weight:700;color:#ffffff;font-family:Georgia,serif;letter-spacing:2px;">BOSQ</span>
+                    <div style="font-size:10px;color:#999999;letter-spacing:3px;text-transform:uppercase;margin-top:2px;">organic living</div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- HERO TITLE -->
+          <tr>
+            <td align="center" style="padding:44px 50px 12px;">
+              <h1 style="margin:0;font-size:28px;font-weight:400;color:#1c1c1c;font-family:Georgia,serif;letter-spacing:0.5px;line-height:1.3;">
+                Thank You For Your Project Enquiry
+              </h1>
+            </td>
+          </tr>
+
+          <!-- GREETING -->
+          <tr>
+            <td style="padding:20px 50px 28px;">
+              <p style="margin:0 0 14px;font-size:15px;color:#444444;line-height:1.7;font-family:Georgia,serif;">
+                Dear ${data.first_name} ${data.last_name},
+              </p>
+              <p style="margin:0;font-size:14px;color:#666666;line-height:1.85;font-family:Arial,sans-serif;">
+                We have received your project enquiry and appreciate your interest in BOSQ. 
+                Our project team is reviewing your requirements and will provide a 
+                comprehensive proposal tailored to your space.
+              </p>
+            </td>
+          </tr>
+
+          <!-- ENQUIRY SUMMARY -->
+          <tr>
+            <td style="padding:0 50px 32px;">
+              <p style="margin:0 0 14px;font-size:11px;font-weight:700;color:#c9a96e;text-transform:uppercase;letter-spacing:2px;font-family:Arial,sans-serif;">
+                Project Summary
+              </p>
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f7f5f2;border:1px solid #e8e3db;border-radius:3px;">
+
+                <!-- Full Name -->
+                <tr>
+                  <td width="160" style="padding:12px 18px;border-bottom:1px solid #e8e3db;vertical-align:top;">
+                    <span style="font-size:11px;font-weight:700;color:#888888;text-transform:uppercase;letter-spacing:1.2px;font-family:Arial,sans-serif;">Full Name</span>
+                  </td>
+                  <td style="padding:12px 18px;border-bottom:1px solid #e8e3db;border-left:1px solid #e8e3db;vertical-align:top;">
+                    <span style="font-size:13px;color:#1c1c1c;font-family:Arial,sans-serif;font-weight:600;">${data.first_name} ${data.last_name}</span>
+                  </td>
+                </tr>
+
+                <!-- Company -->
+                <tr>
+                  <td width="160" style="padding:12px 18px;border-bottom:1px solid #e8e3db;vertical-align:top;">
+                    <span style="font-size:11px;font-weight:700;color:#888888;text-transform:uppercase;letter-spacing:1.2px;font-family:Arial,sans-serif;">Company</span>
+                  </td>
+                  <td style="padding:12px 18px;border-bottom:1px solid #e8e3db;border-left:1px solid #e8e3db;vertical-align:top;">
+                    <span style="font-size:13px;color:#1c1c1c;font-family:Arial,sans-serif;">${data.company_name || "N/A"}</span>
+                  </td>
+                </tr>
+
+                <!-- Project Type -->
+                <tr>
+                  <td width="160" style="padding:12px 18px;border-bottom:1px solid #e8e3db;vertical-align:top;">
+                    <span style="font-size:11px;font-weight:700;color:#888888;text-transform:uppercase;letter-spacing:1.2px;font-family:Arial,sans-serif;">Project Type</span>
+                  </td>
+                  <td style="padding:12px 18px;border-bottom:1px solid #e8e3db;border-left:1px solid #e8e3db;vertical-align:top;">
+                    <span style="font-size:13px;color:#c9a96e;font-family:Arial,sans-serif;font-weight:600;">${data.project_type || "General Project"}</span>
+                  </td>
+                </tr>
+
+                <!-- Message -->
+                <tr>
+                  <td width="160" style="padding:12px 18px;vertical-align:top;">
+                    <span style="font-size:11px;font-weight:700;color:#888888;text-transform:uppercase;letter-spacing:1.2px;font-family:Arial,sans-serif;">Requirements</span>
+                  </td>
+                  <td style="padding:12px 18px;border-left:1px solid #e8e3db;vertical-align:top;">
+                    <span style="font-size:13px;color:#444444;line-height:1.75;font-family:Arial,sans-serif;">${data.message}</span>
+                  </td>
+                </tr>
+
+              </table>
+            </td>
+          </tr>
+
+          <!-- WHAT HAPPENS NEXT -->
+          <tr>
+            <td style="padding:0 50px 40px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#1c1c1c;border-radius:3px;">
+                <tr>
+                  <td style="padding:24px 28px 6px;">
+                    <p style="margin:0;font-size:11px;font-weight:700;color:#c9a96e;text-transform:uppercase;letter-spacing:2px;font-family:Arial,sans-serif;">
+                      What Happens Next?
+                    </p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:8px 28px 20px;">
+                    <p style="margin:0;font-size:14px;color:#cccccc;line-height:1.8;font-family:Arial,sans-serif;">
+                      Our project specialist will review your details and contact you within <strong style="color:#ffffff;">24-48 hours</strong> to discuss your project scope and timeline.
+                    </p>
+                  </td>
+                </tr>
+                <tr>
+                  <td align="center" style="padding:8px 28px 28px;">
+                    <a href="mailto:${process.env.EMAIL_FROM || ""}" style="display:inline-block;padding:12px 36px;background-color:#ffffff;color:#1c1c1c;text-decoration:none;font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;border-radius:2px;font-family:Arial,sans-serif;">
+                      Contact Us
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- CONTACT INFO -->
+          <tr>
+            <td align="center" style="padding:0 50px 28px;">
+              <p style="margin:0;font-size:12px;color:#888888;line-height:1.8;font-family:Arial,sans-serif;">
+                For immediate assistance, call us at 
+                <a href="tel:+97156103637" style="color:#c9a96e;text-decoration:none;">+971 56 103 637</a>
+                &nbsp;or email&nbsp;
+                <a href="mailto:sales@bosq.ae" style="color:#c9a96e;text-decoration:none;">sales@bosq.ae</a>
+              </p>
+            </td>
+          </tr>
+
+          ${socialIconsHtml}
+
+          <!-- FOOTER -->
+          <tr>
+            <td align="center" style="padding:20px 50px;background-color:#f7f5f2;border-top:1px solid #e8e3db;">
+              <p style="margin:0;font-size:11px;color:#aaaaaa;font-family:Arial,sans-serif;letter-spacing:0.3px;">
+                &copy; ${new Date().getFullYear()} Bosq. All Rights Reserved.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+    `.trim(),
+    });
+  }
+
+  // ─────────────────────────────────────────────
+  //  PROJECT ENQUIRY — Admin Notification
+  // ─────────────────────────────────────────────
+  static async sendProjectEnquiryAdmin(data) {
+    const transporter = this.getTransporter();
+    const settings = await this.getMailerSettings("enquiries");
+
+    return transporter.sendMail({
+      from: settings.from,
+      to: settings.to,
+      cc: settings.cc,
+      subject: `New Project Enquiry – ${data.first_name} ${data.last_name}`,
+      html: `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>New Project Enquiry</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f0ede8;font-family:Georgia,'Times New Roman',serif;">
+
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f0ede8;padding:40px 0;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:4px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08);">
+
+          <!-- HEADER -->
+          <tr>
+            <td align="center" style="background-color:#1c1c1c;padding:36px 40px;">
+              <table role="presentation" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="vertical-align:middle;padding-right:10px;">
+                    <div style="display:inline-block;background-color:#c9a96e;border-radius:3px;padding:6px 8px;font-size:16px;font-weight:700;color:#1c1c1c;font-family:Georgia,serif;line-height:1;">b</div>
+                  </td>
+                  <td style="vertical-align:middle;">
+                    <span style="font-size:26px;font-weight:700;color:#ffffff;font-family:Georgia,serif;letter-spacing:2px;">BOSQ</span>
+                    <div style="font-size:10px;color:#999999;letter-spacing:3px;text-transform:uppercase;margin-top:2px;">organic living</div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- ALERT BADGE -->
+          <tr>
+            <td align="center" style="padding:36px 50px 8px;">
+              <div style="display:inline-block;background-color:#fff4e0;border:1px solid #c9a96e;border-radius:20px;padding:6px 18px;">
+                <span style="font-size:11px;font-weight:700;color:#c9a96e;text-transform:uppercase;letter-spacing:2px;font-family:Arial,sans-serif;">
+                  ● New Project Enquiry
+                </span>
+              </div>
+            </td>
+          </tr>
+
+          <!-- TITLE -->
+          <tr>
+            <td align="center" style="padding:16px 50px 8px;">
+              <h1 style="margin:0;font-size:26px;font-weight:400;color:#1c1c1c;font-family:Georgia,serif;line-height:1.3;">
+                New Project Enquiry
+              </h1>
+              <p style="margin:10px 0 0;font-size:13px;color:#999999;font-family:Arial,sans-serif;">
+                ${new Date().toLocaleString("en-AE", { dateStyle: "full", timeStyle: "short" })}
+              </p>
+            </td>
+          </tr>
+
+          <!-- DIVIDER -->
+          <tr>
+            <td style="padding:24px 50px 0;">
+              <hr style="border:none;border-top:1px solid #e8e3db;margin:0;"/>
+            </td>
+          </tr>
+
+          <!-- CONTACT DETAILS -->
+          <tr>
+            <td style="padding:28px 50px 8px;">
+              <p style="margin:0 0 16px;font-size:11px;font-weight:700;color:#c9a96e;text-transform:uppercase;letter-spacing:2px;font-family:Arial,sans-serif;">
+                Contact Details
+              </p>
+
+              <!-- Name Row -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:10px;">
+                <tr>
+                  <td width="140" style="padding:10px 14px;background-color:#f7f5f2;border-radius:3px 0 0 3px;">
+                    <span style="font-size:11px;font-weight:700;color:#888888;text-transform:uppercase;letter-spacing:1.2px;font-family:Arial,sans-serif;">Full Name</span>
+                  </td>
+                  <td style="padding:10px 16px;background-color:#fafaf8;border-radius:0 3px 3px 0;border-left:2px solid #e8e3db;">
+                    <span style="font-size:14px;color:#1c1c1c;font-family:Arial,sans-serif;font-weight:600;">${data.first_name} ${data.last_name}</span>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Company Row -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:10px;">
+                <tr>
+                  <td width="140" style="padding:10px 14px;background-color:#f7f5f2;border-radius:3px 0 0 3px;">
+                    <span style="font-size:11px;font-weight:700;color:#888888;text-transform:uppercase;letter-spacing:1.2px;font-family:Arial,sans-serif;">Company</span>
+                  </td>
+                  <td style="padding:10px 16px;background-color:#fafaf8;border-radius:0 3px 3px 0;border-left:2px solid #e8e3db;">
+                    <span style="font-size:14px;color:#1c1c1c;font-family:Arial,sans-serif;">${data.company_name || "N/A"}</span>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Email Row -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:10px;">
+                <tr>
+                  <td width="140" style="padding:10px 14px;background-color:#f7f5f2;border-radius:3px 0 0 3px;">
+                    <span style="font-size:11px;font-weight:700;color:#888888;text-transform:uppercase;letter-spacing:1.2px;font-family:Arial,sans-serif;">Email</span>
+                  </td>
+                  <td style="padding:10px 16px;background-color:#fafaf8;border-radius:0 3px 3px 0;border-left:2px solid #e8e3db;">
+                    <a href="mailto:${data.email}" style="font-size:14px;color:#c9a96e;text-decoration:none;font-family:Arial,sans-serif;">${data.email}</a>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Phone Row -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:10px;">
+                <tr>
+                  <td width="140" style="padding:10px 14px;background-color:#f7f5f2;border-radius:3px 0 0 3px;">
+                    <span style="font-size:11px;font-weight:700;color:#888888;text-transform:uppercase;letter-spacing:1.2px;font-family:Arial,sans-serif;">Phone</span>
+                  </td>
+                  <td style="padding:10px 16px;background-color:#fafaf8;border-radius:0 3px 3px 0;border-left:2px solid #e8e3db;">
+                    ${
+                      data.phone
+                        ? `<a href="tel:${data.phone}" style="font-size:14px;color:#c9a96e;text-decoration:none;font-family:Arial,sans-serif;">${data.phone}</a>`
+                        : `<span style="font-size:14px;color:#bbbbbb;font-family:Arial,sans-serif;font-style:italic;">Not provided</span>`
+                    }
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Project Type Row -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:10px;">
+                <tr>
+                  <td width="140" style="padding:10px 14px;background-color:#f7f5f2;border-radius:3px 0 0 3px;">
+                    <span style="font-size:11px;font-weight:700;color:#888888;text-transform:uppercase;letter-spacing:1.2px;font-family:Arial,sans-serif;">Project Type</span>
+                  </td>
+                  <td style="padding:10px 16px;background-color:#fafaf8;border-radius:0 3px 3px 0;border-left:2px solid #c9a96e;">
+                    <span style="font-size:14px;color:#c9a96e;font-family:Arial,sans-serif;font-weight:600;">${data.project_type || "General Project"}</span>
+                  </td>
+                </tr>
+              </table>
+
+            </td>
+          </tr>
+
+          <!-- MESSAGE BOX -->
+          <tr>
+            <td style="padding:8px 50px 36px;">
+              <p style="margin:0 0 12px;font-size:11px;font-weight:700;color:#c9a96e;text-transform:uppercase;letter-spacing:2px;font-family:Arial,sans-serif;">
+                Requirements
+              </p>
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="padding:20px 24px;background-color:#f7f5f2;border-left:3px solid #c9a96e;border-radius:0 3px 3px 0;">
+                    <p style="margin:0;font-size:14px;color:#444444;line-height:1.85;font-family:Arial,sans-serif;">
+                      ${data.message}
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- ACTION BLOCK -->
+          <tr>
+            <td style="padding:0 50px 40px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#1c1c1c;border-radius:3px;">
+                <tr>
+                  <td style="padding:24px 28px 6px;">
+                    <p style="margin:0;font-size:11px;font-weight:700;color:#c9a96e;text-transform:uppercase;letter-spacing:2px;font-family:Arial,sans-serif;">
+                      Action Required
+                    </p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:8px 28px 20px;">
+                    <p style="margin:0;font-size:14px;color:#cccccc;line-height:1.8;font-family:Arial,sans-serif;">
+                      Please follow up with this client within <strong style="color:#ffffff;">24-48 hours</strong> to discuss their project requirements.
+                    </p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:4px 28px 28px;">
+                    <table role="presentation" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td style="padding-right:12px;">
+                          <a href="mailto:${data.email}" style="display:inline-block;padding:11px 28px;background-color:#c9a96e;color:#1c1c1c;text-decoration:none;font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;border-radius:2px;font-family:Arial,sans-serif;">
+                            Reply to Client
+                          </a>
+                        </td>
+                        ${
+                          data.phone
+                            ? `
+                        <td>
+                          <a href="tel:${data.phone}" style="display:inline-block;padding:11px 28px;background-color:transparent;color:#ffffff;text-decoration:none;font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;border-radius:2px;border:1px solid #555555;font-family:Arial,sans-serif;">
+                            Call Client
+                          </a>
+                        </td>`
+                            : ""
+                        }
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- FOOTER -->
+          <tr>
+            <td align="center" style="padding:20px 50px;background-color:#f7f5f2;border-top:1px solid #e8e3db;">
+              <p style="margin:0;font-size:11px;color:#aaaaaa;font-family:Arial,sans-serif;letter-spacing:0.3px;">
+                &copy; ${new Date().getFullYear()} Bosq. All Rights Reserved. &nbsp;|&nbsp; Internal Notification
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+    `.trim(),
+    });
+  }
+
+  // ─────────────────────────────────────────────
   //  NEWSLETTER — User Confirmation
   // ─────────────────────────────────────────────
   static async sendNewsletterConfirmation(email) {
     const transporter = this.getTransporter();
     const socialIconsHtml = await EmailService.getSocialIconsHtml();
+    const settings = await this.getMailerSettings("newsletter");
 
     return transporter.sendMail({
-      from: `"${process.env.EMAIL_FROM_NAME || "BOSQ"}" <${process.env.EMAIL_FROM || process.env.SMTP_USER}>`,
+      from: settings.from,
       to: email,
+      emailtype: "newsletter",
       subject: "You're Now Subscribed – BOSQ Newsletter",
       html: `
 <!DOCTYPE html>
@@ -1330,10 +1803,13 @@ class EmailService {
   // ─────────────────────────────────────────────
   static async sendNewsletterAdmin(email) {
     const transporter = this.getTransporter();
+    const settings = await this.getMailerSettings("newsletter");
 
     return transporter.sendMail({
-      from: `"${process.env.EMAIL_FROM_NAME || "BOSQ"}" <${process.env.EMAIL_FROM || process.env.SMTP_USER}>`,
-      to: process.env.ADMIN_EMAIL,
+      from: settings.from,
+      to: settings.to,
+      cc: settings.cc,
+      emailtype: "newsletter",
       subject: `New Newsletter Subscriber – ${email}`,
       html: `
 <!DOCTYPE html>
@@ -1436,425 +1912,6 @@ class EmailService {
     });
   }
 
-  // ─────────────────────────────────────────────
-  //  PROJECT ENQUIRY — User Confirmation
-  // ─────────────────────────────────────────────
-  static async sendProjectEnquiry(data) {
-    const transporter = this.getTransporter();
-
-    return transporter.sendMail({
-      from: `"${process.env.EMAIL_FROM_NAME || "BOSQ"}" <${process.env.EMAIL_FROM || process.env.SMTP_USER}>`,
-      to: data.email,
-      subject: "We've Received Your Project Enquiry – BOSQ",
-      html: `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Project Enquiry Confirmation</title>
-</head>
-<body style="margin:0;padding:0;background-color:#f0ede8;font-family:Georgia,'Times New Roman',serif;">
-
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f0ede8;padding:40px 0;">
-    <tr>
-      <td align="center">
-        <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:4px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08);">
-
-          <!-- HEADER -->
-          <tr>
-            <td align="center" style="background-color:#1c1c1c;padding:36px 40px;">
-              <table role="presentation" cellpadding="0" cellspacing="0">
-                <tr>
-                  <td style="vertical-align:middle;padding-right:10px;">
-                    <div style="display:inline-block;background-color:#c9a96e;border-radius:3px;padding:6px 8px;font-size:16px;font-weight:700;color:#1c1c1c;font-family:Georgia,serif;line-height:1;">b</div>
-                  </td>
-                  <td style="vertical-align:middle;">
-                    <span style="font-size:26px;font-weight:700;color:#ffffff;font-family:Georgia,serif;letter-spacing:2px;">BOSQ</span>
-                    <div style="font-size:10px;color:#999999;letter-spacing:3px;text-transform:uppercase;margin-top:2px;">organic living</div>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-
-          <!-- HERO TITLE -->
-          <tr>
-            <td align="center" style="padding:44px 50px 12px;">
-              <h1 style="margin:0;font-size:28px;font-weight:400;color:#1c1c1c;font-family:Georgia,serif;letter-spacing:0.5px;line-height:1.3;">
-                Thank You For Your Enquiry
-              </h1>
-            </td>
-          </tr>
-
-          <!-- GREETING -->
-          <tr>
-            <td style="padding:20px 50px 28px;">
-              <p style="margin:0 0 14px;font-size:15px;color:#444444;line-height:1.7;font-family:Georgia,serif;">
-                Dear ${data.name},
-              </p>
-              <p style="margin:0;font-size:14px;color:#666666;line-height:1.85;font-family:Arial,sans-serif;">
-                We have received your project enquiry and appreciate your interest in BOSQ.
-                Our team is reviewing your requirements and will be in touch with you shortly.
-              </p>
-            </td>
-          </tr>
-
-          <!-- ENQUIRY SUMMARY -->
-          <tr>
-            <td style="padding:0 50px 32px;">
-              <p style="margin:0 0 14px;font-size:11px;font-weight:700;color:#c9a96e;text-transform:uppercase;letter-spacing:2px;font-family:Arial,sans-serif;">
-                Your Enquiry Summary
-              </p>
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f7f5f2;border:1px solid #e8e3db;border-radius:3px;">
-
-                <!-- Name -->
-                <tr>
-                  <td width="160" style="padding:12px 18px;border-bottom:1px solid #e8e3db;vertical-align:top;">
-                    <span style="font-size:11px;font-weight:700;color:#888888;text-transform:uppercase;letter-spacing:1.2px;font-family:Arial,sans-serif;">Name</span>
-                  </td>
-                  <td style="padding:12px 18px;border-bottom:1px solid #e8e3db;border-left:1px solid #e8e3db;vertical-align:top;">
-                    <span style="font-size:13px;color:#1c1c1c;font-family:Arial,sans-serif;font-weight:600;">${data.name}</span>
-                  </td>
-                </tr>
-
-                <!-- Email -->
-                <tr>
-                  <td width="160" style="padding:12px 18px;border-bottom:1px solid #e8e3db;vertical-align:top;">
-                    <span style="font-size:11px;font-weight:700;color:#888888;text-transform:uppercase;letter-spacing:1.2px;font-family:Arial,sans-serif;">Email</span>
-                  </td>
-                  <td style="padding:12px 18px;border-bottom:1px solid #e8e3db;border-left:1px solid #e8e3db;vertical-align:top;">
-                    <span style="font-size:13px;color:#1c1c1c;font-family:Arial,sans-serif;">${data.email}</span>
-                  </td>
-                </tr>
-
-                ${
-                  data.phone
-                    ? `
-                <!-- Phone -->
-                <tr>
-                  <td width="160" style="padding:12px 18px;border-bottom:1px solid #e8e3db;vertical-align:top;">
-                    <span style="font-size:11px;font-weight:700;color:#888888;text-transform:uppercase;letter-spacing:1.2px;font-family:Arial,sans-serif;">Phone</span>
-                  </td>
-                  <td style="padding:12px 18px;border-bottom:1px solid #e8e3db;border-left:1px solid #e8e3db;vertical-align:top;">
-                    <span style="font-size:13px;color:#1c1c1c;font-family:Arial,sans-serif;">${data.phone}</span>
-                  </td>
-                </tr>`
-                    : ""
-                }
-
-                ${
-                  data.project_title
-                    ? `
-                <!-- Project -->
-                <tr>
-                  <td width="160" style="padding:12px 18px;border-bottom:1px solid #e8e3db;vertical-align:top;">
-                    <span style="font-size:11px;font-weight:700;color:#888888;text-transform:uppercase;letter-spacing:1.2px;font-family:Arial,sans-serif;">Project</span>
-                  </td>
-                  <td style="padding:12px 18px;border-bottom:1px solid #e8e3db;border-left:1px solid #e8e3db;vertical-align:top;">
-                    <span style="font-size:13px;color:#c9a96e;font-family:Arial,sans-serif;font-weight:600;">${data.project_title}</span>
-                  </td>
-                </tr>`
-                    : ""
-                }
-
-                <!-- Message -->
-                <tr>
-                  <td width="160" style="padding:12px 18px;vertical-align:top;">
-                    <span style="font-size:11px;font-weight:700;color:#888888;text-transform:uppercase;letter-spacing:1.2px;font-family:Arial,sans-serif;">Message</span>
-                  </td>
-                  <td style="padding:12px 18px;border-left:1px solid #e8e3db;vertical-align:top;">
-                    <span style="font-size:13px;color:#444444;line-height:1.75;font-family:Arial,sans-serif;">${data.message}</span>
-                  </td>
-                </tr>
-
-              </table>
-            </td>
-          </tr>
-
-          <!-- WHAT HAPPENS NEXT -->
-          <tr>
-            <td style="padding:0 50px 40px;">
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#1c1c1c;border-radius:3px;">
-                <tr>
-                  <td style="padding:24px 28px 6px;">
-                    <p style="margin:0;font-size:11px;font-weight:700;color:#c9a96e;text-transform:uppercase;letter-spacing:2px;font-family:Arial,sans-serif;">
-                      What Happens Next?
-                    </p>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding:8px 28px 20px;">
-                    <p style="margin:0;font-size:14px;color:#cccccc;line-height:1.8;font-family:Arial,sans-serif;">
-                      Our BOSQ team will contact you within <strong style="color:#ffffff;">24 hours</strong> with
-                      more information about the project and next steps.
-                    </p>
-                  </td>
-                </tr>
-                <tr>
-                  <td align="center" style="padding:8px 28px 28px;">
-                    <a href="mailto:${process.env.EMAIL_FROM || ""}" style="display:inline-block;padding:12px 36px;background-color:#ffffff;color:#1c1c1c;text-decoration:none;font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;border-radius:2px;font-family:Arial,sans-serif;">
-                      Contact Us
-                    </a>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-
-          <!-- CONTACT INFO -->
-          <tr>
-            <td align="center" style="padding:0 50px 28px;">
-              <p style="margin:0;font-size:12px;color:#888888;line-height:1.8;font-family:Arial,sans-serif;">
-                For immediate assistance, call us at
-                <a href="tel:+97156103637" style="color:#c9a96e;text-decoration:none;">+971 56 103 637</a>
-                &nbsp;or email&nbsp;
-                <a href="mailto:sales@bosq.ae" style="color:#c9a96e;text-decoration:none;">sales@bosq.ae</a>
-              </p>
-            </td>
-          </tr>
-
-          <!-- FOOTER -->
-          <tr>
-            <td align="center" style="padding:20px 50px;background-color:#f7f5f2;border-top:1px solid #e8e3db;">
-              <p style="margin:0;font-size:11px;color:#aaaaaa;font-family:Arial,sans-serif;letter-spacing:0.3px;">
-                &copy; ${new Date().getFullYear()} Bosq. All Rights Reserved.
-              </p>
-            </td>
-          </tr>
-
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>
-    `.trim(),
-    });
-  }
-
-  // ─────────────────────────────────────────────
-  //  PROJECT ENQUIRY — Admin Notification
-  // ─────────────────────────────────────────────
-  static async sendProjectEnquiryAdmin(data) {
-    const transporter = this.getTransporter();
-
-    return transporter.sendMail({
-      from: `"${process.env.EMAIL_FROM_NAME || "BOSQ"}" <${process.env.EMAIL_FROM || process.env.SMTP_USER}>`,
-      to: process.env.ADMIN_EMAIL,
-      subject: `New Project Enquiry – ${data.name}`,
-      html: `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>New Project Enquiry</title>
-</head>
-<body style="margin:0;padding:0;background-color:#f0ede8;font-family:Georgia,'Times New Roman',serif;">
-
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f0ede8;padding:40px 0;">
-    <tr>
-      <td align="center">
-        <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:4px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08);">
-
-          <!-- HEADER -->
-          <tr>
-            <td align="center" style="background-color:#1c1c1c;padding:36px 40px;">
-              <table role="presentation" cellpadding="0" cellspacing="0">
-                <tr>
-                  <td style="vertical-align:middle;padding-right:10px;">
-                    <div style="display:inline-block;background-color:#c9a96e;border-radius:3px;padding:6px 8px;font-size:16px;font-weight:700;color:#1c1c1c;font-family:Georgia,serif;line-height:1;">b</div>
-                  </td>
-                  <td style="vertical-align:middle;">
-                    <span style="font-size:26px;font-weight:700;color:#ffffff;font-family:Georgia,serif;letter-spacing:2px;">BOSQ</span>
-                    <div style="font-size:10px;color:#999999;letter-spacing:3px;text-transform:uppercase;margin-top:2px;">organic living</div>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-
-          <!-- ALERT BADGE -->
-          <tr>
-            <td align="center" style="padding:36px 50px 8px;">
-              <div style="display:inline-block;background-color:#fff4e0;border:1px solid #c9a96e;border-radius:20px;padding:6px 18px;">
-                <span style="font-size:11px;font-weight:700;color:#c9a96e;text-transform:uppercase;letter-spacing:2px;font-family:Arial,sans-serif;">
-                  ● New Project Enquiry
-                </span>
-              </div>
-            </td>
-          </tr>
-
-          <!-- TITLE -->
-          <tr>
-            <td align="center" style="padding:16px 50px 8px;">
-              <h1 style="margin:0;font-size:26px;font-weight:400;color:#1c1c1c;font-family:Georgia,serif;line-height:1.3;">
-                New Project Enquiry
-              </h1>
-              <p style="margin:10px 0 0;font-size:13px;color:#999999;font-family:Arial,sans-serif;">
-                ${new Date().toLocaleString("en-AE", { dateStyle: "full", timeStyle: "short" })}
-              </p>
-            </td>
-          </tr>
-
-          <!-- DIVIDER -->
-          <tr>
-            <td style="padding:24px 50px 0;">
-              <hr style="border:none;border-top:1px solid #e8e3db;margin:0;"/>
-            </td>
-          </tr>
-
-          <!-- CONTACT DETAILS -->
-          <tr>
-            <td style="padding:28px 50px 8px;">
-              <p style="margin:0 0 16px;font-size:11px;font-weight:700;color:#c9a96e;text-transform:uppercase;letter-spacing:2px;font-family:Arial,sans-serif;">
-                Contact Details
-              </p>
-
-              <!-- Name Row -->
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:10px;">
-                <tr>
-                  <td width="140" style="padding:10px 14px;background-color:#f7f5f2;border-radius:3px 0 0 3px;">
-                    <span style="font-size:11px;font-weight:700;color:#888888;text-transform:uppercase;letter-spacing:1.2px;font-family:Arial,sans-serif;">Name</span>
-                  </td>
-                  <td style="padding:10px 16px;background-color:#fafaf8;border-radius:0 3px 3px 0;border-left:2px solid #e8e3db;">
-                    <span style="font-size:14px;color:#1c1c1c;font-family:Arial,sans-serif;font-weight:600;">${data.name}</span>
-                  </td>
-                </tr>
-              </table>
-
-              <!-- Email Row -->
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:10px;">
-                <tr>
-                  <td width="140" style="padding:10px 14px;background-color:#f7f5f2;border-radius:3px 0 0 3px;">
-                    <span style="font-size:11px;font-weight:700;color:#888888;text-transform:uppercase;letter-spacing:1.2px;font-family:Arial,sans-serif;">Email</span>
-                  </td>
-                  <td style="padding:10px 16px;background-color:#fafaf8;border-radius:0 3px 3px 0;border-left:2px solid #e8e3db;">
-                    <a href="mailto:${data.email}" style="font-size:14px;color:#c9a96e;text-decoration:none;font-family:Arial,sans-serif;">${data.email}</a>
-                  </td>
-                </tr>
-              </table>
-
-              <!-- Phone Row -->
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:10px;">
-                <tr>
-                  <td width="140" style="padding:10px 14px;background-color:#f7f5f2;border-radius:3px 0 0 3px;">
-                    <span style="font-size:11px;font-weight:700;color:#888888;text-transform:uppercase;letter-spacing:1.2px;font-family:Arial,sans-serif;">Phone</span>
-                  </td>
-                  <td style="padding:10px 16px;background-color:#fafaf8;border-radius:0 3px 3px 0;border-left:2px solid #e8e3db;">
-                    ${
-                      data.phone
-                        ? `<a href="tel:${data.phone}" style="font-size:14px;color:#c9a96e;text-decoration:none;font-family:Arial,sans-serif;">${data.phone}</a>`
-                        : `<span style="font-size:14px;color:#bbbbbb;font-family:Arial,sans-serif;font-style:italic;">Not provided</span>`
-                    }
-                  </td>
-                </tr>
-              </table>
-
-              ${
-                data.project_title
-                  ? `
-              <!-- Project Row -->
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:10px;">
-                <tr>
-                  <td width="140" style="padding:10px 14px;background-color:#f7f5f2;border-radius:3px 0 0 3px;">
-                    <span style="font-size:11px;font-weight:700;color:#888888;text-transform:uppercase;letter-spacing:1.2px;font-family:Arial,sans-serif;">Project</span>
-                  </td>
-                  <td style="padding:10px 16px;background-color:#fafaf8;border-radius:0 3px 3px 0;border-left:2px solid #c9a96e;">
-                    <span style="font-size:14px;color:#c9a96e;font-family:Arial,sans-serif;font-weight:600;">${data.project_title}</span>
-                  </td>
-                </tr>
-              </table>`
-                  : ""
-              }
-
-            </td>
-          </tr>
-
-          <!-- MESSAGE BOX -->
-          <tr>
-            <td style="padding:8px 50px 36px;">
-              <p style="margin:0 0 12px;font-size:11px;font-weight:700;color:#c9a96e;text-transform:uppercase;letter-spacing:2px;font-family:Arial,sans-serif;">
-                Message
-              </p>
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-                <tr>
-                  <td style="padding:20px 24px;background-color:#f7f5f2;border-left:3px solid #c9a96e;border-radius:0 3px 3px 0;">
-                    <p style="margin:0;font-size:14px;color:#444444;line-height:1.85;font-family:Arial,sans-serif;">
-                      ${data.message}
-                    </p>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-
-          <!-- ACTION BLOCK -->
-          <tr>
-            <td style="padding:0 50px 40px;">
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#1c1c1c;border-radius:3px;">
-                <tr>
-                  <td style="padding:24px 28px 6px;">
-                    <p style="margin:0;font-size:11px;font-weight:700;color:#c9a96e;text-transform:uppercase;letter-spacing:2px;font-family:Arial,sans-serif;">
-                      Action Required
-                    </p>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding:8px 28px 20px;">
-                    <p style="margin:0;font-size:14px;color:#cccccc;line-height:1.8;font-family:Arial,sans-serif;">
-                      Please follow up with this customer within <strong style="color:#ffffff;">24 hours</strong> to provide
-                      further information about the project.
-                    </p>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding:4px 28px 28px;">
-                    <table role="presentation" cellpadding="0" cellspacing="0">
-                      <tr>
-                        <td style="padding-right:12px;">
-                          <a href="mailto:${data.email}" style="display:inline-block;padding:11px 28px;background-color:#c9a96e;color:#1c1c1c;text-decoration:none;font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;border-radius:2px;font-family:Arial,sans-serif;">
-                            Reply to Customer
-                          </a>
-                        </td>
-                        ${
-                          data.phone
-                            ? `
-                        <td>
-                          <a href="tel:${data.phone}" style="display:inline-block;padding:11px 28px;background-color:transparent;color:#ffffff;text-decoration:none;font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;border-radius:2px;border:1px solid #555555;font-family:Arial,sans-serif;">
-                            Call Customer
-                          </a>
-                        </td>`
-                            : ""
-                        }
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-
-          <!-- FOOTER -->
-          <tr>
-            <td align="center" style="padding:20px 50px;background-color:#f7f5f2;border-top:1px solid #e8e3db;">
-              <p style="margin:0;font-size:11px;color:#aaaaaa;font-family:Arial,sans-serif;letter-spacing:0.3px;">
-                &copy; ${new Date().getFullYear()} Bosq. All Rights Reserved. &nbsp;|&nbsp; Internal Notification
-              </p>
-            </td>
-          </tr>
-
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>
-    `.trim(),
-    });
-  }
-
   static async sendOrderConfirmationEmail(email, data) {
     const html = this.getOrderConfirmationTemplate(data);
 
@@ -1862,6 +1919,7 @@ class EmailService {
       to: email,
       subject: `Order Confirmed – ${data.orderCode}`,
       html,
+      type: "orders",
     });
   }
 
@@ -1880,9 +1938,11 @@ class EmailService {
       estDelivery,
     } = data;
 
-    console.log("item data : ", items?.images);
-
-    const orderDate = new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+    const orderDate = new Date().toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
     const paymentLabel = paymentType === "cod" ? "Cash on Delivery" : "Online Payment";
 
     const billingLine = billingAddress
@@ -2295,7 +2355,11 @@ class EmailService {
 
     const paymentLabel = paymentType === "cod" ? "Cash on Delivery" : "Online Payment";
     const statusFormatted = status.charAt(0).toUpperCase() + status.slice(1);
-    const orderDate = new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+    const orderDate = new Date().toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
 
     const billingLine = billingAddress
       ? [billingAddress.street_address, billingAddress.apartment, billingAddress.state_name || billingAddress.state?.name, billingAddress.country]
@@ -2656,6 +2720,7 @@ class EmailService {
       to: email,
       subject: `Order Update: ${orderCode} is now ${statusFormatted}`,
       html,
+      type: "orders",
     });
   }
 }

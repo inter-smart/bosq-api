@@ -13,6 +13,7 @@ const COOKIEAGE = 15 * 60 * 1000; // 15 minutes for testing
 const Users = models.Users;
 const Otps = models.Otps;
 const AuthSessions = models.AuthSessions;
+const MailerSettings = models.MailerSettings
 
 const generateOtp = () => {
   return Math.floor(1000 + Math.random() * 9000).toString();
@@ -69,7 +70,8 @@ class UsersService {
 
         // Send OTP email after transaction commit
         try {
-          await EmailService.sendOtp(email, otp);
+          const adminEmail = await MailerSettings.findOne({ where: { type: "auth" } });
+          await EmailService.sendOtp(email, otp, adminEmail?.to_email);
         } catch (emailError) {
           console.error("Failed to send OTP email:", emailError);
           throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.OTP_EMAIL_FAILED, HTTP_STATUS.INTERNAL_SERVER_ERROR, ERROR_CODES.INTERNAL_ERROR);
@@ -107,8 +109,12 @@ class UsersService {
         { transaction },
       );
 
+
+
+      const adminEmail = await MailerSettings.findOne({ where: { type: "auth" } });
+
       await transaction.commit();
-      EmailService.sendOtp(email, otp);
+      EmailService.sendOtp(email, otp, adminEmail?.to_email);
 
       return {
         data: { email, expiresIn: 300 },
@@ -429,7 +435,8 @@ class UsersService {
       await transaction.commit();
 
       // Async email
-      EmailService.sendOtp(email, otp).catch((err) => console.error("OTP email failed:", err));
+      const adminEmail = await MailerSettings.findOne({ where: { type: "auth" } });
+      EmailService.sendOtp(email, otp, adminEmail?.to_email).catch((err) => console.error("OTP email failed:", err));
 
       return { data: { expiresIn: 300 } };
     } catch (error) {

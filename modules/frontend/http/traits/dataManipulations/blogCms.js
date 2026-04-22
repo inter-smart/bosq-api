@@ -1,5 +1,5 @@
 const { Op } = require("sequelize");
-const { formatDate, singleMediaWithoutType, mediaWithoutType, dateFirst } = require("../mediaButtonHelper");
+const { formatDate, singleMediaWithoutType, mediaWithoutType } = require("../mediaButtonHelper");
 const { buildTitleSection } = require("./common");
 
 function buildHeroData(cmsData) {
@@ -70,7 +70,7 @@ function buildBlogDetailsData(blog, nextBlog, prevBlog) {
     media_ar: mediaWithoutType(blog, "media_desktop_path_ar", "media_mobile_path_ar", "media_alt", "media_alt_ar") ?? null,
     title: blog.title ?? "N/A",
     title_ar: blog.title_ar ?? "N/A",
-    publishedAt: dateFirst(blog.published_date) ?? "N/A",
+    publishedAt: formatDate(blog.published_date) ?? "N/A",
     description: blog.description ?? "N/A",
     description_ar: blog.description_ar ?? "N/A",
     nextData: nextBlog?.slug ?? null,
@@ -87,7 +87,7 @@ function buildRelatedBlogSection(cms, blog, titleData) {
       id: item.id,
       media: singleMediaWithoutType(item, "thumbnail", "thumbnail_alt", "thumbnail_alt_ar"),
       slug: item.slug ?? "N/A",
-      publishedAt: dateFirst(item.published_date) ?? "N/A",
+      publishedAt: formatDate(item.published_date) ?? "N/A",
       isPopular: true,
       readTime: 4,
       title: item.title ?? "N/A",

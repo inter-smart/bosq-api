@@ -32,23 +32,26 @@ class EmailService {
       });
 
       if (setting?.to_email) {
-
-
-        console.log("to_email", setting.to_email)
-        console.log("cc_emails", setting.cc_emails)
+        console.log("to_email", setting.to_email);
+        console.log("cc_emails", setting.cc_emails);
 
         return {
           from: setting.to_email,
           to: setting.to_email,
-          cc: setting.cc_emails ? setting.cc_emails.split(",").map((e) => e.trim()) : [],
+          cc: setting.cc_emails
+            ? setting.cc_emails.split(",").map((e) => e.trim())
+            : [],
         };
       }
-    } catch (_) { }
+    } catch (_) {}
 
     const defaultFrom = `"${process.env.EMAIL_FROM_NAME || "BOSQ"}" <${process.env.EMAIL_FROM || process.env.SMTP_USER}>`;
     return {
       from: defaultFrom,
-      to: process.env.ADMIN_EMAIL || process.env.EMAIL_FROM || process.env.SMTP_USER,
+      to:
+        process.env.ADMIN_EMAIL ||
+        process.env.EMAIL_FROM ||
+        process.env.SMTP_USER,
       cc: [],
     };
   }
@@ -86,14 +89,14 @@ class EmailService {
    * @param {string} options.html - HTML content
    * @param {string} [options.text] - Plain text content (optional)
    */
-  static async sendEmail({ to, subject, html, text, type = "orders" }) {
+  static async sendEmail({ to, from, cc, subject, html, text, type = "orders" }) {
     const transporter = this.getTransporter();
     const settings = await this.getMailerSettings(type);
 
     const mailOptions = {
-      from: settings.from,
+      from: from ?? settings.from,
       to,
-      cc: settings.cc,
+      cc: cc ?? settings.cc,
       subject,
       html,
       text: text || html.replace(/<[^>]*>/g, ""),
@@ -102,6 +105,7 @@ class EmailService {
 
     return transporter.sendMail(mailOptions);
   }
+
 
   static async getSocialIconsHtml() {
     try {
@@ -337,8 +341,9 @@ class EmailService {
                     </p>
                   </td>
                 </tr>
-                ${data.phone
-          ? `
+                ${
+                  data.phone
+                    ? `
                 <tr>
                   <td style="padding:0 24px 16px;">
                     <p style="margin:0;font-size:12px;color:#999999;font-family:Arial,sans-serif;">
@@ -346,8 +351,8 @@ class EmailService {
                     </p>
                   </td>
                 </tr>`
-          : ""
-        }
+                    : ""
+                }
               </table>
             </td>
           </tr>
@@ -525,10 +530,11 @@ class EmailService {
                     <span style="font-size:11px;font-weight:700;color:#888888;text-transform:uppercase;letter-spacing:1.5px;font-family:Arial,sans-serif;">Phone</span>
                   </td>
                   <td style="vertical-align:top;padding:10px 16px;background-color:#fafaf8;border-radius:0 3px 3px 0;border-left:2px solid #e8e3db;">
-                    ${data.phone
-          ? `<a href="tel:${data.phone}" style="font-size:14px;color:#c9a96e;text-decoration:none;font-family:Arial,sans-serif;">${data.phone}</a>`
-          : `<span style="font-size:14px;color:#bbbbbb;font-family:Arial,sans-serif;font-style:italic;">Not provided</span>`
-        }
+                    ${
+                      data.phone
+                        ? `<a href="tel:${data.phone}" style="font-size:14px;color:#c9a96e;text-decoration:none;font-family:Arial,sans-serif;">${data.phone}</a>`
+                        : `<span style="font-size:14px;color:#bbbbbb;font-family:Arial,sans-serif;font-style:italic;">Not provided</span>`
+                    }
                   </td>
                 </tr>
               </table>
@@ -581,15 +587,16 @@ class EmailService {
                             Reply to Customer
                           </a>
                         </td>
-                        ${data.phone
-          ? `
+                        ${
+                          data.phone
+                            ? `
                         <td>
                           <a href="tel:${data.phone}" style="display:inline-block;padding:11px 28px;background-color:transparent;color:#ffffff;text-decoration:none;font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;border-radius:2px;border:1px solid #555555;font-family:Arial,sans-serif;">
                             Call Customer
                           </a>
                         </td>`
-          : ""
-        }
+                            : ""
+                        }
                       </tr>
                     </table>
                   </td>
@@ -814,8 +821,9 @@ class EmailService {
                   </td>
                 </tr>
 
-                ${data.company_name
-          ? `
+                ${
+                  data.company_name
+                    ? `
                 <!-- Company -->
                 <tr>
                   <td width="160" style="padding:12px 18px;border-bottom:1px solid #e8e3db;vertical-align:top;">
@@ -825,8 +833,8 @@ class EmailService {
                     <span style="font-size:13px;color:#1c1c1c;font-family:Arial,sans-serif;">${data.company_name}</span>
                   </td>
                 </tr>`
-          : ""
-        }
+                    : ""
+                }
 
                 <!-- Help Option -->
                 <tr>
@@ -838,8 +846,9 @@ class EmailService {
                   </td>
                 </tr>
 
-                ${data.state_label
-          ? `
+                ${
+                  data.state_label
+                    ? `
                 <!-- State -->
                 <tr>
                   <td width="160" style="padding:12px 18px;border-bottom:1px solid #e8e3db;vertical-align:top;">
@@ -849,8 +858,8 @@ class EmailService {
                     <span style="font-size:13px;color:#1c1c1c;font-family:Arial,sans-serif;">${data.state_label}</span>
                   </td>
                 </tr>`
-          : ""
-        }
+                    : ""
+                }
 
                 <!-- Message -->
                 <tr>
@@ -1022,8 +1031,9 @@ class EmailService {
                 </tr>
               </table>
 
-              ${data.company_name
-          ? `
+              ${
+                data.company_name
+                  ? `
               <!-- Company Row -->
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:10px;">
                 <tr>
@@ -1035,8 +1045,8 @@ class EmailService {
                   </td>
                 </tr>
               </table>`
-          : ""
-        }
+                  : ""
+              }
 
               <!-- Email Row -->
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:10px;">
@@ -1057,10 +1067,11 @@ class EmailService {
                     <span style="font-size:11px;font-weight:700;color:#888888;text-transform:uppercase;letter-spacing:1.2px;font-family:Arial,sans-serif;">Phone</span>
                   </td>
                   <td style="padding:10px 16px;background-color:#fafaf8;border-radius:0 3px 3px 0;border-left:2px solid #e8e3db;">
-                    ${data.phone
-          ? `<a href="tel:${data.phone}" style="font-size:14px;color:#c9a96e;text-decoration:none;font-family:Arial,sans-serif;">${data.phone}</a>`
-          : `<span style="font-size:14px;color:#bbbbbb;font-family:Arial,sans-serif;font-style:italic;">Not provided</span>`
-        }
+                    ${
+                      data.phone
+                        ? `<a href="tel:${data.phone}" style="font-size:14px;color:#c9a96e;text-decoration:none;font-family:Arial,sans-serif;">${data.phone}</a>`
+                        : `<span style="font-size:14px;color:#bbbbbb;font-family:Arial,sans-serif;font-style:italic;">Not provided</span>`
+                    }
                   </td>
                 </tr>
               </table>
@@ -1077,8 +1088,9 @@ class EmailService {
                 </tr>
               </table>
 
-              ${data.state_label
-          ? `
+              ${
+                data.state_label
+                  ? `
               <!-- State Row -->
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:10px;">
                 <tr>
@@ -1090,8 +1102,8 @@ class EmailService {
                   </td>
                 </tr>
               </table>`
-          : ""
-        }
+                  : ""
+              }
 
             </td>
           </tr>
@@ -1142,15 +1154,16 @@ class EmailService {
                             Reply to Customer
                           </a>
                         </td>
-                        ${data.phone
-          ? `
+                        ${
+                          data.phone
+                            ? `
                         <td>
                           <a href="tel:${data.phone}" style="display:inline-block;padding:11px 28px;background-color:transparent;color:#ffffff;text-decoration:none;font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;border-radius:2px;border:1px solid #555555;font-family:Arial,sans-serif;">
                             Call Customer
                           </a>
                         </td>`
-          : ""
-        }
+                            : ""
+                        }
                       </tr>
                     </table>
                   </td>
@@ -1484,10 +1497,11 @@ class EmailService {
                     <span style="font-size:11px;font-weight:700;color:#888888;text-transform:uppercase;letter-spacing:1.2px;font-family:Arial,sans-serif;">Phone</span>
                   </td>
                   <td style="padding:10px 16px;background-color:#fafaf8;border-radius:0 3px 3px 0;border-left:2px solid #e8e3db;">
-                    ${data.phone
-          ? `<a href="tel:${data.phone}" style="font-size:14px;color:#c9a96e;text-decoration:none;font-family:Arial,sans-serif;">${data.phone}</a>`
-          : `<span style="font-size:14px;color:#bbbbbb;font-family:Arial,sans-serif;font-style:italic;">Not provided</span>`
-        }
+                    ${
+                      data.phone
+                        ? `<a href="tel:${data.phone}" style="font-size:14px;color:#c9a96e;text-decoration:none;font-family:Arial,sans-serif;">${data.phone}</a>`
+                        : `<span style="font-size:14px;color:#bbbbbb;font-family:Arial,sans-serif;font-style:italic;">Not provided</span>`
+                    }
                   </td>
                 </tr>
               </table>
@@ -1552,15 +1566,16 @@ class EmailService {
                             Reply to Client
                           </a>
                         </td>
-                        ${data.phone
-          ? `
+                        ${
+                          data.phone
+                            ? `
                         <td>
                           <a href="tel:${data.phone}" style="display:inline-block;padding:11px 28px;background-color:transparent;color:#ffffff;text-decoration:none;font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;border-radius:2px;border:1px solid #555555;font-family:Arial,sans-serif;">
                             Call Client
                           </a>
                         </td>`
-          : ""
-        }
+                            : ""
+                        }
                       </tr>
                     </table>
                   </td>
@@ -1890,18 +1905,20 @@ class EmailService {
     });
   }
 
-
-
   static async sendOrderConfirmationEmail(email, data) {
     const html = this.getOrderConfirmationTemplate(data);
+    const settings = await this.getMailerSettings("orders");
 
     return this.sendEmail({
       to: email,
+      from: settings.from,
+      cc: settings.cc,
       subject: `Order Confirmed – ${data.orderCode}`,
       html,
       type: "orders",
     });
   }
+
 
   static getOrderConfirmationTemplate(data) {
     const {
@@ -1918,7 +1935,6 @@ class EmailService {
       estDelivery,
     } = data;
 
-
     const orderDate = new Date().toLocaleDateString("en-GB", {
       day: "2-digit",
       month: "short",
@@ -1929,23 +1945,23 @@ class EmailService {
 
     const billingLine = billingAddress
       ? [
-        billingAddress.street_address,
-        billingAddress.apartment,
-        billingAddress.state_name,
-        billingAddress.country,
-      ]
-        .filter(Boolean)
-        .join(", ")
+          billingAddress.street_address,
+          billingAddress.apartment,
+          billingAddress.state_name,
+          billingAddress.country,
+        ]
+          .filter(Boolean)
+          .join(", ")
       : "—";
     const shippingLine = shippingAddress
       ? [
-        shippingAddress.street_address,
-        shippingAddress.apartment,
-        shippingAddress.state_name,
-        shippingAddress.country,
-      ]
-        .filter(Boolean)
-        .join(", ")
+          shippingAddress.street_address,
+          shippingAddress.apartment,
+          shippingAddress.state_name,
+          shippingAddress.country,
+        ]
+          .filter(Boolean)
+          .join(", ")
       : billingLine;
     const deliveryText = estDelivery || "To be confirmed";
 
@@ -2126,8 +2142,8 @@ class EmailService {
                                                     </td>
                                                 </tr>
                                                 ${items
-        .map(
-          (item) => `
+                                                  .map(
+                                                    (item) => `
                                                 <tr>
                                                     <td style="width: 14%; margin-bottom: 0px; margin-top: 0px;">
                                                         <img src="${item?.image || "https://ux.intersmarthosting.in/Mailers/Bosq/prod-1.png"}" width="66px" height="55" alt="image" style="object-fit: cover;">
@@ -2145,15 +2161,16 @@ class EmailService {
                                                         <p style="font-family: 'Open Sans', sans-serif; font-size: 16px; color: #191919; margin: 0px; text-align: right; font-weight: 400;">AED ${parseFloat(item.line_total).toFixed(2)}</p>
                                                     </td>
                                                 </tr>`,
-        )
-        .join("")}
+                                                  )
+                                                  .join("")}
                                                 <tr>
                                                     <td colspan="3">
                                                         <hr style="border: none; border-top: solid 0.5px #f5f5f5; width: 100%; margin: 15px 0;">
                                                     </td>
                                                 </tr>
-                                                ${parseFloat(subtotal) > 0
-        ? `
+                                                ${
+                                                  parseFloat(subtotal) > 0
+                                                    ? `
                                                 <tr>
                                                     <td style="width: 66%; margin-bottom: 0px; margin-top: 0px;" colspan="2">
                                                         <p style="font-size: 16px; font-family: 'Open Sans', sans-serif; color: #282828; font-weight: 400; margin-bottom: 0; margin-top: 0;">Subtotal</p>
@@ -2162,10 +2179,11 @@ class EmailService {
                                                         <p style="font-family: 'Open Sans', sans-serif; font-size: 16px; color: #191919; margin: 0px; text-align: right; font-weight: 400;">AED ${parseFloat(subtotal).toFixed(2)}</p>
                                                     </td>
                                                 </tr>`
-        : ""
-      }
-                                                ${parseFloat(discount_total) > 0
-        ? `
+                                                    : ""
+                                                }
+                                                ${
+                                                  parseFloat(discount_total) > 0
+                                                    ? `
                                                 <tr>
                                                     <td style="width: 66%; margin-bottom: 0px; margin-top: 0px;" colspan="2">
                                                         <p style="font-size: 16px; font-family: 'Open Sans', sans-serif; color: #282828; font-weight: 400; margin-bottom: 0; margin-top: 0;">Discount</p>
@@ -2174,10 +2192,11 @@ class EmailService {
                                                         <p style="font-family: 'Open Sans', sans-serif; font-size: 16px; color: #c0392b; margin: 0px; text-align: right; font-weight: 400;">- AED ${parseFloat(discount_total).toFixed(2)}</p>
                                                     </td>
                                                 </tr>`
-        : ""
-      }
-                                                ${parseFloat(tax_total) > 0
-        ? `
+                                                    : ""
+                                                }
+                                                ${
+                                                  parseFloat(tax_total) > 0
+                                                    ? `
                                                 <tr>
                                                     <td style="width: 66%; margin-bottom: 0px; margin-top: 0px;" colspan="2">
                                                         <p style="font-size: 16px; font-family: 'Open Sans', sans-serif; color: #282828; font-weight: 400; margin-bottom: 0; margin-top: 0;">Tax</p>
@@ -2186,8 +2205,8 @@ class EmailService {
                                                         <p style="font-family: 'Open Sans', sans-serif; font-size: 16px; color: #191919; margin: 0px; text-align: right; font-weight: 400;">AED ${parseFloat(tax_total).toFixed(2)}</p>
                                                     </td>
                                                 </tr>`
-        : ""
-      }
+                                                    : ""
+                                                }
                                                 <tr>
                                                     <td style="width: 66%; margin-bottom: 0px; margin-top: 0px;" colspan="2">
                                                         <p style="font-size: 16px; font-family:  'Open Sans', sans-serif; color: #282828; font-weight: 400; margin-bottom: 0; margin-top: 0;">
@@ -2329,7 +2348,7 @@ class EmailService {
 `;
   }
 
-  static async sendOrderStatusUpdate(email, data) {
+  static async sendOrderStatusUpdate(email, data, type="orders") {
     const {
       orderCode,
       name,
@@ -2357,24 +2376,24 @@ class EmailService {
 
     const billingLine = billingAddress
       ? [
-        billingAddress.street_address,
-        billingAddress.apartment,
-        billingAddress.state_name || billingAddress.state?.name,
-        billingAddress.country,
-      ]
-        .filter(Boolean)
-        .join(", ")
+          billingAddress.street_address,
+          billingAddress.apartment,
+          billingAddress.state_name || billingAddress.state?.name,
+          billingAddress.country,
+        ]
+          .filter(Boolean)
+          .join(", ")
       : "—";
 
     const shippingLine = shippingAddress
       ? [
-        shippingAddress.street_address,
-        shippingAddress.apartment,
-        shippingAddress.state_name || shippingAddress.state?.name,
-        shippingAddress.country,
-      ]
-        .filter(Boolean)
-        .join(", ")
+          shippingAddress.street_address,
+          shippingAddress.apartment,
+          shippingAddress.state_name || shippingAddress.state?.name,
+          shippingAddress.country,
+        ]
+          .filter(Boolean)
+          .join(", ")
       : billingLine;
 
     const deliveryText = estDelivery || "To be confirmed";
@@ -2542,8 +2561,8 @@ class EmailService {
                                                     </td>
                                                 </tr>
                                                 ${items
-        .map(
-          (item) => `
+                                                  .map(
+                                                    (item) => `
                                                 <tr>
                                                     <td style="width: 14%; margin-bottom: 0px; margin-top: 0px;">
                                                         <img src="${generateImageUrl(item?.image) || "https://ux.intersmarthosting.in/Mailers/Bosq/prod-1.png"}" width="66px" height="55" alt="image" style="object-fit: cover;">
@@ -2561,15 +2580,16 @@ class EmailService {
                                                         <p style="font-family: 'Open Sans', sans-serif; font-size: 16px; color: #191919; margin: 0px; text-align: right; font-weight: 400;">AED ${parseFloat(item.line_total).toFixed(2)}</p>
                                                     </td>
                                                 </tr>`,
-        )
-        .join("")}
+                                                  )
+                                                  .join("")}
                                                 <tr>
                                                     <td colspan="3">
                                                         <hr style="border: none; border-top: solid 0.5px #f5f5f5; width: 100%; margin: 15px 0;">
                                                     </td>
                                                 </tr>
-                                                ${parseFloat(subtotal) > 0
-        ? `
+                                                ${
+                                                  parseFloat(subtotal) > 0
+                                                    ? `
                                                 <tr>
                                                     <td style="width: 66%; margin-bottom: 0px; margin-top: 0px;" colspan="2">
                                                         <p style="font-size: 16px; font-family: 'Open Sans', sans-serif; color: #282828; font-weight: 400; margin-bottom: 0; margin-top: 0;">Subtotal</p>
@@ -2578,10 +2598,11 @@ class EmailService {
                                                         <p style="font-family: 'Open Sans', sans-serif; font-size: 16px; color: #191919; margin: 0px; text-align: right; font-weight: 400;">AED ${parseFloat(subtotal).toFixed(2)}</p>
                                                     </td>
                                                 </tr>`
-        : ""
-      }
-                                                ${parseFloat(discount_total) > 0
-        ? `
+                                                    : ""
+                                                }
+                                                ${
+                                                  parseFloat(discount_total) > 0
+                                                    ? `
                                                 <tr>
                                                     <td style="width: 66%; margin-bottom: 0px; margin-top: 0px;" colspan="2">
                                                         <p style="font-size: 16px; font-family: 'Open Sans', sans-serif; color: #282828; font-weight: 400; margin-bottom: 0; margin-top: 0;">Discount</p>
@@ -2590,10 +2611,11 @@ class EmailService {
                                                         <p style="font-family: 'Open Sans', sans-serif; font-size: 16px; color: #c0392b; margin: 0px; text-align: right; font-weight: 400;">- AED ${parseFloat(discount_total).toFixed(2)}</p>
                                                     </td>
                                                 </tr>`
-        : ""
-      }
-                                                ${parseFloat(tax_total) > 0
-        ? `
+                                                    : ""
+                                                }
+                                                ${
+                                                  parseFloat(tax_total) > 0
+                                                    ? `
                                                 <tr>
                                                     <td style="width: 66%; margin-bottom: 0px; margin-top: 0px;" colspan="2">
                                                         <p style="font-size: 16px; font-family: 'Open Sans', sans-serif; color: #282828; font-weight: 400; margin-bottom: 0; margin-top: 0;">Tax</p>
@@ -2602,8 +2624,8 @@ class EmailService {
                                                         <p style="font-family: 'Open Sans', sans-serif; font-size: 16px; color: #191919; margin: 0px; text-align: right; font-weight: 400;">AED ${parseFloat(tax_total).toFixed(2)}</p>
                                                     </td>
                                                 </tr>`
-        : ""
-      }
+                                                    : ""
+                                                }
                                                 <tr>
                                                     <td style="width: 66%; margin-bottom: 0px; margin-top: 0px;" colspan="2">
                                                         <p style="font-size: 16px; font-family:  'Open Sans', sans-serif; color: #282828; font-weight: 400; margin-bottom: 0; margin-top: 0;">
@@ -2712,8 +2734,12 @@ class EmailService {
 </html>
     `.trim();
 
+    const settings = await this.getMailerSettings("orders");
+
     return this.sendEmail({
       to: email,
+      from: settings?.from,
+      cc: settings.cc,
       subject: `Order Update: ${orderCode} is now ${statusFormatted}`,
       html,
       type: "orders",

@@ -215,11 +215,11 @@ class OrderController {
         ...(isCodAndDelivered ? { payment_status: "paid" } : {}),
       });
 
-      // if (status && oldStatus !== status) {
-      //   OrderService.sendOrderStatusEmail(order.id, status, cancel_reason).catch((err) =>
-      //     console.error("Error sending order status email:", err)
-      //   );
-      // }
+      if (status && oldStatus !== status) {
+        OrderService.sendOrderStatusEmail(order.id, status, cancel_reason).catch((err) =>
+          console.error("Error sending order status email:", err)
+        );
+      }
 
       sendSuccessResponse(res, order, "Order updated successfully");
     } catch (error) {

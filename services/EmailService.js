@@ -17,7 +17,7 @@ class EmailService {
         return process.env.NEWSLETTER_EMAIL_FROM;
 
       case "orders":
-        return process.env.ORDER_EMAIL_FLOW;
+        return process.env.ORDER_EMAIL_FROM;
 
       default:
         return process.env.AUTH_EMAIL_FROM; // fallback
@@ -590,7 +590,7 @@ class EmailService {
 
     return this._sendAdminMail(
       `New Product Enquiry – ${data.name}`,
-      this._adminEmailHtml({ badge: "New Product Enquiry", title: "New Product Enquiry", body })
+      this._adminEmailHtml({ badge: "New Product Enquiry", title: "New Product Enquiry", body }),
     );
   }
 

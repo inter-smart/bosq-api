@@ -1,7 +1,7 @@
 const { Op } = require("sequelize");
 const { models, sequelize } = require("../../../../database/models");
 const { generateImageUrl } = require("../../traits/imageUrlHelper");
-const { generateQueryParams } = require("../traits/dataManipulations/product/product");
+const { generateQueryParams, isItemWishListed } = require("../traits/dataManipulations/product/product");
 const { buildOtherMetaData } = require("../traits/dataManipulations/common");
 
 const buildVariantIncludes = () => [
@@ -42,7 +42,7 @@ const buildVariantIncludes = () => [
   },
 ];
 
-const transformVariant = (variant, variantsCount = 0) => {
+const transformVariant = (variant, variantsCount = 0, wishlistedItems = []) => {
   const colorValues = (variant.attribute_values ?? [])
     .filter((av) => av.attribute?.code === "COLOR")
     .map((av) => av.value);
@@ -83,6 +83,7 @@ const transformVariant = (variant, variantsCount = 0) => {
     description: variant.details ?? null,
     description_ar: variant.details_ar ?? null,
     hasMoreVariants: variantsCount > 1,
+    isWishlisted: isItemWishListed(variant.id, wishlistedItems),
     variant_attributes: (variant.attribute_values ?? []).map((av) => ({
       id: av.id,
       attribute_id: av.attribute?.id,
@@ -124,7 +125,7 @@ const transformHeroData = (lp) => ({
   },
 });
 
-const transformListingData = (pt, lp, variantsMap, variantCountsMap = {}) => {
+const transformListingData = (pt, lp, variantsMap, variantCountsMap = {}, wishlistedItems = []) => {
   const variantIds = Array.isArray(pt.product_variants)
     ? pt.product_variants.map(Number)
     : [];
@@ -132,7 +133,7 @@ const transformListingData = (pt, lp, variantsMap, variantCountsMap = {}) => {
   const products = variantIds
     .map((id) => variantsMap[id])
     .filter(Boolean)
-    .map((v) => transformVariant(v, variantCountsMap[v.product_model_id] || 0));
+    .map((v) => transformVariant(v, variantCountsMap[v.product_model_id] || 0, wishlistedItems));
 
   return {
     heroImage: generateImageUrl(pt.media_path) ?? null,
@@ -206,6 +207,18 @@ class OfficeChairsService {
         }, {});
       }
 
+      const userId = req?.cartOwner?.id || null;
+      const isLoggedInUser = req?.cartOwner?.type === "user" && !!userId;
+
+      let wishlistedItems = [];
+      if (isLoggedInUser) {
+        wishlistedItems = await models.Wishlist.findAll({
+          where: { user_id: userId },
+          attributes: ["product_variant_id"],
+          raw: true,
+        });
+      }
+
       const heroData = transformHeroData(lp);
       const metaData = buildOtherMetaData(lp);
       const productModelIds = [
@@ -237,7 +250,7 @@ class OfficeChairsService {
       }
 
       const listingData = productTypes.map((pt) =>
-        transformListingData(pt, lp, variantsMap, variantCountsMap)
+        transformListingData(pt, lp, variantsMap, variantCountsMap, wishlistedItems)
       );
 
       return {

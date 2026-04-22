@@ -2161,7 +2161,7 @@ class EmailService {
                                                         <a href="${process.env.FRONTEND_URL || ""}/orders" style="display: block; font-family: 'Open Sans', sans-serif; text-align: center; width: 142px; height: auto; margin: 0 auto 24px; background-color: #282828;  border-radius: 3px; color: #fff; font-size: 16px; font-weight: 400; line-height: 1; padding: 18px 20px; text-decoration: none;">
                                                             Track Order
                                                         </a>
-                                                    </td
+                                                    </td>
                                                     <td style="width: 50%; margin-top: 0px; vertical-align: top;">
                                                         <a href="mailto:sales@bosq.ae" style="display: block; font-family: 'Open Sans', sans-serif; text-align: center; width: 142px; height: auto; margin: 0 auto 24px; background-color: transparent; border: solid 1px #282828; border-radius: 3px; color: #282828; font-size: 16px; font-weight: 400; line-height: 1; padding: 18px 20px; text-decoration: none;">
                                                             Need Help ?

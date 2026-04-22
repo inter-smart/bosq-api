@@ -63,7 +63,19 @@ class ProductEnquiryService {
         message: data.message,
       });
 
-      await EmailService.sendQueryAcknowledgement(data.email, data.name)
+      const adminData = {
+        name: data.name,
+        email: data.email,
+        phone: data.phone || null,
+        city: data.city || null,
+        message: data.message,
+        product_name: productExists.title || null,
+      };
+
+      await Promise.all([
+        EmailService.sendQueryAcknowledgement(data.email, data.name),
+        EmailService.sendProductEnquiryAdmin(adminData),
+      ]);
 
       return enquiry;
     } catch (error) {

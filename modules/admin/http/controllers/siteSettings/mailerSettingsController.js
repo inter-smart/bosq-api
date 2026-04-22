@@ -1,17 +1,11 @@
 const { validationResult } = require("express-validator");
 const { sequelize, models } = require("../../../../../database/models/index.js");
-const {
-  sendValidationError,
-  sendSuccessResponse,
-  sendErrorResponse,
-  sendNotFoundError,
-} = require("../../traits/responseHandler.js");
+const { sendValidationError, sendSuccessResponse, sendErrorResponse, sendNotFoundError } = require("../../traits/responseHandler.js");
 
 const DataModel = models.MailerSettings;
-const MAILER_TYPES = ["auth", "enquiries", "newsletter", "orders"];
+const MAILER_TYPES = ["auth", "enquiries", "newsletter", "orders", "admin"];
 
 class MailerSettingsController {
-
   static async index(req, res) {
     try {
       let rows = await DataModel.findAll();
@@ -53,10 +47,7 @@ class MailerSettingsController {
         return sendNotFoundError(res, "Mailer settings not found");
       }
 
-      await data.update(
-        { to_email, cc_emails: cc_emails || null },
-        { transaction }
-      );
+      await data.update({ to_email, cc_emails: cc_emails || null }, { transaction });
 
       await transaction.commit();
       return sendSuccessResponse(res, data, "Mailer settings updated successfully", 200);

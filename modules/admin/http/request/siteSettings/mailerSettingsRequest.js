@@ -2,8 +2,8 @@ const { body, param } = require("express-validator");
 
 const validateType = [
   param("type")
-    .isIn(["auth", "enquiries", "newsletter", "orders"])
-    .withMessage("type must be one of: auth, enquiries, newsletter, orders"),
+    .isIn(["auth", "enquiries", "newsletter", "orders", "admin"])
+    .withMessage("type must be one of: auth, enquiries, newsletter, orders, admin"),
 ];
 
 const validateUpdate = [

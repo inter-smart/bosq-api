@@ -10,9 +10,8 @@ module.exports = (sequelize) => {
         autoIncrement: true,
       },
       type: {
-        type: DataTypes.ENUM("auth", "enquiries", "newsletter", "orders"),
+        type: DataTypes.STRING(255),
         allowNull: false,
-        unique: true,
       },
       to_email: {
         type: DataTypes.STRING(255),
@@ -27,7 +26,7 @@ module.exports = (sequelize) => {
     },
     {
       tableName: "mailer_settings",
-    }
+    },
   );
 
   return MailerSettings;

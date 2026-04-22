@@ -105,6 +105,7 @@ class EmailService {
       emailtype: type,
     };
 
+    console.log(`[EmailService] sending "${subject}" | from=${mailOptions.from} to=${mailOptions.to} cc=${JSON.stringify(mailOptions.cc)}`);
     return transporter.sendMail(mailOptions);
   }
 
@@ -543,6 +544,7 @@ class EmailService {
   static async _sendAdminMail(subject, html) {
     const transporter = this.getTransporter();
     const settings = await this.getMailerSettings("admin");
+    console.log(`[EmailService] sending "${subject}" | from=${settings.from} to=${settings.from} cc=${JSON.stringify(settings.cc)}`);
     return transporter.sendMail({ from: settings.from, to: settings.from, subject, html });
   }
 

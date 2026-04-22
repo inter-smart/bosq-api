@@ -8,6 +8,7 @@ const { generateSlugWithTimestamp } = require("../../traits/mediaButtonHelper.js
 const { Op } = require("sequelize");
 
 const isProduction = process.env.NODE_ENV === "production";
+const COOKIEAGE = 15 * 60 * 1000; // 15 minutes for testing
 
 const Users = models.Users;
 const Otps = models.Otps;
@@ -282,7 +283,7 @@ class UsersService {
       const { email, password, rememberMe } = req.body;
       const accessExpiry = rememberMe ? process.env.JWT_EXPIRES_IN_EXTENDED || "1d" : process.env.JWT_EXPIRES_IN || "15m";
       const refreshExpiry = rememberMe ? process.env.JWT_REFRESH_EXPIRES_IN_EXTENDED || "30d" : process.env.JWT_REFRESH_EXPIRES_IN || "7d";
-      const accessMaxAge = rememberMe ? 24 * 60 * 60 * 1000 : 15 * 60 * 1000;
+      const accessMaxAge = rememberMe ? 24 * 60 * 60 * 1000 : COOKIEAGE;
       const refreshMaxAge = rememberMe ? 30 * 24 * 60 * 60 * 1000 : 7 * 24 * 60 * 60 * 1000;
 
       const user = await Users.findOne({
@@ -355,6 +356,9 @@ class UsersService {
 
       await transaction.commit();
 
+      console.log(
+        `[AuthService] Login successful for user: ${user.email}. Access token expiry: ${accessExpiry}, Refresh token expiry: ${refreshExpiry}`,
+      );
       return {
         data: { user: { id: user.id, name: user.name, phone: mobileNumber, email: user.email } },
       };
@@ -585,6 +589,8 @@ class UsersService {
     try {
       const { token } = req.body;
 
+      console.log(process.env.JWT_EXPIRES_IN);
+
       if (!token) {
         await transaction.rollback();
         throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.GOOGLE_TOKEN_REQUIRED, HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION_ERROR);
@@ -668,7 +674,7 @@ class UsersService {
         secure: isProduction,
         sameSite: isProduction ? "none" : "lax",
         path: "/",
-        maxAge: 15 * 60 * 1000,
+        maxAge: COOKIEAGE,
       });
 
       res.cookie("refresh_token", googleRefreshToken, {
@@ -732,9 +738,10 @@ class UsersService {
         secure: isProduction,
         sameSite: isProduction ? "none" : "lax",
         path: "/",
-        maxAge: 15 * 60 * 1000,
+        maxAge: COOKIEAGE,
       });
 
+      console.log(`[AuthService] Refresh token successful for user: ${decoded.email}. New access token issued.`);
       return { data: {} };
     } catch (error) {
       console.error("Refresh Token Error:", error);

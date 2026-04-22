@@ -89,6 +89,7 @@ class AuthController {
 
       const expiresAt = new Date(Date.now() + ms(expiresIn));
 
+      console.log(`[Admin AuthController] Login successful for user: ${user.email}. Token expires in: ${expiresIn}`);
       sendSuccessResponse(
         res,
         {

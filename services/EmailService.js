@@ -1,8 +1,6 @@
 const nodemailer = require("nodemailer");
 const models = require("../database/models");
-const {
-  generateImageUrl,
-} = require("../modules/frontend/traits/imageUrlHelper");
+const { generateImageUrl } = require("../modules/frontend/traits/imageUrlHelper");
 
 class EmailService {
   static transporter = null;
@@ -32,8 +30,10 @@ class EmailService {
       });
 
       if (setting?.to_email) {
-        console.log("to_email", setting.to_email);
-        console.log("cc_emails", setting.cc_emails);
+
+
+        console.log("to_email", setting.to_email)
+        console.log("cc_emails", setting.cc_emails)
 
         return {
           from: setting.to_email,
@@ -64,22 +64,37 @@ class EmailService {
   static getTransporter() {
     if (!this.transporter) {
       this.transporter = nodemailer.createTransport({
-        host: "email-smtp.ap-south-1.amazonaws.com",
-        port: 587, // STARTTLS port
-        secure: false, // false for STARTTLS
-        requireTLS: true, // enforce TLS
+        host: process.env.SMTP_HOST,
+        port: parseInt(process.env.SMTP_PORT) || 587,
+        secure: process.env.SMTP_SECURE === "true",
         auth: {
-          user: process.env.BREVO_SMTP_USER,
-          pass: process.env.BREVO_SMTP_PASS,
-        },
-        tls: {
-          rejectUnauthorized: false, // optional for some environments
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS,
         },
       });
     }
-
     return this.transporter;
   }
+
+  // static getTransporter() {
+  //   if (!this.transporter) {
+  //     this.transporter = nodemailer.createTransport({
+  //       host: "email-smtp.ap-south-1.amazonaws.com",
+  //       port: 587, // STARTTLS port
+  //       secure: false, // false for STARTTLS
+  //       requireTLS: true, // enforce TLS
+  //       auth: {
+  //         user: process.env.BREVO_SMTP_USER,
+  //         pass: process.env.BREVO_SMTP_PASS,
+  //       },
+  //       tls: {
+  //         rejectUnauthorized: false, // optional for some environments
+  //       },
+  //     });
+  //   }
+
+  //   return this.transporter;
+  // }
 
   /**
    * Send an email
@@ -1940,8 +1955,7 @@ class EmailService {
       month: "short",
       year: "numeric",
     });
-    const paymentLabel =
-      paymentType === "cod" ? "Cash on Delivery" : "Online Payment";
+    const paymentLabel = paymentType === "cod" ? "Cash on Delivery" : "Online Payment";
 
     const billingLine = billingAddress
       ? [
@@ -2365,8 +2379,7 @@ class EmailService {
       cancel_reason,
     } = data;
 
-    const paymentLabel =
-      paymentType === "cod" ? "Cash on Delivery" : "Online Payment";
+    const paymentLabel = paymentType === "cod" ? "Cash on Delivery" : "Online Payment";
     const statusFormatted = status.charAt(0).toUpperCase() + status.slice(1);
     const orderDate = new Date().toLocaleDateString("en-GB", {
       day: "2-digit",

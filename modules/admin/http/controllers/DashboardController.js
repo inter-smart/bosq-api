@@ -191,7 +191,7 @@ class DashboardController {
 
   static async getProductStats(req, res) {
     try {
-      const { ProductBase, ProductModels, ProductVariants, OrderItem } = models;
+      const { ProductBase, ProductModels, ProductVariants, OrderItem, Orders } = models;
       const year = req.query.year ? parseInt(req.query.year) : null;
       const month = req.query.month ? parseInt(req.query.month) : null;
 
@@ -228,12 +228,25 @@ class DashboardController {
         group: ["variant_id", "variant.id", "variant.title", "variant.sku"],
         order: [[fn("SUM", col("quantity")), "DESC"]],
         limit: 10,
+        subQuery: false,
         include: [
           {
             model: ProductVariants,
             as: "variant",
             attributes: ["id", "title", "sku"],
             required: true,
+          },
+          {
+            model: Orders,
+            as: "order",
+            attributes: [],
+            required: true,
+            where: {
+              [Op.or]: [
+                { payment_type: "online", status: "confirmed", payment_status: "paid" },
+                { payment_type: "cod", status: "delivered", payment_status: "paid" },
+              ],
+            },
           },
         ],
       });

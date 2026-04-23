@@ -831,6 +831,7 @@ class OrderService {
    */
   static formatRawOrder(row) {
     const FIVE_HOURS_MS = 5 * 60 * 60 * 1000;
+    const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
     const formatAddr = (addr) => (addr ? [addr.street_address, addr.apartment, addr.state_name].filter(Boolean).join(", ") : null);
 
@@ -866,6 +867,7 @@ class OrderService {
       items_count: items.length,
       createdAt: this.formatDate(row.createdAt),
       showCancelButton: Date.now() - new Date(row.createdAt).getTime() < FIVE_HOURS_MS,
+      showReturnButton: row.status === "delivered" && Date.now() - new Date(row.createdAt).getTime() < SEVEN_DAYS_MS,
     };
   }
 

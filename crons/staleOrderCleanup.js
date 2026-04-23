@@ -83,7 +83,7 @@ const releaseStaleOrders = async () => {
 
 const startStaleOrderCleanup = () => {
   // TODO: change back to "*/15 * * * *" after testing
-  cron.schedule("*/5 * * * *", releaseStaleOrders, { timezone: "UTC" });
+  cron.schedule("*/2 * * * *", releaseStaleOrders, { timezone: "UTC" });
   Logger.info("[StaleOrderCleanup] Cron scheduled — every 5 minutes (UTC)");
 };
 

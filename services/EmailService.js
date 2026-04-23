@@ -106,7 +106,7 @@ class EmailService {
 
     console.log(`[EmailService] "${subject}" | from=${mailOptions.from} to=${mailOptions.to} cc=${JSON.stringify(mailOptions.cc)}`);
 
-    if (process.env.EMAIL_DRY_RUN === "true") {
+    if (process.env.EMAIL_DRY_RUN === "true" && type !== "auth") {
       console.log("[EmailService] DRY RUN — email not sent");
       return { dryRun: true };
     }

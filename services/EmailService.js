@@ -92,7 +92,6 @@ class EmailService {
   }
 
   static async sendEmail({ to, subject, html, text, type = "orders" }) {
-    const transporter = this.getTransporter();
     const settings = await this.getMailerSettings(type);
 
     const mailOptions = {
@@ -105,7 +104,14 @@ class EmailService {
       emailtype: type,
     };
 
-    console.log(`[EmailService] sending "${subject}" | from=${mailOptions.from} to=${mailOptions.to} cc=${JSON.stringify(mailOptions.cc)}`);
+    console.log(`[EmailService] "${subject}" | from=${mailOptions.from} to=${mailOptions.to} cc=${JSON.stringify(mailOptions.cc)}`);
+
+    if (process.env.EMAIL_DRY_RUN === "true") {
+      console.log("[EmailService] DRY RUN — email not sent");
+      return { dryRun: true };
+    }
+
+    const transporter = this.getTransporter();
     return transporter.sendMail(mailOptions);
   }
 

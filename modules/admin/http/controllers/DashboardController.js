@@ -66,8 +66,34 @@ class DashboardController {
         where: { ...dateWhere, status: { [Op.ne]: "cancelled" } },
         attributes: [
           [fn("DATE_TRUNC", truncUnit, col("Orders.createdAt")), "period"],
-          [fn("COUNT", col("Orders.id")), "orders"],
-          [fn("SUM", col("grand_total")), "revenue"],
+          // [fn("COUNT", col("Orders.id")), "orders"],
+          // [fn("SUM", col("grand_total")), "revenue"],
+          [
+            fn(
+              "COUNT",
+              Sequelize.literal(`
+      CASE 
+        WHEN "payment_type" = 'online' AND "status" = 'confirmed' THEN 1
+        WHEN "payment_type" = 'cod' AND "status" = 'delivered' THEN 1
+        ELSE NULL
+      END
+    `),
+            ),
+            "orders",
+          ],
+          [
+            fn(
+              "SUM",
+              Sequelize.literal(`
+        CASE 
+          WHEN "payment_type" = 'online' AND "status" = 'confirmed' THEN "grand_total"
+          WHEN "payment_type" = 'cod' AND "status" = 'delivered' THEN "grand_total"
+          ELSE 0 
+        END
+      `),
+            ),
+            "revenue",
+          ],
         ],
         group: [fn("DATE_TRUNC", truncUnit, col("Orders.createdAt"))],
         order: [[fn("DATE_TRUNC", truncUnit, col("Orders.createdAt")), "ASC"]],

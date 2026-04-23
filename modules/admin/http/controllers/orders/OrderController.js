@@ -148,6 +148,8 @@ class OrderController {
       return sendValidationError(res, errors.array());
     }
 
+    const transaction = await sequelize.transaction();
+
     try {
       const { id } = req.params;
       const { est_delivery_details, awb_number, order_url, partner_name, status, cancel_reason } = req.body;
@@ -186,17 +188,21 @@ class OrderController {
       });
 
       if (!order) {
+        await transaction.rollback();
         return sendNotFoundError(res, "Order");
       }
 
       if (status && status !== order.status) {
         if (status === "delivered" && order.status !== "shipped") {
+          await transaction.rollback();
           return sendErrorResponse(res, new Error("Order must be shipped before it can be delivered"));
         }
         if (status === "shipped" && order.status !== "packed") {
+          await transaction.rollback();
           return sendErrorResponse(res, new Error("Order must be packed before it can be shipped"));
         }
         if (status === "packed" && order.status !== "confirmed") {
+          await transaction.rollback();
           return sendErrorResponse(res, new Error("Order must be confirmed before it can be packed"));
         }
       }
@@ -215,14 +221,19 @@ class OrderController {
         ...(isCodAndDelivered ? { payment_status: "paid" } : {}),
       });
 
-      if (status && oldStatus !== status) {
-        OrderService.sendOrderStatusEmail(order.id, status, cancel_reason).catch((err) =>
-          console.error("Error sending order status email:", err)
-        );
+      if (status == "cancelled" || status == "returned") {
+        await OrderService.revertOrderStock(order.id, transaction);
       }
+
+      if (status && oldStatus !== status) {
+        OrderService.sendOrderStatusEmail(order.id, status, cancel_reason).catch((err) => console.error("Error sending order status email:", err));
+      }
+
+      await transaction.commit();
 
       sendSuccessResponse(res, order, "Order updated successfully");
     } catch (error) {
+      await transaction.rollback();
       console.error("Order update error:", error);
       sendErrorResponse(res, error);
     }

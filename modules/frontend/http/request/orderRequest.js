@@ -84,3 +84,18 @@ exports.getOrdersRequest = [
 
   query("limit").optional().isInt({ min: 1, max: 50 }).withMessage("Limit must be between 1 and 50"),
 ];
+
+exports.returnOrderRequest = [
+  param("orderId").notEmpty().withMessage("Order ID is required").isInt({ min: 1 }).withMessage("Order ID must be a positive integer"),
+
+  body("reason").notEmpty().withMessage("Reason is required").isString().isLength({ max: 1000 }).withMessage("Reason must be at most 1000 characters"),
+
+  body("pickup_address")
+    .notEmpty()
+    .withMessage("Pickup address is required")
+    .isString()
+    .isLength({ max: 500 })
+    .withMessage("Pickup address must be at most 500 characters"),
+
+  body("item_ids").notEmpty().withMessage("At least one item must be selected for return"),
+];

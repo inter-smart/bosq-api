@@ -117,6 +117,7 @@ const defineOrders = require("./resources/orders/orders");
 const defineOrderItem = require("./resources/orders/orderItems");
 const defineOrderAddress = require("./resources/orders/orderAddress");
 const definePaymentTransaction = require("./resources/orders/paymentTransactions");
+const defineOrderReturn = require("./resources/orders/orderReturn");
 
 // USER AUTH
 const defineUsers = require("./users/users");
@@ -271,6 +272,7 @@ const models = {
   OrderItem: defineOrderItem(sequelize),
   OrderAddress: defineOrderAddress(sequelize),
   PaymentTransaction: definePaymentTransaction(sequelize),
+  OrderReturn: defineOrderReturn(sequelize),
 
   // USER AUTH
   Users: defineUsers(sequelize),

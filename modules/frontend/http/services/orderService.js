@@ -755,6 +755,90 @@ class OrderService {
   }
 
   /**
+   * Submit a return request for one or more items of a delivered order
+   */
+  static async returnOrder(userId, sessionId, orderId, { reason, pickup_address, photoPaths, item_ids }) {
+    const transaction = await sequelize.transaction();
+
+    try {
+      const whereClause = userId ? { id: orderId, user_id: userId } : { id: orderId, session_id: sessionId, user_id: null };
+
+      const order = await models.Orders.findOne({
+        where: whereClause,
+        include: [{ model: models.OrderItem, as: "items" }],
+        transaction,
+      });
+
+      if (!order) {
+        throw ErrorHandler.createError("Order not found", HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
+      }
+
+      if (order.status !== "delivered") {
+        throw ErrorHandler.createError(
+          `Only delivered orders can be returned. Current status: "${order.status}"`,
+          HTTP_STATUS.BAD_REQUEST,
+          ERROR_CODES.VALIDATION_ERROR,
+        );
+      }
+
+      const validItemIds = new Set(order.items.map((i) => i.id));
+      for (const itemId of item_ids) {
+        if (!validItemIds.has(itemId)) {
+          throw ErrorHandler.createError(
+            `Item ${itemId} does not belong to this order`,
+            HTTP_STATUS.BAD_REQUEST,
+            ERROR_CODES.VALIDATION_ERROR,
+          );
+        }
+      }
+
+      // Check none of the selected items already have a pending/approved return
+      const existingReturns = await models.OrderReturn.findAll({
+        where: {
+          order_item_id: item_ids,
+          status: ["pending", "approved"],
+        },
+        transaction,
+      });
+
+      if (existingReturns.length > 0) {
+        throw ErrorHandler.createError(
+          "One or more selected items already have an active return request",
+          HTTP_STATUS.BAD_REQUEST,
+          ERROR_CODES.VALIDATION_ERROR,
+        );
+      }
+
+      for (const itemId of item_ids) {
+        await models.OrderReturn.create(
+          {
+            order_id: order.id,
+            order_item_id: itemId,
+            reason,
+            pickup_address,
+            photos: photoPaths ?? [],
+            status: "pending",
+          },
+          { transaction },
+        );
+      }
+
+      await order.update({ status: "returned" }, { transaction });
+
+      await transaction.commit();
+
+      this.sendOrderStatusEmail(order.id, "returned").catch((err) => Logger.error(`Order return email failed: ${err.message}`));
+
+      return await this.getOrderById(userId, sessionId, orderId);
+    } catch (error) {
+      if (!transaction.finished) {
+        await transaction.rollback();
+      }
+      throw error;
+    }
+  }
+
+  /**
    * Reorder — copy items from an existing order back into the active cart
    */
   static async reorderOrder(userId, sessionId, orderId) {

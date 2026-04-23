@@ -152,6 +152,11 @@ module.exports = (sequelize) => {
       foreignKey: "order_id",
       as: "payment_transactions",
     });
+
+    Orders.hasMany(models.OrderReturn, {
+      foreignKey: "order_id",
+      as: "returnRequests",
+    });
   };
 
   return Orders;

@@ -3,7 +3,7 @@ const OrderService = require("../services/orderService.js");
 const { ApiResponse } = require("../traits/response.js");
 const { ErrorHandler } = require("../traits/errorHandler.js");
 const { HTTP_STATUS } = require("../traits/constants.js");
-const { placeOrderRequest, getOrderByIdRequest, cancelOrderRequest, reorderOrderRequest, getOrdersRequest } = require("../request/orderRequest.js");
+const { placeOrderRequest, getOrderByIdRequest, cancelOrderRequest, reorderOrderRequest, getOrdersRequest, returnOrderRequest } = require("../request/orderRequest.js");
 
 const GUEST_SESSION_COOKIE = "guest_cart_session";
 
@@ -164,6 +164,57 @@ class OrderController {
       });
     } catch (error) {
       return ErrorHandler.handleControllerError(error, res, "OrderController.cancelOrder");
+    }
+  }
+
+  /**
+   * Submit a return request for one or more items of a delivered order
+   * POST /api/frontend/orders/:orderId/return
+   */
+  static async returnOrder(req, res) {
+    try {
+      await Promise.all(returnOrderRequest.map((v) => v.run(req)));
+      const errors = validationResult(req);
+
+      if (!errors.isEmpty()) {
+        return ApiResponse.validationError(res, errors.array());
+      }
+
+      const userId = req.auth?.id || null;
+      const sessionId = OrderController.getSessionId(req);
+      const { orderId } = req.params;
+
+      if (!userId && !sessionId) {
+        return ApiResponse.error(res, {
+          message: "User must be logged in or have an active cart session",
+          status: HTTP_STATUS.BAD_REQUEST,
+        });
+      }
+
+      const { reason, pickup_address } = req.body;
+
+      let item_ids = req.body.item_ids;
+      if (!Array.isArray(item_ids)) {
+        item_ids = item_ids ? [item_ids] : [];
+      }
+      item_ids = item_ids.map(Number).filter((n) => !isNaN(n));
+
+      const photoPaths = (req.files?.photos ?? []).map((f) => f.path.replace(/\\/g, "/"));
+
+      const order = await OrderService.returnOrder(userId, sessionId, parseInt(orderId), {
+        reason,
+        pickup_address,
+        photoPaths,
+        item_ids,
+      });
+
+      return ApiResponse.success(res, {
+        message: "Return request submitted successfully",
+        data: order,
+        status: HTTP_STATUS.OK,
+      });
+    } catch (error) {
+      return ErrorHandler.handleControllerError(error, res, "OrderController.returnOrder");
     }
   }
 

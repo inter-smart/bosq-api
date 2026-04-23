@@ -65,6 +65,11 @@ module.exports = (sequelize) => {
       foreignKey: "variant_id",
       as: "variant",
     });
+
+    OrderItem.hasMany(models.OrderReturn, {
+      foreignKey: "order_item_id",
+      as: "returnRequests",
+    });
   };
 
   return OrderItem;

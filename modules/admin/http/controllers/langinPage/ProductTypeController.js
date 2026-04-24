@@ -211,20 +211,8 @@ class ProductTypeController {
       const result = await models.ProductCategory.findAll({
         where: {
           status: true,
-          parent_id: null,
         },
         attributes: ["id", "name", "slug"],
-        include: [
-          {
-            model: models.ProductVariants,
-            as: "variants",
-            attributes: [],
-            required: true,
-            through: { attributes: [] },
-          },
-        ],
-        subQuery: false,
-        group: ["ProductCategory.id"],
       });
       return sendSuccessResponse(res, result, "Data retrieved successfully");
     } catch (error) {

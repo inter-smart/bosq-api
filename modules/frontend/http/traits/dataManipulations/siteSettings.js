@@ -91,7 +91,7 @@ function buildNavigationData(products, projects) {
             hasSubmenu: false,
             name: child.name,
             name_ar: child.name_ar,
-            slug: `/products?subcategory=${child.slug}`,
+            slug: `/products?category=${category.slug}&subcategory=${child.slug}`,
             image: generateImageUrl(child.media_path),
           })),
         }

@@ -24,9 +24,9 @@ const cacheKey = cacheKeys.faq;
 class FaqListController {
   static async index(req, res) {
     try {
-
       const whereClause = {};
-      const { product_variant, type, faq_category, base_id, model_id } = req.query;
+      const { product_variant, type, faq_category, base_id, model_id } =
+        req.query;
       // Build where clause for filtering
       if (faq_category) {
         whereClause.faq_category_id = parseInt(faq_category, 10);
@@ -346,7 +346,11 @@ class FaqListController {
         }),
       ]);
 
-      sendSuccessResponse(res, { products, categories: category }, "Dropdown data retrieved successfully");
+      sendSuccessResponse(
+        res,
+        { products, categories: category },
+        "Dropdown data retrieved successfully",
+      );
     } catch (error) {
       console.error("FAQ dropdown retrieval error:", error);
       sendErrorResponse(res, error);
@@ -357,7 +361,9 @@ class FaqListController {
     try {
       const { base_id } = req.query;
       if (!base_id) {
-        return res.status(422).json({ success: false, message: "base_id is required" });
+        return res
+          .status(422)
+          .json({ success: false, message: "base_id is required" });
       }
 
       const productModels = await models.ProductModels.findAll({
@@ -366,7 +372,11 @@ class FaqListController {
         order: [["title", "ASC"]],
       });
 
-      sendSuccessResponse(res, { models: productModels }, "Models retrieved successfully");
+      sendSuccessResponse(
+        res,
+        { models: productModels },
+        "Models retrieved successfully",
+      );
     } catch (error) {
       console.error("FAQ models dropdown error:", error);
       sendErrorResponse(res, error);
@@ -377,7 +387,9 @@ class FaqListController {
     try {
       const { model_id } = req.query;
       if (!model_id) {
-        return res.status(422).json({ success: false, message: "model_id is required" });
+        return res
+          .status(422)
+          .json({ success: false, message: "model_id is required" });
       }
 
       const variantIds = await models.ProductVariants.findAll({
@@ -388,7 +400,11 @@ class FaqListController {
 
       const ids = variantIds.map((v) => v.id);
       if (ids.length === 0) {
-        return sendSuccessResponse(res, { categories: [] }, "No variants found");
+        return sendSuccessResponse(
+          res,
+          { categories: [] },
+          "No variants found",
+        );
       }
 
       const { Op } = require("sequelize");
@@ -404,13 +420,17 @@ class FaqListController {
 
       const categories = categoryIds.length
         ? await models.ProductCategory.findAll({
-            where: { id: { [Op.in]: categoryIds } },
-            attributes: ["id", "name", "name_ar", "slug"],
+            where: { id: { [Op.in]: categoryIds }, status: true },
+            attributes: ["id", "name", "name_ar", "slug"],  
             order: [["name", "ASC"]],
           })
         : [];
 
-      sendSuccessResponse(res, { categories }, "Categories retrieved successfully");
+      sendSuccessResponse(
+        res,
+        { categories },
+        "Categories retrieved successfully",
+      );
     } catch (error) {
       console.error("FAQ categories dropdown error:", error);
       sendErrorResponse(res, error);
@@ -421,7 +441,9 @@ class FaqListController {
     try {
       const { model_id, category_id } = req.query;
       if (!model_id) {
-        return res.status(422).json({ success: false, message: "model_id is required" });
+        return res
+          .status(422)
+          .json({ success: false, message: "model_id is required" });
       }
 
       const whereClause = {
@@ -442,8 +464,18 @@ class FaqListController {
 
       const variants = await models.ProductVariants.findAll({
         where: whereClause,
-        attributes: ["id", "title", "title_ar", "sku", "design_title", "design_title_ar"],
-        order: [["sort_order", "ASC"], ["id", "ASC"]],
+        attributes: [
+          "id",
+          "title",
+          "title_ar",
+          "sku",
+          "design_title",
+          "design_title_ar",
+        ],
+        order: [
+          ["sort_order", "ASC"],
+          ["id", "ASC"],
+        ],
       });
 
       sendSuccessResponse(res, { variants }, "Variants retrieved successfully");

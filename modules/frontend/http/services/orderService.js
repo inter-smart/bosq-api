@@ -587,6 +587,7 @@ class OrderService {
       o.id AS order_id,
       o.order_id AS order_number,
       oi.quantity,
+      oi.variant_id,
       oi.discount_amount,
       COALESCE(oi.discount_amount, 0) <> 0 AS is_coupon_applied,
       (oi.price * oi.quantity)::TEXT AS formatted_total,
@@ -623,6 +624,7 @@ class OrderService {
         order_id: row.order_id,
         order_number: row.order_number,
         name: locale === "ar" ? row.title_ar : row.title,
+        variant_id: row.variant_id,
         quantity: row.quantity,
         discount_amount: row.discount_amount,
         final_amount: row.final_amount,
@@ -737,14 +739,24 @@ class OrderService {
         },
       );
 
-      console.log(JSON.stringify(orderItem, null, 2));
+      const remainingActive = await models.OrderItem.count({
+        where: { order_id: order.id, status: "ordered" },
+        transaction,
+      });
+
+      if (remainingActive === 0) {
+        await models.Orders.update(
+          { status: "cancelled" },
+          { where: { id: order.id }, transaction },
+        );
+      }
 
       await this.cancelAndRevertStock(order, orderItem, transaction);
 
       await transaction.commit();
 
-      // Send cancellation status email (fire-and-forget)
-      // this.sendOrderStatusEmail(order.id, "cancelled").catch((err) => Logger.error(`Order cancellation email failed: ${err.message}`));
+      // Send item cancellation email (fire-and-forget)
+      this.sendItemCancelEmail(order.id, orderItem?.id).catch((err) => Logger.error(`Item cancellation email failed: ${err.message}`));
 
       return await this.getOrderById(userId, sessionId, orderId);
     } catch (error) {
@@ -838,6 +850,91 @@ class OrderService {
       Logger.info(`Order status email (${status}) sent for order ${order.order_id}`);
     } catch (err) {
       Logger.error(`Failed to send order status email (${status}) for order ${orderId}: ${err.message}`);
+    }
+  }
+
+  /**
+   * Send item-level cancellation email when a single item is cancelled from an order
+   */
+  static async sendItemCancelEmail(orderId, orderItemId, cancelReason = null) {
+    try {
+      const order = await models.Orders.findOne({
+        where: { id: orderId },
+        include: [
+          {
+            model: models.OrderItem,
+            as: "items",
+            where: orderItemId ? { id: orderItemId } : undefined,
+            include: [
+              {
+                model: models.ProductBase,
+                as: "product",
+                attributes: ["id", "title"],
+              },
+              {
+                model: models.ProductVariants,
+                as: "variant",
+                attributes: ["id", "sku", "title", "media_path", "price"],
+              },
+            ],
+          },
+          { model: models.OrderAddress, as: "addresses" },
+          {
+            model: models.Users,
+            as: "user",
+            attributes: ["id", "name", "email"],
+          },
+        ],
+      });
+
+      if (!order) {
+        Logger.error(`Order not found for item cancel email: ${orderId}`);
+        return;
+      }
+
+      const billingAddress = order.addresses?.find((a) => a.address_type === "billing");
+      const shippingAddress = order.addresses?.find((a) => a.address_type === "shipping");
+
+      const customerEmail = order.user?.email || billingAddress?.email;
+      const customerName = order.user?.name || billingAddress?.name || "Customer";
+
+      if (!customerEmail) {
+        Logger.error(`No valid email found for item cancel email: ${orderId}`);
+        return;
+      }
+
+      const orderItem = order.items?.[0];
+      if (!orderItem) {
+        Logger.error(`Order item not found for item cancel email: orderId=${orderId}, itemId=${orderItemId}`);
+        return;
+      }
+
+      const p = parseFloat(orderItem.price) || 0;
+      const q = orderItem.quantity || 1;
+      const d = parseFloat(orderItem.discount_amount || "0") || 0;
+
+      const cancelledItem = {
+        title: orderItem.variant?.title || orderItem.product?.title || "Product",
+        sku: orderItem.variant?.sku,
+        quantity: q,
+        price: String(orderItem.price),
+        line_total: String(p * q - d),
+        image: generateImageUrl(orderItem.variant?.media_path) || null,
+      };
+
+      await EmailService.sendItemCancelUpdate(customerEmail, {
+        name: customerName,
+        orderCode: order.order_id,
+        cancelledItem,
+        cancel_reason: cancelReason,
+        paymentType: order.payment_type,
+        billingAddress,
+        shippingAddress,
+      });
+
+      Logger.info(`Item cancellation email sent for order ${order.order_id}, item ${orderItemId}`);
+    } catch (err) {
+      Logger.error(`Failed to send item cancel email for order ${orderId}, item ${orderItemId}: ${err.message}`);
     }
   }
 

@@ -255,6 +255,24 @@ class ProductCategoryController {
       sendErrorResponse(res, error);
     }
   }
+
+  static async getActiveCategories(req, res) {
+    try {
+      const categories = await DataModel.findAll({
+        where: { status: true },
+        attributes: ["id", "parent_id", "name", "name_ar", "slug", "sort_order"],
+        order: [
+          ["sort_order", "ASC"],
+          ["name", "ASC"],
+        ],
+      });
+
+      sendSuccessResponse(res, categories, "Active product categories retrieved successfully");
+    } catch (error) {
+      console.error("Active categories fetch error:", error);
+      sendErrorResponse(res, error);
+    }
+  }
 }
 
 module.exports = ProductCategoryController;

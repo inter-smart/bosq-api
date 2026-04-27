@@ -13,6 +13,7 @@ const upload = createUploadMiddleware("product-categories", fields);
 
 router.get("/", Controller.index);
 router.get("/parents", Controller.getParentCategories);
+router.get("/active", Controller.getActiveCategories);
 
 router.get("/:id", Controller.show);
 

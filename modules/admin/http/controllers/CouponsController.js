@@ -1,12 +1,23 @@
 const { validationResult } = require("express-validator");
 const { sequelize, models } = require("../../../../database/models/index.js");
-const { sendValidationError, sendSuccessResponse, sendErrorResponse, sendNotFoundError } = require("../traits/responseHandler.js");
+const {
+  sendValidationError,
+  sendSuccessResponse,
+  sendErrorResponse,
+  sendNotFoundError,
+} = require("../traits/responseHandler.js");
 
 const { Op } = require("sequelize");
 
-const { validationRequestPost, validateId } = require("../request/CouponsRequest.js");
+const {
+  validationRequestPost,
+  validateId,
+} = require("../request/CouponsRequest.js");
 const { paginate } = require("../traits/datatablePaginationHelper.js");
-const { handleFileUploadStore, handleFileUploadUpdate } = require("../middleware/multerMiddleware.js");
+const {
+  handleFileUploadStore,
+  handleFileUploadUpdate,
+} = require("../middleware/multerMiddleware.js");
 
 const DataModel = models.Coupons;
 
@@ -29,7 +40,11 @@ class CouponsController {
         }),
       ]);
 
-      sendSuccessResponse(res, { totalCoupons, activeCoupons, expiredCoupons }, "Stats retrieved successfully");
+      sendSuccessResponse(
+        res,
+        { totalCoupons, activeCoupons, expiredCoupons },
+        "Stats retrieved successfully",
+      );
     } catch (error) {
       console.error("Coupon stats error:", error);
       sendErrorResponse(res, error);
@@ -139,7 +154,13 @@ class CouponsController {
                     {
                       model: models.ProductCategory,
                       as: "categories",
-                      attributes: ["id", "slug", "name", "name_ar", "parent_id"],
+                      attributes: [
+                        "id",
+                        "slug",
+                        "name",
+                        "name_ar",
+                        "parent_id",
+                      ],
                       through: { attributes: [] },
                       required: false,
                     },
@@ -175,7 +196,13 @@ class CouponsController {
                         {
                           model: models.ProductCategory,
                           as: "categories",
-                          attributes: ["id", "slug", "name", "name_ar", "parent_id"],
+                          attributes: [
+                            "id",
+                            "slug",
+                            "name",
+                            "name_ar",
+                            "parent_id",
+                          ],
                           through: { attributes: [] },
                           required: false,
                         },
@@ -229,7 +256,9 @@ class CouponsController {
 
   //   CREATE
   static async store(req, res) {
-    await Promise.all(validationRequestPost.map((validation) => validation.run(req)));
+    await Promise.all(
+      validationRequestPost.map((validation) => validation.run(req)),
+    );
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return sendValidationError(res, errors.array());
@@ -403,7 +432,9 @@ class CouponsController {
         raw: true,
       });
 
-      const productIds = [...new Set(modelsWithCategory.map((m) => m.product_id))];
+      const productIds = [
+        ...new Set(modelsWithCategory.map((m) => m.product_id)),
+      ];
 
       if (productIds.length === 0) {
         return sendSuccessResponse(res, [], "Data retrieved successfully");
@@ -492,6 +523,9 @@ class CouponsController {
       const { id } = req.params;
       const result = await models.ProductCategory.findAll({
         attributes: ["id", "name", "name_ar", "slug"],
+        where: {
+          status: true,
+        },
         include: [
           {
             model: models.ProductVariants,

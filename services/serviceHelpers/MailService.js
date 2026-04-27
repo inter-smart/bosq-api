@@ -1,3 +1,6 @@
+const nodemailer = require("nodemailer");
+const { models } = require("../../database/models");
+
 class MailService {
   static transporter = null;
 

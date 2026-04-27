@@ -221,7 +221,7 @@ class OrderService {
           order_id: this.generateOrderId(),
           user_id: userId,
           session_id: sessionId,
-          status: "pending",
+          status: paymentType == "cod" ? "confirmed" : "pending",
           payment_status: "pending",
           payment_type: paymentType,
           subtotal: cart.subtotal,

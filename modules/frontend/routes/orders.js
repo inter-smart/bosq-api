@@ -6,9 +6,11 @@ const { optionalAuth } = require("../http/middleware/optionalAuthMiddleware.js")
 const { cartContext } = require("../http/middleware/cartMiddleware.js");
 const { addOrderConfirmationJob } = require("../../../queues/emailQueue.js");
 
- 
 // Place a new order from active cart
 router.post("/place", optionalAuth(), cartContext, OrderController.placeOrder);
+
+// Ge all cancelled Orders for user
+router.get("/cancelled", optionalAuth(), cartContext, OrderController.getCancelledOrders);
 
 // Get all orders for user
 router.get("/", optionalAuth(), cartContext, OrderController.getOrders);

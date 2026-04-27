@@ -25,6 +25,11 @@ module.exports = (sequelize) => {
         allowNull: true,
       },
 
+      status: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        defaultValue: "ordered",
+      },
       quantity: {
         type: DataTypes.INTEGER,
         allowNull: false,

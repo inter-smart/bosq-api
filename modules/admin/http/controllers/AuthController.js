@@ -81,7 +81,7 @@ class AuthController {
       if (!isPasswordValid) return sendUnauthorizedError(res, "Invalid email or password");
 
       const tokenPayload = { id: user.id, email: user.email, role: user.role };
-      const expiresIn = process.env.JWT_EXPIRES_IN || "1d";
+      const expiresIn = process.env.JWT_ADMIN_EXPIRES_IN || process.env.JWT_EXPIRES_IN || "5m";
       const token = jwt.sign(tokenPayload, process.env.JWT_SECRET, {
         expiresIn,
         issuer: process.env.JWT_ISSUER || "bosq",

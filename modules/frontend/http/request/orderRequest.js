@@ -77,6 +77,8 @@ exports.cancelOrderRequest = [
 
 exports.reorderOrderRequest = [
   param("orderId").notEmpty().withMessage("Order ID is required").isInt({ min: 1 }).withMessage("Order ID must be a positive integer"),
+  body("variant_id").optional().isInt({ min: 1 }).withMessage("variant_id must be a positive integer"),
+  body("quantity").optional().isInt({ min: 1 }).withMessage("quantity must be a positive integer"),
 ];
 
 exports.getOrdersRequest = [

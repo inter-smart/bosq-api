@@ -547,7 +547,8 @@ class OrderService {
         ) AS shipping_address
       FROM orders o
       LEFT JOIN order_items oi
-        ON oi.order_id = o.id 
+        ON oi.order_id = o.id
+        AND oi.status = 'ordered' 
       LEFT JOIN product_base pb
         ON pb.id = oi.product_id 
       LEFT JOIN product_variants pv
@@ -568,6 +569,80 @@ class OrderService {
     return {
       orders: rows.map((row) => this.formatRawOrder(row)),
       pagination: { total, page, limit, total_pages: Math.ceil(total / limit) },
+    };
+  }
+
+  /**
+   * Get all cancelled orders for a user (raw SQL — single query with window count + JSON_AGG)
+   */
+
+  static async getCancelledOrders(userId, sessionId, locale = "en", { page = 1, limit = 12 } = {}) {
+    const offset = (page - 1) * limit;
+
+    const whereClause = userId ? `o.user_id = :ownerId` : `o.session_id = :ownerId AND o.user_id IS NULL`;
+
+    const sql = `
+    SELECT
+      oi.id AS item_id,
+      o.id AS order_id,
+      o.order_id AS order_number,
+      oi.quantity,
+      oi.discount_amount,
+      COALESCE(oi.discount_amount, 0) <> 0 AS is_coupon_applied,
+      (oi.price * oi.quantity)::TEXT AS formatted_total,
+      (oi.price * oi.quantity - COALESCE(oi.discount_amount, 0))::TEXT AS final_amount,
+      o."createdAt" AS formatted_cancelled_date,
+      COALESCE(pv.media_path, '/images/cart-product-1.png') AS media_path,
+      COALESCE(pv.title, '') AS title,
+      COALESCE(pv.title_ar, '') AS title_ar,
+      COUNT(*) OVER() AS total_count
+    FROM orders o
+    INNER JOIN order_items oi
+      ON oi.order_id = o.id
+      AND oi.status = 'cancelled'
+    LEFT JOIN product_variants pv
+      ON pv.id = oi.variant_id
+    WHERE ${whereClause}
+    ORDER BY o."createdAt" DESC
+    LIMIT :limit OFFSET :offset
+  `;
+
+    const rows = await sequelize.query(sql, {
+      replacements: {
+        ownerId: userId ?? sessionId,
+        limit,
+        offset,
+      },
+      type: sequelize.QueryTypes.SELECT,
+    });
+
+    const total = rows.length > 0 ? parseInt(rows[0].total_count, 10) : 0;
+
+    return {
+      orders: rows.map((row) => ({
+        order_id: row.order_id,
+        order_number: row.order_number,
+        name: locale === "ar" ? row.title_ar : row.title,
+        quantity: row.quantity,
+        discount_amount: row.discount_amount,
+        final_amount: row.final_amount,
+        formatted_total: row.formatted_total,
+        formatted_cancelled_date: this.formatDate(row.formatted_cancelled_date),
+        cancelledReason: "",
+        media: {
+          path: generateImageUrl(row.media_path),
+          alt: row.title,
+        },
+        actions: {
+          can_reorder: true,
+        },
+      })),
+      pagination: {
+        total,
+        page,
+        limit,
+        total_pages: Math.ceil(total / limit),
+      },
     };
   }
 
@@ -620,7 +695,7 @@ class OrderService {
   /**
    * Cancel an order (only pending orders can be cancelled)
    */
-  static async cancelOrder(userId, sessionId, orderId) {
+  static async cancelOrder(userId, sessionId, orderId, orderItemId = null) {
     const transaction = await sequelize.transaction();
 
     try {
@@ -628,12 +703,6 @@ class OrderService {
 
       const order = await models.Orders.findOne({
         where: whereClause,
-        include: [
-          {
-            model: models.OrderItem,
-            as: "items",
-          },
-        ],
         transaction,
       });
 
@@ -641,23 +710,41 @@ class OrderService {
         throw ErrorHandler.createError("Order not found", HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
       }
 
-      if (order.status !== "pending") {
-        throw ErrorHandler.createError(
-          `Cannot cancel order with status "${order.status}". Only pending orders can be cancelled`,
-          HTTP_STATUS.BAD_REQUEST,
-          ERROR_CODES.VALIDATION_ERROR,
-        );
-      }
+      // if (order.status !== "pending") {
+      //   throw ErrorHandler.createError(
+      //     `Cannot cancel order with status "${order.status}". Only pending orders can be cancelled`,
+      //     HTTP_STATUS.BAD_REQUEST,
+      //     ERROR_CODES.VALIDATION_ERROR,
+      //   );
+      // }
 
-      // Restore stock for each order item
-      await this.revertOrderStock(order.id, transaction);
+      const orderItem = await models.OrderItem.findOne({
+        where: {
+          order_id: order.id,
+          ...(orderItemId ? { id: orderItemId } : {}),
+        },
+        transaction,
+      });
 
-      await order.update({ status: "cancelled" }, { transaction });
+      await models.OrderItem.update(
+        { status: "cancelled" },
+        {
+          where: {
+            order_id: order.id,
+            ...(orderItemId ? { id: orderItemId } : {}),
+          },
+          transaction,
+        },
+      );
+
+      console.log(JSON.stringify(orderItem, null, 2));
+
+      await this.cancelAndRevertStock(order, orderItem, transaction);
 
       await transaction.commit();
 
       // Send cancellation status email (fire-and-forget)
-      this.sendOrderStatusEmail(order.id, "cancelled").catch((err) => Logger.error(`Order cancellation email failed: ${err.message}`));
+      // this.sendOrderStatusEmail(order.id, "cancelled").catch((err) => Logger.error(`Order cancellation email failed: ${err.message}`));
 
       return await this.getOrderById(userId, sessionId, orderId);
     } catch (error) {
@@ -757,7 +844,7 @@ class OrderService {
   /**
    * Reorder — copy items from an existing order back into the active cart
    */
-  static async reorderOrder(userId, sessionId, orderId) {
+  static async reorderOrder(userId, sessionId, orderId, variantId = null, quantity = null) {
     const CartService = require("./cartService.js");
 
     const whereClause = userId ? { id: orderId, user_id: userId } : { id: orderId, session_id: sessionId, user_id: null };
@@ -771,8 +858,16 @@ class OrderService {
       throw ErrorHandler.createError("Order not found", HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
     }
 
-    for (const item of order.items) {
-      await CartService.addItem(userId, sessionId, item.variant_id, item.quantity);
+    if (variantId) {
+      const item = order.items.find((i) => i.variant_id === variantId);
+      if (!item) {
+        throw ErrorHandler.createError("Item not found in order", HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
+      }
+      await CartService.addItem(userId, sessionId, item.variant_id, quantity ?? item.quantity);
+    } else {
+      for (const item of order.items) {
+        await CartService.addItem(userId, sessionId, item.variant_id, item.quantity);
+      }
     }
 
     return CartService.getCart(userId, sessionId);
@@ -924,21 +1019,57 @@ class OrderService {
    * @param {number} orderId
    * @param {object} transaction - Sequelize transaction
    */
-  static async revertOrderStock(orderId, transaction) {
-    const orderItems = await models.OrderItem.findAll({
-      where: { order_id: orderId },
-      transaction,
-    });
-
-    for (const item of orderItems) {
-      await models.ProductVariants.increment("stock", {
-        by: item.quantity,
-        where: { id: item.variant_id },
+  static async revertOrderStock(orderId, orderItemId, transaction) {
+    if (orderId) {
+      const orderItems = await models.OrderItem.findAll({
+        where: { order_id: orderId },
         transaction,
       });
+
+      for (const item of orderItems) {
+        await models.ProductVariants.increment("stock", {
+          by: item.quantity,
+          where: { id: item.variant_id },
+          transaction,
+        });
+      }
+    } else if (orderItemId) {
+      const item = await models.OrderItem.findByPk(orderItemId, { transaction });
+      if (item) {
+        await models.ProductVariants.increment("stock", {
+          by: item.quantity,
+          where: { id: item.variant_id },
+          transaction,
+        });
+      }
     }
 
     Logger.info(`Stock reverted for order ${orderId}`);
+  }
+
+  static async cancelAndRevertStock(order, orderItem, transaction) {
+    const orderItemAmount = orderItem ? parseFloat(orderItem.quantity * orderItem.price) - parseFloat(orderItem.discount_amount || "0") : 0;
+    const currentSubTotal = parseFloat(order.subtotal) || 0;
+    const currentGrandTotal = parseFloat(order.grand_total) || 0;
+    const currentDiscountTotal = parseFloat(order.discount_total) || 0;
+
+    const newSubTotal = Math.max(0, currentSubTotal - orderItemAmount);
+    const newGrandTotal = Math.max(0, currentGrandTotal - orderItemAmount);
+    const newDiscountTotal = Math.max(0, currentDiscountTotal - parseFloat(orderItem.discount_amount || "0"));
+
+    console.log(JSON.stringify(orderItem, null, 2));
+
+    await Promise.all([
+      models.Orders.update(
+        { subtotal: newSubTotal.toFixed(2), grand_total: newGrandTotal.toFixed(2), discount_total: newDiscountTotal.toFixed(2) },
+        { where: { id: order.id }, transaction },
+      ),
+      models.ProductVariants.increment("stock", {
+        by: orderItem.quantity,
+        where: { id: orderItem.variant_id },
+        transaction,
+      }),
+    ]);
   }
 }
 

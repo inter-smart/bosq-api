@@ -96,6 +96,46 @@ class OrderController {
   }
 
   /**
+   * Get all cancelled orders for the authenticated user
+   * GET /api/frontend/orders/cancelled
+   *
+   */
+  static async getCancelledOrders(req, res) {
+    try {
+      await Promise.all(getOrdersRequest.map((v) => v.run(req)));
+      const errors = validationResult(req);
+
+      if (!errors.isEmpty()) {
+        return ApiResponse.validationError(res, errors.array());
+      }
+
+      const userId = req.auth?.id || null;
+      const sessionId = OrderController.getSessionId(req);
+
+      if (!userId && !sessionId) {
+        return ApiResponse.success(res, {
+          message: "Orders retrieved successfully",
+          data: { orders: [], pagination: { total: 0, page: 1, limit: 12, total_pages: 0 } },
+          status: HTTP_STATUS.OK,
+        });
+      }
+
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 12;
+
+      const result = await OrderService.getCancelledOrders(userId, sessionId, { page, limit });
+
+      return ApiResponse.paginated(res, {
+        message: "Orders retrieved successfully",
+        data: { orders: result.orders, status: req.auth?.status, pagination: result.pagination },
+        status: HTTP_STATUS.OK,
+      });
+    } catch (error) {
+      return ErrorHandler.handleControllerError(error, res, "OrderController.getOrders");
+    }
+  }
+
+  /**
    * Get a single order by ID
    * GET /api/frontend/orders/:orderId
    */
@@ -140,13 +180,10 @@ class OrderController {
       await Promise.all(cancelOrderRequest.map((v) => v.run(req)));
       const errors = validationResult(req);
 
-      if (!errors.isEmpty()) {
-        return ApiResponse.validationError(res, errors.array());
-      }
-
       const userId = req.auth?.id || null;
       const sessionId = OrderController.getSessionId(req);
       const { orderId } = req.params;
+      const { orderItemId } = req.body;
 
       if (!userId && !sessionId) {
         return ApiResponse.error(res, {
@@ -155,7 +192,7 @@ class OrderController {
         });
       }
 
-      const order = await OrderService.cancelOrder(userId, sessionId, parseInt(orderId));
+      const order = await OrderService.cancelOrder(userId, sessionId, parseInt(orderId), orderItemId ? parseInt(orderItemId) : null);
 
       return ApiResponse.success(res, {
         message: "Order cancelled successfully",
@@ -183,6 +220,7 @@ class OrderController {
       const userId = req.auth?.id || null;
       const sessionId = OrderController.getSessionId(req);
       const { orderId } = req.params;
+      const { variant_id, quantity } = req.body || {};
 
       if (!userId && !sessionId) {
         return ApiResponse.error(res, {
@@ -191,7 +229,13 @@ class OrderController {
         });
       }
 
-      const cart = await OrderService.reorderOrder(userId, sessionId, parseInt(orderId));
+      const cart = await OrderService.reorderOrder(
+        userId,
+        sessionId,
+        parseInt(orderId),
+        variant_id ? parseInt(variant_id) : null,
+        quantity ? parseInt(quantity) : null,
+      );
 
       return ApiResponse.success(res, {
         message: "Items added to cart successfully",

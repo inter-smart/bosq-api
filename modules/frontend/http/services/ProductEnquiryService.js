@@ -1,14 +1,8 @@
 const { models } = require("../../../../database/models");
-const {
-  validateRecaptcha,
-} = require("../../../../services/RecaptchaValidation");
+const { validateRecaptcha } = require("../../../../services/RecaptchaValidation");
 const { handleFileUploadStore } = require("../../../admin/http/middleware/multerMiddleware");
 const { ErrorHandler } = require("../traits/errorHandler");
-const {
-  RESPONSE_MESSAGES,
-  ERROR_CODES,
-  HTTP_STATUS,
-} = require("../traits/constants");
+const { RESPONSE_MESSAGES, ERROR_CODES, HTTP_STATUS } = require("../traits/constants");
 const EmailService = require("../../../../services/EmailService");
 
 class ProductEnquiryService {
@@ -17,23 +11,14 @@ class ProductEnquiryService {
       const data = req.body;
       const token = data?.recaptcha_token;
 
-
       if (!token) {
-        throw ErrorHandler.createError(
-          RESPONSE_MESSAGES.ERROR.RECAPTCHA_MISSING,
-          HTTP_STATUS.BAD_REQUEST,
-          ERROR_CODES.VALIDATION_ERROR,
-        );
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.RECAPTCHA_MISSING, HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION_ERROR);
       }
 
       const { success, score } = await validateRecaptcha(token);
 
       if (!success || score < 0.5) {
-        throw ErrorHandler.createError(
-          RESPONSE_MESSAGES.ERROR.RECAPTCHA_FAILED,
-          HTTP_STATUS.FORBIDDEN,
-          ERROR_CODES.VALIDATION_ERROR,
-        );
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.RECAPTCHA_FAILED, HTTP_STATUS.FORBIDDEN, ERROR_CODES.VALIDATION_ERROR);
       }
 
       const { product_id } = data;
@@ -43,11 +28,7 @@ class ProductEnquiryService {
       });
 
       if (!productExists) {
-        throw ErrorHandler.createError(
-          RESPONSE_MESSAGES.ERROR.INVALID_PRODUCT,
-          HTTP_STATUS.BAD_REQUEST,
-          ERROR_CODES.VALIDATION_ERROR,
-        );
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.INVALID_PRODUCT, HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION_ERROR);
       }
 
       const fileFields = ["media_path"];
@@ -73,7 +54,7 @@ class ProductEnquiryService {
       };
 
       await Promise.all([
-        EmailService.sendQueryAcknowledgement(data.email, data.name),
+        EmailService.sendQueryAcknowledgement(data.email, data.name, data.message),
         EmailService.sendProductEnquiryAdmin(adminData),
       ]);
 

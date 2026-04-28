@@ -31,21 +31,13 @@ module.exports = (sequelize) => {
       },
 
       status: {
-        type: DataTypes.ENUM(
-          "pending",
-          "confirmed",
-          "packed",
-          "shipped",
-          "delivered",
-          "cancelled",
-          "returned",
-        ),
+        type: DataTypes.ENUM("pending", "confirmed", "packed", "shipped", "delivered", "cancelled", "returned"),
         allowNull: false,
         defaultValue: "pending",
       },
 
       payment_status: {
-        type: DataTypes.ENUM("pending", "paid", "failed", "refunded"),
+        type: DataTypes.ENUM("pending", "paid", "failed", "refunded", "cancelled"),
         allowNull: false,
         defaultValue: "pending",
       },
@@ -123,7 +115,6 @@ module.exports = (sequelize) => {
         allowNull: true,
         default: null,
       },
-
     },
     {
       tableName: "orders",

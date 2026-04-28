@@ -80,7 +80,7 @@ const RESPONSE_MESSAGES = {
       ar: "تم إرسال طلب الاشتراك في النشرة الإخبارية بنجاح",
     },
 
-    PROJECT_ENQUIRY_RECEIVED:    {
+    PROJECT_ENQUIRY_RECEIVED: {
       en: "Project enquiry submitted successfully",
       ar: "تم إرسال استفسار المشروع بنجاح",
     },
@@ -213,8 +213,8 @@ const RESPONSE_MESSAGES = {
       ar: "بعض العناصر غير متوفرة في المخزون، يرجى تحديث سلة التسوق",
     },
     COUPON_ALREADY_APPLIED: {
-      en: "A coupon is already applied. Remove it first before applying a new one",
-      ar: "تم تطبيق كوبون بالفعل. يرجى إزالته أولاً قبل تطبيق كوبون جديد",
+      en: "A coupon is already applied. Remove it to add a new one.",
+      ar: "يوجد كوبون مطبّق بالفعل. أزله لإضافة كوبون جديد.",
     },
     INVALID_OR_EXPIRED_COUPON: {
       en: "Invalid or expired coupon code",
@@ -233,16 +233,16 @@ const RESPONSE_MESSAGES = {
       ar: "لقد استخدمت هذا الكوبون بالفعل الحد الأقصى من المرات",
     },
     COUPON_NOT_APPLICABLE: {
-      en: "This coupon is not applicable to the items in your cart",
-      ar: "هذا الكوبون غير قابل للتطبيق على العناصر الموجودة في سلة التسوق",
+      en: "This coupon isn't valid for the items in your cart.",
+      ar: "هذا الكوبون غير صالح للمنتجات الموجودة في سلة التسوق الخاصة بك",
     },
     MINIMUM_ELIGIBLE_PRODUCTS_AMOUNT_REQUIRED: (amount) => ({
-      en: `The total of eligible products must be at least ${amount} to use this coupon`,
-      ar: `يجب أن يكون إجمالي المنتجات المؤهلة على الأقل ${amount} لاستخدام هذا الكوبون`,
+      en: `This coupon requires a minimum of ${amount} AED in eligible items.`,
+      ar: `يتطلب هذا الكوبون حدًا أدنى قدره ${amount} درهم إماراتي من المنتجات المؤهلة`,
     }),
     NO_COUPON_APPLIED: {
-      en: "No coupon is applied to this cart",
-      ar: "لا يوجد كوبون مطبق على سلة التسوق",
+      en: "You haven't applied any coupon yet.",
+      ar: "لم تقم بتطبيق أي قسيمة خصم حتى الآن",
     },
     PRODUCT_VARIANT_OUT_OF_STOCK: {
       en: "Product variant out of stock",
@@ -297,7 +297,7 @@ const RESPONSE_MESSAGES = {
       ar: "يجب أن تكون كلمة المرور الجديدة مختلفة عن كلمة المرور القديمة",
     },
 
-    EMAIL_ALREADY_EXISTS:{
+    EMAIL_ALREADY_EXISTS: {
       en: "This email is already subscribed to the newsletter",
       ar: "هذا البريد الإلكتروني مشترك بالفعل في النشرة الإخبارية",
     },
@@ -341,7 +341,7 @@ const RESPONSE_MESSAGES = {
       en: "Failed to send OTP email. Please try again.",
       ar: "فشل إرسال بريد OTP. يرجى المحاولة مرة أخرى.",
     },
-    PASSWORD_INCORRECT:{
+    PASSWORD_INCORRECT: {
       en: "Password is incorrect",
       ar: "كلمة المرور غير صحيحة",
     },

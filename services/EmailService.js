@@ -1,4 +1,3 @@
-const nodemailer = require("nodemailer");
 const models = require("../database/models");
 const { generateImageUrl } = require("../modules/frontend/traits/imageUrlHelper");
 const officeChairEnquiryTemplate = require("../mailers/templates/officeChairEnquiryTemplate");
@@ -687,7 +686,7 @@ class EmailService {
                                                     (item) => `
                                                 <tr>
                                                     <td style="width: 14%; margin-bottom: 0px; margin-top: 0px;">
-                                                        <img src="${item?.image || "https://ux.intersmarthosting.in/Mailers/Bosq/prod-1.png"}" width="66px" height="55" alt="image" style="object-fit: cover;">
+                                                        <img src="${item?.image}" width="66px" height="55" alt="image" style="object-fit: cover;">
                                                     </td>
                                                     <td style="width: 66%; margin-bottom: 0px; margin-top: 0px;">
                                                         <p style="font-size: 16px; font-family: 'Open Sans', sans-serif; color: #282828; font-weight: 400; margin-bottom: 5px; margin-top: 0;">
@@ -780,15 +779,15 @@ class EmailService {
                                             style="width: 100%; max-width: 70%; margin: auto; height: auto; border-radius: 15px; margin-bottom: 30px;">
                                             <tbody>
                                                 <tr>
-                                                    <td
+                                                    <!-- <td
                                                         style="width: 50%; margin-top: 0px; vertical-align: top;">
                                                         <a href="" style="display: block; font-family: 'Open Sans', sans-serif; text-align: center; width: 142px; height: auto; margin: 0 auto 24px; background-color: #282828;  border-radius: 3px; color: #fff; font-size: 16px; font-weight: 400; line-height: 1; padding: 18px 20px; text-decoration: none;">
                                                             Track Order
                                                         </a>
-                                                    </td>
+                                                    </td> -->
                                                     <td
-                                                        style="width: 50%; margin-top: 0px; vertical-align: top;">
-                                                        <a href="mailto:sales@bosq.ae" style="display: block; font-family: 'Open Sans', sans-serif; text-align: center; width: 142px; height: auto; margin: 0 auto 24px; background-color: transparent; border: solid 1px #282828; border-radius: 3px; color: #282828; font-size: 16px; font-weight: 400; line-height: 1; padding: 18px 20px; text-decoration: none;">
+                                                        style="width: 100%; margin-top: 0px; vertical-align: top;">
+                                                        <a href="${process.env.FRONTEND_URL || ""}/contact" style="display: block; font-family: 'Open Sans', sans-serif; text-align: center; width: 142px; height: auto; margin: 0 auto 24px; background-color: transparent; border: solid 1px #282828; border-radius: 3px; color: #282828; font-size: 16px; font-weight: 400; line-height: 1; padding: 18px 20px; text-decoration: none;">
                                                             Need Help ?
                                                         </a>
                                                     </td>
@@ -906,6 +905,9 @@ class EmailService {
       cancel_reason,
     } = data;
 
+
+
+    console.log("imageITEMS", items)
     const paymentLabel = paymentType === "cod" ? "Cash on Delivery" : "Online Payment";
     const statusFormatted = status.charAt(0).toUpperCase() + status.slice(1);
     const orderDate = new Date().toLocaleDateString("en-GB", {
@@ -1100,7 +1102,7 @@ class EmailService {
                                                     (item) => `
                                                 <tr>
                                                     <td style="width: 14%; margin-bottom: 0px; margin-top: 0px;">
-                                                        <img src="${generateImageUrl(item?.image) || "https://ux.intersmarthosting.in/Mailers/Bosq/prod-1.png"}" width="66px" height="55" alt="image" style="object-fit: cover;">
+                                                        <img src="${item?.image || "https://ux.intersmarthosting.in/Mailers/Bosq/prod-1.png"}" width="66px" height="55" alt="image" style="object-fit: cover;">
                                                     </td>
                                                     <td style="width: 66%; margin-bottom: 0px; margin-top: 0px;">
                                                         <p style="font-size: 16px; font-family: 'Open Sans', sans-serif; color: #282828; font-weight: 400; margin-bottom: 5px; margin-top: 0;">
@@ -1189,13 +1191,13 @@ class EmailService {
                                         <table style="width: 100%; max-width: 70%; margin: auto; height: auto; border-radius: 15px; margin-bottom: 30px;">
                                             <tbody>
                                                 <tr>
-                                                    <td style="width: 50%; margin-top: 0px; vertical-align: top;">
+                                                    <!-- <td style="width: 50%; margin-top: 0px; vertical-align: top;">
                                                         <a href="${process.env.FRONTEND_URL || ""}/orders" style="display: block; font-family: 'Open Sans', sans-serif; text-align: center; width: 142px; height: auto; margin: 0 auto 24px; background-color: #282828;  border-radius: 3px; color: #fff; font-size: 16px; font-weight: 400; line-height: 1; padding: 18px 20px; text-decoration: none;">
                                                             Track Order
                                                         </a>
-                                                    </td>
-                                                    <td style="width: 50%; margin-top: 0px; vertical-align: top;">
-                                                        <a href="mailto:sales@bosq.ae" style="display: block; font-family: 'Open Sans', sans-serif; text-align: center; width: 142px; height: auto; margin: 0 auto 24px; background-color: transparent; border: solid 1px #282828; border-radius: 3px; color: #282828; font-size: 16px; font-weight: 400; line-height: 1; padding: 18px 20px; text-decoration: none;">
+                                                    </td> -->
+                                                    <td style="width: 100%; margin-top: 0px; vertical-align: top;">
+                                                        <a href="${process.env.FRONTEND_URL || ""}/contact" style="display: block; font-family: 'Open Sans', sans-serif; text-align: center; width: 142px; height: auto; margin: 0 auto 24px; background-color: transparent; border: solid 1px #282828; border-radius: 3px; color: #282828; font-size: 16px; font-weight: 400; line-height: 1; padding: 18px 20px; text-decoration: none;">
                                                             Need Help ?
                                                         </a>
                                                     </td>

@@ -7,6 +7,7 @@ const { setCache, getCache } = require("../../../redis/redisService");
 const {
   buildTitleSection,
   buildCmsSection,
+  buildOtherMetaData,
 } = require("../traits/dataManipulations/common");
 const {
   buildProjectCategorySection,
@@ -19,7 +20,7 @@ const {
 
 const cacheKey = cacheKeys.projects;
 
-class PrivacyPolicyService {
+class ProjectService {
   static async index() {
     try {
       // 1. Get data from cache
@@ -63,6 +64,7 @@ class PrivacyPolicyService {
       const heroData = buildTitleSection(projectCMS);
       const projectInfo = buildProjectBannerSection(projectCMS, "banner");
       const projectCategories = buildProjectCategorySection(projectCategory);
+
       const result = {
         heroData,
         projectInfo,
@@ -207,6 +209,7 @@ class PrivacyPolicyService {
       const solutionData = buildCmsSection(projects, "section3");
       const specializedAreasData = buildSpecialisedAreaSection(projects);
       const enquiryData = buildCmsSection(cms, "form");
+      const metaData = buildOtherMetaData(projects);
 
       const result = {
         heroData,
@@ -215,6 +218,7 @@ class PrivacyPolicyService {
         specializedAreasData,
         enquiryData,
         projects,
+        metaData
       };
 
       return {
@@ -228,4 +232,4 @@ class PrivacyPolicyService {
   }
 }
 
-module.exports = PrivacyPolicyService;
+module.exports = ProjectService;

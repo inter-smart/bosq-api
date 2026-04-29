@@ -117,8 +117,9 @@ class CartService {
               ],
             },
           ],
+          order: [[{ model: models.CartItems, as: "items" }, "id", "ASC"]],
+          transaction,
         },
-        { transaction },
       );
 
       if (!cart) {
@@ -137,6 +138,7 @@ class CartService {
 
       // Reload cart with fresh data after price sync
       await cart.reload({
+        order: [[{ model: models.CartItems, as: "items" }, "id", "ASC"]],
         include: [
           {
             model: models.CartItems,
@@ -487,8 +489,9 @@ class CartService {
               ],
             },
           ],
+          order: [[{ model: models.CartItems, as: "items" }, "id", "ASC"]],
+          transaction,
         },
-        { transaction },
       );
 
       if (!cart) {

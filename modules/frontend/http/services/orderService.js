@@ -230,6 +230,7 @@ class OrderService {
           discount_total: orderDiscountTotal.toFixed(2),
           tax_total: cart.tax_total,
           grand_total: Math.max(0, orderGrandTotal).toFixed(2),
+          coupon_type: appliedCoupon?.scope_type ?? null,
         },
         { transaction },
       );
@@ -502,6 +503,7 @@ class OrderService {
         o.est_delivery_details,
         o.subtotal,
         o.discount_total,
+        o.coupon_type,
         o.tax_total,
         o.grand_total,
         o."createdAt",
@@ -517,7 +519,7 @@ class OrderService {
               'discount_amount',oi.discount_amount,
               'line_total',     (oi.price * oi.quantity)::TEXT,
                'final_amount',     ((oi.price * oi.quantity) - COALESCE(oi.discount_amount, 0))::TEXT,
-  'is_coupon_applied', COALESCE(oi.discount_amount, 0) <> 0,
+               'is_coupon_applied', COALESCE(oi.discount_amount, 0) <> 0,
               'product',        JSONB_BUILD_OBJECT('id', pb.id, 'title', pb.title, 'slug', pb.slug),
               'variant',        JSONB_BUILD_OBJECT(
                                   'id',        pv.id,
@@ -747,19 +749,9 @@ class OrderService {
         },
       );
 
-      const remainingActive = await models.OrderItem.count({
-        where: { order_id: order.id, status: "ordered" },
-        transaction,
-      });
-
-      if (remainingActive === 0) {
-        await models.Orders.update(
-          { status: "cancelled", discount_total: 0.00 },
-          { where: { id: order.id }, transaction },
-        );
-      }
 
       await this.cancelAndRevertStock(order, orderItem, transaction);
+
 
       await transaction.commit();
 
@@ -1051,6 +1043,7 @@ class OrderService {
       order_id: row.order_id,
       order_url: row.order_url,
       awb_number: row.awb_number,
+      coupon_type: row?.coupon_type,
       partner_name: row.partner_name,
       status: this.formatEnums(row.status),
       payment_status: this.formatEnums(row.payment_status),
@@ -1163,10 +1156,22 @@ class OrderService {
     const newDiscountTotal = Math.max(0, currentDiscountTotal - parseFloat(orderItem.discount_amount || "0"));
 
 
-    await Promise.all([
+    console.log("newSubTotal", newSubTotal);
+    console.log("newGrandTotal", newGrandTotal);
+    console.log("newDiscountTotal", newDiscountTotal);
+
+
+    const [orderUpdateResult, stockUpdateResult] = await Promise.all([
       models.Orders.update(
-        { subtotal: newSubTotal.toFixed(2), grand_total: newGrandTotal.toFixed(2), discount_total: newDiscountTotal.toFixed(2) },
-        { where: { id: order.id }, transaction },
+        {
+          subtotal: newSubTotal.toFixed(2),
+          grand_total: newGrandTotal.toFixed(2),
+          discount_total: newDiscountTotal.toFixed(2),
+        },
+        {
+          where: { id: order.id },
+          transaction,
+        }
       ),
       models.ProductVariants.increment("stock", {
         by: orderItem.quantity,
@@ -1174,6 +1179,9 @@ class OrderService {
         transaction,
       }),
     ]);
+
+    console.log("Order update result:", orderUpdateResult);
+    console.log("Stock increment result:", stockUpdateResult);
   }
 }
 

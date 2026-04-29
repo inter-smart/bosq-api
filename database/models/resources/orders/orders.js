@@ -115,6 +115,12 @@ module.exports = (sequelize) => {
         allowNull: true,
         default: null,
       },
+
+      coupon_type: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        defaultValue: null,
+      }
     },
     {
       tableName: "orders",

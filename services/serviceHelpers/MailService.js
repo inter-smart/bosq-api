@@ -91,7 +91,7 @@ class MailService {
           cc: setting.cc_emails ? setting.cc_emails.split(",").map((e) => e.trim()) : [],
         };
       }
-    } catch (_) {}
+    } catch (_) { }
 
     const defaultFrom = this.getEmailFromByType(type);
 
@@ -156,7 +156,7 @@ class MailService {
 
     console.log(`[EmailService] "${subject}" | from=${mailOptions.from} to=${mailOptions.to} cc=${JSON.stringify(mailOptions.cc)}`);
 
-    if (process.env.EMAIL_DRY_RUN === "true" && type !== "auth") {
+    if (process.env.EMAIL_DRY_RUN === "true" && (type !== "auth" || type !== "orders")) {
       console.log("[EmailService] DRY RUN — email not sent");
       return { dryRun: true };
     }

@@ -1,5 +1,7 @@
 const models = require("../database/models");
-const { generateImageUrl } = require("../modules/frontend/traits/imageUrlHelper");
+const {
+  generateImageUrl,
+} = require("../modules/frontend/traits/imageUrlHelper");
 const officeChairEnquiryTemplate = require("../mailers/templates/officeChairEnquiryTemplate");
 const welcomeEmailTemplate = require("../mailers/templates/welcomeEmailTemplate");
 const passwordResetTemplate = require("../mailers/templates/passwordResetTemplate");
@@ -41,7 +43,10 @@ class EmailService {
     const socialIconsHtml = await MailService.getSocialIconsHtml();
     const settings = await MailService.getMailerSettings("auth");
 
-    const html = welcomeEmailTemplate({ customerName: name, iconsHtml: socialIconsHtml });
+    const html = welcomeEmailTemplate({
+      customerName: name,
+      iconsHtml: socialIconsHtml,
+    });
 
     return await MailService.sendEmail({
       from: settings.from,
@@ -193,8 +198,15 @@ class EmailService {
   static async _sendAdminMail(subject, html) {
     const transporter = this.getTransporter();
     const settings = await this.getMailerSettings("admin");
-    console.log(`[EmailService] sending "${subject}" | from=${settings.from} to=${settings.from} cc=${JSON.stringify(settings.cc)}`);
-    return transporter.sendMail({ from: settings.from, to: settings.from, subject, html });
+    console.log(
+      `[EmailService] sending "${subject}" | from=${settings.from} to=${settings.from} cc=${JSON.stringify(settings.cc)}`,
+    );
+    return transporter.sendMail({
+      from: settings.from,
+      to: settings.from,
+      subject,
+      html,
+    });
   }
 
   // ─────────────────────────────────────────────
@@ -239,12 +251,17 @@ class EmailService {
 
     return this._sendAdminMail(
       `New Product Enquiry – ${data.name}`,
-      this._adminEmailHtml({ badge: "New Product Enquiry", title: "New Product Enquiry", body }),
+      this._adminEmailHtml({
+        badge: "New Product Enquiry",
+        title: "New Product Enquiry",
+        body,
+      }),
     );
   }
 
   static async sendContactEnquiryAdmin(data) {
-    const emailVal = (v) => `<a href="mailto:${v}" style="font-size:14px;color:#c9a96e;text-decoration:none;font-family:Arial,sans-serif;">${v}</a>`;
+    const emailVal = (v) =>
+      `<a href="mailto:${v}" style="font-size:14px;color:#c9a96e;text-decoration:none;font-family:Arial,sans-serif;">${v}</a>`;
     const phoneVal = (v) =>
       v
         ? `<a href="tel:${v}" style="font-size:14px;color:#c9a96e;text-decoration:none;font-family:Arial,sans-serif;">${v}</a>`
@@ -280,7 +297,14 @@ class EmailService {
           })}`;
 
     const subject = `New ${data.type.charAt(0).toUpperCase() + data.type.slice(1)} Enquiry – ${data.name}`;
-    return this._sendAdminMail(subject, this._adminEmailHtml({ badge: "New Enquiry Received", title: "New Contact Enquiry", body }));
+    return this._sendAdminMail(
+      subject,
+      this._adminEmailHtml({
+        badge: "New Enquiry Received",
+        title: "New Contact Enquiry",
+        body,
+      }),
+    );
   }
 
   // Product Enquire
@@ -291,7 +315,11 @@ class EmailService {
 
     console.log(socialIconsHtml);
 
-    const html = officeChairEnquiryTemplate({ customerName: name, enquiryMessage: message, iconsHtml: socialIconsHtml });
+    const html = officeChairEnquiryTemplate({
+      customerName: name,
+      enquiryMessage: message,
+      iconsHtml: socialIconsHtml,
+    });
 
     return await MailService.sendEmail({
       from: settings.from,
@@ -361,7 +389,11 @@ class EmailService {
 
     return this._sendAdminMail(
       `New General Enquiry – ${data.first_name} ${data.last_name}`,
-      this._adminEmailHtml({ badge: "New General Enquiry", title: "New General Enquiry", body }),
+      this._adminEmailHtml({
+        badge: "New General Enquiry",
+        title: "New General Enquiry",
+        body,
+      }),
     );
   }
 
@@ -425,7 +457,11 @@ class EmailService {
 
     return this._sendAdminMail(
       `New Project Enquiry – ${data.first_name} ${data.last_name}`,
-      this._adminEmailHtml({ badge: "New Project Enquiry", title: "New Project Enquiry", body }),
+      this._adminEmailHtml({
+        badge: "New Project Enquiry",
+        title: "New Project Enquiry",
+        body,
+      }),
     );
   }
 
@@ -460,7 +496,11 @@ class EmailService {
 
     return this._sendAdminMail(
       `New Newsletter Subscriber – ${email}`,
-      this._adminEmailHtml({ badge: "New Subscriber", title: "New Newsletter Subscriber", body }),
+      this._adminEmailHtml({
+        badge: "New Subscriber",
+        title: "New Newsletter Subscriber",
+        body,
+      }),
     );
   }
 
@@ -495,13 +535,28 @@ class EmailService {
       month: "short",
       year: "numeric",
     });
-    const paymentLabel = paymentType === "cod" ? "Cash on Delivery" : "Online Payment";
+    const paymentLabel =
+      paymentType === "cod" ? "Cash on Delivery" : "Online Payment";
 
     const billingLine = billingAddress
-      ? [billingAddress.street_address, billingAddress.apartment, billingAddress.state_name, billingAddress.country].filter(Boolean).join(", ")
+      ? [
+          billingAddress.street_address,
+          billingAddress.apartment,
+          billingAddress.state_name,
+          billingAddress.country,
+        ]
+          .filter(Boolean)
+          .join(", ")
       : "—";
     const shippingLine = shippingAddress
-      ? [shippingAddress.street_address, shippingAddress.apartment, shippingAddress.state_name, shippingAddress.country].filter(Boolean).join(", ")
+      ? [
+          shippingAddress.street_address,
+          shippingAddress.apartment,
+          shippingAddress.state_name,
+          shippingAddress.country,
+        ]
+          .filter(Boolean)
+          .join(", ")
       : billingLine;
     const deliveryText = estDelivery || "To be confirmed";
 
@@ -905,10 +960,9 @@ class EmailService {
       cancel_reason,
     } = data;
 
-
-
-    console.log("imageITEMS", items)
-    const paymentLabel = paymentType === "cod" ? "Cash on Delivery" : "Online Payment";
+    console.log("imageITEMS", items);
+    const paymentLabel =
+      paymentType === "cod" ? "Cash on Delivery" : "Online Payment";
     const statusFormatted = status.charAt(0).toUpperCase() + status.slice(1);
     const orderDate = new Date().toLocaleDateString("en-GB", {
       day: "2-digit",
@@ -917,7 +971,12 @@ class EmailService {
     });
 
     const billingLine = billingAddress
-      ? [billingAddress.street_address, billingAddress.apartment, billingAddress.state_name || billingAddress.state?.name, billingAddress.country]
+      ? [
+          billingAddress.street_address,
+          billingAddress.apartment,
+          billingAddress.state_name || billingAddress.state?.name,
+          billingAddress.country,
+        ]
           .filter(Boolean)
           .join(", ")
       : "—";
@@ -934,6 +993,7 @@ class EmailService {
       : billingLine;
 
     const deliveryText = estDelivery || "To be confirmed";
+    const { from, cc } = await MailService.getMailerSettings("orders");
 
     let messageText = `This email is to notify you that the status of your recent Bosq order (#${orderCode}) has been updated to <strong>${statusFormatted}</strong>. We will keep you posted on any further updates regarding your shipment!`;
 
@@ -1273,6 +1333,8 @@ class EmailService {
 
     return await MailService.sendEmail({
       to: email,
+      from: from,
+      cc: cc,
       subject: `Order Update: ${orderCode} is now ${statusFormatted}`,
       html,
       type: "orders",
@@ -1280,9 +1342,20 @@ class EmailService {
   }
 
   static async sendItemCancelUpdate(email, data) {
-    const { name, orderCode, cancelledItem, cancel_reason, paymentType, billingAddress, shippingAddress } = data;
+    const {
+      name,
+      orderCode,
+      cancelledItem,
+      cancel_reason,
+      paymentType,
+      billingAddress,
+      shippingAddress,
+    } = data;
 
-    const paymentLabel = paymentType === "cod" ? "Cash on Delivery" : "Online Payment";
+    const { from, cc } = await MailService.getMailerSettings("orders");
+
+    const paymentLabel =
+      paymentType === "cod" ? "Cash on Delivery" : "Online Payment";
     const orderDate = new Date().toLocaleDateString("en-GB", {
       day: "2-digit",
       month: "short",
@@ -1290,7 +1363,12 @@ class EmailService {
     });
 
     const billingLine = billingAddress
-      ? [billingAddress.street_address, billingAddress.apartment, billingAddress.state_name || billingAddress.state?.name, billingAddress.country]
+      ? [
+          billingAddress.street_address,
+          billingAddress.apartment,
+          billingAddress.state_name || billingAddress.state?.name,
+          billingAddress.country,
+        ]
           .filter(Boolean)
           .join(", ")
       : "—";
@@ -1312,7 +1390,9 @@ class EmailService {
     }
 
     const item = cancelledItem;
-    const itemLineTotal = parseFloat(item?.line_total || item?.price || 0).toFixed(2);
+    const itemLineTotal = parseFloat(
+      item?.line_total || item?.price || 0,
+    ).toFixed(2);
 
     const html = `
 <!DOCTYPE html>
@@ -1581,6 +1661,8 @@ class EmailService {
     `.trim();
 
     return await MailService.sendEmail({
+      from: from,
+      cc: cc,
       to: email,
       subject: `Item Cancellation: Your item from order #${orderCode} has been cancelled`,
       html,

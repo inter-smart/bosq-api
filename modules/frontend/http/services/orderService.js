@@ -66,15 +66,17 @@ class OrderService {
         transaction,
       });
 
-      const cartShippingAddress = await Model.findOne({
-        where: {
-          [field]: ownerId,
-          status: "active",
-          address_type: "shipping",
-          id: shipping,
-        },
-        transaction,
-      });
+      const cartShippingAddress = isSameAddress
+        ? cartBillingAddress
+        : await Model.findOne({
+            where: {
+              [field]: ownerId,
+              status: "active",
+              address_type: "shipping",
+              id: shipping,
+            },
+            transaction,
+          });
 
       if (!cartBillingAddress) {
         throw ErrorHandler.createError("Billing address not found", HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION_ERROR);

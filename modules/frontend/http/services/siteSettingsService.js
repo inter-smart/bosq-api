@@ -40,6 +40,7 @@ class SiteSettingsService {
             },
           ],
           order: [["sort_order", "ASC"]],
+          subQuery: false,
         }),
         await models.Projects.findAll({
           where: {

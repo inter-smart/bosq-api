@@ -7,8 +7,9 @@ const { HTTP_STATUS, RESPONSE_MESSAGES } = require("../traits/constants.js");
 const { addToCartRequest, updateCartItemRequest, removeCartItemRequest } = require("../request/cartRequest.js");
 const { console } = require("inspector");
 
+const { COOKIE } = require("../../../../config/authConfig.js");
+
 const GUEST_SESSION_COOKIE = "guest_cart_session";
-const COOKIE_MAX_AGE = 30 * 24 * 60 * 60 * 1000; // 30 days
 
 const isProduction = process.env.NODE_ENV === "production";
 
@@ -26,7 +27,7 @@ class CartController {
   static generateAndSetSessionCookie(res) {
     const sessionId = crypto.randomUUID();
     res.cookie(GUEST_SESSION_COOKIE, sessionId, {
-      maxAge: COOKIE_MAX_AGE,
+      maxAge: COOKIE.GUEST_SESSION_MAX_AGE,
       httpOnly: true,
       secure: isProduction,
       sameSite: isProduction ? "none" : "lax",
@@ -340,7 +341,7 @@ class CartController {
 
       if (sessionId) {
         res.cookie(GUEST_SESSION_COOKIE, sessionId, {
-          maxAge: COOKIE_MAX_AGE,
+          maxAge: COOKIE.GUEST_SESSION_MAX_AGE,
           httpOnly: true,
           secure: isProduction,
           sameSite: isProduction ? "none" : "lax",

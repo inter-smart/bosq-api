@@ -15,6 +15,7 @@ const {
 } = require("../request/auth/AuthRequest");
 const EmailService = require("../../../../services/EmailService");
 const ms = require("ms");
+const { JWT, TTL } = require("../../../../config/authConfig.js");
 
 const AdminUser = models.AdminUser;
 
@@ -81,7 +82,7 @@ class AuthController {
       if (!isPasswordValid) return sendUnauthorizedError(res, "Invalid email or password");
 
       const tokenPayload = { id: user.id, email: user.email, role: user.role };
-      const expiresIn = process.env.JWT_ADMIN_EXPIRES_IN || "30m";
+      const expiresIn = JWT.ADMIN_EXPIRY;
       const token = jwt.sign(tokenPayload, process.env.JWT_SECRET, {
         expiresIn,
         issuer: process.env.JWT_ISSUER || "bosq",
@@ -133,7 +134,7 @@ class AuthController {
       // Increment rate limit counter
       const newAttempts = await redisClient.incr(rateLimitKey);
       if (newAttempts === 1) {
-        await redisClient.expire(rateLimitKey, 3600); // 1 hour
+        await redisClient.expire(rateLimitKey, TTL.ADMIN_RATE_LIMIT_SECONDS);
       }
 
       // Check if user exists
@@ -151,7 +152,6 @@ class AuthController {
       // Generate 6-digit OTP
       const otp = generateOTP();
 
-      // Store OTP in Redis with 10-minute expiration
       const otpData = {
         otp: otp,
         email: user.email,
@@ -161,7 +161,7 @@ class AuthController {
 
       await redisClient.setEx(
         `password-reset-otp:${user.email.toLowerCase()}`,
-        3600, // 1 hour
+        TTL.ADMIN_PASSWORD_RESET_OTP_SECONDS,
         JSON.stringify(otpData),
       );
 
@@ -263,8 +263,7 @@ class AuthController {
         return sendCustomError(res, `Invalid OTP. ${5 - otpData.attempts} attempts remaining`, 400);
       }
 
-      // OTP verified → mark verified for 5 minutes
-      await redisClient.setEx(verifiedKey, 300, "true");
+      await redisClient.setEx(verifiedKey, TTL.ADMIN_VERIFIED_MARKER_SECONDS, "true");
 
       return sendSuccessResponse(res, null, "OTP verified successfully. You may now reset your password", 200);
     } catch (error) {
@@ -297,7 +296,7 @@ class AuthController {
       // Increment rate limit counter
       const newAttempts = await redisClient.incr(rateLimitKey);
       if (newAttempts === 1) {
-        await redisClient.expire(rateLimitKey, 3600); // 1 hour
+        await redisClient.expire(rateLimitKey, TTL.ADMIN_RATE_LIMIT_SECONDS);
       }
 
       // Check if user exists
@@ -325,7 +324,7 @@ class AuthController {
 
       await redisClient.setEx(
         `password-reset-otp:${user.email.toLowerCase()}`,
-        600, // 10 minutes
+        TTL.ADMIN_RESEND_OTP_SECONDS,
         JSON.stringify(otpData),
       );
 

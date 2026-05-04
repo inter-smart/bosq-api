@@ -7,8 +7,9 @@ const EmailService = require("../../../../../services/EmailService.js");
 const { generateSlugWithTimestamp } = require("../../traits/mediaButtonHelper.js");
 const { Op } = require("sequelize");
 
+const { JWT, COOKIE, TTL } = require("../../../../../config/authConfig.js");
+
 const isProduction = process.env.NODE_ENV === "production";
-const COOKIEAGE = 15 * 60 * 1000; // 15 minutes for testing
 
 const Users = models.Users;
 const Otps = models.Otps;
@@ -45,7 +46,7 @@ class UsersService {
 
       // Generate OTP
       const otp = generateOtp();
-      const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+      const expiresAt = new Date(Date.now() + TTL.OTP_MS);
 
       // If user exists
       if (existingUser) {
@@ -76,7 +77,7 @@ class UsersService {
         }
 
         return {
-          data: { email, expiresIn: 300 },
+          data: { email, expiresIn: TTL.OTP_SECONDS },
           message: RESPONSE_MESSAGES.SUCCESS.OTP_RESENT,
           status: HTTP_STATUS.OK,
         };
@@ -111,7 +112,7 @@ class UsersService {
       EmailService.sendOtp(email, otp);
 
       return {
-        data: { email, expiresIn: 300 },
+        data: { email, expiresIn: TTL.OTP_SECONDS },
         message: RESPONSE_MESSAGES.SUCCESS.REGISTER_SUCCESS,
         status: HTTP_STATUS.CREATED,
       };
@@ -177,7 +178,7 @@ class UsersService {
         },
         process.env.JWT_SECRET,
         {
-          expiresIn: "5m",
+          expiresIn: JWT.REGISTER_TEMP_EXPIRY,
           issuer: process.env.JWT_ISSUER || "BOSQ",
         },
       );
@@ -186,8 +187,8 @@ class UsersService {
         throw new Error("Redis client not available");
       }
 
-      // Store temp token (5 min TTL)
-      await redisClient.setEx(`register-temp-token:${email}`, 300, JSON.stringify({ tempToken, email }));
+      // Store temp token
+      await redisClient.setEx(`register-temp-token:${email}`, TTL.REGISTER_TEMP_TOKEN_SECONDS, JSON.stringify({ tempToken, email }));
 
       await transaction.commit();
 
@@ -275,10 +276,16 @@ class UsersService {
     const transaction = await sequelize.transaction();
     try {
       const { email, password, rememberMe } = req.body;
-      const accessExpiry = rememberMe ? process.env.JWT_EXPIRES_IN_EXTENDED || "1d" : process.env.JWT_EXPIRES_IN || "15m";
-      const refreshExpiry = rememberMe ? process.env.JWT_REFRESH_EXPIRES_IN_EXTENDED || "30d" : process.env.JWT_REFRESH_EXPIRES_IN || "7d";
-      const accessMaxAge = rememberMe ? 24 * 60 * 60 * 1000 : COOKIEAGE;
-      const refreshMaxAge = rememberMe ? 30 * 24 * 60 * 60 * 1000 : 7 * 24 * 60 * 60 * 1000;
+      const accessExpiry = rememberMe ? JWT.ACCESS_EXPIRY_EXTENDED : JWT.ACCESS_EXPIRY;
+      const refreshExpiry = rememberMe ? JWT.REFRESH_EXPIRY_EXTENDED : JWT.REFRESH_EXPIRY;
+      const accessMaxAge = rememberMe ? COOKIE.ACCESS_MAX_AGE_EXTENDED : COOKIE.ACCESS_MAX_AGE;
+      const refreshMaxAge = rememberMe ? COOKIE.REFRESH_MAX_AGE_EXTENDED : COOKIE.REFRESH_MAX_AGE;
+
+      console.log("rememberMe", rememberMe);
+      console.log("accessExpiry", accessExpiry);
+      console.log("refreshExpiry", refreshExpiry);
+      console.log("accessMaxAge", accessMaxAge);
+      console.log("refreshMaxAge", refreshMaxAge);
 
       const user = await Users.findOne({
         where: { email },
@@ -351,7 +358,7 @@ class UsersService {
       await transaction.commit();
 
       console.log(
-        `[AuthService] Login successful for user: ${user.email}. Access token expiry: ${accessExpiry}, Refresh token expiry: ${refreshExpiry}`,
+        `[AuthService] Login successful for user: ${user.email}. Tokens issued. Access Expiry: ${accessExpiry}, Refresh Expiry: ${refreshExpiry}`,
       );
       return {
         data: { user: { id: user.id, name: user.name, phone: mobileNumber, email: user.email } },
@@ -360,7 +367,10 @@ class UsersService {
       if (!transaction.finished) {
         await transaction.rollback();
       }
-      console.error("Login Error:", error);
+      console.error(`[AuthService] Login Error for ${req.body.email}:`, {
+        message: error.message,
+        stack: error.stack,
+      });
       throw error;
     }
   }
@@ -412,7 +422,7 @@ class UsersService {
       );
 
       const otp = generateOtp();
-      const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+      const expiresAt = new Date(Date.now() + TTL.OTP_MS);
 
       await Otps.create(
         {
@@ -431,7 +441,7 @@ class UsersService {
       // Async email
       EmailService.sendOtp(email, otp);
 
-      return { data: { expiresIn: 300 } };
+      return { data: { expiresIn: TTL.OTP_SECONDS } };
     } catch (error) {
       if (!transaction.finished) {
         await transaction.rollback();
@@ -488,7 +498,7 @@ class UsersService {
         },
         process.env.JWT_SECRET,
         {
-          expiresIn: "15m",
+          expiresIn: JWT.FORGOT_PASSWORD_TEMP_EXPIRY,
           issuer: process.env.JWT_ISSUER || "BOSQ",
         },
       );
@@ -497,8 +507,8 @@ class UsersService {
         throw new Error("Redis client not available");
       }
 
-      // Store temp token (5 min TTL)
-      await redisClient.setEx(`forgot-password-temp-token:${email}`, 300, JSON.stringify({ resetToken, email }));
+      // Store temp token
+      await redisClient.setEx(`forgot-password-temp-token:${email}`, TTL.FORGOT_PASSWORD_TEMP_TOKEN_SECONDS, JSON.stringify({ resetToken, email }));
 
       await transaction.commit();
 
@@ -582,8 +592,6 @@ class UsersService {
     try {
       const { token } = req.body;
 
-      console.log(process.env.JWT_EXPIRES_IN);
-
       if (!token) {
         await transaction.rollback();
         throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.GOOGLE_TOKEN_REQUIRED, HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION_ERROR);
@@ -639,16 +647,16 @@ class UsersService {
 
       // Sign JWT (same pattern as regular login)
       const jwtToken = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, {
-        expiresIn: process.env.JWT_EXPIRES_IN || "15m",
+        expiresIn: JWT.ACCESS_EXPIRY,
         issuer: process.env.JWT_ISSUER || "BOSQ",
       });
 
       const googleRefreshToken = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, {
-        expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || "7d",
+        expiresIn: JWT.REFRESH_EXPIRY,
         issuer: process.env.JWT_ISSUER || "BOSQ",
       });
 
-      const googleRefreshExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+      const googleRefreshExpiresAt = new Date(Date.now() + COOKIE.REFRESH_MAX_AGE);
 
       await AuthSessions.create(
         {
@@ -667,7 +675,7 @@ class UsersService {
         secure: isProduction,
         sameSite: isProduction ? "none" : "lax",
         path: "/",
-        maxAge: COOKIEAGE,
+        maxAge: COOKIE.ACCESS_MAX_AGE,
       });
 
       res.cookie("refresh_token", googleRefreshToken, {
@@ -675,7 +683,7 @@ class UsersService {
         secure: isProduction,
         sameSite: isProduction ? "none" : "lax",
         path: "/",
-        maxAge: 7 * 24 * 60 * 60 * 1000,
+        maxAge: COOKIE.REFRESH_MAX_AGE,
       });
 
       await transaction.commit();
@@ -696,13 +704,16 @@ class UsersService {
       const refreshToken = req.cookies?.refresh_token;
 
       if (!refreshToken) {
+        console.warn("[AuthService] Refresh token attempt without refresh_token cookie");
         throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.TOKEN_INVALID, HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.AUTH_ERROR);
       }
 
       let decoded;
       try {
         decoded = jwt.verify(refreshToken, process.env.JWT_SECRET);
+        console.log(`[AuthService] Refresh token verified for ${decoded.email}`);
       } catch (err) {
+        console.error(`[AuthService] Refresh token verification failed: ${err.message}`);
         // Token is expired or invalid — revoke any matching session
         await AuthSessions.destroy({ where: { refresh_token: refreshToken } });
         throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.TOKEN_EXPIRED, HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.AUTH_ERROR);
@@ -711,16 +722,18 @@ class UsersService {
       const session = await AuthSessions.findOne({ where: { refresh_token: refreshToken } });
 
       if (!session) {
+        console.warn(`[AuthService] Refresh token session not found for ${decoded?.email || "unknown"}`);
         throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.TOKEN_INVALID, HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.AUTH_ERROR);
       }
 
       if (new Date() > new Date(session.expires_at)) {
+        console.warn(`[AuthService] Refresh token session expired for ${decoded.email}`);
         await session.destroy();
         throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.TOKEN_EXPIRED, HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.AUTH_ERROR);
       }
 
       const newAccessToken = jwt.sign({ id: decoded.id, email: decoded.email }, process.env.JWT_SECRET, {
-        expiresIn: process.env.JWT_EXPIRES_IN || "15m",
+        expiresIn: JWT.ACCESS_EXPIRY,
         issuer: process.env.JWT_ISSUER || "BOSQ",
       });
 
@@ -731,13 +744,13 @@ class UsersService {
         secure: isProduction,
         sameSite: isProduction ? "none" : "lax",
         path: "/",
-        maxAge: COOKIEAGE,
+        maxAge: COOKIE.ACCESS_MAX_AGE,
       });
 
-      console.log(`[AuthService] Refresh token successful for user: ${decoded.email}. New access token issued.`);
+      console.log(`[AuthService] New access token issued for ${decoded.email}. Expiry: ${JWT.ACCESS_EXPIRY}`);
       return { data: {} };
     } catch (error) {
-      console.error("Refresh Token Error:", error);
+      console.error("[AuthService] Refresh Token Error:", error.message);
       throw error;
     }
   }

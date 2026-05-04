@@ -34,7 +34,8 @@ const verifyToken = () => {
 
     try {
       // Get token from Authorization header or cookie
-      const token = req.headers.authorization?.split(" ")[1] || req.cookies.access_token || req.cookies.refresh_token;
+      const authHeader = req.headers.authorization;
+      const token = authHeader?.split(" ")[1] || req.cookies.access_token || req.cookies.refresh_token;
 
       if (!token) {
         return sendUnauthorizedError(res, "Authorization token required");
@@ -44,11 +45,12 @@ const verifyToken = () => {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
       req.auth = decoded;
-      console.log("Decoded token data:", decoded);
       next();
     } catch (error) {
-      console.error("Auth middleware error:", {
+      console.error(`[AuthMiddleware] Auth error on ${req.originalUrl}:`, {
+        name: error.name,
         message: error.message,
+        expiredAt: error.expiredAt,
         timestamp: new Date().toISOString(),
       });
       return sendUnauthorizedError(res, error.name === "TokenExpiredError" ? "Token expired" : "Invalid token");

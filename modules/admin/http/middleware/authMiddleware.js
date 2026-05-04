@@ -12,6 +12,7 @@ module.exports = (roles = []) => {
       // Get token from Authorization header or cookie
       const token = req.headers.authorization?.split(" ")[1] || req.cookies?.jwt;
       if (!token) {
+        console.warn(`[AdminAuthMiddleware] No token found in request to ${req.originalUrl}`);
         return sendUnauthorizedError(res, "Authorization token required");
       }
 
@@ -20,13 +21,16 @@ module.exports = (roles = []) => {
 
       // Check role
       if (roles.length && !roles.includes(decoded.role)) {
+        console.warn(`[AdminAuthMiddleware] Insufficient permissions for ${decoded.email} on ${req.originalUrl}. Required: ${roles}, Has: ${decoded.role}`);
         return sendUnauthorizedError(res, "Insufficient permissions");
       }
 
       req.user = decoded;
+      console.log(`[AdminAuthMiddleware] Token verified for admin ${decoded.email} on ${req.originalUrl}`);
       next();
     } catch (error) {
-      console.error("Auth middleware error:", {
+      console.error(`[AdminAuthMiddleware] Auth error on ${req.originalUrl}:`, {
+        name: error.name,
         message: error.message,
         timestamp: new Date().toISOString(),
       });

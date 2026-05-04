@@ -60,7 +60,7 @@ class CheckOutController {
 
       if (!cartOwner) {
         return ApiResponse.error(res, {
-          message: "User ID or Session ID is required",
+          message: "User ID or Session ID is required, please log in",
           status: HTTP_STATUS.BAD_REQUEST,
         });
       }

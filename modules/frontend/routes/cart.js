@@ -4,6 +4,7 @@ const CartController = require("../http/controllers/CartController.js");
 const { verifyToken } = require("../http/middleware/authMiddleware.js");
 const { optionalAuth } = require("../http/middleware/optionalAuthMiddleware.js");
 const { cartContext } = require("../http/middleware/cartMiddleware.js");
+const { verifyUserSession } = require("../http/middleware/staleUserMiddleware.js");
 
 // Routes that work for both authenticated users and guests
 router.get("/matching-products", optionalAuth(), cartContext, CartController.getMatchingProducts);

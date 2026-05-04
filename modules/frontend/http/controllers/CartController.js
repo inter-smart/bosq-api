@@ -82,7 +82,14 @@ class CartController {
   static async addItem(req, res) {
     try {
       const userId = req.auth?.id || null;
-      const { variant_id, quantity = 1 } = req.body;
+      const { variant_id, isAuthenticated, quantity = 1 } = req.body;
+
+      if (!userId && isAuthenticated) {
+        return ApiResponse.error(res, {
+          message: "User session has expired. Please log in again.",
+          status: HTTP_STATUS.UNAUTHORIZED,
+        });
+      }
 
       let sessionId = null;
 
@@ -115,7 +122,14 @@ class CartController {
   static async addMultipleItems(req, res) {
     try {
       const userId = req.auth?.id || null;
-      const { variant_ids } = req.body;
+      const { variant_ids, isAuthenticated } = req.body;
+
+      if (!userId && isAuthenticated) {
+        return ApiResponse.error(res, {
+          message: "User session has expired. Please log in again.",
+          status: HTTP_STATUS.UNAUTHORIZED,
+        });
+      }
 
       if (!Array.isArray(variant_ids) || variant_ids.length === 0) {
         return ApiResponse.error(res, {
@@ -152,7 +166,14 @@ class CartController {
   static async buyNowItem(req, res) {
     try {
       const userId = req.auth?.id || null;
-      const { variant_id, quantity = 1 } = req.body;
+      const { variant_id, isAuthenticated, quantity = 1 } = req.body;
+
+      if (!userId && isAuthenticated) {
+        return ApiResponse.error(res, {
+          message: "User session has expired. Please log in again.",
+          status: HTTP_STATUS.UNAUTHORIZED,
+        });
+      }
 
       let sessionId = null;
 
@@ -192,8 +213,16 @@ class CartController {
       }
 
       const userId = req.auth?.id || null;
+      const { quantity, variant_id, isAuthenticated } = req.body;
       const { itemId } = req.params;
-      const { quantity, variant_id } = req.body;
+
+      if (!userId && isAuthenticated) {
+        return ApiResponse.error(res, {
+          message: "User session has expired. Please log in again.",
+          status: HTTP_STATUS.UNAUTHORIZED,
+        });
+      }
+
       const sessionId = CartController.getSessionId(req);
 
       if (!userId && !sessionId) {
@@ -231,6 +260,15 @@ class CartController {
 
       const userId = req.auth?.id || null;
       const { itemId } = req.params;
+      const { isAuthenticated } = req.body;
+
+      if (!userId && isAuthenticated) {
+        return ApiResponse.error(res, {
+          message: "User session has expired. Please log in again.",
+          status: HTTP_STATUS.UNAUTHORIZED,
+        });
+      }
+
       const sessionId = CartController.getSessionId(req);
 
       if (!userId && !sessionId) {

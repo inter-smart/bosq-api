@@ -32,6 +32,15 @@ class AddressController {
 
   static async store(req, res) {
     try {
+      const cartOwner = req.cartOwner;
+
+      if (!cartOwner) {
+        return ApiResponse.error(res, {
+          message: RESPONSE_MESSAGES.ERROR.USER_SESSION_REQUIRED,
+          status: HTTP_STATUS.BAD_REQUEST,
+        });
+      }
+
       const data = await service.store(req, res);
       return ApiResponse.success(res, {
         message: RESPONSE_MESSAGES.SUCCESS.DATA_CREATED,
@@ -45,6 +54,14 @@ class AddressController {
 
   static async update(req, res) {
     try {
+      const cartOwner = req.cartOwner;
+
+      if (!cartOwner) {
+        return ApiResponse.error(res, {
+          message: RESPONSE_MESSAGES.ERROR.USER_SESSION_REQUIRED,
+          status: HTTP_STATUS.BAD_REQUEST,
+        });
+      }
       const data = await service.update(req, res);
       return ApiResponse.success(res, {
         message: RESPONSE_MESSAGES.SUCCESS.DATA_UPDATED,
@@ -60,6 +77,14 @@ class AddressController {
     const { id } = req.params;
     try {
       const cartOwner = req.cartOwner;
+
+      if (!cartOwner) {
+        return ApiResponse.error(res, {
+          message: RESPONSE_MESSAGES.ERROR.USER_SESSION_REQUIRED,
+          status: HTTP_STATUS.BAD_REQUEST,
+        });
+      }
+
       const addressType = req?.body?.addressType || "billing";
       const data = await service.destroy(cartOwner, id, addressType);
       return ApiResponse.success(res, {
@@ -74,9 +99,18 @@ class AddressController {
 
   static async setDefault(req, res) {
     const { id } = req.params;
-    const { addressType } = req.body;
+    const { addressType, isAuthenticated } = req.body;
+    const userId = req.auth?.id || null;
     try {
       const cartOwner = req.cartOwner;
+
+      if (!cartOwner) {
+        return ApiResponse.error(res, {
+          message: RESPONSE_MESSAGES.ERROR.USER_SESSION_REQUIRED,
+          status: HTTP_STATUS.BAD_REQUEST,
+        });
+      }
+
       const data = await service.setDefault(cartOwner, id, addressType);
       return ApiResponse.success(res, {
         message: RESPONSE_MESSAGES.SUCCESS.DATA_UPDATED,

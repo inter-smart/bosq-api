@@ -4,6 +4,7 @@ const Controller = require("../http/controllers/AddressController.js");
 const { verifyToken } = require("../http/middleware/authMiddleware.js");
 const { cartContext } = require("../http/middleware/cartMiddleware.js");
 const { optionalAuth } = require("../http/middleware/optionalAuthMiddleware.js");
+const { verifyUserSession } = require("../http/middleware/staleUserMiddleware.js");
 
 router.get("/", optionalAuth(), cartContext, Controller.index);
 router.get("/:id", optionalAuth(), cartContext, Controller.get);

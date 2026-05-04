@@ -353,6 +353,10 @@ const RESPONSE_MESSAGES = {
       en: "Your account has been deactivated. Please contact the admin.",
       ar: "تم تعطيل حسابك. يرجى التواصل مع المسؤول.",
     },
+    USER_SESSION_REQUIRED: {
+      en: "User ID or Session ID is required, please log in",
+      ar: "معرّف المستخدم أو الجلسة مطلوب، يرجى تسجيل الدخول",
+    },
   },
 };
 

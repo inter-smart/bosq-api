@@ -10,7 +10,7 @@ function buildAddressSection(data) {
       data?.map((item) => ({
         id: item?.id,
         fullName: item?.name,
-        phone: `${item?.country_code} ${item?.phone}` ?? null,
+        phone: item?.phone ?? null,
         streetAddress: formatAddress(item) ?? null,
         shippingFullName: item?.shipping_address?.name ?? null,
         shipping_address: formatAddress(item?.shipping_address) ?? null,

@@ -52,7 +52,7 @@ class OrderController {
           orderData.user = {
             name: billing.name,
             email: billing.email,
-            mobile: (billing.country_code || "") + " " + (billing.phone || ""),
+            mobile: billing.phone,
             is_guest: true,
           };
         }
@@ -86,7 +86,7 @@ class OrderController {
           {
             model: models.Users,
             as: "user",
-            attributes: ["id", "first_name", "last_name", "email", "mobile", "name"],
+            attributes: ["id", "first_name", "last_name", "email", "mobile", "name", "country_code"],
           },
           {
             model: models.OrderItem,
@@ -124,13 +124,15 @@ class OrderController {
         return sendNotFoundError(res, "Order");
       }
 
+
+
       const orderData = data.toJSON();
       if (!orderData.user && orderData.addresses && orderData.addresses.length > 0) {
         const billing = orderData.addresses.find((a) => a.address_type === "billing") || orderData.addresses[0];
         orderData.user = {
           name: user ? user.name : billing.name,
           email: user ? user.email : billing.email,
-          mobile: (billing.country_code || "") + " " + (billing.phone || ""),
+          mobile: billing.phone || "",
         };
       }
 

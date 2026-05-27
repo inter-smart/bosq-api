@@ -100,6 +100,13 @@ module.exports = (sequelize) => {
       otherKey: "product_variant_id",
       as: "variants",
     });
+
+    // Delivery rules
+    ProductCategory.hasMany(models.StateDeliveryRules, {
+      foreignKey: "category_id",
+      as: "delivery_rules",
+      onDelete: "CASCADE",
+    });
   };
 
   return ProductCategory;

@@ -196,8 +196,8 @@ class EmailService {
   }
 
   static async _sendAdminMail(subject, html) {
-    const transporter = this.getTransporter();
-    const settings = await this.getMailerSettings("admin");
+    const transporter = MailService.getTransporter();
+    const settings = await MailService.getMailerSettings("admin");
     console.log(
       `[EmailService] sending "${subject}" | from=${settings.from} to=${settings.from} cc=${JSON.stringify(settings.cc)}`,
     );
@@ -398,7 +398,7 @@ class EmailService {
   }
 
   static async sendProjectEnquiry(data) {
-    const transporter = this.getTransporter();
+    const transporter = MailService.getTransporter();
     const socialIconsHtml = await MailService.getSocialIconsHtml();
     const settings = await MailService.getMailerSettings("enquiries");
     const html = projectEnquiryTemplate(data, socialIconsHtml);

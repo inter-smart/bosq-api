@@ -60,19 +60,19 @@ function buildCheckoutFormPayload(data) {
     ---------------------------------- */
     shipping_address: shipping
       ? {
-          name: shipping?.name || "",
-          company_name: shipping?.company_name || "",
-          state: {
-            name: shipping?.state?.name || "",
-            slug: shipping?.state?.slug || "",
-          },
-          street_address: shipping?.street_address || "",
-          apartment: shipping?.apartment || "",
-          country: {
-            name: shipping?.state?.country?.name || "",
-            slug: shipping?.state?.country?.slug || "",
-          },
-        }
+        name: shipping?.name || "",
+        company_name: shipping?.company_name || "",
+        state: {
+          name: shipping?.state?.name || "",
+          slug: shipping?.state?.slug || "",
+        },
+        street_address: shipping?.street_address || "",
+        apartment: shipping?.apartment || "",
+        country: {
+          name: shipping?.state?.country?.name || "",
+          slug: shipping?.state?.country?.slug || "",
+        },
+      }
       : null,
   };
 }

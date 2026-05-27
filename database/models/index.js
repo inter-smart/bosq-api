@@ -136,6 +136,7 @@ const defineProjectEnquiry = require("./enquiries/projects");
 // STATE AND COUNTRY
 const defineState = require("./state");
 const defineCountry = require("./country");
+const defineStateDeliveryRules = require("./stateDeliveryRules");
 
 // MASTER
 const defineEnquiryDropdown = require("./master/enquiryDropdown");
@@ -282,6 +283,7 @@ const models = {
 
   Country: defineCountry(sequelize),
   State: defineState(sequelize),
+  StateDeliveryRules: defineStateDeliveryRules(sequelize),
 
   // COUPONS
   Coupons: defineCoupons(sequelize),

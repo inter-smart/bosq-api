@@ -25,7 +25,7 @@ class CountryService {
         attributes: ["name", "slug"],
         where: {
           slug: {
-            [Op.in]: ["ae", "om"],
+            [Op.in]: ["ae"],
           },
         },
       });

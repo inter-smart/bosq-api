@@ -51,6 +51,140 @@ class CheckOutService {
     return { is_valid: true };
   }
 
+
+
+  static async getCartDataWithDeliveryCharges(userId, sessionId, stateId) {
+
+
+    const cart = await models.Cart.findOne({
+      where: { user_id: '37', status: "active", type: "cart" },
+      include: [
+        {
+          model: models.CartItems,
+          as: "items",
+          include: [
+            {
+              model: models.ProductVariants,
+              as: "variant",
+              attributes: ["id", "sku", "price", "media_path", "title", "stock"],
+              include: [
+                {
+                  model: models.ProductCategory,
+                  as: "categories",
+                  attributes: ["id", "name", "parent_id"],
+                  through: { attributes: [] },
+                  include: [
+                    {
+                      model: models.ProductCategory,
+                      as: "parent",
+                      attributes: ["id", "name"]
+                    }
+                  ]
+                }
+              ]
+            },
+          ],
+        },
+      ],
+    });
+
+    if (!cart) {
+      return { items: [] };
+    }
+
+    let deliveryRules = [];
+    if (stateId) {
+      deliveryRules = await models.StateDeliveryRules.findAll({
+        where: { state_id: stateId }
+      });
+    }
+
+    const defaultRule = deliveryRules.find(r => r.category_id === null);
+
+    const items = cart.items.map((item) => {
+      let deliveryCharge = 0;
+      let ruleApplied = null;
+      const categories = item.variant?.categories || [];
+      // Extract unique parent categories for this variant
+      const parentCategories = [];
+      for (const cat of categories) {
+        if (cat.parent_id && cat.parent) {
+          if (!parentCategories.find(c => c.id === cat.parent.id)) {
+            parentCategories.push({ id: cat.parent.id, name: cat.parent.name });
+          }
+        } else {
+          if (!parentCategories.find(c => c.id === cat.id)) {
+            parentCategories.push({ id: cat.id, name: cat.name });
+          }
+        }
+      }
+
+      if (stateId && deliveryRules.length > 0) {
+        // Find if any parent category of this variant has a specific rule
+        for (const parentCat of parentCategories) {
+          const rule = deliveryRules.find(r => r.category_id === parentCat.id);
+          if (rule) {
+            ruleApplied = rule;
+            break;
+          }
+        }
+
+        // If no specific category matched, fallback to default rule
+        if (!ruleApplied && defaultRule) {
+          ruleApplied = defaultRule;
+        }
+
+        if (ruleApplied && !ruleApplied.is_free) {
+          deliveryCharge = parseFloat(ruleApplied.charge);
+        }
+      }
+
+      let calculatedTotalDeliveryCharge = 0;
+      let redirectToSales = false;
+
+      if (item.quantity === 1) {
+        calculatedTotalDeliveryCharge = deliveryCharge;
+      } else if (item.quantity >= 2 && item.quantity <= 10) {
+        calculatedTotalDeliveryCharge = deliveryCharge * 2;
+      } else if (item.quantity > 10) {
+        calculatedTotalDeliveryCharge = 0; // Delivery is handled by sales team
+        redirectToSales = true;
+      }
+
+      return {
+        id: item.id,
+        variant_id: item.variant_id,
+        title: item.variant?.title || "",
+        slug: item.variant?.sku || "",
+        price: item.price,
+        media_path: generateImageUrl(item?.variant?.media_path),
+        quantity: item.quantity,
+        categories: parentCategories,
+        delivery_charge_per_unit: deliveryCharge,
+        total_delivery_charge: calculatedTotalDeliveryCharge.toFixed(2),
+        redirect_to_sales: redirectToSales,
+        discount_amount: item.discount_amount,
+        line_total: (parseFloat(item.price) * item.quantity + calculatedTotalDeliveryCharge - item.discount_amount).toFixed(2),
+        is_sold_out: item.variant ? item.variant.stock < item.quantity : false,
+      };
+    });
+
+    const itemCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
+    const overallDeliveryCharge = items.reduce((sum, item) => sum + parseFloat(item.total_delivery_charge), 0);
+    const requiresSalesContact = items.some(item => item.redirect_to_sales);
+
+    return {
+      id: cart.id,
+      items,
+      sub_total: cart.subtotal,
+      tax_total: cart.tax_total,
+      overall_delivery_charge: overallDeliveryCharge.toFixed(2),
+      requires_sales_contact: requiresSalesContact,
+      grand_total: cart.grand_total,
+      item_count: itemCount,
+    };
+  }
+
   static async getCartData(userId, sessionId) {
     const whereClause = userId
       ? { user_id: userId, status: "active", type: "cart" }
@@ -358,9 +492,9 @@ class CheckOutService {
         coupon_scope_type: coupon.scope_type,
         item_discounts: itemDiscounts
           ? Array.from(itemDiscounts.entries()).map(([id, amount]) => ({
-              id,
-              amount: parseFloat(amount.toFixed(2)),
-            }))
+            id,
+            amount: parseFloat(amount.toFixed(2)),
+          }))
           : null,
       };
 

@@ -77,6 +77,40 @@ class CheckOutController {
     }
   }
 
+
+  static async testCheckout(req, res) {
+    try {
+      const cartOwner = req.cartOwner;
+      const state_id = req.query.state_id || req.body.state_id;
+
+      if (!cartOwner) {
+        return ApiResponse.error(res, {
+          message: "User ID or Session ID is required, please log in",
+          status: HTTP_STATUS.BAD_REQUEST,
+        });
+      }
+
+      if (!state_id) {
+        return ApiResponse.error(res, {
+          message: "State ID is required. Pass ?state_id=... in the URL query.",
+          status: HTTP_STATUS.BAD_REQUEST,
+        });
+      }
+
+      console.log(cartOwner);
+
+      const cart = await CheckOutService.getCartDataWithDeliveryCharges(cartOwner.userId, cartOwner.sessionId, state_id);
+
+      return ApiResponse.success(res, {
+        message: "Cart data retrieved successfully",
+        data: cart,
+        status: HTTP_STATUS.OK,
+      });
+    } catch (error) {
+      return ErrorHandler.handleControllerError(error, res, "CheckOutController.testCheckout");
+    }
+  }
+
   static async getAddressForUsers(req, res) {
     const cartOwner = req.cartOwner;
 

@@ -5,6 +5,7 @@ const { verifyToken } = require("../http/middleware/authMiddleware.js");
 const { optionalAuth } = require("../http/middleware/optionalAuthMiddleware.js");
 const { cartContext } = require("../http/middleware/cartMiddleware.js");
 
+router.get("/checkout-test", optionalAuth(), cartContext, Controller.testCheckout);
 // Routes that work for both authenticated users and guests
 router.get("/validate-checkout", optionalAuth(), cartContext, Controller.validateCheckout);
 router.get("/cart-summary", optionalAuth(), cartContext, Controller.getCartData);

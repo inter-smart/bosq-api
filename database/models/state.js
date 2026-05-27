@@ -25,72 +25,6 @@ module.exports = (sequelize) => {
         type: DataTypes.INTEGER,
         allowNull: false,
       },
-
-      status: {
-        type: DataTypes.SMALLINT,
-        allowNull: false,
-        defaultValue: 1, // ACTIVE
-      },
-
-      meta_title: {
-        type: DataTypes.TEXT,
-        allowNull: true,
-      },
-
-      meta_description: {
-        type: DataTypes.TEXT,
-        allowNull: true,
-      },
-
-      meta_keywords: {
-        type: DataTypes.TEXT,
-        allowNull: true,
-      },
-
-      targeted_keywords: {
-        type: DataTypes.TEXT,
-        allowNull: true,
-      },
-
-      other_meta_tags: {
-        type: DataTypes.TEXT,
-        allowNull: true,
-      },
-
-      canonical_url: {
-        type: DataTypes.TEXT,
-        allowNull: true,
-      },
-
-      og_image: {
-        type: DataTypes.TEXT,
-        allowNull: true,
-      },
-
-      og_title: {
-        type: DataTypes.TEXT,
-        allowNull: true,
-      },
-
-      og_description: {
-        type: DataTypes.TEXT,
-        allowNull: true,
-      },
-
-      twitter_title: {
-        type: DataTypes.TEXT,
-        allowNull: true,
-      },
-
-      twitter_description: {
-        type: DataTypes.TEXT,
-        allowNull: true,
-      },
-
-      twitter_image: {
-        type: DataTypes.TEXT,
-        allowNull: true,
-      },
     },
     {
       tableName: "states",
@@ -118,6 +52,13 @@ module.exports = (sequelize) => {
     State.hasMany(models.CustomizationEnquiry, {
       foreignKey: "state_id",
       as: "customization_form",
+      onDelete: "CASCADE",
+    });
+
+    // delivery rules
+    State.hasMany(models.StateDeliveryRules, {
+      foreignKey: "state_id",
+      as: "delivery_rules",
       onDelete: "CASCADE",
     });
   };

@@ -20,27 +20,6 @@ module.exports = (sequelize) => {
         allowNull: true,
         unique: true,
       },
-
-      status: {
-        type: DataTypes.SMALLINT,
-        allowNull: false,
-        defaultValue: 1, // ACTIVE
-      },
-
-      meta_title: {
-        type: DataTypes.TEXT,
-        allowNull: true,
-      },
-
-      meta_description: {
-        type: DataTypes.TEXT,
-        allowNull: true,
-      },
-
-      meta_keywords: {
-        type: DataTypes.TEXT,
-        allowNull: true,
-      },
     },
     {
       tableName: "countries",

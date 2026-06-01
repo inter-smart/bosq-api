@@ -111,6 +111,38 @@ class CheckOutController {
     }
   }
 
+  static async getShippingCharge(req, res) {
+    try {
+      const userId = req.auth?.id;
+      const sessionId = req.cartOwner?.id;
+      const state_id = req.body?.state_id;
+
+      if (!userId && !sessionId) {
+        return ApiResponse.error(res, {
+          message: "User ID or Session ID is required",
+          status: HTTP_STATUS.BAD_REQUEST,
+        });
+      }
+
+      if (!state_id) {
+        return ApiResponse.error(res, {
+          message: "state_id is required",
+          status: HTTP_STATUS.BAD_REQUEST,
+        });
+      }
+
+      const result = await CheckOutService.getShippingChargeForState(userId, sessionId, state_id);
+
+      return ApiResponse.success(res, {
+        message: "Shipping charge calculated successfully",
+        data: result,
+        status: HTTP_STATUS.OK,
+      });
+    } catch (error) {
+      return ErrorHandler.handleControllerError(error, res, "CheckOutController.getShippingCharge");
+    }
+  }
+
   static async getAddressForUsers(req, res) {
     const cartOwner = req.cartOwner;
 

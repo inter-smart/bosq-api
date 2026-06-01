@@ -185,6 +185,64 @@ class CheckOutService {
     };
   }
 
+  /**
+   * Calculate shipping charge for a given stateId (called from the new API endpoint).
+   * Reuses the same flat-rate threshold + calculateCartShippingCharge logic as getCartData.
+   */
+  static async getShippingChargeForState(userId, sessionId, stateId) {
+    const whereClause = userId
+      ? { user_id: userId, status: "active", type: "cart" }
+      : { session_id: sessionId, status: "active", user_id: null, type: "cart" };
+
+    const cart = await models.Cart.findOne({
+      where: whereClause,
+      include: [
+        {
+          model: models.CartItems,
+          as: "items",
+          include: [
+            {
+              model: models.ProductVariants,
+              as: "variant",
+              attributes: ["id", "sku", "price", "media_path", "title", "stock"],
+              include: [
+                {
+                  model: models.ProductCategory,
+                  as: "categories",
+                  attributes: ["id", "name", "parent_id"],
+                  through: { attributes: [] },
+                  include: [
+                    {
+                      model: models.ProductCategory,
+                      as: "parent",
+                      attributes: ["id", "name"],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    if (!cart) {
+      return { overall_delivery_charge: "0.00" };
+    }
+
+    const cartSubTotal = parseFloat(cart?.subtotal || 0);
+    const isChargeCalculationNeeded = cartSubTotal > MINIMUM_CART_SUBTOTAL;
+
+    let overallDeliveryCharge = isChargeCalculationNeeded ? 0 : 100;
+
+    if (isChargeCalculationNeeded && stateId) {
+      const shippingChargeData = await this.calculateCartShippingCharge(cart, stateId);
+      overallDeliveryCharge = shippingChargeData.overallDeliveryCharge;
+    }
+
+    return { overall_delivery_charge: overallDeliveryCharge.toFixed(2) };
+  }
+
   static async calculateCartShippingCharge(cart, stateId) {
     if (!stateId || !cart || !cart.items || cart.items.length === 0) {
       return { overallDeliveryCharge: 0, requiresSalesContact: false, itemsCharges: [] };

@@ -38,7 +38,9 @@ function buildCheckoutFormPayload(data) {
     is_default: data?.is_default,
 
     // frontend expects slug for Select component matching
+    state_id: data?.state_id || null,
     state: {
+      id: data?.state?.id || null,
       name: data?.state?.name || "",
       slug: data?.state?.slug || "",
     },
@@ -62,7 +64,9 @@ function buildCheckoutFormPayload(data) {
       ? {
         name: shipping?.name || "",
         company_name: shipping?.company_name || "",
+        state_id: shipping?.state_id || null,
         state: {
+          id: shipping?.state?.id || null,
           name: shipping?.state?.name || "",
           slug: shipping?.state?.slug || "",
         },

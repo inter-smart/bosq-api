@@ -12,6 +12,9 @@ router.get("/cart-summary", optionalAuth(), cartContext, Controller.getCartData)
 router.get("/cart-buynow", optionalAuth(), cartContext, Controller.getBuyNowCartData);
 router.get("/cart-addresss", optionalAuth(), cartContext, Controller.getAddressForUsers);
 
+// Shipping charge calculation
+router.post("/shipping-charge", optionalAuth(), cartContext, Controller.getShippingCharge);
+
 // Coupon routes
 router.post("/apply-coupon", verifyToken(), Controller.applyCoupon);
 router.post("/remove-coupon", verifyToken(), Controller.removeCoupon);

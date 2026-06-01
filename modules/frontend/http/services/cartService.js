@@ -7,10 +7,96 @@ const ProductServiceHelpers = require("../traits/products.js");
 const { isItemWishListed, generateQueryParams } = require("../traits/dataManipulations/product/product.js");
 const { Op } = require("sequelize");
 const { type } = require("os");
-const { console } = require("inspector");
 const logger = require("../../../../config/logger.js");
 
+const MINIMUM_CART_SUBTOTAL = 500;
+
 class CartService {
+  static async calculateCartShippingCharge(cart, stateId) {
+    if (!stateId || !cart || !cart.items || cart.items.length === 0) {
+      return { overallDeliveryCharge: 0, requiresSalesContact: false, itemsCharges: [] };
+    }
+
+    const deliveryRules = await models.StateDeliveryRules.findAll({
+      where: { state_id: stateId },
+    });
+
+    const defaultRule = deliveryRules.find((r) => r.category_id === null);
+
+
+    const itemsCharges = cart.items.map((item) => {
+      let deliveryCharge = 0;
+      let ruleApplied = null;
+      const categories = item.variant?.categories || [];
+      const parentCategories = [];
+
+      console.log("Categories: ", JSON.stringify(categories, null, 2))
+
+      for (const cat of categories) {
+        if (cat.parent_id && cat.parent) {
+          console.log("Parent 1: ", JSON.stringify(cat.parent, null, 2))
+          if (!parentCategories.find((c) => c.id === cat.parent.id)) {
+            parentCategories.push({ id: cat.parent.id, name: cat.parent.name });
+          }
+        } else {
+          console.log("Parent 2: ", JSON.stringify(cat.parent, null, 2))
+          if (!parentCategories.find((c) => c.id === cat.id)) {
+            parentCategories.push({ id: cat.id, name: cat.name });
+          }
+        }
+      }
+      console.log("Parent Categories: ", JSON.stringify(parentCategories, null, 2))
+
+      if (deliveryRules.length > 0) {
+        for (const parentCat of parentCategories) {
+          const rule = deliveryRules.find((r) => r.category_id === parentCat.id);
+          if (rule) {
+            ruleApplied = rule;
+            break;
+          }
+        }
+
+        if (!ruleApplied && defaultRule) {
+          ruleApplied = defaultRule;
+        }
+
+        if (ruleApplied && !ruleApplied.is_free) {
+          deliveryCharge = parseFloat(ruleApplied.charge);
+        }
+      }
+
+      let calculatedTotalDeliveryCharge = 0;
+      let redirectToSales = false;
+
+      if (item.quantity === 1) {
+        calculatedTotalDeliveryCharge = deliveryCharge;
+      } else if (item.quantity >= 2 && item.quantity <= 10) {
+        calculatedTotalDeliveryCharge = deliveryCharge * 2;
+      } else if (item.quantity > 10) {
+        calculatedTotalDeliveryCharge = 0;
+        redirectToSales = true;
+      }
+
+      console.log("calculatedTotalDeliveryCharge ===>", calculatedTotalDeliveryCharge);
+      console.log("redirectToSales ===>", redirectToSales);
+
+      return {
+        itemId: item.id,
+        totalDeliveryCharge: calculatedTotalDeliveryCharge,
+        redirectToSales,
+      };
+    });
+
+    const overallDeliveryCharge = itemsCharges.reduce((sum, item) => sum + item.totalDeliveryCharge, 0);
+    const requiresSalesContact = itemsCharges.some((item) => item.redirectToSales);
+
+    return {
+      overallDeliveryCharge,
+      requiresSalesContact,
+      itemsCharges,
+    };
+  }
+
   /**
    * Get or create cart for user/guest
    */
@@ -77,50 +163,61 @@ class CartService {
         ? { user_id: userId, status: "active", type: "cart" }
         : { session_id: sessionId, status: "active", user_id: null, type: "cart" };
 
-      const cart = await models.Cart.findOne(
-        {
-          where: whereClause,
-          include: [
-            {
-              model: models.CartItems,
-              as: "items",
-              include: [
-                {
-                  model: models.ProductBase,
-                  as: "product",
-                  attributes: ["id", "title", "slug"],
-                },
-                {
-                  model: models.ProductVariants,
-                  as: "variant",
-                  attributes: ["id", "sku", "price", "media_path", "stock", "title", "title_ar"],
-                  include: [
-                    {
-                      model: models.ProductVariantAttributes,
-                      as: "variant_attributes",
-                      attributes: ["id", "attribute_id", "attribute_value_id"],
-                      include: [
-                        {
-                          model: models.ProductAttribute,
-                          as: "ProductAttribute",
-                          attributes: ["id", "name", "name_ar", "code", "slug"],
-                        },
-                        {
-                          model: models.AttributeValues,
-                          as: "AttributeValue",
-                          attributes: ["id", "value", "value_ar", "slug"],
-                        },
-                      ],
-                    },
-                  ],
-                },
-              ],
-            },
-          ],
-          order: [[{ model: models.CartItems, as: "items" }, "id", "ASC"]],
-          transaction,
-        },
-      );
+      const cart = await models.Cart.findOne({
+        where: whereClause,
+        include: [
+          {
+            model: models.CartItems,
+            as: "items",
+            include: [
+              {
+                model: models.ProductBase,
+                as: "product",
+                attributes: ["id", "title", "slug"],
+              },
+              {
+                model: models.ProductVariants,
+                as: "variant",
+                attributes: ["id", "sku", "price", "media_path", "stock", "title", "title_ar"],
+                include: [
+                  {
+                    model: models.ProductVariantAttributes,
+                    as: "variant_attributes",
+                    attributes: ["id", "attribute_id", "attribute_value_id"],
+                    include: [
+                      {
+                        model: models.ProductAttribute,
+                        as: "ProductAttribute",
+                        attributes: ["id", "name", "name_ar", "code", "slug"],
+                      },
+                      {
+                        model: models.AttributeValues,
+                        as: "AttributeValue",
+                        attributes: ["id", "value", "value_ar", "slug"],
+                      },
+                    ],
+                  },
+                  {
+                    model: models.ProductCategory,
+                    as: "categories",
+                    attributes: ["id", "name", "parent_id"],
+                    through: { attributes: [] },
+                    include: [
+                      {
+                        model: models.ProductCategory,
+                        as: "parent",
+                        attributes: ["id", "name"],
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+        order: [[{ model: models.CartItems, as: "items" }, "id", "ASC"]],
+        transaction,
+      });
 
       if (!cart) {
         await transaction.commit();
@@ -162,6 +259,20 @@ class CartService {
                     ],
                   },
                   {
+                    model: models.ProductCategory,
+                    as: "categories",
+                    attributes: ["id", "name", "parent_id"],
+                    through: { attributes: [] },
+                    include: [
+                      {
+                        model: models.ProductCategory,
+                        as: "parent",
+                        attributes: ["id", "name"],
+                      },
+                    ],
+                  },
+
+                  {
                     model: models.ProductVariantAttributes,
                     as: "variant_attributes",
                     attributes: ["id", "attribute_id", "attribute_value_id"],
@@ -185,6 +296,67 @@ class CartService {
         ],
         transaction,
       });
+
+      const cartOwner = userId ? { type: "user", id: userId } : { type: "guest", id: sessionId };
+
+      const cartSubTotal = parseFloat(cart?.subtotal || 0);
+      const isChargeCalculationNeeded = cartSubTotal > MINIMUM_CART_SUBTOTAL;
+
+
+
+      let stateId = null;
+
+      if (cartOwner.id && isChargeCalculationNeeded) {
+        const modelsMap = {
+          user: {
+            model: models.Address,
+            field: "user_id",
+          },
+          guest: {
+            model: models.CartAddress,
+            field: "session_id",
+          },
+        };
+
+        const config = modelsMap[cartOwner.type];
+        if (config) {
+          const { model: Model, field } = config;
+
+          const addresses = await Model.findAll({
+            where: { [field]: cartOwner.id },
+          });
+
+          let candidateAddresses = [];
+          const shippingAddresses = addresses.filter((a) => a.address_type === "shipping");
+          const billingAddresses = addresses.filter((a) => a.address_type === "billing");
+
+          if (shippingAddresses.length > 0) {
+            candidateAddresses = shippingAddresses;
+          } else if (billingAddresses.length > 0) {
+            candidateAddresses = billingAddresses;
+          }
+
+          let selectedAddress = null;
+          if (candidateAddresses.length > 0) {
+            selectedAddress = candidateAddresses.find((a) => a.is_default) || candidateAddresses[0];
+          }
+
+          if (selectedAddress) {
+            stateId = selectedAddress.state_id;
+          }
+        }
+      }
+
+      let overallDeliveryCharge = isChargeCalculationNeeded ? 0 : 100;
+      let requiresSalesContact = false;
+      let itemsCharges = [];
+
+      if (isChargeCalculationNeeded) {
+        const shippingChargeData = await this.calculateCartShippingCharge(cart, stateId);
+        overallDeliveryCharge = shippingChargeData.overallDeliveryCharge;
+        requiresSalesContact = shippingChargeData.requiresSalesContact;
+        itemsCharges = shippingChargeData.itemsCharges;
+      }
 
       const itemCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -227,12 +399,15 @@ class CartService {
       return {
         id: cart.id,
         items: formattedCartData,
-        subtotal: cart?.subtotal,
+        subtotal: parseFloat(cart?.subtotal),
         discount_total: cart?.discount_total,
         tax_total: cart?.tax_total,
-        grand_total: cart?.grand_total,
+        grand_total: parseFloat(cart?.grand_total) + parseFloat(overallDeliveryCharge),
         applied_coupon_code: cart?.applied_coupon_code,
         item_count: itemCount,
+        shipping_charge: overallDeliveryCharge,
+        requires_sales_contact: requiresSalesContact,
+        items_charges: itemsCharges,
       };
     } catch (error) {
       console.log(error);
@@ -468,31 +643,29 @@ class CartService {
         ? { user_id: userId, status: "active", type: "cart" }
         : { session_id: sessionId, status: "active", user_id: null, type: "cart" };
 
-      const cart = await models.Cart.findOne(
-        {
-          where: whereClause,
-          include: [
-            {
-              model: models.CartItems,
-              as: "items",
-              include: [
-                {
-                  model: models.ProductBase,
-                  as: "product",
-                  attributes: ["id", "title", "slug"],
-                },
-                {
-                  model: models.ProductVariants,
-                  as: "variant",
-                  attributes: ["id", "sku", "price", "media_path", "stock", "title", "title_ar"],
-                },
-              ],
-            },
-          ],
-          order: [[{ model: models.CartItems, as: "items" }, "id", "ASC"]],
-          transaction,
-        },
-      );
+      const cart = await models.Cart.findOne({
+        where: whereClause,
+        include: [
+          {
+            model: models.CartItems,
+            as: "items",
+            include: [
+              {
+                model: models.ProductBase,
+                as: "product",
+                attributes: ["id", "title", "slug"],
+              },
+              {
+                model: models.ProductVariants,
+                as: "variant",
+                attributes: ["id", "sku", "price", "media_path", "stock", "title", "title_ar"],
+              },
+            ],
+          },
+        ],
+        order: [[{ model: models.CartItems, as: "items" }, "id", "ASC"]],
+        transaction,
+      });
 
       if (!cart) {
         throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.CART_NOT_FOUND, HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);

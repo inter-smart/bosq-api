@@ -5,7 +5,7 @@ const { HTTP_STATUS, ERROR_CODES, RESPONSE_MESSAGES } = require("../traits/const
 const { generateImageUrl } = require("../../traits/imageUrlHelper.js");
 const { buildCheckoutFormPayload } = require("../traits/dataManipulations/address.js");
 const ProductServiceHelpers = require("../traits/products.js");
-const { checkInvalidProducts } = require("../traits/dataManipulations/product/product.js");
+const MINIMUM_CART_SUBTOTAL = 500;
 
 class CheckOutService {
   static async validateCheckout(user) {
@@ -185,6 +185,86 @@ class CheckOutService {
     };
   }
 
+  static async calculateCartShippingCharge(cart, stateId) {
+    if (!stateId || !cart || !cart.items || cart.items.length === 0) {
+      return { overallDeliveryCharge: 0, requiresSalesContact: false, itemsCharges: [] };
+    }
+
+    const deliveryRules = await models.StateDeliveryRules.findAll({
+      where: { state_id: stateId }
+    });
+
+    const defaultRule = deliveryRules.find(r => r.category_id === null);
+
+    const itemsCharges = cart.items.map((item) => {
+      let deliveryCharge = 0;
+      let ruleApplied = null;
+      const categories = item.variant?.categories || [];
+      const parentCategories = [];
+
+      for (const cat of categories) {
+        if (cat.parent_id && cat.parent) {
+          if (!parentCategories.find(c => c.id === cat.parent.id)) {
+            parentCategories.push({ id: cat.parent.id, name: cat.parent.name });
+          }
+        } else {
+          if (!parentCategories.find(c => c.id === cat.id)) {
+            parentCategories.push({ id: cat.id, name: cat.name });
+          }
+        }
+      }
+
+      if (deliveryRules.length > 0) {
+        for (const parentCat of parentCategories) {
+          const rule = deliveryRules.find(r => r.category_id === parentCat.id);
+          if (rule) {
+            ruleApplied = rule;
+            break;
+          }
+        }
+
+        if (!ruleApplied && defaultRule) {
+          ruleApplied = defaultRule;
+        }
+
+        if (ruleApplied && !ruleApplied.is_free) {
+          deliveryCharge = parseFloat(ruleApplied.charge);
+        }
+      }
+
+      let calculatedTotalDeliveryCharge = 0;
+      let redirectToSales = false;
+
+      if (item.quantity === 1) {
+        calculatedTotalDeliveryCharge = deliveryCharge;
+      } else if (item.quantity >= 2 && item.quantity <= 10) {
+        calculatedTotalDeliveryCharge = deliveryCharge * 2;
+      } else if (item.quantity > 10) {
+        calculatedTotalDeliveryCharge = 0;
+        redirectToSales = true;
+      }
+
+
+      console.log("calculatedTotalDeliveryCharge ===>", calculatedTotalDeliveryCharge)
+      console.log("redirectToSales ===>", redirectToSales)
+
+      return {
+        itemId: item.id,
+        totalDeliveryCharge: calculatedTotalDeliveryCharge,
+        redirectToSales
+      };
+    });
+
+    const overallDeliveryCharge = itemsCharges.reduce((sum, item) => sum + item.totalDeliveryCharge, 0);
+    const requiresSalesContact = itemsCharges.some(item => item.redirectToSales);
+
+    return {
+      overallDeliveryCharge,
+      requiresSalesContact,
+      itemsCharges
+    };
+  }
+
   static async getCartData(userId, sessionId) {
     const whereClause = userId
       ? { user_id: userId, status: "active", type: "cart" }
@@ -203,6 +283,21 @@ class CheckOutService {
               model: models.ProductVariants,
               as: "variant",
               attributes: ["id", "sku", "price", "media_path", "title", "stock"],
+              include: [
+                {
+                  model: models.ProductCategory,
+                  as: "categories",
+                  attributes: ["id", "name", "parent_id"],
+                  through: { attributes: [] },
+                  include: [
+                    {
+                      model: models.ProductCategory,
+                      as: "parent",
+                      attributes: ["id", "name"]
+                    }
+                  ]
+                }
+              ]
             },
           ],
         },
@@ -215,69 +310,96 @@ class CheckOutService {
       };
     }
 
-    // const appliedCouponScope = cart.applied_coupon_scope;
+    const cartOwner = userId
+      ? { type: "user", id: userId }
+      : { type: "guest", id: sessionId };
 
-    // appliedCouponScope !== "common" && (await ProductServiceHelpers.validateCoupon(cart));
+    const cartSubTotal = parseFloat(cart?.subtotal || 0);
+    const isChargeCalculationNeeded = cartSubTotal > MINIMUM_CART_SUBTOTAL;
 
-    // appliedCouponScope !== "common" &&
-    //   (await cart.reload({
-    //     include: [
-    //       {
-    //         model: models.CartItems,
-    //         as: "items",
-    //         where: { is_buy_now: false },
-    //         include: [
-    //           {
-    //             model: models.ProductBase,
-    //             as: "product",
-    //             attributes: ["id", "title", "slug"],
-    //           },
-    //           {
-    //             model: models.ProductVariants,
-    //             as: "variant",
-    //             attributes: ["id", "sku", "price", "media_path", "stock", "title", "title_ar"],
-    //           },
-    //         ],
-    //       },
-    //     ],
-    //   }));
+    let stateId = null;
+
+    if (cartOwner.id && isChargeCalculationNeeded) {
+      const modelsMap = {
+        user: {
+          model: models.Address,
+          field: "user_id",
+        },
+        guest: {
+          model: models.CartAddress,
+          field: "session_id",
+        },
+      };
+
+      const config = modelsMap[cartOwner.type];
+      if (config) {
+        const { model: Model, field } = config;
+
+        const addresses = await Model.findAll({
+          where: { [field]: cartOwner.id },
+        });
+
+        let candidateAddresses = [];
+        const shippingAddresses = addresses.filter((a) => a.address_type === "shipping");
+        const billingAddresses = addresses.filter((a) => a.address_type === "billing");
+
+
+
+        if (shippingAddresses.length > 0) {
+          candidateAddresses = shippingAddresses;
+        } else if (billingAddresses.length > 0) {
+          candidateAddresses = billingAddresses;
+        }
+
+        let selectedAddress = null;
+        if (candidateAddresses.length > 0) {
+          selectedAddress = candidateAddresses.find((a) => a.is_default) || candidateAddresses[0];
+        }
+
+        if (selectedAddress) {
+          stateId = selectedAddress.state_id;
+        }
+      }
+    }
+
+
+    let overallDeliveryCharge = isChargeCalculationNeeded ? 0 : 100;
+    let requiresSalesContact = false;
+    let itemsCharges = [];
+
+    if (isChargeCalculationNeeded) {
+      const shippingChargeData = await this.calculateCartShippingCharge(cart, stateId);
+      overallDeliveryCharge = shippingChargeData.overallDeliveryCharge;
+      requiresSalesContact = shippingChargeData.requiresSalesContact;
+      itemsCharges = shippingChargeData.itemsCharges;
+    }
 
     const itemCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
 
-    // let couponDiscountType = null;
-    // let couponDiscountValue = null;
-    // if (cart.coupon_id) {
-    //   const coupon = await models.Coupons.findOne({
-    //     where: { id: cart.coupon_id },
-    //     attributes: ["discount_type", "discount_value"],
-    //   });
-    //   if (coupon) {
-    //     couponDiscountType = coupon.discount_type;
-    //     couponDiscountValue = coupon.discount_value;
-    //   }
-    // }
 
     return {
       id: cart.id,
-      items: cart.items.map((item) => ({
-        id: item.id,
-        variant_id: item.variant_id,
-        title: item.variant?.title || "",
-        slug: item.variant?.sku || "",
-        price: item.price,
-        media_path: generateImageUrl(item?.variant?.media_path),
-        quantity: item.quantity,
-        discount_amount: item.discount_amount,
-        line_total: (parseFloat(item.price) * item.quantity).toFixed(2),
-        is_sold_out: item.variant ? item.variant.stock < item.quantity : false,
-      })),
+      items: cart.items.map((item) => {
+        const itemCharge = itemsCharges.find(i => i.itemId === item.id);
+
+        return {
+          id: item.id,
+          variant_id: item.variant_id,
+          title: item.variant?.title || "",
+          slug: item.variant?.sku || "",
+          price: item.price,
+          media_path: generateImageUrl(item?.variant?.media_path),
+          quantity: item.quantity,
+          discount_amount: item.discount_amount,
+          line_total: (parseFloat(item.price) * item.quantity).toFixed(2),
+          is_sold_out: item.variant ? item.variant.stock < item.quantity : false,
+        };
+      }),
       sub_total: cart.subtotal,
-      // discount_total: cart.discount_total,
       tax_total: cart.tax_total,
+      overall_delivery_charge: overallDeliveryCharge.toFixed(2),
+      requires_sales_contact: requiresSalesContact,
       grand_total: cart.grand_total,
-      // applied_coupon_code: cart.applied_coupon_code,
-      // coupon_discount_type: couponDiscountType,
-      // coupon_discount_value: couponDiscountValue,
       item_count: itemCount,
     };
   }
@@ -303,6 +425,21 @@ class CheckOutService {
               model: models.ProductVariants,
               as: "variant",
               attributes: ["id", "sku", "price", "media_path", "title", "stock"],
+              include: [
+                {
+                  model: models.ProductCategory,
+                  as: "categories",
+                  attributes: ["id", "name", "parent_id"],
+                  through: { attributes: [] },
+                  include: [
+                    {
+                      model: models.ProductCategory,
+                      as: "parent",
+                      attributes: ["id", "name"]
+                    }
+                  ]
+                }
+              ]
             },
           ],
         },
@@ -316,10 +453,6 @@ class CheckOutService {
     }
 
     await ProductServiceHelpers.syncCartItemPrices(cart);
-
-    // const appliedCouponScope = cart.applied_coupon_scope;
-
-    // appliedCouponScope !== "common" && (await ProductServiceHelpers.validateCoupon(cart));
 
     await cart.reload({
       include: [
@@ -336,35 +469,113 @@ class CheckOutService {
               model: models.ProductVariants,
               as: "variant",
               attributes: ["id", "sku", "price", "media_path", "stock", "title", "title_ar"],
+              include: [
+                {
+                  model: models.ProductCategory,
+                  as: "categories",
+                  attributes: ["id", "name", "parent_id"],
+                  through: { attributes: [] },
+                  include: [
+                    {
+                      model: models.ProductCategory,
+                      as: "parent",
+                      attributes: ["id", "name"]
+                    }
+                  ]
+                }
+              ]
             },
           ],
         },
       ],
     });
 
+    const cartOwner = userId
+      ? { type: "user", id: userId }
+      : { type: "guest", id: sessionId };
+
+    const cartSubTotal = parseFloat(cart?.subtotal || 0);
+    const isChargeCalculationNeeded = cartSubTotal > MINIMUM_CART_SUBTOTAL;
+
+
+    let stateId = null;
+
+    if (cartOwner.id && isChargeCalculationNeeded) {
+      const modelsMap = {
+        user: {
+          model: models.Address,
+          field: "user_id",
+        },
+        guest: {
+          model: models.CartAddress,
+          field: "session_id",
+        },
+      };
+
+      const config = modelsMap[cartOwner.type];
+      if (config) {
+        const { model: Model, field } = config;
+
+        const addresses = await Model.findAll({
+          where: { [field]: cartOwner.id },
+        });
+
+        let candidateAddresses = [];
+        const shippingAddresses = addresses.filter((a) => a.address_type === "shipping");
+        const billingAddresses = addresses.filter((a) => a.address_type === "billing");
+
+        if (shippingAddresses.length > 0) {
+          candidateAddresses = shippingAddresses;
+        } else if (billingAddresses.length > 0) {
+          candidateAddresses = billingAddresses;
+        }
+
+        let selectedAddress = null;
+        if (candidateAddresses.length > 0) {
+          selectedAddress = candidateAddresses.find((a) => a.is_default) || candidateAddresses[0];
+        }
+
+        if (selectedAddress) {
+          stateId = selectedAddress.state_id;
+        }
+      }
+    }
+
+    let overallDeliveryCharge = isChargeCalculationNeeded ? 0 : 100;
+    let requiresSalesContact = false;
+    let itemsCharges = [];
+
+    if (isChargeCalculationNeeded) {
+      const shippingChargeData = await this.calculateCartShippingCharge(cart, stateId);
+      overallDeliveryCharge = shippingChargeData.overallDeliveryCharge;
+      requiresSalesContact = shippingChargeData.requiresSalesContact;
+      itemsCharges = shippingChargeData.itemsCharges;
+    }
+
     const itemCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
+
 
     return {
       id: cart.id,
-      items: cart.items.map((item) => ({
-        id: item.id,
-        variant_id: item.variant_id,
-        title: item.variant?.title || "",
-        slug: item.variant?.sku || "",
-        price: item.price,
-        media_path: generateImageUrl(item?.variant?.media_path),
-        quantity: item.quantity,
-        discount_amount: item.discount_amount,
-        line_total: (parseFloat(item.price) * item.quantity).toFixed(2),
-        is_sold_out: item.variant ? item.variant.stock < item.quantity : false,
-      })),
+      items: cart.items.map((item) => {
+        return {
+          id: item.id,
+          variant_id: item.variant_id,
+          title: item.variant?.title || "",
+          slug: item.variant?.sku || "",
+          price: item.price,
+          media_path: generateImageUrl(item?.variant?.media_path),
+          quantity: item.quantity,
+          discount_amount: item.discount_amount,
+          line_total: (parseFloat(item.price) * item.quantity).toFixed(2),
+          is_sold_out: item.variant ? item.variant.stock < item.quantity : false,
+        };
+      }),
+      overall_delivery_charge: overallDeliveryCharge.toFixed(2),
+      requires_sales_contact: requiresSalesContact,
       sub_total: cart.subtotal,
-      // discount_total: cart.discount_total,
       tax_total: cart.tax_total,
-      grand_total: cart.grand_total,
-      // applied_coupon_code: cart.applied_coupon_code,
-      // coupon_discount_type: couponDiscountType,
-      // coupon_discount_value: couponDiscountValue,
+      grand_total: (parseFloat(cart.subtotal) + parseFloat(overallDeliveryCharge)).toFixed(2),
       item_count: itemCount,
     };
   }

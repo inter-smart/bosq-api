@@ -5,7 +5,6 @@ const { ApiResponse } = require("../traits/response.js");
 const { ErrorHandler } = require("../traits/errorHandler.js");
 const { HTTP_STATUS, RESPONSE_MESSAGES } = require("../traits/constants.js");
 const { addToCartRequest, updateCartItemRequest, removeCartItemRequest } = require("../request/cartRequest.js");
-const { console } = require("inspector");
 
 const { COOKIE } = require("../../../../config/authConfig.js");
 

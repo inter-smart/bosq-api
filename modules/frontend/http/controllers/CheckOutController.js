@@ -20,6 +20,8 @@ class CheckOutController {
 
       const cart = await CheckOutService.getCartData(userId, sessionId);
 
+      console.log(cart)
+
       return ApiResponse.success(res, {
         message: "Cart data retrieved successfully",
         data: cart,

@@ -23,29 +23,28 @@ class CartService {
 
     const defaultRule = deliveryRules.find((r) => r.category_id === null);
 
-
     const itemsCharges = cart.items.map((item) => {
       let deliveryCharge = 0;
       let ruleApplied = null;
       const categories = item.variant?.categories || [];
       const parentCategories = [];
 
-      console.log("Categories: ", JSON.stringify(categories, null, 2))
+      console.log("Categories: ", JSON.stringify(categories, null, 2));
 
       for (const cat of categories) {
         if (cat.parent_id && cat.parent) {
-          console.log("Parent 1: ", JSON.stringify(cat.parent, null, 2))
+          console.log("Parent 1: ", JSON.stringify(cat.parent, null, 2));
           if (!parentCategories.find((c) => c.id === cat.parent.id)) {
             parentCategories.push({ id: cat.parent.id, name: cat.parent.name });
           }
         } else {
-          console.log("Parent 2: ", JSON.stringify(cat.parent, null, 2))
+          console.log("Parent 2: ", JSON.stringify(cat.parent, null, 2));
           if (!parentCategories.find((c) => c.id === cat.id)) {
             parentCategories.push({ id: cat.id, name: cat.name });
           }
         }
       }
-      console.log("Parent Categories: ", JSON.stringify(parentCategories, null, 2))
+      console.log("Parent Categories: ", JSON.stringify(parentCategories, null, 2));
 
       if (deliveryRules.length > 0) {
         for (const parentCat of parentCategories) {
@@ -76,9 +75,6 @@ class CartService {
         calculatedTotalDeliveryCharge = 0;
         redirectToSales = true;
       }
-
-      console.log("calculatedTotalDeliveryCharge ===>", calculatedTotalDeliveryCharge);
-      console.log("redirectToSales ===>", redirectToSales);
 
       return {
         itemId: item.id,
@@ -301,8 +297,6 @@ class CartService {
 
       const cartSubTotal = parseFloat(cart?.subtotal || 0);
       const isChargeCalculationNeeded = cartSubTotal > MINIMUM_CART_SUBTOTAL;
-
-
 
       let stateId = null;
 

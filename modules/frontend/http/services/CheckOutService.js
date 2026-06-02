@@ -51,13 +51,9 @@ class CheckOutService {
     return { is_valid: true };
   }
 
-
-
   static async getCartDataWithDeliveryCharges(userId, sessionId, stateId) {
-
-
     const cart = await models.Cart.findOne({
-      where: { user_id: '37', status: "active", type: "cart" },
+      where: { user_id: "37", status: "active", type: "cart" },
       include: [
         {
           model: models.CartItems,
@@ -77,11 +73,11 @@ class CheckOutService {
                     {
                       model: models.ProductCategory,
                       as: "parent",
-                      attributes: ["id", "name"]
-                    }
-                  ]
-                }
-              ]
+                      attributes: ["id", "name"],
+                    },
+                  ],
+                },
+              ],
             },
           ],
         },
@@ -95,11 +91,11 @@ class CheckOutService {
     let deliveryRules = [];
     if (stateId) {
       deliveryRules = await models.StateDeliveryRules.findAll({
-        where: { state_id: stateId }
+        where: { state_id: stateId },
       });
     }
 
-    const defaultRule = deliveryRules.find(r => r.category_id === null);
+    const defaultRule = deliveryRules.find((r) => r.category_id === null);
 
     const items = cart.items.map((item) => {
       let deliveryCharge = 0;
@@ -109,11 +105,11 @@ class CheckOutService {
       const parentCategories = [];
       for (const cat of categories) {
         if (cat.parent_id && cat.parent) {
-          if (!parentCategories.find(c => c.id === cat.parent.id)) {
+          if (!parentCategories.find((c) => c.id === cat.parent.id)) {
             parentCategories.push({ id: cat.parent.id, name: cat.parent.name });
           }
         } else {
-          if (!parentCategories.find(c => c.id === cat.id)) {
+          if (!parentCategories.find((c) => c.id === cat.id)) {
             parentCategories.push({ id: cat.id, name: cat.name });
           }
         }
@@ -122,7 +118,7 @@ class CheckOutService {
       if (stateId && deliveryRules.length > 0) {
         // Find if any parent category of this variant has a specific rule
         for (const parentCat of parentCategories) {
-          const rule = deliveryRules.find(r => r.category_id === parentCat.id);
+          const rule = deliveryRules.find((r) => r.category_id === parentCat.id);
           if (rule) {
             ruleApplied = rule;
             break;
@@ -171,7 +167,7 @@ class CheckOutService {
 
     const itemCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
     const overallDeliveryCharge = items.reduce((sum, item) => sum + parseFloat(item.total_delivery_charge), 0);
-    const requiresSalesContact = items.some(item => item.redirect_to_sales);
+    const requiresSalesContact = items.some((item) => item.redirect_to_sales);
 
     return {
       id: cart.id,
@@ -249,10 +245,10 @@ class CheckOutService {
     }
 
     const deliveryRules = await models.StateDeliveryRules.findAll({
-      where: { state_id: stateId }
+      where: { state_id: stateId },
     });
 
-    const defaultRule = deliveryRules.find(r => r.category_id === null);
+    const defaultRule = deliveryRules.find((r) => r.category_id === null);
 
     const itemsCharges = cart.items.map((item) => {
       let deliveryCharge = 0;
@@ -262,11 +258,11 @@ class CheckOutService {
 
       for (const cat of categories) {
         if (cat.parent_id && cat.parent) {
-          if (!parentCategories.find(c => c.id === cat.parent.id)) {
+          if (!parentCategories.find((c) => c.id === cat.parent.id)) {
             parentCategories.push({ id: cat.parent.id, name: cat.parent.name });
           }
         } else {
-          if (!parentCategories.find(c => c.id === cat.id)) {
+          if (!parentCategories.find((c) => c.id === cat.id)) {
             parentCategories.push({ id: cat.id, name: cat.name });
           }
         }
@@ -274,7 +270,7 @@ class CheckOutService {
 
       if (deliveryRules.length > 0) {
         for (const parentCat of parentCategories) {
-          const rule = deliveryRules.find(r => r.category_id === parentCat.id);
+          const rule = deliveryRules.find((r) => r.category_id === parentCat.id);
           if (rule) {
             ruleApplied = rule;
             break;
@@ -302,24 +298,22 @@ class CheckOutService {
         redirectToSales = true;
       }
 
-
-      console.log("calculatedTotalDeliveryCharge ===>", calculatedTotalDeliveryCharge)
-      console.log("redirectToSales ===>", redirectToSales)
-
       return {
         itemId: item.id,
         totalDeliveryCharge: calculatedTotalDeliveryCharge,
-        redirectToSales
+        redirectToSales,
       };
     });
 
     const overallDeliveryCharge = itemsCharges.reduce((sum, item) => sum + item.totalDeliveryCharge, 0);
-    const requiresSalesContact = itemsCharges.some(item => item.redirectToSales);
+    const requiresSalesContact = itemsCharges.some((item) => item.redirectToSales);
+
+    console.log("calculatedTotalDeliveryCharge ===>", overallDeliveryCharge);
 
     return {
       overallDeliveryCharge,
       requiresSalesContact,
-      itemsCharges
+      itemsCharges,
     };
   }
 
@@ -351,11 +345,11 @@ class CheckOutService {
                     {
                       model: models.ProductCategory,
                       as: "parent",
-                      attributes: ["id", "name"]
-                    }
-                  ]
-                }
-              ]
+                      attributes: ["id", "name"],
+                    },
+                  ],
+                },
+              ],
             },
           ],
         },
@@ -368,9 +362,7 @@ class CheckOutService {
       };
     }
 
-    const cartOwner = userId
-      ? { type: "user", id: userId }
-      : { type: "guest", id: sessionId };
+    const cartOwner = userId ? { type: "user", id: userId } : { type: "guest", id: sessionId };
 
     const cartSubTotal = parseFloat(cart?.subtotal || 0);
     const isChargeCalculationNeeded = cartSubTotal > MINIMUM_CART_SUBTOTAL;
@@ -401,8 +393,6 @@ class CheckOutService {
         const shippingAddresses = addresses.filter((a) => a.address_type === "shipping");
         const billingAddresses = addresses.filter((a) => a.address_type === "billing");
 
-
-
         if (shippingAddresses.length > 0) {
           candidateAddresses = shippingAddresses;
         } else if (billingAddresses.length > 0) {
@@ -420,7 +410,6 @@ class CheckOutService {
       }
     }
 
-
     let overallDeliveryCharge = isChargeCalculationNeeded ? 0 : 100;
     let requiresSalesContact = false;
     let itemsCharges = [];
@@ -434,11 +423,10 @@ class CheckOutService {
 
     const itemCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
 
-
     return {
       id: cart.id,
       items: cart.items.map((item) => {
-        const itemCharge = itemsCharges.find(i => i.itemId === item.id);
+        const itemCharge = itemsCharges.find((i) => i.itemId === item.id);
 
         return {
           id: item.id,
@@ -493,11 +481,11 @@ class CheckOutService {
                     {
                       model: models.ProductCategory,
                       as: "parent",
-                      attributes: ["id", "name"]
-                    }
-                  ]
-                }
-              ]
+                      attributes: ["id", "name"],
+                    },
+                  ],
+                },
+              ],
             },
           ],
         },
@@ -537,24 +525,21 @@ class CheckOutService {
                     {
                       model: models.ProductCategory,
                       as: "parent",
-                      attributes: ["id", "name"]
-                    }
-                  ]
-                }
-              ]
+                      attributes: ["id", "name"],
+                    },
+                  ],
+                },
+              ],
             },
           ],
         },
       ],
     });
 
-    const cartOwner = userId
-      ? { type: "user", id: userId }
-      : { type: "guest", id: sessionId };
+    const cartOwner = userId ? { type: "user", id: userId } : { type: "guest", id: sessionId };
 
     const cartSubTotal = parseFloat(cart?.subtotal || 0);
     const isChargeCalculationNeeded = cartSubTotal > MINIMUM_CART_SUBTOTAL;
-
 
     let stateId = null;
 
@@ -611,7 +596,6 @@ class CheckOutService {
     }
 
     const itemCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
-
 
     return {
       id: cart.id,

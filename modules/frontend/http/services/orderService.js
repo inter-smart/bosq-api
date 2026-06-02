@@ -69,14 +69,14 @@ class OrderService {
       const cartShippingAddress = isSameAddress
         ? cartBillingAddress
         : await Model.findOne({
-          where: {
-            [field]: ownerId,
-            status: "active",
-            address_type: "shipping",
-            id: shipping,
-          },
-          transaction,
-        });
+            where: {
+              [field]: ownerId,
+              status: "active",
+              address_type: "shipping",
+              id: shipping,
+            },
+            transaction,
+          });
 
       if (!cartBillingAddress) {
         throw ErrorHandler.createError("Billing address not found", HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION_ERROR);
@@ -160,6 +160,20 @@ class OrderService {
         }
       }
 
+      // Calculate shipping charge — mirrors the threshold logic in CheckOutService.getCartData
+      const MINIMUM_CART_SUBTOTAL = 500;
+      const cartSubTotal = parseFloat(cart.subtotal || 0);
+      const isChargeCalculationNeeded = cartSubTotal > MINIMUM_CART_SUBTOTAL;
+
+      const shippingStateId = cartShippingAddress?.state_id ?? cartBillingAddress?.state_id ?? null;
+      let shippingTotal = isChargeCalculationNeeded ? 0 : 100;
+      let itemsShippingCharges = [];
+      if (isChargeCalculationNeeded && shippingStateId) {
+        const shippingData = await CheckOutService.calculateCartShippingCharge(cart, shippingStateId);
+        shippingTotal = shippingData.overallDeliveryCharge ?? 0;
+        itemsShippingCharges = shippingData.itemsCharges ?? [];
+      }
+
       // Apply coupon if provided — re-validate and persist to DB within this transaction
       let appliedCoupon = null;
       let orderDiscountTotal = parseFloat(cart.discount_total);
@@ -229,13 +243,15 @@ class OrderService {
           subtotal: cart.subtotal,
           discount_total: orderDiscountTotal.toFixed(2),
           tax_total: cart.tax_total,
-          grand_total: Math.max(0, orderGrandTotal).toFixed(2),
+          shipping_total: parseFloat(shippingTotal).toFixed(2),
+          grand_total: Math.max(0, orderGrandTotal + parseFloat(shippingTotal)).toFixed(2),
         },
         { transaction },
       );
 
       for (const item of cart.items) {
         const itemDiscount = itemDiscounts?.get(item.id) ?? parseFloat(item.discount_amount ?? 0);
+        const itemShipping = itemsShippingCharges.find((c) => c.itemId === item.id)?.totalDeliveryCharge ?? 0;
 
         await models.OrderItem.create(
           {
@@ -245,6 +261,7 @@ class OrderService {
             quantity: item.quantity,
             price: item.price,
             discount_amount: itemDiscount.toFixed(2),
+            shipping_charge: isChargeCalculationNeeded ? parseFloat(itemShipping).toFixed(2) : shippingTotal,
           },
           { transaction },
         );
@@ -390,8 +407,8 @@ class OrderService {
 
       const user = order.user_id
         ? await models.Users.findByPk(order.user_id, {
-          attributes: ["id", "name", "email"],
-        })
+            attributes: ["id", "name", "email"],
+          })
         : null;
 
       const billingAddress = order.addresses.find((a) => a.address_type === "billing");
@@ -415,13 +432,13 @@ class OrderService {
       const [billingState, shippingState] = await Promise.all([
         billingAddress.state_id
           ? models.State.findByPk(billingAddress.state_id, {
-            attributes: ["name"],
-          })
+              attributes: ["name"],
+            })
           : null,
         shippingAddress?.state_id
           ? models.State.findByPk(shippingAddress.state_id, {
-            attributes: ["name"],
-          })
+              attributes: ["name"],
+            })
           : null,
       ]);
 
@@ -440,6 +457,7 @@ class OrderService {
         subtotal: order.subtotal,
         discount_total: order.discount_total,
         tax_total: order.tax_total,
+        shipping_total: order.shipping_total,
         grand_total: order.grand_total,
         estDelivery: order.est_delivery_details || null,
 
@@ -452,11 +470,11 @@ class OrderService {
 
         shippingAddress: shippingAddress
           ? {
-            street_address: shippingAddress.street_address,
-            apartment: shippingAddress.apartment || null,
-            state_name: shippingState?.name || null,
-            country: "UAE",
-          }
+              street_address: shippingAddress.street_address,
+              apartment: shippingAddress.apartment || null,
+              state_name: shippingState?.name || null,
+              country: "UAE",
+            }
           : null,
 
         items: order.items.map((item) => ({
@@ -482,10 +500,7 @@ class OrderService {
     const offset = (page - 1) * limit;
 
     const whereClause = `
-  ${userId
-        ? `o.user_id = :ownerId`
-        : `o.session_id = :ownerId AND o.user_id IS NULL`
-      }
+  ${userId ? `o.user_id = :ownerId` : `o.session_id = :ownerId AND o.user_id IS NULL`}
   AND o.status <> 'cancelled'
 `;
 
@@ -503,6 +518,7 @@ class OrderService {
         o.subtotal,
         o.discount_total,
         o.tax_total,
+        o.shipping_total,
         o.grand_total,
         o."createdAt",
         COUNT(*) OVER() AS total_count,
@@ -753,10 +769,7 @@ class OrderService {
       });
 
       if (remainingActive === 0) {
-        await models.Orders.update(
-          { status: "cancelled", discount_total: 0.00 },
-          { where: { id: order.id }, transaction },
-        );
+        await models.Orders.update({ status: "cancelled", discount_total: 0.0 }, { where: { id: order.id }, transaction });
       }
 
       await this.cancelAndRevertStock(order, orderItem, transaction);
@@ -848,6 +861,7 @@ class OrderService {
         subtotal: order.subtotal,
         discount_total: order.discount_total,
         tax_total: order.tax_total,
+        shipping_total: order.shipping_total,
         grand_total: order.grand_total,
         estDelivery: order.est_delivery_details,
         items: itemsData,
@@ -1004,13 +1018,14 @@ class OrderService {
         quantity: item.quantity,
         price: item.price,
         discount_amount: item.discount_amount,
+        shipping_charge: item.shipping_charge,
         line_total: (parseFloat(item.price) * item.quantity).toFixed(2),
         product: item.product,
         variant: item.variant
           ? {
-            ...item.variant.toJSON(),
-            media_path: generateImageUrl(item?.variant?.media_path),
-          }
+              ...item.variant.toJSON(),
+              media_path: generateImageUrl(item?.variant?.media_path),
+            }
           : null,
       })),
       billing_address: billingAddress ? this.formatAddress(billingAddress) : null,
@@ -1018,6 +1033,7 @@ class OrderService {
       subtotal: order.subtotal,
       discount_total: order.discount_total,
       tax_total: order.tax_total,
+      shipping_total: order.shipping_total,
       grand_total: order.grand_total,
       item_count: itemCount,
       items_count: itemsCount,
@@ -1040,9 +1056,9 @@ class OrderService {
       line_total: parseFloat(item.line_total).toFixed(2),
       variant: item.variant
         ? {
-          ...item.variant,
-          media_path: generateImageUrl(item.variant.media_path),
-        }
+            ...item.variant,
+            media_path: generateImageUrl(item.variant.media_path),
+          }
         : null,
     }));
 
@@ -1062,6 +1078,7 @@ class OrderService {
       subtotal: row.subtotal,
       discount_total: row.discount_total,
       tax_total: row.tax_total,
+      shipping_total: row.shipping_total,
       grand_total: row.grand_total,
       item_count: items.reduce((s, i) => s + i.quantity, 0),
       items_count: items.length,
@@ -1161,7 +1178,6 @@ class OrderService {
     const newSubTotal = Math.max(0, currentSubTotal - orderItemAmount);
     const newGrandTotal = Math.max(0, currentGrandTotal - orderItemAmount);
     const newDiscountTotal = Math.max(0, currentDiscountTotal - parseFloat(orderItem.discount_amount || "0"));
-
 
     await Promise.all([
       models.Orders.update(

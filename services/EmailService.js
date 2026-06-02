@@ -523,6 +523,7 @@ class EmailService {
       subtotal,
       discount_total,
       tax_total,
+      shipping_total,
       grand_total,
       items = [],
       billingAddress,
@@ -804,6 +805,14 @@ class EmailService {
                                                 }
                                                 <tr>
                                                     <td style="width: 66%; margin-bottom: 0px; margin-top: 0px;" colspan="2">
+                                                        <p style="font-size: 16px; font-family: 'Open Sans', sans-serif; color: #282828; font-weight: 400; margin-bottom: 0; margin-top: 0;">Shipping</p>
+                                                    </td>
+                                                    <td style="width: 20%; font-size: 16px; color: #191919; font-weight: 400; margin-bottom: 0px; margin-top: 0px; line-height: 22px; text-align: right;">
+                                                        <p style="font-family: 'Open Sans', sans-serif; font-size: 16px; color: #191919; margin: 0px; text-align: right; font-weight: 400;">${parseFloat(shipping_total || 0) > 0 ? `AED ${parseFloat(shipping_total).toFixed(2)}` : "Free"}</p>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td style="width: 66%; margin-bottom: 0px; margin-top: 0px;" colspan="2">
                                                         <p style="font-size: 16px; font-family:  'Open Sans', sans-serif; color: #282828; font-weight: 400; margin-bottom: 0; margin-top: 0;">
                                                             Total Amount <span style="font-size: 16px; font-family:  'Open Sans', sans-serif; color: #BBBCBC; font-weight: 400;">( Inc Tax )</span>
                                                         </p>
@@ -952,6 +961,7 @@ class EmailService {
       subtotal,
       discount_total,
       tax_total,
+      shipping_total,
       grand_total,
       items = [],
       billingAddress,
@@ -1223,6 +1233,14 @@ class EmailService {
                                                 </tr>`
                                                     : ""
                                                 }
+                                                <tr>
+                                                    <td style="width: 66%; margin-bottom: 0px; margin-top: 0px;" colspan="2">
+                                                        <p style="font-size: 16px; font-family: 'Open Sans', sans-serif; color: #282828; font-weight: 400; margin-bottom: 0; margin-top: 0;">Shipping</p>
+                                                    </td>
+                                                    <td style="width: 20%; font-size: 16px; color: #191919; font-weight: 400; margin-bottom: 0px; margin-top: 0px; line-height: 22px; text-align: right;">
+                                                        <p style="font-family: 'Open Sans', sans-serif; font-size: 16px; color: #191919; margin: 0px; text-align: right; font-weight: 400;">${parseFloat(shipping_total || 0) > 0 ? `AED ${parseFloat(shipping_total).toFixed(2)}` : "Free"}</p>
+                                                    </td>
+                                                </tr>
                                                 <tr>
                                                     <td style="width: 66%; margin-bottom: 0px; margin-top: 0px;" colspan="2">
                                                         <p style="font-size: 16px; font-family:  'Open Sans', sans-serif; color: #282828; font-weight: 400; margin-bottom: 0; margin-top: 0;">

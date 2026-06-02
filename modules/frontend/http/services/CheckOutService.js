@@ -617,7 +617,7 @@ class CheckOutService {
       requires_sales_contact: requiresSalesContact,
       sub_total: cart.subtotal,
       tax_total: cart.tax_total,
-      grand_total: (parseFloat(cart.subtotal) + parseFloat(overallDeliveryCharge)).toFixed(2),
+      grand_total: cart.grand_total,
       item_count: itemCount,
     };
   }

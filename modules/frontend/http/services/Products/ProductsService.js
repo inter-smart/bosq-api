@@ -712,38 +712,38 @@ class ProductsService {
       }
 
       // ─── Transform ───────────────────────────────────────────────────────────
-      const transformedData = rawResults.map((row) => {
-        const variantAttrs = Array.isArray(row.variant_attributes) ? row.variant_attributes : JSON.parse(row.variant_attributes || "[]");
+      const transformedData = rawResults
+        .map((row) => {
+          const variantAttrs = Array.isArray(row.variant_attributes) ? row.variant_attributes : JSON.parse(row.variant_attributes || "[]");
 
-        const modelVariantCount = variantCountsMap[row.product_model_id] || 0;
+          const modelVariantCount = variantCountsMap[row.product_model_id] || 0;
 
-        const formattedAttributes = variantAttrs.map((va) => ({
-          code: va.attribute_code,
-          slug: va.attribute_slug,
-          values: [{ slug: va.value_slug, value: va.value }],
-        }));
+          const formattedAttributes = variantAttrs.map((va) => ({
+            code: va.attribute_code,
+            slug: va.attribute_slug,
+            values: [{ slug: va.value_slug, value: va.value }],
+          }));
 
-        return {
-          id: row.id,
-          title: row.title,
-          title_ar: row.title_ar,
-          media_path: generateImageUrl(row.media_path),
-          hover_media_path: generateImageUrl(row.hover_media_path),
-          slug: row.sku,
-          base_slug: row.base_slug,
-          model_slug: row.model_slug,
-          product_code: row.product_code,
-          hasMoreVariants: modelVariantCount > 1,
-          isWishlisted: isItemWishListed(row.id, wishlistedItems),
-          price: row.price,
-          stock: row.stock,
-          categories: Array.isArray(row.categories) ? row.categories : JSON.parse(row.categories || "[]"),
-          variant_attributes: variantAttrs,
-          query_params: generateQueryParams(row.sku, formattedAttributes),
-        };
-      });
-
-      console.log(transformedData.length);
+          return {
+            id: row.id,
+            title: row.title,
+            title_ar: row.title_ar,
+            media_path: generateImageUrl(row.media_path),
+            hover_media_path: generateImageUrl(row.hover_media_path),
+            slug: row.sku,
+            base_slug: row.base_slug,
+            model_slug: row.model_slug,
+            product_code: row.product_code,
+            hasMoreVariants: modelVariantCount > 1,
+            isWishlisted: isItemWishListed(row.id, wishlistedItems),
+            price: row.price,
+            stock: row.stock,
+            categories: Array.isArray(row.categories) ? row.categories : JSON.parse(row.categories || "[]"),
+            variant_attributes: variantAttrs,
+            query_params: generateQueryParams(row.sku, formattedAttributes),
+          };
+        })
+        .filter((item) => item.categories.length > 0);
 
       return {
         data: {

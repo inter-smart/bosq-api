@@ -236,6 +236,10 @@ const RESPONSE_MESSAGES = {
       en: "This coupon isn't valid for the items in your cart.",
       ar: "هذا الكوبون غير صالح للمنتجات الموجودة في سلة التسوق الخاصة بك",
     },
+    COUPON_INVALID_OR_EXPIRED: {
+      en: "Coupon is invalid or expired",
+      ar: "الكوبون غير صالح أو منتهي الصلاحية",
+    },
     MINIMUM_ELIGIBLE_PRODUCTS_AMOUNT_REQUIRED: (amount) => ({
       en: `This coupon requires a minimum of ${amount} AED in eligible items.`,
       ar: `يتطلب هذا الكوبون حدًا أدنى قدره ${amount} درهم إماراتي من المنتجات المؤهلة`,

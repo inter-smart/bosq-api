@@ -37,6 +37,7 @@ class OrderService {
   static async placeOrder(cartOwner, paymentType = "cod", address = {}, type = "cart", couponCode = null) {
     const transaction = await sequelize.transaction();
 
+
     const { type: userType, id: ownerId } = cartOwner;
     const isGuest = userType === "guest";
     const userId = isGuest ? null : ownerId;
@@ -69,14 +70,14 @@ class OrderService {
       const cartShippingAddress = isSameAddress
         ? cartBillingAddress
         : await Model.findOne({
-            where: {
-              [field]: ownerId,
-              status: "active",
-              address_type: "shipping",
-              id: shipping,
-            },
-            transaction,
-          });
+          where: {
+            [field]: ownerId,
+            status: "active",
+            address_type: "shipping",
+            id: shipping,
+          },
+          transaction,
+        });
 
       if (!cartBillingAddress) {
         throw ErrorHandler.createError("Billing address not found", HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION_ERROR);
@@ -127,17 +128,17 @@ class OrderService {
       });
 
       if (!cart) {
-        throw ErrorHandler.createError(RESPONSE_MESSAGES.CART_NOT_FOUND, HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.CART_NOT_FOUND, HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
       }
 
       if (!cart.items || cart.items.length === 0) {
-        throw ErrorHandler.createError(RESPONSE_MESSAGES.CART_IS_EMPTY, HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION_ERROR);
+        throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.CART_IS_EMPTY, HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION_ERROR);
       }
 
       // Validate stock for all items
       for (const item of cart.items) {
         if (!item.variant) {
-          throw ErrorHandler.createError(RESPONSE_MESSAGES.PRODUCT_VARIANT_NOT_FOUND, HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION_ERROR);
+          throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.PRODUCT_VARIANT_NOT_FOUND, HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION_ERROR);
         }
         if (item.variant.stock === null || item.variant.stock === undefined) {
           // null stock means no stock tracking for this variant — allow through
@@ -194,12 +195,12 @@ class OrderService {
         });
 
         if (!coupon) {
-          throw ErrorHandler.createError("Coupon is invalid or expired", HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION_ERROR);
+          throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.COUPON_INVALID_OR_EXPIRED, HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION_ERROR);
         }
 
         if (coupon.min_order_amount && parseFloat(cart.subtotal) < parseFloat(coupon.min_order_amount)) {
           throw ErrorHandler.createError(
-            `Minimum order amount of ${coupon.min_order_amount} required for this coupon`,
+            RESPONSE_MESSAGES.ERROR.MINIMUM_ORDER_AMOUNT_REQUIRED(coupon.min_order_amount),
             HTTP_STATUS.BAD_REQUEST,
             ERROR_CODES.VALIDATION_ERROR,
           );
@@ -207,14 +208,14 @@ class OrderService {
 
         const totalUsageCount = await models.CouponUsage.count({ where: { coupon_id: coupon.id }, transaction });
         if (totalUsageCount >= coupon.usage_limit_total) {
-          throw ErrorHandler.createError("Coupon usage limit has been reached", HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION_ERROR);
+          throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.COUPON_USAGE_LIMIT_REACHED, HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION_ERROR);
         }
 
         if (userId) {
           const userUsageCount = await models.CouponUsage.count({ where: { coupon_id: coupon.id, user_id: userId }, transaction });
           if (userUsageCount >= coupon.usage_limit_per_user) {
             throw ErrorHandler.createError(
-              "You have already used this coupon the maximum number of times",
+              RESPONSE_MESSAGES.ERROR.COUPON_USER_LIMIT_REACHED,
               HTTP_STATUS.BAD_REQUEST,
               ERROR_CODES.VALIDATION_ERROR,
             );
@@ -222,7 +223,7 @@ class OrderService {
         }
 
         if (coupon.scope_type !== "common" && !CheckOutService.isCouponApplicableToCart(coupon, cart.items)) {
-          throw ErrorHandler.createError("Coupon is not applicable to items in your cart", HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION_ERROR);
+          throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.COUPON_NOT_APPLICABLE, HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION_ERROR);
         }
 
         const result = await CheckOutService.couponWiseUpdates(coupon, cart, transaction, true);
@@ -407,8 +408,8 @@ class OrderService {
 
       const user = order.user_id
         ? await models.Users.findByPk(order.user_id, {
-            attributes: ["id", "name", "email"],
-          })
+          attributes: ["id", "name", "email"],
+        })
         : null;
 
       const billingAddress = order.addresses.find((a) => a.address_type === "billing");
@@ -432,13 +433,13 @@ class OrderService {
       const [billingState, shippingState] = await Promise.all([
         billingAddress.state_id
           ? models.State.findByPk(billingAddress.state_id, {
-              attributes: ["name"],
-            })
+            attributes: ["name"],
+          })
           : null,
         shippingAddress?.state_id
           ? models.State.findByPk(shippingAddress.state_id, {
-              attributes: ["name"],
-            })
+            attributes: ["name"],
+          })
           : null,
       ]);
 
@@ -470,11 +471,11 @@ class OrderService {
 
         shippingAddress: shippingAddress
           ? {
-              street_address: shippingAddress.street_address,
-              apartment: shippingAddress.apartment || null,
-              state_name: shippingState?.name || null,
-              country: "UAE",
-            }
+            street_address: shippingAddress.street_address,
+            apartment: shippingAddress.apartment || null,
+            state_name: shippingState?.name || null,
+            country: "UAE",
+          }
           : null,
 
         items: order.items.map((item) => ({
@@ -1010,7 +1011,7 @@ class OrderService {
       status: this?.formatEnums(order.status),
       payment_status: this?.formatEnums(order.payment_status),
       payment_type: order.payment_type,
-      est_delivery_details: order?.status == "delivered" ? "Delivered" : order.est_delivery_details,
+      est_delivery_details: order?.status == "delivered" ? null : order.est_delivery_details,
       items: order.items.map((item) => ({
         id: item.id,
         product_id: item.product_id,
@@ -1023,9 +1024,9 @@ class OrderService {
         product: item.product,
         variant: item.variant
           ? {
-              ...item.variant.toJSON(),
-              media_path: generateImageUrl(item?.variant?.media_path),
-            }
+            ...item.variant.toJSON(),
+            media_path: generateImageUrl(item?.variant?.media_path),
+          }
           : null,
       })),
       billing_address: billingAddress ? this.formatAddress(billingAddress) : null,
@@ -1056,9 +1057,9 @@ class OrderService {
       line_total: parseFloat(item.line_total).toFixed(2),
       variant: item.variant
         ? {
-            ...item.variant,
-            media_path: generateImageUrl(item.variant.media_path),
-          }
+          ...item.variant,
+          media_path: generateImageUrl(item.variant.media_path),
+        }
         : null,
     }));
 
@@ -1071,7 +1072,7 @@ class OrderService {
       status: this.formatEnums(row.status),
       payment_status: this.formatEnums(row.payment_status),
       payment_type: row.payment_type,
-      est_delivery_details: row.status === "delivered" ? "Delivered" : row.est_delivery_details,
+      est_delivery_details: row.status === "delivered" ? null : row.est_delivery_details,
       items,
       billing_address: formatAddr(row.billing_address),
       shipping_address: formatAddr(row.shipping_address),

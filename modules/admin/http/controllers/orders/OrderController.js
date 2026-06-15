@@ -125,16 +125,18 @@ class OrderController {
       }
 
 
-
+let billing;
       const orderData = data.toJSON();
       if (!orderData.user && orderData.addresses && orderData.addresses.length > 0) {
-        const billing = orderData.addresses.find((a) => a.address_type === "billing") || orderData.addresses[0];
+        billing = orderData.addresses.find((a) => a.address_type === "billing") || orderData.addresses[0];
         orderData.user = {
           name: user ? user.name : billing.name,
           email: user ? user.email : billing.email,
-          mobile: billing.phone || "",
-        };
+          mobile: user?.country_code + user.mobile,
       }
+      
+      console.log("mobileDATA", user?.country_code + user.mobile);
+      
 
       sendSuccessResponse(res, orderData, "Order retrieved successfully");
     } catch (error) {

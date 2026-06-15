@@ -279,9 +279,9 @@ async function processUpload(hierarchy) {
             ...variant.data,
             product_model_id: modelId,
             price: computedPrice,
-            ...(variant.coverImage ? { media_path: variant.coverImage } : {}),
-            ...(variant.hoverImage ? { hover_media_path: variant.hoverImage } : {}),
-            ...(variant.brochurePath ? { brochure: variant.brochurePath } : {}),
+            media_path: variant.coverImage || null,
+            hover_media_path: variant.hoverImage || null,
+            brochure: variant.brochurePath || null,
             status: variant.data.status ?? true,
             is_primary: variant.data.is_primary ?? false,
             is_featured: variant.data.is_featured ?? false,
@@ -441,23 +441,16 @@ async function processUpload(hierarchy) {
       }
     });
 
-    // Updated variants — skip media_paths that already exist
+    // Updated variants — full replace: delete existing rows, then insert the new set
     if (variantsToUpdate.length > 0) {
       const updatedIds = variantsToUpdate.map((v) => v.existingId);
-      const existingImages = await ProductVariantImages.findAll({
-        attributes: ["product_variant_id", "media_path"],
+      await ProductVariantImages.destroy({
         where: { product_variant_id: { [Op.in]: updatedIds } },
         transaction: t,
       });
-      // Set of "variantId:media_path" strings that already exist
-      const existingImageSet = new Set(existingImages.map((img) => `${img.product_variant_id}:${img.media_path}`));
-
       variantsToUpdate.forEach(({ existingId }, idx) => {
         for (const record of variantsToUpdateMeta[idx].mediaRecords) {
-          const key = `${existingId}:${record.media_path}`;
-          if (!existingImageSet.has(key)) {
-            imageRows.push({ ...record, product_variant_id: existingId });
-          }
+          imageRows.push({ ...record, product_variant_id: existingId });
         }
       });
     }
@@ -481,21 +474,16 @@ async function processUpload(hierarchy) {
       }
     });
 
+    // Updated variants — full replace: delete existing rows, then insert the new set
     if (variantsToUpdate.length > 0) {
       const updatedIds = variantsToUpdate.map((v) => v.existingId);
-      const existingProjectImages = await ProductProjectImage.findAll({
-        attributes: ["product_variant_id", "media_path"],
+      await ProductProjectImage.destroy({
         where: { product_variant_id: { [Op.in]: updatedIds } },
         transaction: t,
       });
-      const existingProjectImageSet = new Set(existingProjectImages.map((img) => `${img.product_variant_id}:${img.media_path}`));
-
       variantsToUpdate.forEach(({ existingId }, idx) => {
         for (const record of variantsToUpdateMeta[idx].projectImageRecords) {
-          const key = `${existingId}:${record.media_path}`;
-          if (!existingProjectImageSet.has(key)) {
-            projectImageRows.push({ ...record, product_variant_id: existingId });
-          }
+          projectImageRows.push({ ...record, product_variant_id: existingId });
         }
       });
     }

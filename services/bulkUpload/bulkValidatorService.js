@@ -667,7 +667,7 @@ function buildHierarchy(baseRows, modelRows, resolvedVariants, modelImagePaths) 
         rowNum: modelRow._rowNumber,
         data: {
           ...cleanRow(modelRow, MODEL_FIELDS),
-          ...(resolvedMediaPath ? { media_path: resolvedMediaPath } : {}),
+          media_path: resolvedMediaPath || null,
         },
         variants: variantList,
       };

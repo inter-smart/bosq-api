@@ -396,6 +396,51 @@ class AuthController {
       return sendErrorResponse(res, error);
     }
   }
+
+  static async refreshToken(req, res) {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return sendUnauthorizedError(res, "User not authenticated");
+      }
+
+      const user = await AdminUser.findOne({
+        where: { id: userId, status: true },
+        attributes: ["id", "username", "email", "role"],
+      });
+
+      if (!user) {
+        return sendUnauthorizedError(res, "User not found or inactive");
+      }
+
+      const tokenPayload = { id: user.id, email: user.email, role: user.role };
+      const expiresIn = JWT.ADMIN_EXPIRY;
+      const token = jwt.sign(tokenPayload, process.env.JWT_SECRET, {
+        expiresIn,
+        issuer: process.env.JWT_ISSUER || "bosq",
+      });
+
+      const expiresAt = new Date(Date.now() + ms(expiresIn));
+
+      console.log(`[Admin AuthController] Session refreshed for: ${user.email}. Expires in: ${expiresIn}`);
+
+      return sendSuccessResponse(
+        res,
+        {
+          token,
+          user,
+          tokenType: "Bearer",
+          expiresIn,
+          expiresAt: expiresAt.toISOString(),
+          expiresAtUnix: Math.floor(expiresAt.getTime() / 1000),
+        },
+        "Token refreshed successfully",
+      );
+    } catch (error) {
+      console.error("Refresh token error:", error);
+      return sendErrorResponse(res, error);
+    }
+  }
 }
 
 module.exports = AuthController;

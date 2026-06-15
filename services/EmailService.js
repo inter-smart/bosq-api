@@ -753,8 +753,9 @@ class EmailService {
                                                             Qty : ${String(item?.quantity || 0).padStart(2, "0")}
                                                         </p>
                                                     </td>
-                                                    <td style="width: 20%; font-size: 16px; color: #191919; font-weight: 400; margin-bottom: 0px; margin-top: 0px; line-height: 22px; text-align: right;">
-                                                        <p style="font-family: 'Open Sans', sans-serif; font-size: 16px; color: #191919; margin: 0px; text-align: right; font-weight: 400;">AED ${parseFloat(item.line_total).toFixed(2)}</p>
+                                                    <td style="width: 20%; font-size: 16px; color: #191919; font-weight: 400; margin-bottom: 0px; margin-top: 0px; line-height: 22px; text-align: right; vertical-align: top;">
+                                                        <p style="font-family: 'Open Sans', sans-serif; font-size: 16px; color: #191919; margin: 0px 0px 2px 0px; text-align: right; font-weight: 400;">AED ${parseFloat(item.line_total).toFixed(2)}</p>
+                                                        ${item.discount_amount ? `<p style="font-family: 'Open Sans', sans-serif; font-size: 13px; color: #c0392b; margin: 0px 0px 2px 0px; text-align: right; font-weight: 400;">- AED ${item.discount_amount}</p><p style="font-family: 'Open Sans', sans-serif; font-size: 14px; color: #282828; margin: 0px; text-align: right; font-weight: 500;">AED ${item.final_total}</p>` : ""}
                                                     </td>
                                                 </tr>`,
                                                   )
@@ -1183,8 +1184,9 @@ class EmailService {
                                                             Qty : ${String(item?.quantity || 0).padStart(2, "0")}
                                                         </p>
                                                     </td>
-                                                    <td style="width: 20%; font-size: 16px; color: #191919; font-weight: 400; margin-bottom: 0px; margin-top: 0px; line-height: 22px; text-align: right;">
-                                                        <p style="font-family: 'Open Sans', sans-serif; font-size: 16px; color: #191919; margin: 0px; text-align: right; font-weight: 400;">AED ${parseFloat(item.line_total).toFixed(2)}</p>
+                                                    <td style="width: 20%; font-size: 16px; color: #191919; font-weight: 400; margin-bottom: 0px; margin-top: 0px; line-height: 22px; text-align: right; vertical-align: top;">
+                                                        <p style="font-family: 'Open Sans', sans-serif; font-size: 16px; color: #191919; margin: 0px 0px 2px 0px; text-align: right; font-weight: 400;">AED ${parseFloat(item.line_total).toFixed(2)}</p>
+                                                        ${item.discount_amount ? `<p style="font-family: 'Open Sans', sans-serif; font-size: 13px; color: #c0392b; margin: 0px 0px 2px 0px; text-align: right; font-weight: 400;">- AED ${item.discount_amount}</p><p style="font-family: 'Open Sans', sans-serif; font-size: 14px; color: #282828; margin: 0px; text-align: right; font-weight: 500;">AED ${item.final_total}</p>` : ""}
                                                     </td>
                                                 </tr>`,
                                                   )

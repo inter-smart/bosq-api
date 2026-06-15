@@ -557,7 +557,9 @@ class CartService {
 
       await transaction.commit();
 
-      return { skipped };
+      const updatedCart = await this.getCart(userId, sessionId);
+
+      return { skipped, updatedCharge: updatedCart?.shipping_charge || 0 };
     } catch (error) {
       if (!transaction.finished) {
         await transaction.rollback();

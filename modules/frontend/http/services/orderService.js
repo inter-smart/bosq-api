@@ -478,14 +478,21 @@ class OrderService {
           }
           : null,
 
-        items: order.items.map((item) => ({
-          title: item.variant?.title || item.product?.title || "Product",
-          sku: item.variant?.sku || "",
-          quantity: item.quantity,
-          price: item.price,
-          line_total: (parseFloat(item.price) * item.quantity).toFixed(2),
-          image: generateImageUrl(item.variant?.media_path) || null,
-        })),
+        items: order.items.map((item) => {
+          const lineTotal = (parseFloat(item.price) * item.quantity).toFixed(2);
+          const discount = parseFloat(item.discount_amount || 0);
+          const finalTotal = Math.max(0, parseFloat(lineTotal) - discount).toFixed(2);
+          return {
+            title: item.variant?.title || item.product?.title || "Product",
+            sku: item.variant?.sku || "",
+            quantity: item.quantity,
+            price: item.price,
+            discount_amount: discount > 0 ? discount.toFixed(2) : null,
+            line_total: lineTotal,
+            final_total: finalTotal,
+            image: generateImageUrl(item.variant?.media_path) || null,
+          };
+        }),
       });
 
       Logger.info(`Order confirmation email enqueued for order ${order.order_id}`);
@@ -643,6 +650,8 @@ class OrderService {
     });
 
     const total = rows.length > 0 ? parseInt(rows[0].total_count, 10) : 0;
+
+    console.log("rows ===========>", rows);
 
     return {
       orders: rows.map((row) => ({

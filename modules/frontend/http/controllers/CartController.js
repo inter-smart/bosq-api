@@ -146,11 +146,11 @@ class CartController {
         }
       }
 
-      await CartService.addMultipleItems(userId, sessionId, variant_ids);
+      const { skipped } = await CartService.addMultipleItems(userId, sessionId, variant_ids);
 
       return ApiResponse.success(res, {
-        message: "Items added to cart successfully",
-        data: null,
+        message: skipped.length ? "Some items could not be added (out of stock)" : "Items added to cart successfully",
+        data: { skipped_variant_ids: skipped },
         status: HTTP_STATUS.OK,
       });
     } catch (error) {

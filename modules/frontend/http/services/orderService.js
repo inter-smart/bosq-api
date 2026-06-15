@@ -984,13 +984,20 @@ class OrderService {
         throw ErrorHandler.createError("Item not found in order", HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
       }
       await CartService.addItem(userId, sessionId, item.variant_id, quantity ?? item.quantity);
+      const cart = await CartService.getCart(userId, sessionId);
+      return { cart, skipped: [] };
     } else {
+      const skipped = [];
       for (const item of order.items) {
-        await CartService.addItem(userId, sessionId, item.variant_id, item.quantity);
+        try {
+          await CartService.addItem(userId, sessionId, item.variant_id, item.quantity);
+        } catch (err) {
+          skipped.push(item.variant_id);
+        }
       }
+      const cart = await CartService.getCart(userId, sessionId);
+      return { cart, skipped };
     }
-
-    return CartService.getCart(userId, sessionId);
   }
 
   /**

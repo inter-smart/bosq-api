@@ -504,6 +504,8 @@ class CartService {
     try {
       const cart = await this.getOrCreateCart(userId, sessionId, "cart", transaction);
 
+      const skipped = [];
+
       for (const variantId of variantIds) {
         const variant = await models.ProductVariants.findOne({
           attributes: ["id", "price", "status", "stock"],
@@ -512,11 +514,8 @@ class CartService {
         });
 
         if (!variant) {
-          throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.PRODUCT_VARIANT_NOT_FOUND, HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
-        }
-
-        if (variant.stock < 1) {
-          throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.OUT_OF_STOCK, HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
+          skipped.push(variantId);
+          continue;
         }
 
         const existingItem = await models.CartItems.findOne({
@@ -526,8 +525,9 @@ class CartService {
 
         const currentQty = existingItem ? existingItem.quantity : 0;
 
-        if (currentQty + 1 > variant.stock) {
-          throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.OUT_OF_STOCK, HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
+        if (variant.stock < 1 || currentQty + 1 > variant.stock) {
+          skipped.push(variantId);
+          continue;
         }
 
         if (existingItem) {
@@ -557,7 +557,7 @@ class CartService {
 
       await transaction.commit();
 
-      return;
+      return { skipped };
     } catch (error) {
       if (!transaction.finished) {
         await transaction.rollback();

@@ -229,7 +229,7 @@ class OrderController {
         });
       }
 
-      const cart = await OrderService.reorderOrder(
+      const { cart, skipped } = await OrderService.reorderOrder(
         userId,
         sessionId,
         parseInt(orderId),
@@ -238,8 +238,8 @@ class OrderController {
       );
 
       return ApiResponse.success(res, {
-        message: "Items added to cart successfully",
-        data: cart,
+        message: skipped.length ? "Some items could not be added (out of stock)" : "Items added to cart successfully",
+        data: { cart, skipped_variant_ids: skipped },
         status: HTTP_STATUS.OK,
       });
     } catch (error) {

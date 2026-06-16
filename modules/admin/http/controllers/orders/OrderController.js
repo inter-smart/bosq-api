@@ -52,6 +52,7 @@ class OrderController {
           orderData.user = {
             name: billing.name,
             email: billing.email,
+            country_code: billing.country_code || "",
             mobile: billing.phone,
             is_guest: true,
           };
@@ -125,16 +126,19 @@ class OrderController {
       }
 
 
-
+      let billing;
       const orderData = data.toJSON();
       if (!orderData.user && orderData.addresses && orderData.addresses.length > 0) {
-        const billing = orderData.addresses.find((a) => a.address_type === "billing") || orderData.addresses[0];
+        billing = orderData.addresses.find((a) => a.address_type === "billing") || orderData.addresses[0];
         orderData.user = {
-          name: user ? user.name : billing.name,
-          email: user ? user.email : billing.email,
-          mobile: billing.phone || "",
+          name: billing.name,
+          email: billing.email,
+          country_code: billing.country_code || "",
+          mobile: billing.phone,
+          is_guest: true,
         };
       }
+      
 
       sendSuccessResponse(res, orderData, "Order retrieved successfully");
     } catch (error) {

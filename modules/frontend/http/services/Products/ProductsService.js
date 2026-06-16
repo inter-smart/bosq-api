@@ -410,8 +410,6 @@ class ProductsService {
         limit = 12,
       } = params;
 
-      console.log("INIT", params);
-
       const isLoggedInUser = type === "user";
 
       const parseArrayParam = (param) => {

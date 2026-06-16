@@ -4,20 +4,6 @@ const OrderController = require("../http/controllers/OrderController.js");
 const PaymentController = require("../http/controllers/PaymentController.js");
 const { optionalAuth } = require("../http/middleware/optionalAuthMiddleware.js");
 const { cartContext } = require("../http/middleware/cartMiddleware.js");
-const { addOrderConfirmationJob } = require("../../../queues/emailQueue.js");
-const OrderService = require("../http/services/orderService.js");
-
-// DEV ONLY — trigger order confirmation email for any order ID without placing a new order
-if (process.env.NODE_ENV !== "production") {
-  router.post("/test-email/:orderId", async (req, res) => {
-    try {
-      await OrderService.sendOrderConfirmationEmail(parseInt(req.params.orderId, 10));
-      res.json({ success: true, message: `Order confirmation email queued for order ID ${req.params.orderId}` });
-    } catch (err) {
-      res.status(500).json({ success: false, error: err.message });
-    }
-  });
-}
 
 // Place a new order from active cart
 router.post("/place", optionalAuth(), cartContext, OrderController.placeOrder);

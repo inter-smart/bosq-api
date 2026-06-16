@@ -26,7 +26,6 @@ router.post("/resend-otp", validateResendOtp, Controller.resendOtp);
 
 
 router.use(authMiddleware(['admin']));
-router.post('/refresh-token', Controller.refreshToken);
 // router.post('/logout', Controller.logout);
 
 

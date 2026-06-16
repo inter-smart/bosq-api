@@ -33,8 +33,6 @@ function buildProfieSection(data) {
 function buildProfileEditSection(data) {
   if (!data) return null;
 
-  console.log(data.toJSON);
-
   const userData = data.toJSON ? data.toJSON() : data;
   return {
     displayName: userData.name ?? null,

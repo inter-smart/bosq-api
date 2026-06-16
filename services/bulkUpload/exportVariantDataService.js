@@ -203,7 +203,6 @@ async function getExportData(variantIds) {
     });
   }
 
-  console.log(variantRows);
 
   return {
     bases: Array.from(seenBases.values()),

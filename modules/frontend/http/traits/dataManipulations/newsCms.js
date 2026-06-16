@@ -4,20 +4,20 @@ const { buildTitleSection } = require("./common");
 
 
 
-  function buildNewsData(news) {
-    return {
-      news: news.map((item) => ({
-        id: item.id,
-        slug: item.slug ?? "N/A",
-        publishedAt: formatDate(item.published_date) ?? "N/A",
-        title: item.title ?? "N/A",
-        title_ar: item.title_ar ?? "N/A",
-        media: singleMediaWithoutType(item, "thumbnail", "thumbnail_alt", "thumbnail_alt_ar"),
-      })),
-    };
-  }
+function buildNewsData(news) {
+  return {
+    news: news.map((item) => ({
+      id: item.id,
+      slug: item.slug ?? "N/A",
+      publishedAt: formatDate(item.published_date) ?? "N/A",
+      title: item.title ?? "N/A",
+      title_ar: item.title_ar ?? "N/A",
+      media: singleMediaWithoutType(item, "thumbnail", "thumbnail_alt", "thumbnail_alt_ar"),
+    })),
+  };
+}
 
-  const extractKeywords = (text = "") => {
+const extractKeywords = (text = "") => {
   return text
     .toLowerCase()
     .replace(/[^\w\s]/g, "")
@@ -35,9 +35,7 @@ const buildTitleConditions = (keywords) => {
   }));
 };
 
-function buildNewsDetailsData(news, nextNews, prevNews){
-
-  console.log(news)
+function buildNewsDetailsData(news, nextNews, prevNews) {
 
   return {
     media: mediaWithoutType(news, "media_desktop_path", "media_mobile_path", "media_alt", "media_alt_ar") ?? null,
@@ -54,8 +52,8 @@ function buildNewsDetailsData(news, nextNews, prevNews){
 
 
 
-function buildRelatedNewsSection(cms, news, titleData){
-    const title = buildTitleSection(cms, titleData);
+function buildRelatedNewsSection(cms, news, titleData) {
+  const title = buildTitleSection(cms, titleData);
 
   return {
     ...title,
@@ -79,9 +77,9 @@ function buildRelatedNewsSection(cms, news, titleData){
 
 
 module.exports = {
-    buildNewsData,
-    extractKeywords,
-    buildTitleConditions,
-    buildNewsDetailsData,
-    buildRelatedNewsSection
+  buildNewsData,
+  extractKeywords,
+  buildTitleConditions,
+  buildNewsDetailsData,
+  buildRelatedNewsSection
 };

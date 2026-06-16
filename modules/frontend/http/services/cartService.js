@@ -29,22 +29,18 @@ class CartService {
       const categories = item.variant?.categories || [];
       const parentCategories = [];
 
-      console.log("Categories: ", JSON.stringify(categories, null, 2));
 
       for (const cat of categories) {
         if (cat.parent_id && cat.parent) {
-          console.log("Parent 1: ", JSON.stringify(cat.parent, null, 2));
           if (!parentCategories.find((c) => c.id === cat.parent.id)) {
             parentCategories.push({ id: cat.parent.id, name: cat.parent.name });
           }
         } else {
-          console.log("Parent 2: ", JSON.stringify(cat.parent, null, 2));
           if (!parentCategories.find((c) => c.id === cat.id)) {
             parentCategories.push({ id: cat.id, name: cat.name });
           }
         }
       }
-      console.log("Parent Categories: ", JSON.stringify(parentCategories, null, 2));
 
       if (deliveryRules.length > 0) {
         for (const parentCat of parentCategories) {
@@ -416,7 +412,6 @@ class CartService {
   static async addItem(userId, sessionId, variantId, quantity = 1) {
     const transaction = await sequelize.transaction();
 
-    console.log("Adding item to cart - userId:", userId, "sessionId:", sessionId, "variantId:", variantId, "quantity:", quantity);
 
     try {
       const variant = await models.ProductVariants.findOne({
@@ -425,7 +420,6 @@ class CartService {
         transaction,
       });
 
-      console.log("Product variant found:", variant?.toJSON?.());
 
       if (!variant) {
         throw ErrorHandler.createError(RESPONSE_MESSAGES.ERROR.PRODUCT_VARIANT_NOT_FOUND, HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND_ERROR);
@@ -820,13 +814,11 @@ class CartService {
    * Merge guest cart into user cart after login
    */
   static async mergeGuestCart(userId, sessionId) {
-    console.log("Attempting to merge guest cart for user:", userId, "with session:", sessionId);
 
     if (!sessionId) {
       return;
     }
 
-    console.log("Starting cart merge transaction...");
 
     const transaction = await sequelize.transaction();
 
@@ -842,7 +834,6 @@ class CartService {
         transaction,
       });
 
-      console.log("GUEST CART TO MERGE:", guestCart?.toJSON?.());
 
       if (!guestCart) {
         await transaction.commit();
@@ -854,7 +845,6 @@ class CartService {
         return;
       }
 
-      console.log("Merging cart with", guestCart.items.length, "items");
 
       const userCart = await this.getOrCreateCart(userId, null, "cart", transaction);
 
@@ -898,13 +888,11 @@ class CartService {
       });
 
       if (activeBuyNowCart) {
-        console.log("ACTIVE CART FOUND FOR BUY NOW - DELETING");
         await activeBuyNowCart.destroy({ force: true, transaction });
       }
 
       await ProductServiceHelpers.recalculateCartTotals(userCart.id, transaction);
 
-      console.log("CART MERGE SUCCESSFUL");
 
       // 6️⃣ Commit
       await transaction.commit();

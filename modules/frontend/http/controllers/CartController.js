@@ -12,6 +12,11 @@ const GUEST_SESSION_COOKIE = "guest_cart_session";
 
 const isProduction = process.env.NODE_ENV === "production";
 
+const unAuthorizedUserResponse = {
+  message: RESPONSE_MESSAGES.ERROR.USER_SESSION_REQUIRED,
+  status: HTTP_STATUS.UNAUTHORIZED,
+};
+
 class CartController {
   /**
    * Get session ID from cookie
@@ -84,10 +89,7 @@ class CartController {
       const { variant_id, isAuthenticated, quantity = 1 } = req.body;
 
       if (!userId && isAuthenticated) {
-        return ApiResponse.error(res, {
-          message: "User session has expired. Please log in again.",
-          status: HTTP_STATUS.UNAUTHORIZED,
-        });
+        return ApiResponse.error(res, unAuthorizedUserResponse);
       }
 
       let sessionId = null;
@@ -124,10 +126,7 @@ class CartController {
       const { variant_ids, isAuthenticated } = req.body;
 
       if (!userId && isAuthenticated) {
-        return ApiResponse.error(res, {
-          message: "User session has expired. Please log in again.",
-          status: HTTP_STATUS.UNAUTHORIZED,
-        });
+        return ApiResponse.error(res, unAuthorizedUserResponse);
       }
 
       if (!Array.isArray(variant_ids) || variant_ids.length === 0) {
@@ -158,6 +157,49 @@ class CartController {
     }
   }
 
+
+  static async addBundles(req, res) {
+    try {
+      const { variant_ids, isAuthenticated } = req.body;
+
+
+      const cartOwner = req.cartOwner;
+
+      if (!cartOwner) {
+        return ApiResponse.error(res, unAuthorizedUserResponse);
+      }
+
+      if (!Array.isArray(variant_ids) || variant_ids.length === 0) {
+        return ApiResponse.error(res, {
+          message: "variant_ids must be a non-empty array",
+          status: HTTP_STATUS.BAD_REQUEST,
+        });
+      }
+
+      const { type } = cartOwner;
+
+
+      let userId = null;
+      let sessionId = null;
+
+      if (type === 'guest') {
+        sessionId = cartOwner.id;
+      } else {
+        userId = cartOwner.id;
+      }
+
+      const { skipped, updatedCharge } = await CartService.addMultipleItems(userId, sessionId, variant_ids);
+
+      return ApiResponse.success(res, {
+        message: skipped.length ? "Some items could not be added (out of stock)" : "Items added to cart successfully",
+        data: { skipped_variant_ids: skipped, updatedCharge },
+        status: HTTP_STATUS.OK,
+      });
+    } catch (error) {
+      return ErrorHandler.handleControllerError(error, res, "CartController.addBundles");
+    }
+  }
+
   /**
    * Add item to cart
    * POST /api/frontend/cart/buynow
@@ -168,10 +210,7 @@ class CartController {
       const { variant_id, isAuthenticated, quantity = 1 } = req.body;
 
       if (!userId && isAuthenticated) {
-        return ApiResponse.error(res, {
-          message: "User session has expired. Please log in again.",
-          status: HTTP_STATUS.UNAUTHORIZED,
-        });
+        return ApiResponse.error(res, unAuthorizedUserResponse);
       }
 
       let sessionId = null;
@@ -216,19 +255,13 @@ class CartController {
       const { itemId } = req.params;
 
       if (!userId && isAuthenticated) {
-        return ApiResponse.error(res, {
-          message: "User session has expired. Please log in again.",
-          status: HTTP_STATUS.UNAUTHORIZED,
-        });
+        return ApiResponse.error(res, unAuthorizedUserResponse);
       }
 
       const sessionId = CartController.getSessionId(req);
 
       if (!userId && !sessionId) {
-        return ApiResponse.error(res, {
-          message: "User must be logged in or have an active cart session",
-          status: HTTP_STATUS.BAD_REQUEST,
-        });
+        return ApiResponse.error(res, unAuthorizedUserResponse);
       }
 
       const cart = await CartService.updateItemQuantity(userId, sessionId, parseInt(itemId), parseInt(variant_id), quantity);
@@ -262,19 +295,13 @@ class CartController {
       const { isAuthenticated } = req.body;
 
       if (!userId && isAuthenticated) {
-        return ApiResponse.error(res, {
-          message: "User session has expired. Please log in again.",
-          status: HTTP_STATUS.UNAUTHORIZED,
-        });
+        return ApiResponse.error(res, unAuthorizedUserResponse);
       }
 
       const sessionId = CartController.getSessionId(req);
 
       if (!userId && !sessionId) {
-        return ApiResponse.error(res, {
-          message: "User must be logged in or have an active cart session",
-          status: HTTP_STATUS.BAD_REQUEST,
-        });
+        return ApiResponse.error(res, unAuthorizedUserResponse);
       }
 
       const cart = await CartService.removeItem(userId, sessionId, parseInt(itemId));
@@ -299,10 +326,7 @@ class CartController {
       const sessionId = CartController.getSessionId(req);
 
       if (!userId && !sessionId) {
-        return ApiResponse.error(res, {
-          message: "User must be logged in or have an active cart session",
-          status: HTTP_STATUS.BAD_REQUEST,
-        });
+        return ApiResponse.error(res, unAuthorizedUserResponse);
       }
 
       const cart = await CartService.clearCart(userId, sessionId);

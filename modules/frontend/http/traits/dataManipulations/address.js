@@ -29,6 +29,8 @@ function buildCheckoutFormPayload(data) {
        Billing
     ---------------------------------- */
     id: data?.id || null,
+    parent_address_id: data?.parent_address_id || null,
+
     address_type: data?.address_type,
     name: data?.name || "",
     company_name: data?.company_name || "",

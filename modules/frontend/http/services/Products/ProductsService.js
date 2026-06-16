@@ -465,7 +465,6 @@ class ProductsService {
       conditions.push(`pv."deletedAt" IS NULL`);
       conditions.push(`pv."status" = true`);
 
-      console.log(priceRanges);
 
       // Price
       if (priceMin) {

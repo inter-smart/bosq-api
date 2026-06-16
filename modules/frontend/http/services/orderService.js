@@ -69,14 +69,14 @@ class OrderService {
       const cartShippingAddress = isSameAddress
         ? cartBillingAddress
         : await Model.findOne({
-            where: {
-              [field]: ownerId,
-              status: "active",
-              address_type: "shipping",
-              id: shipping,
-            },
-            transaction,
-          });
+          where: {
+            [field]: ownerId,
+            status: "active",
+            address_type: "shipping",
+            id: shipping,
+          },
+          transaction,
+        });
 
       if (!cartBillingAddress) {
         throw ErrorHandler.createError("Billing address not found", HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION_ERROR);
@@ -180,7 +180,6 @@ class OrderService {
       let orderGrandTotal = parseFloat(cart.grand_total);
       let itemDiscounts = null;
 
-      console.log("CPN CODE", couponCode);
 
       if (couponCode) {
         const coupon = await models.Coupons.findOne({
@@ -304,7 +303,6 @@ class OrderService {
 
       // Record coupon usage if a coupon was applied
       const couponForUsage = appliedCoupon ?? (cart.coupon_id ? { id: cart.coupon_id, code: cart.applied_coupon_code } : null);
-      console.log("CPN", couponForUsage);
       if (couponForUsage) {
         await models.CouponUsage.create(
           {
@@ -403,8 +401,8 @@ class OrderService {
 
       const user = order.user_id
         ? await models.Users.findByPk(order.user_id, {
-            attributes: ["id", "name", "email"],
-          })
+          attributes: ["id", "name", "email"],
+        })
         : null;
 
       const billingAddress = order.addresses.find((a) => a.address_type === "billing");
@@ -428,13 +426,13 @@ class OrderService {
       const [billingState, shippingState] = await Promise.all([
         billingAddress.state_id
           ? models.State.findByPk(billingAddress.state_id, {
-              attributes: ["name"],
-            })
+            attributes: ["name"],
+          })
           : null,
         shippingAddress?.state_id
           ? models.State.findByPk(shippingAddress.state_id, {
-              attributes: ["name"],
-            })
+            attributes: ["name"],
+          })
           : null,
       ]);
 
@@ -466,11 +464,11 @@ class OrderService {
 
         shippingAddress: shippingAddress
           ? {
-              street_address: shippingAddress.street_address,
-              apartment: shippingAddress.apartment || null,
-              state_name: shippingState?.name || null,
-              country: "UAE",
-            }
+            street_address: shippingAddress.street_address,
+            apartment: shippingAddress.apartment || null,
+            state_name: shippingState?.name || null,
+            country: "UAE",
+          }
           : null,
 
         items: order.items.map((item) => {
@@ -646,7 +644,6 @@ class OrderService {
 
     const total = rows.length > 0 ? parseInt(rows[0].total_count, 10) : 0;
 
-    console.log("rows ===========>", rows);
 
     return {
       orders: rows.map((row) => ({
@@ -1035,9 +1032,9 @@ class OrderService {
         product: item.product,
         variant: item.variant
           ? {
-              ...item.variant.toJSON(),
-              media_path: generateImageUrl(item?.variant?.media_path),
-            }
+            ...item.variant.toJSON(),
+            media_path: generateImageUrl(item?.variant?.media_path),
+          }
           : null,
       })),
       billing_address: billingAddress ? this.formatAddress(billingAddress) : null,
@@ -1068,9 +1065,9 @@ class OrderService {
       line_total: parseFloat(item.line_total).toFixed(2),
       variant: item.variant
         ? {
-            ...item.variant,
-            media_path: generateImageUrl(item.variant.media_path),
-          }
+          ...item.variant,
+          media_path: generateImageUrl(item.variant.media_path),
+        }
         : null,
     }));
 

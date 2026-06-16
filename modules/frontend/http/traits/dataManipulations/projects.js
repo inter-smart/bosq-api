@@ -98,7 +98,6 @@ function buildProjectDetailsSection(data) {
 // buildProjectGallerySection
 
 function buildProfileTitleSection(data) {
-  console.log("ccf", data);
   const section = {
     title: data?.title ?? "",
     title_ar: data?.title_ar ?? "",

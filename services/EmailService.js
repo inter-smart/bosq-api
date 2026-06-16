@@ -1,6 +1,6 @@
 const models = require("../database/models");
 const {
-  generateImageUrl,
+    generateImageUrl,
 } = require("../modules/frontend/traits/imageUrlHelper");
 const officeChairEnquiryTemplate = require("../mailers/templates/officeChairEnquiryTemplate");
 const welcomeEmailTemplate = require("../mailers/templates/welcomeEmailTemplate");
@@ -13,66 +13,65 @@ const newsletterConfirmationTemplate = require("../mailers/templates/newsletterC
 const MailService = require("./serviceHelpers/MailService");
 
 class EmailService {
-  static async sendPasswordResetEmail(email, data) {
-    const socialMediaIcons = await MailService.getSocialIconsHtml();
-    const html = passwordResetTemplate(data, socialMediaIcons);
+    static async sendPasswordResetEmail(email, data) {
+        const socialMediaIcons = await MailService.getSocialIconsHtml();
+        const html = passwordResetTemplate(data, socialMediaIcons);
 
-    console.log(socialMediaIcons);
 
-    return await MailService.sendEmail({
-      to: email,
-      subject: `${data.otp} is your password reset code`,
-      html,
-      type: "auth",
-    });
-  }
+        return await MailService.sendEmail({
+            to: email,
+            subject: `${data.otp} is your password reset code`,
+            html,
+            type: "auth",
+        });
+    }
 
-  static async sendOtp(to, otp) {
-    const socialMediaIcons = await MailService.getSocialIconsHtml();
-    const html = otpEmailTemplate(otp, socialMediaIcons);
+    static async sendOtp(to, otp) {
+        const socialMediaIcons = await MailService.getSocialIconsHtml();
+        const html = otpEmailTemplate(otp, socialMediaIcons);
 
-    return await MailService.sendEmail({
-      to,
-      subject: "Your OTP for Registration",
-      html,
-      type: "auth",
-    });
-  }
+        return await MailService.sendEmail({
+            to,
+            subject: "Your OTP for Registration",
+            html,
+            type: "auth",
+        });
+    }
 
-  static async sendOnboardMail(email, name) {
-    const socialIconsHtml = await MailService.getSocialIconsHtml();
-    const settings = await MailService.getMailerSettings("auth");
+    static async sendOnboardMail(email, name) {
+        const socialIconsHtml = await MailService.getSocialIconsHtml();
+        const settings = await MailService.getMailerSettings("auth");
 
-    const html = welcomeEmailTemplate({
-      customerName: name,
-      iconsHtml: socialIconsHtml,
-    });
+        const html = welcomeEmailTemplate({
+            customerName: name,
+            iconsHtml: socialIconsHtml,
+        });
 
-    return await MailService.sendEmail({
-      from: settings.from,
-      to: email,
-      cc: settings.cc,
-      subject: "Welcome to Bosq – Organic Living for Your Workspace",
-      html: html,
-    });
-  }
+        return await MailService.sendEmail({
+            from: settings.from,
+            to: email,
+            cc: settings.cc,
+            subject: "Welcome to Bosq – Organic Living for Your Workspace",
+            html: html,
+        });
+    }
 
-  static async sendContactEnquiry(data) {
-    const socialIconsHtml = await MailService.getSocialIconsHtml();
-    const settings = await MailService.getMailerSettings("enquiries");
-    const html = contactEnquiryTemplate(data, socialIconsHtml);
+    static async sendContactEnquiry(data) {
+        const socialIconsHtml = await MailService.getSocialIconsHtml();
+        const settings = await MailService.getMailerSettings("enquiries");
+        const html = contactEnquiryTemplate(data, socialIconsHtml);
 
-    return await MailService.sendEmail({
-      from: settings.from,
-      to: data.email,
-      cc: settings.cc,
-      subject: "Thank You For Your Enquiry – BOSQ",
-      html: html,
-    });
-  }
+        return await MailService.sendEmail({
+            from: settings.from,
+            to: data.email,
+            cc: settings.cc,
+            subject: "Thank You For Your Enquiry – BOSQ",
+            html: html,
+        });
+    }
 
-  static _adminEmailHtml({ badge, title, body }) {
-    return `<!DOCTYPE html>
+    static _adminEmailHtml({ badge, title, body }) {
+        return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
@@ -139,11 +138,11 @@ class EmailService {
   </table>
 </body>
 </html>`.trim();
-  }
+    }
 
-  static _detailRow(label, value, { highlight = false } = {}) {
-    const borderColor = highlight ? "#c9a96e" : "#e8e3db";
-    return `
+    static _detailRow(label, value, { highlight = false } = {}) {
+        const borderColor = highlight ? "#c9a96e" : "#e8e3db";
+        return `
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:10px;">
                 <tr>
                   <td width="140" style="padding:10px 14px;background-color:#f7f5f2;border-radius:3px 0 0 3px;">
@@ -154,10 +153,10 @@ class EmailService {
                   </td>
                 </tr>
               </table>`;
-  }
+    }
 
-  static _ctaBlock({ email, phone, followUpText, replyLabel, callLabel }) {
-    return `
+    static _ctaBlock({ email, phone, followUpText, replyLabel, callLabel }) {
+        return `
           <tr>
             <td style="padding:0 50px 40px;">
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#1c1c1c;border-radius:3px;">
@@ -178,14 +177,13 @@ class EmailService {
                         <td style="padding-right:12px;">
                           <a href="mailto:${email}" style="display:inline-block;padding:11px 28px;background-color:#c9a96e;color:#1c1c1c;text-decoration:none;font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;border-radius:2px;font-family:Arial,sans-serif;">${replyLabel}</a>
                         </td>
-                        ${
-                          phone
-                            ? `
+                        ${phone
+                ? `
                         <td>
                           <a href="tel:${phone}" style="display:inline-block;padding:11px 28px;background-color:transparent;color:#ffffff;text-decoration:none;font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;border-radius:2px;border:1px solid #555555;font-family:Arial,sans-serif;">${callLabel}</a>
                         </td>`
-                            : ""
-                        }
+                : ""
+            }
                       </tr>
                     </table>
                   </td>
@@ -193,32 +191,32 @@ class EmailService {
               </table>
             </td>
           </tr>`;
-  }
+    }
 
-  static async _sendAdminMail(subject, html) {
-    const transporter = MailService.getTransporter();
-    const settings = await MailService.getMailerSettings("admin");
-    console.log(
-      `[EmailService] sending "${subject}" | from=${settings.from} to=${settings.from} cc=${JSON.stringify(settings.cc)}`,
-    );
-    return transporter.sendMail({
-      from: settings.from,
-      to: settings.from,
-      subject,
-      html,
-    });
-  }
+    static async _sendAdminMail(subject, html) {
+        const transporter = MailService.getTransporter();
+        const settings = await MailService.getMailerSettings("admin");
+        console.log(
+            `[EmailService] sending "${subject}" | from=${settings.from} to=${settings.from} cc=${JSON.stringify(settings.cc)}`,
+        );
+        return transporter.sendMail({
+            from: settings.from,
+            to: settings.from,
+            subject,
+            html,
+        });
+    }
 
-  // ─────────────────────────────────────────────
+    // ─────────────────────────────────────────────
 
-  static async sendProductEnquiryAdmin(data) {
-    const nameVal = `<span style="font-size:14px;color:#1c1c1c;font-family:Arial,sans-serif;font-weight:600;">${data.name}</span>`;
-    const emailVal = `<a href="mailto:${data.email}" style="font-size:14px;color:#c9a96e;text-decoration:none;font-family:Arial,sans-serif;">${data.email}</a>`;
-    const phoneVal = data.phone
-      ? `<a href="tel:${data.phone}" style="font-size:14px;color:#c9a96e;text-decoration:none;font-family:Arial,sans-serif;">${data.phone}</a>`
-      : `<span style="font-size:14px;color:#bbbbbb;font-family:Arial,sans-serif;font-style:italic;">Not provided</span>`;
+    static async sendProductEnquiryAdmin(data) {
+        const nameVal = `<span style="font-size:14px;color:#1c1c1c;font-family:Arial,sans-serif;font-weight:600;">${data.name}</span>`;
+        const emailVal = `<a href="mailto:${data.email}" style="font-size:14px;color:#c9a96e;text-decoration:none;font-family:Arial,sans-serif;">${data.email}</a>`;
+        const phoneVal = data.phone
+            ? `<a href="tel:${data.phone}" style="font-size:14px;color:#c9a96e;text-decoration:none;font-family:Arial,sans-serif;">${data.phone}</a>`
+            : `<span style="font-size:14px;color:#bbbbbb;font-family:Arial,sans-serif;font-style:italic;">Not provided</span>`;
 
-    const body = `
+        const body = `
           <tr>
             <td style="padding:28px 50px 8px;">
               <p style="margin:0 0 16px;font-size:11px;font-weight:700;color:#c9a96e;text-transform:uppercase;letter-spacing:2px;font-family:Arial,sans-serif;">Enquiry Details</p>
@@ -247,27 +245,27 @@ class EmailService {
             followUpText: `Please follow up with this customer within <strong style="color:#ffffff;">24 hours</strong> to provide tailored recommendations and pricing.`,
             replyLabel: "Reply to Customer",
             callLabel: "Call Customer",
-          })}`;
+        })}`;
 
-    return this._sendAdminMail(
-      `New Product Enquiry – ${data.name}`,
-      this._adminEmailHtml({
-        badge: "New Product Enquiry",
-        title: "New Product Enquiry",
-        body,
-      }),
-    );
-  }
+        return this._sendAdminMail(
+            `New Product Enquiry – ${data.name}`,
+            this._adminEmailHtml({
+                badge: "New Product Enquiry",
+                title: "New Product Enquiry",
+                body,
+            }),
+        );
+    }
 
-  static async sendContactEnquiryAdmin(data) {
-    const emailVal = (v) =>
-      `<a href="mailto:${v}" style="font-size:14px;color:#c9a96e;text-decoration:none;font-family:Arial,sans-serif;">${v}</a>`;
-    const phoneVal = (v) =>
-      v
-        ? `<a href="tel:${v}" style="font-size:14px;color:#c9a96e;text-decoration:none;font-family:Arial,sans-serif;">${v}</a>`
-        : `<span style="font-size:14px;color:#bbbbbb;font-family:Arial,sans-serif;font-style:italic;">Not provided</span>`;
+    static async sendContactEnquiryAdmin(data) {
+        const emailVal = (v) =>
+            `<a href="mailto:${v}" style="font-size:14px;color:#c9a96e;text-decoration:none;font-family:Arial,sans-serif;">${v}</a>`;
+        const phoneVal = (v) =>
+            v
+                ? `<a href="tel:${v}" style="font-size:14px;color:#c9a96e;text-decoration:none;font-family:Arial,sans-serif;">${v}</a>`
+                : `<span style="font-size:14px;color:#bbbbbb;font-family:Arial,sans-serif;font-style:italic;">Not provided</span>`;
 
-    const body = `
+        const body = `
           <tr>
             <td style="padding:28px 50px 8px;">
               <p style="margin:0 0 16px;font-size:11px;font-weight:700;color:#c9a96e;text-transform:uppercase;letter-spacing:2px;font-family:Arial,sans-serif;">Contact Details</p>
@@ -294,68 +292,67 @@ class EmailService {
             followUpText: `Please follow up with this customer within <strong style="color:#ffffff;">24 hours</strong> to provide tailored recommendations and pricing.`,
             replyLabel: "Reply to Customer",
             callLabel: "Call Customer",
-          })}`;
+        })}`;
 
-    const subject = `New ${data.type.charAt(0).toUpperCase() + data.type.slice(1)} Enquiry – ${data.name}`;
-    return this._sendAdminMail(
-      subject,
-      this._adminEmailHtml({
-        badge: "New Enquiry Received",
-        title: "New Contact Enquiry",
-        body,
-      }),
-    );
-  }
+        const subject = `New ${data.type.charAt(0).toUpperCase() + data.type.slice(1)} Enquiry – ${data.name}`;
+        return this._sendAdminMail(
+            subject,
+            this._adminEmailHtml({
+                badge: "New Enquiry Received",
+                title: "New Contact Enquiry",
+                body,
+            }),
+        );
+    }
 
-  // Product Enquire
+    // Product Enquire
 
-  static async sendQueryAcknowledgement(email, name, message) {
-    const socialIconsHtml = await MailService.getSocialIconsHtml();
-    const settings = await MailService.getMailerSettings("enquiries");
+    static async sendQueryAcknowledgement(email, name, message) {
+        const socialIconsHtml = await MailService.getSocialIconsHtml();
+        const settings = await MailService.getMailerSettings("enquiries");
 
-    console.log(socialIconsHtml);
 
-    const html = officeChairEnquiryTemplate({
-      customerName: name,
-      enquiryMessage: message,
-      iconsHtml: socialIconsHtml,
-    });
+        const html = officeChairEnquiryTemplate({
+            customerName: name,
+            enquiryMessage: message,
+            iconsHtml: socialIconsHtml,
+        });
 
-    return await MailService.sendEmail({
-      from: settings.from,
-      to: email,
-      cc: settings.cc,
-      subject: "We've Received Your Query – BOSQ",
-      html: html,
-    });
-  }
+        return await MailService.sendEmail({
+            from: settings.from,
+            to: email,
+            cc: settings.cc,
+            subject: "We've Received Your Query – BOSQ",
+            html: html,
+        });
+    }
 
-  // ─────────────────────────────────────────────
-  //  GENERAL ENQUIRY — User Confirmation
-  // ─────────────────────────────────────────────
-  static async sendGeneralEnquiry(data) {
-    const socialIconsHtml = await MailService.getSocialIconsHtml();
-    const settings = await MailService.getMailerSettings("enquiries");
-    const html = customizationEnquiryTemplate(data, socialIconsHtml);
+    // ─────────────────────────────────────────────
+    //  GENERAL ENQUIRY — User Confirmation
+    // ─────────────────────────────────────────────
+    static async sendGeneralEnquiry(data) {
+        const socialIconsHtml = await MailService.getSocialIconsHtml();
+        const settings = await MailService.getMailerSettings("enquiries");
+        const html = customizationEnquiryTemplate(data, socialIconsHtml);
 
-    return await MailService.sendEmail({
-      from: settings.from,
-      to: data.email,
-      cc: settings.cc,
-      subject: "We've Received Your General Enquiry – BOSQ",
-      html: html,
-    });
-  }
+        return await MailService.sendEmail({
+            from: settings.from,
+            to: data.email,
+            cc: settings.cc,
+            subject: "We've Received Your General Enquiry – BOSQ",
+            html: html,
+        });
+    }
 
-  static async sendGeneralEnquiryAdmin(data) {
-    const nameVal = `<span style="font-size:14px;color:#1c1c1c;font-family:Arial,sans-serif;font-weight:600;">${data.first_name} ${data.last_name}</span>`;
-    const emailVal = `<a href="mailto:${data.email}" style="font-size:14px;color:#c9a96e;text-decoration:none;font-family:Arial,sans-serif;">${data.email}</a>`;
-    const phoneVal = data.phone
-      ? `<a href="tel:${data.phone}" style="font-size:14px;color:#c9a96e;text-decoration:none;font-family:Arial,sans-serif;">${data.phone}</a>`
-      : `<span style="font-size:14px;color:#bbbbbb;font-family:Arial,sans-serif;font-style:italic;">Not provided</span>`;
-    const helpVal = `<span style="font-size:14px;color:#c9a96e;font-family:Arial,sans-serif;font-weight:600;">${data.option_label || `Option ID: ${data.options_id}`}</span>`;
+    static async sendGeneralEnquiryAdmin(data) {
+        const nameVal = `<span style="font-size:14px;color:#1c1c1c;font-family:Arial,sans-serif;font-weight:600;">${data.first_name} ${data.last_name}</span>`;
+        const emailVal = `<a href="mailto:${data.email}" style="font-size:14px;color:#c9a96e;text-decoration:none;font-family:Arial,sans-serif;">${data.email}</a>`;
+        const phoneVal = data.phone
+            ? `<a href="tel:${data.phone}" style="font-size:14px;color:#c9a96e;text-decoration:none;font-family:Arial,sans-serif;">${data.phone}</a>`
+            : `<span style="font-size:14px;color:#bbbbbb;font-family:Arial,sans-serif;font-style:italic;">Not provided</span>`;
+        const helpVal = `<span style="font-size:14px;color:#c9a96e;font-family:Arial,sans-serif;font-weight:600;">${data.option_label || `Option ID: ${data.options_id}`}</span>`;
 
-    const body = `
+        const body = `
           <tr>
             <td style="padding:28px 50px 8px;">
               <p style="margin:0 0 16px;font-size:11px;font-weight:700;color:#c9a96e;text-transform:uppercase;letter-spacing:2px;font-family:Arial,sans-serif;">Contact Details</p>
@@ -385,46 +382,46 @@ class EmailService {
             followUpText: `Please follow up with this customer within <strong style="color:#ffffff;">24 hours</strong> to provide tailored recommendations and pricing.`,
             replyLabel: "Reply to Customer",
             callLabel: "Call Customer",
-          })}`;
+        })}`;
 
-    return this._sendAdminMail(
-      `New General Enquiry – ${data.first_name} ${data.last_name}`,
-      this._adminEmailHtml({
-        badge: "New General Enquiry",
-        title: "New General Enquiry",
-        body,
-      }),
-    );
-  }
+        return this._sendAdminMail(
+            `New General Enquiry – ${data.first_name} ${data.last_name}`,
+            this._adminEmailHtml({
+                badge: "New General Enquiry",
+                title: "New General Enquiry",
+                body,
+            }),
+        );
+    }
 
-  static async sendProjectEnquiry(data) {
-    const transporter = MailService.getTransporter();
-    const socialIconsHtml = await MailService.getSocialIconsHtml();
-    const settings = await MailService.getMailerSettings("enquiries");
-    const html = projectEnquiryTemplate(data, socialIconsHtml);
+    static async sendProjectEnquiry(data) {
+        const transporter = MailService.getTransporter();
+        const socialIconsHtml = await MailService.getSocialIconsHtml();
+        const settings = await MailService.getMailerSettings("enquiries");
+        const html = projectEnquiryTemplate(data, socialIconsHtml);
 
-    return await MailService.sendEmail({
-      from: settings.from,
-      to: data.email,
-      cc: settings.cc,
-      subject: "We've Received Your Project Enquiry – BOSQ",
-      html: html,
-    });
-  }
+        return await MailService.sendEmail({
+            from: settings.from,
+            to: data.email,
+            cc: settings.cc,
+            subject: "We've Received Your Project Enquiry – BOSQ",
+            html: html,
+        });
+    }
 
-  // ─────────────────────────────────────────────
-  //  PROJECT ENQUIRY — Admin Notification
-  // ─────────────────────────────────────────────
-  static async sendProjectEnquiryAdmin(data) {
-    const nameVal = `<span style="font-size:14px;color:#1c1c1c;font-family:Arial,sans-serif;font-weight:600;">${data.first_name} ${data.last_name}</span>`;
-    const companyVal = `<span style="font-size:14px;color:#1c1c1c;font-family:Arial,sans-serif;">${data.company_name || "N/A"}</span>`;
-    const emailVal = `<a href="mailto:${data.email}" style="font-size:14px;color:#c9a96e;text-decoration:none;font-family:Arial,sans-serif;">${data.email}</a>`;
-    const phoneVal = data.phone
-      ? `<a href="tel:${data.phone}" style="font-size:14px;color:#c9a96e;text-decoration:none;font-family:Arial,sans-serif;">${data.phone}</a>`
-      : `<span style="font-size:14px;color:#bbbbbb;font-family:Arial,sans-serif;font-style:italic;">Not provided</span>`;
-    const projectTypeVal = `<span style="font-size:14px;color:#c9a96e;font-family:Arial,sans-serif;font-weight:600;">${data.project_type || "General Project"}</span>`;
+    // ─────────────────────────────────────────────
+    //  PROJECT ENQUIRY — Admin Notification
+    // ─────────────────────────────────────────────
+    static async sendProjectEnquiryAdmin(data) {
+        const nameVal = `<span style="font-size:14px;color:#1c1c1c;font-family:Arial,sans-serif;font-weight:600;">${data.first_name} ${data.last_name}</span>`;
+        const companyVal = `<span style="font-size:14px;color:#1c1c1c;font-family:Arial,sans-serif;">${data.company_name || "N/A"}</span>`;
+        const emailVal = `<a href="mailto:${data.email}" style="font-size:14px;color:#c9a96e;text-decoration:none;font-family:Arial,sans-serif;">${data.email}</a>`;
+        const phoneVal = data.phone
+            ? `<a href="tel:${data.phone}" style="font-size:14px;color:#c9a96e;text-decoration:none;font-family:Arial,sans-serif;">${data.phone}</a>`
+            : `<span style="font-size:14px;color:#bbbbbb;font-family:Arial,sans-serif;font-style:italic;">Not provided</span>`;
+        const projectTypeVal = `<span style="font-size:14px;color:#c9a96e;font-family:Arial,sans-serif;font-weight:600;">${data.project_type || "General Project"}</span>`;
 
-    const body = `
+        const body = `
           <tr>
             <td style="padding:28px 50px 8px;">
               <p style="margin:0 0 16px;font-size:11px;font-weight:700;color:#c9a96e;text-transform:uppercase;letter-spacing:2px;font-family:Arial,sans-serif;">Contact Details</p>
@@ -453,40 +450,40 @@ class EmailService {
             followUpText: `Please follow up with this client within <strong style="color:#ffffff;">24-48 hours</strong> to discuss their project requirements.`,
             replyLabel: "Reply to Client",
             callLabel: "Call Client",
-          })}`;
+        })}`;
 
-    return this._sendAdminMail(
-      `New Project Enquiry – ${data.first_name} ${data.last_name}`,
-      this._adminEmailHtml({
-        badge: "New Project Enquiry",
-        title: "New Project Enquiry",
-        body,
-      }),
-    );
-  }
+        return this._sendAdminMail(
+            `New Project Enquiry – ${data.first_name} ${data.last_name}`,
+            this._adminEmailHtml({
+                badge: "New Project Enquiry",
+                title: "New Project Enquiry",
+                body,
+            }),
+        );
+    }
 
-  // ─────────────────────────────────────────────
-  //  NEWSLETTER — User Confirmation
-  // ─────────────────────────────────────────────
-  static async sendNewsletterConfirmation(email) {
-    const socialIconsHtml = await MailService.getSocialIconsHtml();
-    const settings = await MailService.getMailerSettings("newsletter");
-    const html = newsletterConfirmationTemplate({ iconsHtml: socialIconsHtml });
+    // ─────────────────────────────────────────────
+    //  NEWSLETTER — User Confirmation
+    // ─────────────────────────────────────────────
+    static async sendNewsletterConfirmation(email) {
+        const socialIconsHtml = await MailService.getSocialIconsHtml();
+        const settings = await MailService.getMailerSettings("newsletter");
+        const html = newsletterConfirmationTemplate({ iconsHtml: socialIconsHtml });
 
-    return await MailService.sendEmail({
-      from: settings.from,
-      to: email,
-      emailtype: "newsletter",
-      subject: "You're Now Subscribed – BOSQ Newsletter",
-      html: html,
-    });
-  }
+        return await MailService.sendEmail({
+            from: settings.from,
+            to: email,
+            emailtype: "newsletter",
+            subject: "You're Now Subscribed – BOSQ Newsletter",
+            html: html,
+        });
+    }
 
-  // ─────────────────────────────────────────────
-  //  NEWSLETTER — Admin Notification
-  // ─────────────────────────────────────────────
-  static async sendNewsletterAdmin(email) {
-    const body = `
+    // ─────────────────────────────────────────────
+    //  NEWSLETTER — Admin Notification
+    // ─────────────────────────────────────────────
+    static async sendNewsletterAdmin(email) {
+        const body = `
           <tr>
             <td style="padding:28px 50px 36px;">
               <p style="margin:0 0 16px;font-size:11px;font-weight:700;color:#c9a96e;text-transform:uppercase;letter-spacing:2px;font-family:Arial,sans-serif;">Subscriber Details</p>
@@ -494,74 +491,74 @@ class EmailService {
             </td>
           </tr>`;
 
-    return this._sendAdminMail(
-      `New Newsletter Subscriber – ${email}`,
-      this._adminEmailHtml({
-        badge: "New Subscriber",
-        title: "New Newsletter Subscriber",
-        body,
-      }),
-    );
-  }
+        return this._sendAdminMail(
+            `New Newsletter Subscriber – ${email}`,
+            this._adminEmailHtml({
+                badge: "New Subscriber",
+                title: "New Newsletter Subscriber",
+                body,
+            }),
+        );
+    }
 
-  static async sendOrderConfirmationEmail(email, data) {
-    const html = this.getOrderConfirmationTemplate(data);
+    static async sendOrderConfirmationEmail(email, data) {
+        const html = this.getOrderConfirmationTemplate(data);
 
-    return await MailService.sendEmail({
-      to: email,
-      subject: `Order Confirmed – ${data.orderCode}`,
-      html,
-      type: "orders",
-    });
-  }
+        return await MailService.sendEmail({
+            to: email,
+            subject: `Order Confirmed – ${data.orderCode}`,
+            html,
+            type: "orders",
+        });
+    }
 
-  static getOrderConfirmationTemplate(data) {
-    const {
-      orderCode,
-      name,
-      paymentType,
-      subtotal,
-      discount_total,
-      tax_total,
-      shipping_total,
-      grand_total,
-      items = [],
-      billingAddress,
-      shippingAddress,
-      estDelivery,
-    } = data;
+    static getOrderConfirmationTemplate(data) {
+        const {
+            orderCode,
+            name,
+            paymentType,
+            subtotal,
+            discount_total,
+            tax_total,
+            shipping_total,
+            grand_total,
+            items = [],
+            billingAddress,
+            shippingAddress,
+            estDelivery,
+        } = data;
 
-    const orderDate = new Date().toLocaleDateString("en-GB", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
-    const paymentLabel =
-      paymentType === "cod" ? "Cash on Delivery" : "Online Payment";
+        const orderDate = new Date().toLocaleDateString("en-GB", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+        });
+        const paymentLabel =
+            paymentType === "cod" ? "Cash on Delivery" : "Online Payment";
 
-    const billingLine = billingAddress
-      ? [
-          billingAddress.street_address,
-          billingAddress.apartment,
-          billingAddress.state_name,
-          billingAddress.country,
-        ]
-          .filter(Boolean)
-          .join(", ")
-      : "—";
-    const shippingLine = shippingAddress
-      ? [
-          shippingAddress.street_address,
-          shippingAddress.apartment,
-          shippingAddress.state_name,
-          shippingAddress.country,
-        ]
-          .filter(Boolean)
-          .join(", ")
-      : billingLine;
-    const deliveryText = estDelivery || "To be confirmed";
+        const billingLine = billingAddress
+            ? [
+                billingAddress.street_address,
+                billingAddress.apartment,
+                billingAddress.state_name,
+                billingAddress.country,
+            ]
+                .filter(Boolean)
+                .join(", ")
+            : "—";
+        const shippingLine = shippingAddress
+            ? [
+                shippingAddress.street_address,
+                shippingAddress.apartment,
+                shippingAddress.state_name,
+                shippingAddress.country,
+            ]
+                .filter(Boolean)
+                .join(", ")
+            : billingLine;
+        const deliveryText = estDelivery || "To be confirmed";
 
-    return `
+        return `
     
 <!DOCTYPE html>
 <html>
@@ -738,8 +735,8 @@ class EmailService {
                                                     </td>
                                                 </tr>
                                                 ${items
-                                                  .map(
-                                                    (item) => `
+                .map(
+                    (item) => `
                                                 <tr>
                                                     <td style="width: 14%; margin-bottom: 0px; margin-top: 0px;">
                                                         <img src="${item?.image}" width="66px" height="55" alt="image" style="object-fit: cover;">
@@ -758,16 +755,15 @@ class EmailService {
                                                         ${item.discount_amount ? `<p style="font-family: 'Open Sans', sans-serif; font-size: 13px; color: #c0392b; margin: 0px 0px 2px 0px; text-align: right; font-weight: 400;">- AED ${item.discount_amount}</p><p style="font-family: 'Open Sans', sans-serif; font-size: 14px; color: #282828; margin: 0px; text-align: right; font-weight: 500;">AED ${item.final_total}</p>` : ""}
                                                     </td>
                                                 </tr>`,
-                                                  )
-                                                  .join("")}
+                )
+                .join("")}
                                                 <tr>
                                                     <td colspan="3">
                                                         <hr style="border: none; border-top: solid 0.5px #f5f5f5; width: 100%; margin: 15px 0;">
                                                     </td>
                                                 </tr>
-                                                ${
-                                                  parseFloat(subtotal) > 0
-                                                    ? `
+                                                ${parseFloat(subtotal) > 0
+                ? `
                                                 <tr>
                                                     <td style="width: 66%; margin-bottom: 0px; margin-top: 0px;" colspan="2">
                                                         <p style="font-size: 16px; font-family: 'Open Sans', sans-serif; color: #282828; font-weight: 400; margin-bottom: 0; margin-top: 0;">Subtotal</p>
@@ -776,11 +772,10 @@ class EmailService {
                                                         <p style="font-family: 'Open Sans', sans-serif; font-size: 16px; color: #191919; margin: 0px; text-align: right; font-weight: 400;">AED ${parseFloat(subtotal).toFixed(2)}</p>
                                                     </td>
                                                 </tr>`
-                                                    : ""
-                                                }
-                                                ${
-                                                  parseFloat(discount_total) > 0
-                                                    ? `
+                : ""
+            }
+                                                ${parseFloat(discount_total) > 0
+                ? `
                                                 <tr>
                                                     <td style="width: 66%; margin-bottom: 0px; margin-top: 0px;" colspan="2">
                                                         <p style="font-size: 16px; font-family: 'Open Sans', sans-serif; color: #282828; font-weight: 400; margin-bottom: 0; margin-top: 0;">Discount</p>
@@ -789,11 +784,10 @@ class EmailService {
                                                         <p style="font-family: 'Open Sans', sans-serif; font-size: 16px; color: #c0392b; margin: 0px; text-align: right; font-weight: 400;">- AED ${parseFloat(discount_total).toFixed(2)}</p>
                                                     </td>
                                                 </tr>`
-                                                    : ""
-                                                }
-                                                ${
-                                                  parseFloat(tax_total) > 0
-                                                    ? `
+                : ""
+            }
+                                                ${parseFloat(tax_total) > 0
+                ? `
                                                 <tr>
                                                     <td style="width: 66%; margin-bottom: 0px; margin-top: 0px;" colspan="2">
                                                         <p style="font-size: 16px; font-family: 'Open Sans', sans-serif; color: #282828; font-weight: 400; margin-bottom: 0; margin-top: 0;">Tax</p>
@@ -802,8 +796,8 @@ class EmailService {
                                                         <p style="font-family: 'Open Sans', sans-serif; font-size: 16px; color: #191919; margin: 0px; text-align: right; font-weight: 400;">AED ${parseFloat(tax_total).toFixed(2)}</p>
                                                     </td>
                                                 </tr>`
-                                                    : ""
-                                                }
+                : ""
+            }
                                                 <tr>
                                                     <td style="width: 66%; margin-bottom: 0px; margin-top: 0px;" colspan="2">
                                                         <p style="font-size: 16px; font-family: 'Open Sans', sans-serif; color: #282828; font-weight: 400; margin-bottom: 0; margin-top: 0;">Shipping</p>
@@ -951,71 +945,70 @@ class EmailService {
 
 </html>
 `;
-  }
-
-  static async sendOrderStatusUpdate(email, data) {
-    const {
-      orderCode,
-      name,
-      paymentType,
-      status,
-      subtotal,
-      discount_total,
-      tax_total,
-      shipping_total,
-      grand_total,
-      items = [],
-      billingAddress,
-      shippingAddress,
-      estDelivery,
-      cancel_reason,
-    } = data;
-
-    console.log("imageITEMS", items);
-    const paymentLabel =
-      paymentType === "cod" ? "Cash on Delivery" : "Online Payment";
-    const statusFormatted = status.charAt(0).toUpperCase() + status.slice(1);
-    const orderDate = new Date().toLocaleDateString("en-GB", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
-
-    const billingLine = billingAddress
-      ? [
-          billingAddress.street_address,
-          billingAddress.apartment,
-          billingAddress.state_name || billingAddress.state?.name,
-          billingAddress.country,
-        ]
-          .filter(Boolean)
-          .join(", ")
-      : "—";
-
-    const shippingLine = shippingAddress
-      ? [
-          shippingAddress.street_address,
-          shippingAddress.apartment,
-          shippingAddress.state_name || shippingAddress.state?.name,
-          shippingAddress.country,
-        ]
-          .filter(Boolean)
-          .join(", ")
-      : billingLine;
-
-    const deliveryText = estDelivery || "To be confirmed";
-    const { from, cc } = await MailService.getMailerSettings("orders");
-
-    let messageText = `This email is to notify you that the status of your recent Bosq order (#${orderCode}) has been updated to <strong>${statusFormatted}</strong>. We will keep you posted on any further updates regarding your shipment!`;
-
-    if (status === "cancelled") {
-      messageText = `This email is to notify you that your recent Bosq order (#${orderCode}) has been <strong>Cancelled</strong>.`;
-      if (cancel_reason) {
-        messageText += `<br><br><strong>Reason for Cancellation:</strong> ${cancel_reason}`;
-      }
     }
 
-    const html = `
+    static async sendOrderStatusUpdate(email, data) {
+        const {
+            orderCode,
+            name,
+            paymentType,
+            status,
+            subtotal,
+            discount_total,
+            tax_total,
+            shipping_total,
+            grand_total,
+            items = [],
+            billingAddress,
+            shippingAddress,
+            estDelivery,
+            cancel_reason,
+        } = data;
+
+        const paymentLabel =
+            paymentType === "cod" ? "Cash on Delivery" : "Online Payment";
+        const statusFormatted = status.charAt(0).toUpperCase() + status.slice(1);
+        const orderDate = new Date().toLocaleDateString("en-GB", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+        });
+
+        const billingLine = billingAddress
+            ? [
+                billingAddress.street_address,
+                billingAddress.apartment,
+                billingAddress.state_name || billingAddress.state?.name,
+                billingAddress.country,
+            ]
+                .filter(Boolean)
+                .join(", ")
+            : "—";
+
+        const shippingLine = shippingAddress
+            ? [
+                shippingAddress.street_address,
+                shippingAddress.apartment,
+                shippingAddress.state_name || shippingAddress.state?.name,
+                shippingAddress.country,
+            ]
+                .filter(Boolean)
+                .join(", ")
+            : billingLine;
+
+        const deliveryText = estDelivery || "To be confirmed";
+        const { from, cc } = await MailService.getMailerSettings("orders");
+
+        let messageText = `This email is to notify you that the status of your recent Bosq order (#${orderCode}) has been updated to <strong>${statusFormatted}</strong>. We will keep you posted on any further updates regarding your shipment!`;
+
+        if (status === "cancelled") {
+            messageText = `This email is to notify you that your recent Bosq order (#${orderCode}) has been <strong>Cancelled</strong>.`;
+            if (cancel_reason) {
+                messageText += `<br><br><strong>Reason for Cancellation:</strong> ${cancel_reason}`;
+            }
+        }
+
+        const html = `
 <!DOCTYPE html>
 <html>
 <head>
@@ -1169,8 +1162,8 @@ class EmailService {
                                                     </td>
                                                 </tr>
                                                 ${items
-                                                  .map(
-                                                    (item) => `
+                .map(
+                    (item) => `
                                                 <tr>
                                                     <td style="width: 14%; margin-bottom: 0px; margin-top: 0px;">
                                                         <img src="${item?.image || "https://ux.intersmarthosting.in/Mailers/Bosq/prod-1.png"}" width="66px" height="55" alt="image" style="object-fit: cover;">
@@ -1189,16 +1182,15 @@ class EmailService {
                                                         ${item.discount_amount ? `<p style="font-family: 'Open Sans', sans-serif; font-size: 13px; color: #c0392b; margin: 0px 0px 2px 0px; text-align: right; font-weight: 400;">- AED ${item.discount_amount}</p><p style="font-family: 'Open Sans', sans-serif; font-size: 14px; color: #282828; margin: 0px; text-align: right; font-weight: 500;">AED ${item.final_total}</p>` : ""}
                                                     </td>
                                                 </tr>`,
-                                                  )
-                                                  .join("")}
+                )
+                .join("")}
                                                 <tr>
                                                     <td colspan="3">
                                                         <hr style="border: none; border-top: solid 0.5px #f5f5f5; width: 100%; margin: 15px 0;">
                                                     </td>
                                                 </tr>
-                                                ${
-                                                  parseFloat(subtotal) > 0
-                                                    ? `
+                                                ${parseFloat(subtotal) > 0
+                ? `
                                                 <tr>
                                                     <td style="width: 66%; margin-bottom: 0px; margin-top: 0px;" colspan="2">
                                                         <p style="font-size: 16px; font-family: 'Open Sans', sans-serif; color: #282828; font-weight: 400; margin-bottom: 0; margin-top: 0;">Subtotal</p>
@@ -1207,11 +1199,10 @@ class EmailService {
                                                         <p style="font-family: 'Open Sans', sans-serif; font-size: 16px; color: #191919; margin: 0px; text-align: right; font-weight: 400;">AED ${parseFloat(subtotal).toFixed(2)}</p>
                                                     </td>
                                                 </tr>`
-                                                    : ""
-                                                }
-                                                ${
-                                                  parseFloat(discount_total) > 0
-                                                    ? `
+                : ""
+            }
+                                                ${parseFloat(discount_total) > 0
+                ? `
                                                 <tr>
                                                     <td style="width: 66%; margin-bottom: 0px; margin-top: 0px;" colspan="2">
                                                         <p style="font-size: 16px; font-family: 'Open Sans', sans-serif; color: #282828; font-weight: 400; margin-bottom: 0; margin-top: 0;">Discount</p>
@@ -1220,11 +1211,10 @@ class EmailService {
                                                         <p style="font-family: 'Open Sans', sans-serif; font-size: 16px; color: #c0392b; margin: 0px; text-align: right; font-weight: 400;">- AED ${parseFloat(discount_total).toFixed(2)}</p>
                                                     </td>
                                                 </tr>`
-                                                    : ""
-                                                }
-                                                ${
-                                                  parseFloat(tax_total) > 0
-                                                    ? `
+                : ""
+            }
+                                                ${parseFloat(tax_total) > 0
+                ? `
                                                 <tr>
                                                     <td style="width: 66%; margin-bottom: 0px; margin-top: 0px;" colspan="2">
                                                         <p style="font-size: 16px; font-family: 'Open Sans', sans-serif; color: #282828; font-weight: 400; margin-bottom: 0; margin-top: 0;">Tax</p>
@@ -1233,8 +1223,8 @@ class EmailService {
                                                         <p style="font-family: 'Open Sans', sans-serif; font-size: 16px; color: #191919; margin: 0px; text-align: right; font-weight: 400;">AED ${parseFloat(tax_total).toFixed(2)}</p>
                                                     </td>
                                                 </tr>`
-                                                    : ""
-                                                }
+                : ""
+            }
                                                 <tr>
                                                     <td style="width: 66%; margin-bottom: 0px; margin-top: 0px;" colspan="2">
                                                         <p style="font-size: 16px; font-family: 'Open Sans', sans-serif; color: #282828; font-weight: 400; margin-bottom: 0; margin-top: 0;">Shipping</p>
@@ -1351,70 +1341,70 @@ class EmailService {
 </html>
     `.trim();
 
-    return await MailService.sendEmail({
-      to: email,
-      from: from,
-      cc: cc,
-      subject: `Order Update: ${orderCode} is now ${statusFormatted}`,
-      html,
-      type: "orders",
-    });
-  }
-
-  static async sendItemCancelUpdate(email, data) {
-    const {
-      name,
-      orderCode,
-      cancelledItem,
-      cancel_reason,
-      paymentType,
-      billingAddress,
-      shippingAddress,
-    } = data;
-
-    const { from, cc } = await MailService.getMailerSettings("orders");
-
-    const paymentLabel =
-      paymentType === "cod" ? "Cash on Delivery" : "Online Payment";
-    const orderDate = new Date().toLocaleDateString("en-GB", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
-
-    const billingLine = billingAddress
-      ? [
-          billingAddress.street_address,
-          billingAddress.apartment,
-          billingAddress.state_name || billingAddress.state?.name,
-          billingAddress.country,
-        ]
-          .filter(Boolean)
-          .join(", ")
-      : "—";
-
-    const shippingLine = shippingAddress
-      ? [
-          shippingAddress.street_address,
-          shippingAddress.apartment,
-          shippingAddress.state_name || shippingAddress.state?.name,
-          shippingAddress.country,
-        ]
-          .filter(Boolean)
-          .join(", ")
-      : billingLine;
-
-    let messageText = `This email is to notify you that one item from your Bosq order (<strong>#${orderCode}</strong>) has been <strong>Cancelled</strong>.`;
-    if (cancel_reason) {
-      messageText += `<br><br><strong>Reason for Cancellation:</strong> ${cancel_reason}`;
+        return await MailService.sendEmail({
+            to: email,
+            from: from,
+            cc: cc,
+            subject: `Order Update: ${orderCode} is now ${statusFormatted}`,
+            html,
+            type: "orders",
+        });
     }
 
-    const item = cancelledItem;
-    const itemLineTotal = parseFloat(
-      item?.line_total || item?.price || 0,
-    ).toFixed(2);
+    static async sendItemCancelUpdate(email, data) {
+        const {
+            name,
+            orderCode,
+            cancelledItem,
+            cancel_reason,
+            paymentType,
+            billingAddress,
+            shippingAddress,
+        } = data;
 
-    const html = `
+        const { from, cc } = await MailService.getMailerSettings("orders");
+
+        const paymentLabel =
+            paymentType === "cod" ? "Cash on Delivery" : "Online Payment";
+        const orderDate = new Date().toLocaleDateString("en-GB", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+        });
+
+        const billingLine = billingAddress
+            ? [
+                billingAddress.street_address,
+                billingAddress.apartment,
+                billingAddress.state_name || billingAddress.state?.name,
+                billingAddress.country,
+            ]
+                .filter(Boolean)
+                .join(", ")
+            : "—";
+
+        const shippingLine = shippingAddress
+            ? [
+                shippingAddress.street_address,
+                shippingAddress.apartment,
+                shippingAddress.state_name || shippingAddress.state?.name,
+                shippingAddress.country,
+            ]
+                .filter(Boolean)
+                .join(", ")
+            : billingLine;
+
+        let messageText = `This email is to notify you that one item from your Bosq order (<strong>#${orderCode}</strong>) has been <strong>Cancelled</strong>.`;
+        if (cancel_reason) {
+            messageText += `<br><br><strong>Reason for Cancellation:</strong> ${cancel_reason}`;
+        }
+
+        const item = cancelledItem;
+        const itemLineTotal = parseFloat(
+            item?.line_total || item?.price || 0,
+        ).toFixed(2);
+
+        const html = `
 <!DOCTYPE html>
 <html>
 <head>
@@ -1680,15 +1670,15 @@ class EmailService {
 </html>
     `.trim();
 
-    return await MailService.sendEmail({
-      from: from,
-      cc: cc,
-      to: email,
-      subject: `Item Cancellation: Your item from order #${orderCode} has been cancelled`,
-      html,
-      type: "auth",
-    });
-  }
+        return await MailService.sendEmail({
+            from: from,
+            cc: cc,
+            to: email,
+            subject: `Item Cancellation: Your item from order #${orderCode} has been cancelled`,
+            html,
+            type: "auth",
+        });
+    }
 }
 
 module.exports = EmailService;

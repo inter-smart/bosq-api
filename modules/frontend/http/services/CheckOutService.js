@@ -180,7 +180,6 @@ class CheckOutService {
     const overallDeliveryCharge = itemsCharges.reduce((sum, item) => sum + item.totalDeliveryCharge, 0);
     const requiresSalesContact = itemsCharges.some((item) => item.redirectToSales);
 
-    console.log("calculatedTotalDeliveryCharge ===>", overallDeliveryCharge);
 
     return {
       overallDeliveryCharge,
@@ -194,7 +193,6 @@ class CheckOutService {
       ? { user_id: userId, status: "active", type: "cart" }
       : { session_id: sessionId, status: "active", user_id: null, type: "cart" };
 
-    console.log(`Fetching cart data for ${userId ? "user" : "guest"} with ID ${userId || sessionId}`);
 
     const cart = await models.Cart.findOne({
       where: whereClause,
@@ -330,7 +328,6 @@ class CheckOutService {
       ? { user_id: userId, status: "active", type: "buynow" }
       : { session_id: sessionId, status: "active", user_id: null, type: "buynow" };
 
-    console.log(`Fetching buy now cart data for ${userId ? "user" : "guest"} with ID ${userId || sessionId}`);
 
     const cart = await models.Cart.findOne({
       where: whereClause,
@@ -803,9 +800,23 @@ class CheckOutService {
       }),
     ]);
 
+
+    const billing = billingAddresses?.map((item) => buildCheckoutFormPayload(item)) || [];
+
+    const shippingMap = new Map(
+      (shippingAddresses || []).map((item) => [
+        String(item.parent_address_id),
+        buildCheckoutFormPayload(item),
+      ])
+    );
+
+    const shipping = (billingAddresses || [])
+      .map((billingItem) => shippingMap.get(String(billingItem.id)))
+      .filter(Boolean);
+
     return {
-      billing: billingAddresses?.map((item) => buildCheckoutFormPayload(item)) || [],
-      shipping: shippingAddresses?.map((item) => buildCheckoutFormPayload(item)) || [],
+      billing,
+      shipping,
     };
   }
 
@@ -873,7 +884,6 @@ class CheckOutService {
 
       const matchingItems = this.getMatchingCartItems(coupon, cart.items).sort((a, b) => b.quantity * b.price - a.quantity * a.price);
 
-      console.log("Matching items for coupon:", JSON.stringify(matchingItems, null, 2));
 
       if (matchingItems.length === 0) {
         throw ErrorHandler.createError(
@@ -913,7 +923,6 @@ class CheckOutService {
       const itemDiscounts = new Map();
 
       for (const item of matchingItems) {
-        console.log("Remaining max discount", remainingMaxDiscount);
         if (remainingMaxDiscount <= 0) break;
 
         const totalItems = item.quantity;
@@ -933,8 +942,7 @@ class CheckOutService {
 
         const finalPrice = round2(itemTotalPrice - itemDiscount);
 
-        console.log(itemDiscount);
-        console.log(finalPrice);
+
 
         itemDiscounts.set(item.id, itemDiscount);
 
@@ -979,7 +987,6 @@ class CheckOutService {
         );
       }
 
-      console.log(discountAmount, newDiscountTotal, newGrandTotal);
 
       return { discountAmount: newDiscountTotal, newDiscountTotal, newGrandTotal, itemDiscounts };
     }

@@ -62,8 +62,8 @@ class CheckOutController {
 
       if (!cartOwner) {
         return ApiResponse.error(res, {
-          message: "User ID or Session ID is required, please log in",
-          status: HTTP_STATUS.BAD_REQUEST,
+          message: RESPONSE_MESSAGES.ERROR.USER_SESSION_REQUIRED,
+          status: HTTP_STATUS.UNAUTHORIZED,
         });
       }
 
@@ -91,7 +91,7 @@ class CheckOutController {
       if (!userId && !sessionId) {
         return ApiResponse.error(res, {
           message: "User ID or Session ID is required",
-          status: HTTP_STATUS.BAD_REQUEST,
+          status: HTTP_STATUS.UNAUTHORIZED,
         });
       }
 
@@ -120,8 +120,8 @@ class CheckOutController {
     try {
       if (!cartOwner) {
         return ApiResponse.error(res, {
-          message: "User ID or Session ID is required",
-          status: HTTP_STATUS.BAD_REQUEST,
+          message: RESPONSE_MESSAGES.ERROR.USER_SESSION_REQUIRED,
+          status: HTTP_STATUS.UNAUTHORIZED,
         });
       }
 
@@ -146,7 +146,7 @@ class CheckOutController {
       if (!userId) {
         return ApiResponse.error(res, {
           message: "User ID or Session ID is required",
-          status: HTTP_STATUS.BAD_REQUEST,
+          status: HTTP_STATUS.UNAUTHORIZED,
         });
       }
 
@@ -177,8 +177,8 @@ class CheckOutController {
 
       if (!userId && !sessionId) {
         return ApiResponse.error(res, {
-          message: "User ID or Session ID is required",
-          status: HTTP_STATUS.BAD_REQUEST,
+          message: RESPONSE_MESSAGES.ERROR.USER_SESSION_REQUIRED,
+          status: HTTP_STATUS.UNAUTHORIZED,
         });
       }
 

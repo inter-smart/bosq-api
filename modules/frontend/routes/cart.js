@@ -12,6 +12,7 @@ router.get("/similar-products", optionalAuth(), cartContext, CartController.getS
 router.get("/", optionalAuth(), cartContext, CartController.getCart);
 router.post("/add", optionalAuth(), cartContext, CartController.addItem);
 router.post("/add-together", optionalAuth(), cartContext, CartController.addMultipleItems);
+router.post("/bundle-together", optionalAuth(), cartContext, CartController.addBundles);
 router.post("/buynow", optionalAuth(), cartContext, CartController.buyNowItem);
 router.put("/item/:itemId", optionalAuth(), cartContext, CartController.updateItem);
 router.delete("/item/:itemId", optionalAuth(), cartContext, CartController.removeItem);

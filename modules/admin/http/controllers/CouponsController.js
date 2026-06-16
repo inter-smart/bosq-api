@@ -388,6 +388,8 @@ class CouponsController {
             model: models.ProductCategory,
             as: "children",
             attributes: ["id", "name", "slug"],
+            where: { status: true },
+            required: false, // keeps parent even if no active children
           },
         ],
       });
@@ -491,8 +493,8 @@ class CouponsController {
       }
 
       const result = await models.ProductVariants.findAll({
-        where: { product_model_id: id },
-        attributes: ["id", "sku"],
+        where: { product_model_id: id, status: true },
+        attributes: ["id", "sku", "title"],
         include,
       });
       return sendSuccessResponse(res, result, "Data retrieved successfully");

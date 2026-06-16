@@ -228,6 +228,7 @@ class ProductTypeController {
         return sendErrorResponse(res, "Category id is required");
       }
       const result = await models.ProductVariants.findAll({
+        where: {status: true},
         attributes: ["id", "sku", "title"],
         include: [
           {

@@ -402,23 +402,21 @@ class EmailService {
     //  PROJECT ENQUIRY — Admin Notification
     // ─────────────────────────────────────────────
     static async sendProjectEnquiryAdmin(data) {
-        const nameVal = `<span style="font-size:14px;color:#1c1c1c;font-family:Arial,sans-serif;font-weight:600;">${data.first_name} ${data.last_name}</span>`;
-        const companyVal = `<span style="font-size:14px;color:#1c1c1c;font-family:Arial,sans-serif;">${data.company_name || "N/A"}</span>`;
-        const emailVal = `<a href="mailto:${data.email}" style="font-size:14px;color:#c9a96e;text-decoration:none;font-family:Arial,sans-serif;">${data.email}</a>`;
+        const nameVal = `<span style="font-size:14px;color:#1c1c1c;font-family:Arial,sans-serif;font-weight:600;">${data?.name}</span>`;
+        const emailVal = `<a href="mailto:${data.email}" style="font-size:14px;color:#c9a96e;text-decoration:none;font-family:Arial,sans-serif;">${data?.email}</a>`;
         const phoneVal = data.phone
-            ? `<a href="tel:${data.phone}" style="font-size:14px;color:#c9a96e;text-decoration:none;font-family:Arial,sans-serif;">${data.phone}</a>`
+            ? `<a href="tel:${data.phone}" style="font-size:14px;color:#c9a96e;text-decoration:none;font-family:Arial,sans-serif;">${data?.phone}</a>`
             : `<span style="font-size:14px;color:#bbbbbb;font-family:Arial,sans-serif;font-style:italic;">Not provided</span>`;
-        const projectTypeVal = `<span style="font-size:14px;color:#c9a96e;font-family:Arial,sans-serif;font-weight:600;">${data.project_type || "General Project"}</span>`;
+        const projectTypeVal = `<span style="font-size:14px;color:#c9a96e;font-family:Arial,sans-serif;font-weight:600;">${data?.project_title || "General Project"}</span>`;
 
         const body = `
           <tr>
             <td style="padding:28px 50px 8px;">
               <p style="margin:0 0 16px;font-size:11px;font-weight:700;color:#c9a96e;text-transform:uppercase;letter-spacing:2px;font-family:Arial,sans-serif;">Contact Details</p>
               ${this._detailRow("Full Name", nameVal)}
-              ${this._detailRow("Company", companyVal)}
               ${this._detailRow("Email", emailVal)}
               ${this._detailRow("Phone", phoneVal)}
-              ${this._detailRow("Project Type", projectTypeVal, { highlight: true })}
+              ${this._detailRow("Project", projectTypeVal, { highlight: true })}
             </td>
           </tr>
           <tr>
@@ -442,7 +440,7 @@ class EmailService {
         })}`;
 
         return this._sendAdminMail(
-            `New Project Enquiry – ${data.first_name} ${data.last_name}`,
+            `New Project Enquiry – ${data.name}`,
             this._adminEmailHtml({
                 badge: "New Project Enquiry",
                 title: "New Project Enquiry",

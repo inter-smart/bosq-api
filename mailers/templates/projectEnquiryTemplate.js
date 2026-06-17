@@ -4,7 +4,7 @@ const projectEnquiryTemplate = (data, iconsHtml = "") => {
   const contactUrl = `mailto:${companyEmail}`;
   const currentYear = new Date().getFullYear();
 
-  const { first_name, last_name, company_name, project_type, message } = data;
+  const { name, project_title, message } = data;
 
   return `
 <!DOCTYPE html>
@@ -45,7 +45,7 @@ const projectEnquiryTemplate = (data, iconsHtml = "") => {
                 <tr>
                     <td style="padding:0 30px;">
                         <h3 style="font-size:16px; color:#282828; font-weight:500; text-align:center; margin:0 0 22px;">
-                            Dear ${first_name} ${last_name},
+                            Dear ${name},
                         </h3>
 
                         <p style="font-size:16px; color:#282828; width:95%; margin:0 auto 24px; line-height:25px; text-align:center;">
@@ -68,15 +68,11 @@ const projectEnquiryTemplate = (data, iconsHtml = "") => {
                                     </h2>
 
                                     <p style="font-size:14px; color:#444444; margin:0 0 12px;">
-                                        <strong>Name:</strong> ${first_name} ${last_name}
+                                        <strong>Name:</strong> ${name}
                                     </p>
 
                                     <p style="font-size:14px; color:#444444; margin:0 0 12px;">
-                                        <strong>Company:</strong> ${company_name || "N/A"}
-                                    </p>
-
-                                    <p style="font-size:14px; color:#444444; margin:0 0 12px;">
-                                        <strong>Project Type:</strong> ${project_type}
+                                        <strong>Project:</strong> ${project_title}
                                     </p>
 
                                     <p style="font-size:14px; color:#444444; line-height:24px; margin:0;">

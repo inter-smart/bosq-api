@@ -12,9 +12,11 @@ const {
 
 class ProjectEnquiryService {
   static async store(data) {
+
     try {
       const token = data?.recaptcha_token;
-
+      
+      console.log("ENQUIRY DATA", data);
       if (!token) {
         throw ErrorHandler.createError(
           RESPONSE_MESSAGES.ERROR.RECAPTCHA_MISSING,
@@ -59,6 +61,9 @@ class ProjectEnquiryService {
         ...data,
         project_title: projectExists.title || null,
       };
+
+
+      
 
       await Promise.all([
         EmailService.sendProjectEnquiry(emailData),

@@ -18,4 +18,8 @@ const addOrderConfirmationJob = (data) => {
   return emailQueue.add("order_confirmation", data);
 };
 
-module.exports = { emailQueue, addOrderConfirmationJob };
+const addRegistrationWelcomeJob = (data) => {
+  return emailQueue.add("registration_welcome", data);
+};
+
+module.exports = { emailQueue, addOrderConfirmationJob, addRegistrationWelcomeJob };

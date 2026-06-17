@@ -7,7 +7,7 @@ class MailService {
   static async getSocialIconsHtml() {
     const BASE_IMAGE_URL = process.env.BASE_URL;
     try {
-      const socialLinks = await models.models.SocialMedia.findAll({
+      const socialLinks = await models.SocialMedia.findAll({
         where: { status: true },
         order: [["sort_order", "ASC"]],
       });

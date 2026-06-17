@@ -6,6 +6,7 @@ const { models, sequelize } = require("../../../../../database/models/index.js")
 const EmailService = require("../../../../../services/EmailService.js");
 const { generateSlugWithTimestamp } = require("../../traits/mediaButtonHelper.js");
 const { Op } = require("sequelize");
+const { addRegistrationWelcomeJob } = require("../../../../../queues/emailQueue.js");
 
 const { JWT, COOKIE, TTL } = require("../../../../../config/authConfig.js");
 
@@ -261,6 +262,8 @@ class UsersService {
       await redisClient.del(`register-temp-token:${email}`);
 
       await transaction.commit();
+
+      addRegistrationWelcomeJob({ email, name: user.name });
 
       return { data: { userId: user.id } };
     } catch (error) {

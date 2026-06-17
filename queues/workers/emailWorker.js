@@ -20,6 +20,16 @@ const processJob = async (job) => {
     return { sent: true };
   }
 
+  if (name === "registration_welcome") {
+    const { email, name: customerName } = data;
+    if (!email) {
+      throw new Error(`Registration welcome job ${job.id} missing email`);
+    }
+    await EmailService.sendOnboardMail(email, customerName);
+    Logger.info(`Registration welcome email sent → ${email}`);
+    return { sent: true };
+  }
+
   Logger.warn(`Email worker: unknown job name "${name}" (job ${job.id})`);
 };
 

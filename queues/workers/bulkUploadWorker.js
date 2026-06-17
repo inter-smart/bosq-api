@@ -1,12 +1,9 @@
 const { Worker } = require("bullmq");
+const { workerConnection } = require("../../config/bullConnection");
 const { redisClient } = require("../../config/redis");
 const { processUpload } = require("../../services/bulkUpload/bulkUploadService");
 const { processFaqUpload } = require("../../services/bulkUpload/faqBulkUploadService");
 const Logger = require("../../config/logger");
-
-const connection = {
-  url: process.env.REDIS_URL || "redis://localhost:6379",
-};
 
 const SESSION_PREFIX = "bulk_upload_session:";
 const FAQ_SESSION_PREFIX = "bulk_faq_session:";
@@ -68,7 +65,7 @@ const processJob = async (job) => {
 
 const startBulkUploadWorker = () => {
   worker = new Worker("bulk-upload", processJob, {
-    connection,
+    connection: workerConnection,
     concurrency: 1, // Process one bulk upload at a time to protect DB
   });
 

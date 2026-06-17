@@ -1557,7 +1557,7 @@ class EmailService {
                                                 </tr>
                                                 <tr>
                                                     <td style="width: 14%; margin-bottom: 0px; margin-top: 0px;">
-                                                        <img src="${generateImageUrl(item?.image) || "https://ux.intersmarthosting.in/Mailers/Bosq/prod-1.png"}" width="66px" height="55" alt="image" style="object-fit: cover;">
+                                                        <img src="${item?.image || "https://ux.intersmarthosting.in/Mailers/Bosq/prod-1.png"}" width="66px" height="55" alt="image" style="object-fit: cover;">
                                                     </td>
                                                     <td style="width: 66%; margin-bottom: 0px; margin-top: 0px;">
                                                         <p style="font-size: 16px; font-family: 'Open Sans', sans-serif; color: #282828; font-weight: 400; margin-bottom: 5px; margin-top: 0;">

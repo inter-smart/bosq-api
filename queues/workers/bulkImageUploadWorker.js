@@ -1,10 +1,7 @@
 const { Worker } = require("bullmq");
+const { workerConnection } = require("../../config/bullConnection");
 const { processImageUpload, cleanupStagingFiles } = require("../../services/bulkImage/bulkImageUploadService");
 const Logger = require("../../config/logger");
-
-const connection = {
-  url: process.env.REDIS_URL || "redis://localhost:6379",
-};
 
 let worker = null;
 
@@ -35,7 +32,7 @@ const processJob = async (job) => {
 
 const startBulkImageUploadWorker = () => {
   worker = new Worker("bulk-image-upload", processJob, {
-    connection,
+    connection: workerConnection,
     concurrency: 1, // One batch at a time to protect the filesystem
   });
 

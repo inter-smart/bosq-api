@@ -1,10 +1,7 @@
 const { Worker } = require("bullmq");
+const { workerConnection } = require("../../config/bullConnection");
 const EmailService = require("../../services/EmailService");
 const Logger = require("../../config/logger");
-
-const connection = {
-  url: process.env.REDIS_URL || "redis://localhost:6379",
-};
 
 let worker = null;
 
@@ -28,7 +25,7 @@ const processJob = async (job) => {
 
 const startEmailWorker = () => {
   worker = new Worker("email", processJob, {
-    connection,
+    connection: workerConnection,
     concurrency: 2,
   });
 

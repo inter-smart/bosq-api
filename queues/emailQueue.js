@@ -1,11 +1,8 @@
 const { Queue } = require("bullmq");
-
-const connection = {
-  url: process.env.REDIS_URL || "redis://localhost:6379",
-};
+const { queueConnection } = require("../config/bullConnection");
 
 const emailQueue = new Queue("email", {
-  connection,
+  connection: queueConnection,
   defaultJobOptions: {
     attempts: 3,
     backoff: {
@@ -13,7 +10,7 @@ const emailQueue = new Queue("email", {
       delay: 5000,
     },
     removeOnComplete: { age: 3600, count: 100 },
-    removeOnFail: { age: 86400 },
+    removeOnFail: { age: 86400, count: 1000 },
   },
 });
 

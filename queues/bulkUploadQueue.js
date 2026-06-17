@@ -1,11 +1,8 @@
 const { Queue } = require("bullmq");
-
-const connection = {
-  url: process.env.REDIS_URL || "redis://localhost:6379",
-};
+const { queueConnection } = require("../config/bullConnection");
 
 const bulkUploadQueue = new Queue("bulk-upload", {
-  connection,
+  connection: queueConnection,
   defaultJobOptions: {
     attempts: 3,
     backoff: {
@@ -13,7 +10,7 @@ const bulkUploadQueue = new Queue("bulk-upload", {
       delay: 5000,
     },
     removeOnComplete: { age: 86400, count: 50 },
-    removeOnFail: { age: 7 * 86400 },
+    removeOnFail: { age: 7 * 86400, count: 500 },
   },
 });
 

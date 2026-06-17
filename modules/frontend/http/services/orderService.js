@@ -840,16 +840,19 @@ class OrderService {
       }
 
       const itemsData = (order.items || []).map((item) => {
-        const p = parseFloat(item.price) || 0;
-        const q = item.quantity || 1;
-        const d = parseFloat(item.discount_amount || "0") || 0;
+        const price = parseFloat(item.price) || 0;
+        const quantity = item.quantity || 1;
+        const discount = parseFloat(item.discount_amount || 0);
+        const lineTotal = (price * quantity).toFixed(2);
+        const finalTotal = Math.max(0, parseFloat(lineTotal) - discount).toFixed(2);
         return {
           title: item.variant?.title || item.product?.title || "Product",
-          sku: item.variant?.sku,
-          quantity: q,
-          price: String(item.price),
-          discount_amount: String(item.discount_amount || "0"),
-          line_total: String(p * q - d),
+          sku: item.variant?.sku || "",
+          quantity,
+          price: price.toFixed(2),
+          discount_amount: discount > 0 ? discount.toFixed(2) : null,
+          line_total: lineTotal,
+          final_total: finalTotal,
           image: generateImageUrl(item.variant?.media_path) || null,
         };
       });

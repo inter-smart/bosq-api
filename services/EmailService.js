@@ -76,41 +76,38 @@ class EmailService {
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <style>
+      @import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;500;600;700&display=swap');
+      body, p, h1, h2, h3, h4, h5, h6 {
+          font-family: "Open Sans", sans-serif;
+          font-weight: 400;
+      }
+  </style>
 </head>
-<body style="margin:0;padding:0;background-color:#f0ede8;font-family:Georgia,'Times New Roman',serif;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f0ede8;padding:40px 0;">
+<body style="margin:0;padding:0;background-color:#ffffff;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#ffffff;padding:40px 0;">
     <tr>
       <td align="center">
-        <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:4px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08);">
+        <table role="presentation" width="700" cellpadding="0" cellspacing="0" style="max-width:700px;width:100%;background-color:#ffffff;border:1px solid #efeeee;border-radius:4px;overflow:hidden;">
 
           <tr>
-            <td align="center" style="background-color:#1c1c1c;padding:36px 40px;">
-              <table role="presentation" cellpadding="0" cellspacing="0">
-                <tr>
-                  <td style="vertical-align:middle;padding-right:10px;">
-                    <div style="display:inline-block;background-color:#c9a96e;border-radius:3px;padding:6px 8px;font-size:16px;font-weight:700;color:#1c1c1c;font-family:Georgia,serif;line-height:1;">b</div>
-                  </td>
-                  <td style="vertical-align:middle;">
-                    <span style="font-size:26px;font-weight:700;color:#ffffff;font-family:Georgia,serif;letter-spacing:2px;">BOSQ</span>
-                    <div style="font-size:10px;color:#999999;letter-spacing:3px;text-transform:uppercase;margin-top:2px;">organic living</div>
-                  </td>
-                </tr>
-              </table>
+            <td align="center" style="background-color:#282828;padding:30px 0;">
+              <img src="https://ux.intersmarthosting.in/Mailers/Bosq/logo.png" width="132px" height="40" alt="logo" style="object-fit: contain;">
             </td>
           </tr>
 
           <tr>
             <td align="center" style="padding:36px 50px 8px;">
-              <div style="display:inline-block;background-color:#fff4e0;border:1px solid #c9a96e;border-radius:20px;padding:6px 18px;">
-                <span style="font-size:11px;font-weight:700;color:#c9a96e;text-transform:uppercase;letter-spacing:2px;font-family:Arial,sans-serif;">● ${badge}</span>
+              <div style="display:inline-block;background-color:#F2F2F2;border:1px solid #e5e5e5;border-radius:20px;padding:6px 18px;">
+                <span style="font-size:11px;font-weight:700;color:#282828;text-transform:uppercase;letter-spacing:2px;">● ${badge}</span>
               </div>
             </td>
           </tr>
 
           <tr>
             <td align="center" style="padding:16px 50px 8px;">
-              <h1 style="margin:0;font-size:26px;font-weight:400;color:#1c1c1c;font-family:Georgia,serif;line-height:1.3;">${title}</h1>
-              <p style="margin:10px 0 0;font-size:13px;color:#999999;font-family:Arial,sans-serif;letter-spacing:0.3px;">
+              <h1 style="margin:0;font-size:24px;font-weight:500;color:#282828;line-height:1.3;">${title}</h1>
+              <p style="margin:10px 0 0;font-size:13px;color:#999999;letter-spacing:0.3px;">
                 ${new Date().toLocaleString("en-AE", { dateStyle: "full", timeStyle: "short" })}
               </p>
             </td>
@@ -118,19 +115,11 @@ class EmailService {
 
           <tr>
             <td style="padding:24px 50px 0;">
-              <hr style="border:none;border-top:1px solid #e8e3db;margin:0;"/>
+              <hr style="border:none;border-top:1px solid #efeeee;margin:0;"/>
             </td>
           </tr>
 
           ${body}
-
-          <tr>
-            <td align="center" style="padding:20px 50px;background-color:#f7f5f2;border-top:1px solid #e8e3db;">
-              <p style="margin:0;font-size:11px;color:#aaaaaa;font-family:Arial,sans-serif;letter-spacing:0.3px;">
-                &copy; ${new Date().getFullYear()} Bosq. All Rights Reserved. &nbsp;|&nbsp; Internal Notification
-              </p>
-            </td>
-          </tr>
 
         </table>
       </td>
@@ -141,14 +130,14 @@ class EmailService {
     }
 
     static _detailRow(label, value, { highlight = false } = {}) {
-        const borderColor = highlight ? "#c9a96e" : "#e8e3db";
+        const borderColor = highlight ? "#282828" : "#efeeee";
         return `
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:10px;">
                 <tr>
-                  <td width="140" style="padding:10px 14px;background-color:#f7f5f2;border-radius:3px 0 0 3px;">
-                    <span style="font-size:11px;font-weight:700;color:#888888;text-transform:uppercase;letter-spacing:1.2px;font-family:Arial,sans-serif;">${label}</span>
+                  <td width="140" style="padding:10px 14px;background-color:#F2F2F2;border-radius:3px 0 0 3px;">
+                    <span style="font-size:11px;font-weight:700;color:#888888;text-transform:uppercase;letter-spacing:1.2px;">${label}</span>
                   </td>
-                  <td style="padding:10px 16px;background-color:#fafaf8;border-radius:0 3px 3px 0;border-left:2px solid ${borderColor};">
+                  <td style="padding:10px 16px;background-color:#ffffff;border-radius:0 3px 3px 0;border-left:2px solid ${borderColor};border-top:1px solid #efeeee;border-right:1px solid #efeeee;border-bottom:1px solid #efeeee;">
                     ${value}
                   </td>
                 </tr>
@@ -159,15 +148,15 @@ class EmailService {
         return `
           <tr>
             <td style="padding:0 50px 40px;">
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#1c1c1c;border-radius:3px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#282828;border-radius:3px;">
                 <tr>
                   <td style="padding:24px 28px 6px;">
-                    <p style="margin:0;font-size:11px;font-weight:700;color:#c9a96e;text-transform:uppercase;letter-spacing:2px;font-family:Arial,sans-serif;">Action Required</p>
+                    <p style="margin:0;font-size:11px;font-weight:700;color:#ffffff;text-transform:uppercase;letter-spacing:2px;">Action Required</p>
                   </td>
                 </tr>
                 <tr>
                   <td style="padding:8px 28px 20px;">
-                    <p style="margin:0;font-size:14px;color:#cccccc;line-height:1.8;font-family:Arial,sans-serif;">${followUpText}</p>
+                    <p style="margin:0;font-size:14px;color:#cccccc;line-height:1.8;">${followUpText}</p>
                   </td>
                 </tr>
                 <tr>
@@ -175,12 +164,12 @@ class EmailService {
                     <table role="presentation" cellpadding="0" cellspacing="0">
                       <tr>
                         <td style="padding-right:12px;">
-                          <a href="mailto:${email}" style="display:inline-block;padding:11px 28px;background-color:#c9a96e;color:#1c1c1c;text-decoration:none;font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;border-radius:2px;font-family:Arial,sans-serif;">${replyLabel}</a>
+                          <a href="mailto:${email}" style="display:inline-block;padding:11px 28px;background-color:#ffffff;color:#282828;text-decoration:none;font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;border-radius:2px;">${replyLabel}</a>
                         </td>
                         ${phone
                 ? `
                         <td>
-                          <a href="tel:${phone}" style="display:inline-block;padding:11px 28px;background-color:transparent;color:#ffffff;text-decoration:none;font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;border-radius:2px;border:1px solid #555555;font-family:Arial,sans-serif;">${callLabel}</a>
+                          <a href="tel:${phone}" style="display:inline-block;padding:11px 28px;background-color:transparent;color:#ffffff;text-decoration:none;font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;border-radius:2px;border:1px solid #555555;">${callLabel}</a>
                         </td>`
                 : ""
             }

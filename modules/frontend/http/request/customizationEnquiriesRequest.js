@@ -6,7 +6,7 @@ const validationRequestPost = [
     .trim()
     .notEmpty()
     .withMessage("First name is required")
-    .isLength({ min: 2, max: 50 })
+    .isLength({ min: 1, max: 50 })
     .withMessage("First name must be between 2 and 50 characters")
     .matches(/^[a-zA-Z\s\u0600-\u06FF]+$/)
     .withMessage("First name can only contain letters"),
@@ -16,17 +16,13 @@ const validationRequestPost = [
     .trim()
     .notEmpty()
     .withMessage("Last name is required")
-    .isLength({ min: 2, max: 50 })
+    .isLength({ min: 1, max: 50 })
     .withMessage("Last name must be between 2 and 50 characters")
     .matches(/^[a-zA-Z\s\u0600-\u06FF]+$/)
     .withMessage("Last name can only contain letters"),
 
   // Company Name (optional)
-  body("company_name")
-    .optional({ checkFalsy: true })
-    .trim()
-    .isLength({ max: 100 })
-    .withMessage("Company name must not exceed 100 characters"),
+  body("company_name").optional({ checkFalsy: true }).trim().isLength({ max: 100 }).withMessage("Company name must not exceed 100 characters"),
 
   // Email
   body("email")
@@ -43,14 +39,11 @@ const validationRequestPost = [
   body("phone")
     .optional({ checkFalsy: true })
     .trim()
-    .matches(
-      /^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,9}$/,
-    )
+    .matches(/^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,9}$/)
     .withMessage("Please provide a valid phone number"),
 
   // Options ID
-  body("dropdown_id")
-   .optional(),
+  body("dropdown_id").optional(),
   // Message
   body("message").optional(),
 ];

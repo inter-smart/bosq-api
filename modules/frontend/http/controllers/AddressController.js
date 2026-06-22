@@ -3,9 +3,19 @@ const { HTTP_STATUS, RESPONSE_MESSAGES } = require("../traits/constants");
 const { ErrorHandler } = require("../traits/errorHandler");
 const service = require("../services/addressService");
 
+const unAuthorizedUserResponse = {
+  message: RESPONSE_MESSAGES.ERROR.USER_SESSION_REQUIRED,
+  status: HTTP_STATUS.UNAUTHORIZED,
+};
+
 class AddressController {
   static async index(req, res) {
     try {
+      const cartOwner = req.cartOwner;
+
+      if (!cartOwner) {
+        return ApiResponse.error(res, unAuthorizedUserResponse);
+      }
       const data = await service.index(req, res);
       return ApiResponse.success(res, {
         message: RESPONSE_MESSAGES.SUCCESS.DATA_RETRIEVED,
@@ -18,6 +28,12 @@ class AddressController {
   }
 
   static async get(req, res) {
+    const cartOwner = req.cartOwner;
+
+    if (!cartOwner) {
+      return ApiResponse.error(res, unAuthorizedUserResponse);
+    }
+
     try {
       const data = await service.get(req, res);
       return ApiResponse.success(res, {
@@ -35,10 +51,7 @@ class AddressController {
       const cartOwner = req.cartOwner;
 
       if (!cartOwner) {
-        return ApiResponse.error(res, {
-          message: RESPONSE_MESSAGES.ERROR.USER_SESSION_REQUIRED,
-          status: HTTP_STATUS.BAD_REQUEST,
-        });
+        return ApiResponse.error(res, unAuthorizedUserResponse);
       }
 
       const data = await service.store(req, res);
@@ -57,10 +70,7 @@ class AddressController {
       const cartOwner = req.cartOwner;
 
       if (!cartOwner) {
-        return ApiResponse.error(res, {
-          message: RESPONSE_MESSAGES.ERROR.USER_SESSION_REQUIRED,
-          status: HTTP_STATUS.BAD_REQUEST,
-        });
+        return ApiResponse.error(res, unAuthorizedUserResponse);
       }
       const data = await service.update(req, res);
       return ApiResponse.success(res, {
@@ -79,10 +89,7 @@ class AddressController {
       const cartOwner = req.cartOwner;
 
       if (!cartOwner) {
-        return ApiResponse.error(res, {
-          message: RESPONSE_MESSAGES.ERROR.USER_SESSION_REQUIRED,
-          status: HTTP_STATUS.BAD_REQUEST,
-        });
+        return ApiResponse.error(res, unAuthorizedUserResponse);
       }
 
       const addressType = req?.body?.addressType || "billing";
@@ -105,10 +112,7 @@ class AddressController {
       const cartOwner = req.cartOwner;
 
       if (!cartOwner) {
-        return ApiResponse.error(res, {
-          message: RESPONSE_MESSAGES.ERROR.USER_SESSION_REQUIRED,
-          status: HTTP_STATUS.BAD_REQUEST,
-        });
+        return ApiResponse.error(res, unAuthorizedUserResponse);
       }
 
       const data = await service.setDefault(cartOwner, id, addressType);

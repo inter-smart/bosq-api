@@ -21,7 +21,6 @@ const { validateRecaptcha } = require("../../../../services/RecaptchaValidation.
 class AddressService {
   static async index(req, res) {
     try {
-
       if (!req.cartOwner) {
         throw new Error("Cart owner not found");
       }
@@ -98,20 +97,12 @@ class AddressService {
     try {
       const { id } = req.params;
 
-      if (!req.cartOwner) {
-        return res.status(400).json({
-          message: "Cart context not found",
-        });
-      }
-
       const { type, id: userId } = req.cartOwner;
 
       const config = modelsMap[type];
 
       if (!config) {
-        return res.status(400).json({
-          message: "Invalid cart owner type",
-        });
+        throw new Error("Invalid cart owner type");
       }
 
       const { model: Model, field, aliasName: alias } = config;
@@ -180,7 +171,7 @@ class AddressService {
   static async getAllAddressByUser(req, res) {
     try {
       if (!req.cartOwner) {
-        return res.status(400).json({
+        return res.status(401).json({
           message: "Cart context not found",
         });
       }
@@ -271,7 +262,7 @@ class AddressService {
       }
 
       if (!req.cartOwner) {
-        return res.status(400).json({
+        return res.status(401).json({
           message: "Cart context not found",
         });
       }

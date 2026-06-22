@@ -51,16 +51,12 @@ class CheckOutService {
     return { is_valid: true };
   }
 
-
-
   /**
    * Calculate shipping charge for a given stateId (called from the new API endpoint).
    * Reuses the same flat-rate threshold + calculateCartShippingCharge logic as getCartData.
    */
-  static async getShippingChargeForState(userId, sessionId, stateId) {
-    const whereClause = userId
-      ? { user_id: userId, status: "active", type: "cart" }
-      : { session_id: sessionId, status: "active", user_id: null, type: "cart" };
+  static async getShippingChargeForState(userId, sessionId, stateId, type) {
+    const whereClause = userId ? { user_id: userId, status: "active", type } : { session_id: sessionId, status: "active", user_id: null, type };
 
     const cart = await models.Cart.findOne({
       where: whereClause,
@@ -180,7 +176,6 @@ class CheckOutService {
     const overallDeliveryCharge = itemsCharges.reduce((sum, item) => sum + item.totalDeliveryCharge, 0);
     const requiresSalesContact = itemsCharges.some((item) => item.redirectToSales);
 
-
     return {
       overallDeliveryCharge,
       requiresSalesContact,
@@ -192,7 +187,6 @@ class CheckOutService {
     const whereClause = userId
       ? { user_id: userId, status: "active", type: "cart" }
       : { session_id: sessionId, status: "active", user_id: null, type: "cart" };
-
 
     const cart = await models.Cart.findOne({
       where: whereClause,
@@ -327,7 +321,6 @@ class CheckOutService {
     const whereClause = userId
       ? { user_id: userId, status: "active", type: "buynow" }
       : { session_id: sessionId, status: "active", user_id: null, type: "buynow" };
-
 
     const cart = await models.Cart.findOne({
       where: whereClause,
@@ -614,9 +607,9 @@ class CheckOutService {
         coupon_scope_type: coupon.scope_type,
         item_discounts: itemDiscounts
           ? Array.from(itemDiscounts.entries()).map(([id, amount]) => ({
-            id,
-            amount: parseFloat(amount.toFixed(2)),
-          }))
+              id,
+              amount: parseFloat(amount.toFixed(2)),
+            }))
           : null,
       };
 
@@ -800,19 +793,11 @@ class CheckOutService {
       }),
     ]);
 
-
     const billing = billingAddresses?.map((item) => buildCheckoutFormPayload(item)) || [];
 
-    const shippingMap = new Map(
-      (shippingAddresses || []).map((item) => [
-        String(item.parent_address_id),
-        buildCheckoutFormPayload(item),
-      ])
-    );
+    const shippingMap = new Map((shippingAddresses || []).map((item) => [String(item.parent_address_id), buildCheckoutFormPayload(item)]));
 
-    const shipping = (billingAddresses || [])
-      .map((billingItem) => shippingMap.get(String(billingItem.id)))
-      .filter(Boolean);
+    const shipping = (billingAddresses || []).map((billingItem) => shippingMap.get(String(billingItem.id))).filter(Boolean);
 
     return {
       billing,
@@ -884,7 +869,6 @@ class CheckOutService {
 
       const matchingItems = this.getMatchingCartItems(coupon, cart.items).sort((a, b) => b.quantity * b.price - a.quantity * a.price);
 
-
       if (matchingItems.length === 0) {
         throw ErrorHandler.createError(
           RESPONSE_MESSAGES.ERROR.MINIMUM_ELIGIBLE_PRODUCTS_AMOUNT_REQUIRED(coupon.min_product_amount),
@@ -942,8 +926,6 @@ class CheckOutService {
 
         const finalPrice = round2(itemTotalPrice - itemDiscount);
 
-
-
         itemDiscounts.set(item.id, itemDiscount);
 
         if (persist) {
@@ -986,7 +968,6 @@ class CheckOutService {
           },
         );
       }
-
 
       return { discountAmount: newDiscountTotal, newDiscountTotal, newGrandTotal, itemDiscounts };
     }

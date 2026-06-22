@@ -20,7 +20,7 @@ class CheckOutController {
 
       const cart = await CheckOutService.getCartData(userId, sessionId);
 
-      console.log(cart)
+      console.log(cart);
 
       return ApiResponse.success(res, {
         message: "Cart data retrieved successfully",
@@ -79,14 +79,12 @@ class CheckOutController {
     }
   }
 
-
-
-
   static async getShippingCharge(req, res) {
     try {
       const userId = req.auth?.id;
       const sessionId = req.cartOwner?.id;
       const state_id = req.body?.state_id;
+      const type = req.body?.type || "cart";
 
       if (!userId && !sessionId) {
         return ApiResponse.error(res, {
@@ -102,7 +100,7 @@ class CheckOutController {
         });
       }
 
-      const result = await CheckOutService.getShippingChargeForState(userId, sessionId, state_id);
+      const result = await CheckOutService.getShippingChargeForState(userId, sessionId, state_id, type);
 
       return ApiResponse.success(res, {
         message: "Shipping charge calculated successfully",

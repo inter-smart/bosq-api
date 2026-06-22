@@ -2,7 +2,10 @@ const { Op, literal, Error } = require("sequelize");
 const { models } = require("../../../../database/models");
 const cacheKeys = require("../../../redis/cacheKeys");
 const { setCache, getCache } = require("../../../redis/redisService");
-const { buildOtherMetaData, buildTitleSection } = require("../traits/dataManipulations/common");
+const {
+  buildOtherMetaData,
+  buildTitleSection,
+} = require("../traits/dataManipulations/common");
 const {
   buildRelatedNewsSection,
   buildNewsDetailsData,
@@ -185,34 +188,37 @@ class newservice {
 
         keywords.length
           ? models.News.findAll({
-            attributes: [
-              "slug",
-              "title",
-              "title_ar",
-              "thumbnail",
-              "thumbnail_alt",
-              "thumbnail_alt_ar",
-              "published_date",
-            ],
-
-            where: {
-              [Op.and]: [
-                literal(`
-            to_tsvector('simple', title || ' ' || coalesce(title_ar, ''))
-            @@ to_tsquery('simple', '${keywords.join(" | ")}')
-          `),
-                {
-                  id: { [Op.ne]: news.id },
-                },
-                {
-                  status: true,
-                },
+              attributes: [
+                "slug",
+                "title",
+                "title_ar",
+                "thumbnail",
+                "thumbnail_alt",
+                "thumbnail_alt_ar",
+                "published_date",
               ],
-            },
 
-            limit: 5,
-            order: [["createdAt", "DESC"]],
-          })
+              where: {
+                [Op.and]: [
+                  literal(`
+            (
+              SELECT COUNT(*) FROM unnest(ARRAY[${keywords.map((k) => `'${k}'`).join(",")}]) AS kw
+              WHERE to_tsvector('simple', title || ' ' || coalesce(title_ar, ''))
+              @@ plainto_tsquery('simple', kw)
+            ) >= 2
+          `),
+                  {
+                    id: { [Op.ne]: news.id },
+                  },
+                  {
+                    status: true,
+                  },
+                ],
+              },
+
+              limit: 5,
+              order: [["createdAt", "DESC"]],
+            })
           : Promise.resolve([]),
 
         models.News.findAll({
@@ -236,8 +242,16 @@ class newservice {
 
       const heroData = buildTitleSection(cms);
       const newsData = buildNewsDetailsData(news, nextnews, prevnews);
-      const relatedNewsData = buildRelatedNewsSection(cms, relatednews, "related_news");
-      const popularNewsData = buildRelatedNewsSection(cms, popularnews, "popular_news");
+      const relatedNewsData = buildRelatedNewsSection(
+        cms,
+        relatednews,
+        "related_news",
+      );
+      const popularNewsData = buildRelatedNewsSection(
+        cms,
+        popularnews,
+        "popular_news",
+      );
       const metaData = buildOtherMetaData(news);
 
       const result = {

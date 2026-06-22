@@ -197,8 +197,11 @@ class BlogService {
                 where: {
                   [Op.and]: [
                     literal(`
-            to_tsvector('simple', title || ' ' || coalesce(title_ar, ''))
-            @@ plainto_tsquery('simple', '${keywords.join(" ")}')
+            (
+              SELECT COUNT(*) FROM unnest(ARRAY[${keywords.map((k) => `'${k}'`).join(",")}]) AS kw
+              WHERE to_tsvector('simple', title || ' ' || coalesce(title_ar, '')) 
+              @@ plainto_tsquery('simple', kw)
+            ) >= 2
           `),
                     {
                       id: { [Op.ne]: blog.id },
@@ -213,11 +216,10 @@ class BlogService {
                 order: [["updatedAt", "DESC"]],
               })
             : Promise.resolve([]),
-
           models.Blogs.findAll({
             where: {
               status: true,
-              id: { [Op.ne]: blog.id }, 
+              id: { [Op.ne]: blog.id },
             },
             attributes: [
               "slug",

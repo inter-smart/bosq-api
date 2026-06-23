@@ -197,25 +197,31 @@ class newservice {
                 "thumbnail_alt_ar",
                 "published_date",
               ],
-
               where: {
                 [Op.and]: [
                   literal(`
-            (
-              SELECT COUNT(*) FROM unnest(ARRAY[${keywords.map((k) => `'${k}'`).join(",")}]) AS kw
-              WHERE to_tsvector('simple', title || ' ' || coalesce(title_ar, ''))
-              @@ plainto_tsquery('simple', kw)
-            ) >= 2
+            id != '${news.id}'
+            AND (
+              (
+                SELECT COUNT(*)
+                FROM unnest(ARRAY[${keywords.map((k) => `'${k}'`).join(",")}]) AS kw
+                WHERE to_tsvector('simple', title || ' ' || coalesce(title_ar, ''))
+                  @@ plainto_tsquery('simple', kw)
+              ) >= 2
+              OR
+              (
+                SELECT COUNT(*)
+                FROM unnest(tsvector_to_array(
+                  to_tsvector('simple', title || ' ' || coalesce(title_ar, ''))
+                )) AS word
+                WHERE to_tsvector('simple', '${(news.title + " " + (news.title_ar || "")).replace(/'/g, "''")}')
+                  @@ plainto_tsquery('simple', word)
+              ) >= 2
+            )
           `),
-                  {
-                    id: { [Op.ne]: news.id },
-                  },
-                  {
-                    status: true,
-                  },
+                  { status: true },
                 ],
               },
-
               limit: 5,
               order: [["createdAt", "DESC"]],
             })

@@ -83,7 +83,7 @@ class MailService {
     }
 
     try {
-      const setting = await models.models.MailerSettings.findOne({
+      const setting = await models.MailerSettings.findOne({
         where: { type },
       });
 
@@ -98,7 +98,7 @@ class MailService {
           cc: setting.cc_emails ? setting.cc_emails.split(",").map((e) => e.trim()) : [],
         };
       }
-    } catch (_) { }
+    } catch (_) {}
 
     const defaultFrom = this.getEmailFromByType(type);
 
@@ -117,8 +117,8 @@ class MailService {
     if (!this.transporter) {
       if (process.env.USE_BREVO === "true") {
         this.transporter = nodemailer.createTransport({
-          host: "email-smtp.ap-south-1.amazonaws.com",
-          port: 587, // STARTTLS port
+          host: process.env.BREVO_SMTP_HOST || "smtp-relay.brevo.com",
+          port: parseInt(process.env.BREVO_SMTP_PORT) || 587, // STARTTLS port
           secure: false, // false for STARTTLS
           requireTLS: true, // enforce TLS
           auth: {

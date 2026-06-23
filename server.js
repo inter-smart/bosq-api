@@ -40,6 +40,8 @@ const allowedOrigins = [
   "https://bosq-staging.netlify.app",
   "https://dev-bosq.netlify.app",
   "https://admin-bosq.netlify.app",
+  "https://bosq.ae",
+  "https://admin.bosq.ae",
 ];
 
 app.use(

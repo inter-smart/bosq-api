@@ -5,6 +5,9 @@ const validateRecaptcha = async (recaptchaToken) => {
     throw new Error("RECAPTCHA_SECRET_KEY is not defined");
   }
 
+  console.log(recaptchaToken);
+  console.log(secretKey);
+
   const response = await fetch("https://www.google.com/recaptcha/api/siteverify", {
     method: "POST",
     headers: {
@@ -14,6 +17,8 @@ const validateRecaptcha = async (recaptchaToken) => {
   });
 
   const data = await response.json();
+
+  console.log(data);
 
   // 🔍 TEMP LOG (remove after testing)
 

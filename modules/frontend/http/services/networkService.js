@@ -48,7 +48,7 @@ class NetworkService {
    * @param {string} params.cancelUrl       - Redirect URL on cancellation
    * @param {string} [params.description]   - Optional payment description
    */
-  static async createPayment({ amount, currency = "AED", orderReference, returnUrl, cancelUrl }) {
+  static async createPayment({ amount, currency = "AED", orderReference, returnUrl, cancelUrl, email }) {
     const token = await this.getAccessToken();
     const url = `${BASE_URL}/transactions/outlets/${MERCHANT_ID}/orders`;
 
@@ -61,6 +61,7 @@ class NetworkService {
         currencyCode: currency,
         value: amountInMinorUnits,
       },
+      emailAddress: email,
       merchantAttributes: {
         redirectUrl: returnUrl,
         cancelUrl: cancelUrl,

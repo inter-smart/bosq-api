@@ -23,7 +23,15 @@ class PaymentService {
     const whereClause = userId ? { id: orderId, user_id: userId } : { id: orderId, session_id: sessionId, user_id: null };
 
     // Plain read — guards below are the safety net; no row-lock needed here
-    const order = await models.Orders.findOne({ where: whereClause });
+    const order = await models.Orders.findOne({
+      where: whereClause,
+      include: [
+        {
+          model: models.OrderAddress,
+          as: "addresses",
+        },
+      ],
+    });
 
     if (!order) {
       const error = new Error("Order not found");
@@ -55,7 +63,24 @@ class PaymentService {
       };
     }
 
+    const billingAddress = order.addresses.find((a) => a.address_type === "billing");
+
+    if (!billingAddress) {
+      const error = new Error("Billing address not found");
+      error.status = HTTP_STATUS.NOT_FOUND;
+      error.error_code = ERROR_CODES.NOT_FOUND_ERROR;
+      throw error;
+    }
+
     const clientBaseUrl = process.env.CLIENT_BASE_URL;
+    const customerEmail = billingAddress?.email;
+
+    if (!customerEmail) {
+      const error = new Error("Customer email not found");
+      error.status = HTTP_STATUS.NOT_FOUND;
+      error.error_code = ERROR_CODES.NOT_FOUND_ERROR;
+      throw error;
+    }
 
     // N-Genius appends ?ref={orderUUID} to this URL automatically after payment
     const redirectUrl = `${clientBaseUrl}/${locale}/order?orderId=${orderId}`;
@@ -66,6 +91,7 @@ class PaymentService {
       returnUrl: redirectUrl,
       cancelUrl: redirectUrl,
       orderReference: order.order_id,
+      email: customerEmail,
     });
 
     Logger.info(`[Payment] N-Genius session created: transactionId=${transactionId}`);
@@ -146,10 +172,7 @@ class PaymentService {
     // OR order_reference (set by webhook after AUTHORISED fires = N-Genius order UUID).
     const order = await models.Orders.findOne({
       where: {
-        [Op.or]: [
-          { network_transaction_id: ref },
-          { order_reference: ref },
-        ],
+        [Op.or]: [{ network_transaction_id: ref }, { order_reference: ref }],
       },
     });
 

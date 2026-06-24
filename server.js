@@ -19,6 +19,8 @@ const { startStaleOrderCleanup } = require("./crons/staleOrderCleanup");
 const { homeCmsData } = require("./database/seeders/HomeCms");
 const users = require("./database/models/users/users");
 const seedCountriesAndStates = require("./database/seeders/stateCountry");
+const { seedPermissions } = require("./database/seeders/rbac/permissions");
+const { seedRoles } = require("./database/seeders/rbac/roles");
 
 dotenv.config();
 const app = express();
@@ -75,13 +77,8 @@ const startServer = async () => {
   try {
     await sequelize.authenticate();
 
-    // await homeCmsData();
-    // await seedCountriesAndStates();
-    // Add this to see which models are registered
-    // console.log("Registered models:", Object.keys(sequelize.models));
-
-    // await createAdminUser();
-    // await seedMetaTags();
+    await seedPermissions();
+    await seedRoles();
 
     // Sync ActivityLog table (creates it if it doesn't exist; safe for all other tables)
     await models.ActivityLog.sync({ alter: false });

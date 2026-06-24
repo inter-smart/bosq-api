@@ -552,7 +552,9 @@ class ProductsService {
         "name-a-z": `pv."title" ASC`,
         "name-z-a": `pv."title" DESC`,
       };
-      const orderSQL = orderMap[sortBy] || `pv."sort_order" ASC`; // default sorting
+      const stockOrder = `(COALESCE(pv."stock", 0) <= 0) ASC`;
+      const sortOrder = orderMap[sortBy] || `pv."sort_order" ASC`;
+      const orderSQL = `${stockOrder}, ${sortOrder}`;
 
       // ─── MAIN QUERY ──────────────────────────────────────────────────────────
       const mainSQL = `

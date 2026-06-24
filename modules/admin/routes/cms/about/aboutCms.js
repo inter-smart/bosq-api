@@ -4,8 +4,7 @@ const Controller = require("../../../http/controllers/cms/about/AboutCmsControll
 const {
   createUploadMiddleware,
 } = require("../../../http/middleware/multerMiddleware");
-const authMiddleware = require("../../../http/middleware/authMiddleware");
-
+const requirePermission = require("../../../http/middleware/requirePermission.js");
 // Define upload fields
 const fields = [
   { name: "banner_media_desktop_path", maxCount: 1 },
@@ -21,8 +20,7 @@ const fields = [
 // Create upload middleware with fields
 const upload = createUploadMiddleware("about-cms", fields);
 
-router.use(authMiddleware(["admin"]));
-
+router.use(requirePermission("cms"));
 router.get("/", Controller.index);
 router.post("/", upload, Controller.update);
 

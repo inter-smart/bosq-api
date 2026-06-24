@@ -1,10 +1,8 @@
 const express = require("express");
 const router = express.Router();
 const Controller = require("../../http/controllers/resources/product/ProductAttributeController");
-const authMiddleware = require("../../http/middleware/authMiddleware");
-
-router.use(authMiddleware(["admin"]));
-
+const requirePermission = require("../../http/middleware/requirePermission.js");
+router.use(requirePermission("products"));
 router.get("/", Controller.index);
 router.get("/:id", Controller.show);
 router.post("/", Controller.store);

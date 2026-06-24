@@ -1,11 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const authMiddleware = require('../../http/middleware/authMiddleware');
+const requireAuth = require("../../http/middleware/requireAuth.js");
 const Controller = require('../../http/controllers/AuthController');
 const { validatePasswordResetRequest, validatePasswordReset, validateResendOtp, validateVerifyOtp, validateResetPassword } = require('../../http/request/auth/AuthRequest');
 
 
-router.post('/register', Controller.register);
 router.post('/login', Controller.login);
 
 // Password reset routes (public - no auth required)
@@ -25,7 +24,8 @@ router.post("/resend-otp", validateResendOtp, Controller.resendOtp);
 
 
 
-router.use(authMiddleware(['admin']));
+router.use(requireAuth());
+router.get('/me', Controller.me);
 // router.post('/logout', Controller.logout);
 
 

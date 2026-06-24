@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const Controller = require("../../http/controllers/blog/blogsController.js");
 const { createUploadMiddleware } = require("../../http/middleware/multerMiddleware");
-const authMiddleware = require("../../http/middleware/authMiddleware");
+const requirePermission = require("../../http/middleware/requirePermission.js");
 // Define upload fields
 const fields = [
     { name: "thumbnail", maxCount: 1 },
@@ -16,8 +16,7 @@ const fields = [
 // Create upload middleware with fields
 const upload = createUploadMiddleware("blogs", fields);
 
-router.use(authMiddleware(["admin"]));
-
+router.use(requirePermission("blog"));
 router.get("/", Controller.index);
 
 

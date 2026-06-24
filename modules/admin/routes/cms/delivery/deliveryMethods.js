@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const Controller = require("../../../http/controllers/cms/delivery/DeliveryMethodsController");
 const { createUploadMiddleware } = require("../../../http/middleware/multerMiddleware");
-const authMiddleware = require("../../../http/middleware/authMiddleware");
+const requirePermission = require("../../../http/middleware/requirePermission.js");
 // Define upload fields
 const fields = [
     {name: "media_path", maxCount: 1}
@@ -11,8 +11,7 @@ const fields = [
 // Create upload middleware with fields
 const upload = createUploadMiddleware("delivery-methods", fields);
 
-router.use(authMiddleware(["admin"]));
-
+router.use(requirePermission("cms"));
 router.get("/", Controller.index);
 
 

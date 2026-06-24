@@ -5,7 +5,6 @@ const { validationResult } = require("express-validator");
 const { sequelize, models } = require("../../../../database/models/index");
 const { sendValidationError, sendSuccessResponse, sendErrorResponse, sendUnauthorizedError, sendCustomError } = require("../traits/responseHandler");
 const {
-  validationRequestPost,
   validationLogin,
   validateResendOtp,
   validateCurrentUserPassword,
@@ -16,6 +15,7 @@ const {
 const EmailService = require("../../../../services/EmailService");
 const ms = require("ms");
 const { JWT, TTL } = require("../../../../config/authConfig.js");
+const { SUPER_ADMIN_SLUG } = require("../../../../database/seeders/rbac/roles");
 
 const AdminUser = models.AdminUser;
 
@@ -23,47 +23,31 @@ const generateOTP = () => {
   return crypto.randomInt(100000, 999999).toString();
 };
 
+// Loads an admin's roles + the union of their permissions' module keys.
+const getAccessInfo = async (adminUserId) => {
+  const admin = await AdminUser.findOne({
+    where: { id: adminUserId, status: true },
+    include: [
+      {
+        model: models.Role,
+        as: "roles",
+        include: [{ model: models.Permission, as: "permissions" }],
+      },
+    ],
+  });
+
+  const roles = admin?.roles || [];
+  const isSuperAdmin = roles.some((role) => role.slug === SUPER_ADMIN_SLUG);
+  const permissions = [...new Set(roles.flatMap((role) => role.permissions.map((p) => p.module)))];
+
+  return {
+    isSuperAdmin,
+    permissions,
+    roles: roles.map((role) => ({ id: role.id, name: role.name, slug: role.slug })),
+  };
+};
+
 class AuthController {
-  static async register(req, res) {
-    await Promise.all(validationRequestPost.map((v) => v.run(req)));
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) return sendValidationError(res, errors);
-
-    try {
-      const { username, password, email, role } = req.body;
-
-      // Check existing user
-      const existingUserByUsername = await AdminUser.findOne({
-        where: { username },
-      });
-
-      if (existingUserByUsername) {
-        return sendErrorResponse(res, new Error("Username already exists"), {
-          statusCode: 409,
-        });
-      }
-
-      const existingUserByEmail = await AdminUser.findOne({ where: { email } });
-      if (existingUserByEmail) {
-        return sendErrorResponse(res, new Error("Email already exists"), {
-          statusCode: 409,
-        });
-      }
-
-      // Hash password
-      const hashedPassword = await bcrypt.hash(password, 12);
-
-      const user = await sequelize.transaction(async (t) =>
-        AdminUser.create({ username, email, password: hashedPassword, role: role || "user" }, { transaction: t }),
-      );
-
-      return sendSuccessResponse(res, { user }, "User registered successfully", 201);
-    } catch (error) {
-      console.error("Register error:", error);
-      return sendErrorResponse(res, error);
-    }
-  }
-
   static async login(req, res) {
     await Promise.all(validationLogin.map((v) => v.run(req)));
     const errors = validationResult(req);
@@ -73,7 +57,7 @@ class AuthController {
       const { email, password } = req.body;
       const user = await AdminUser.findOne({
         where: { email, status: true },
-        attributes: ["id", "username", "email", "role", "password", "createdAt", "updatedAt"],
+        attributes: ["id", "username", "email", "password", "createdAt", "updatedAt"],
       });
 
       if (!user) return sendUnauthorizedError(res, "Invalid email or password");
@@ -81,7 +65,7 @@ class AuthController {
       const isPasswordValid = await bcrypt.compare(password, user.password);
       if (!isPasswordValid) return sendUnauthorizedError(res, "Invalid email or password");
 
-      const tokenPayload = { id: user.id, email: user.email, role: user.role };
+      const tokenPayload = { id: user.id, email: user.email };
       const expiresIn = JWT.ADMIN_EXPIRY;
       const token = jwt.sign(tokenPayload, process.env.JWT_SECRET, {
         expiresIn,
@@ -89,6 +73,7 @@ class AuthController {
       });
 
       const expiresAt = new Date(Date.now() + ms(expiresIn));
+      const access = await getAccessInfo(user.id);
 
       console.log(`[Admin AuthController] Login successful for user: ${user.email}. Token expires in: ${expiresIn}`);
       sendSuccessResponse(
@@ -96,6 +81,7 @@ class AuthController {
         {
           token,
           user,
+          ...access,
           tokenType: "Bearer",
           expiresIn,
           expiresAt: expiresAt.toISOString(),
@@ -106,6 +92,26 @@ class AuthController {
     } catch (error) {
       console.error("Login error:", error);
       sendErrorResponse(res, error);
+    }
+  }
+
+  static async me(req, res) {
+    try {
+      const userId = req.user?.id;
+      if (!userId) return sendUnauthorizedError(res, "User not authenticated");
+
+      const user = await AdminUser.findOne({
+        where: { id: userId, status: true },
+        attributes: ["id", "username", "email", "createdAt", "updatedAt"],
+      });
+
+      if (!user) return sendUnauthorizedError(res, "User not found or inactive");
+
+      const access = await getAccessInfo(userId);
+      return sendSuccessResponse(res, { user, ...access }, "OK");
+    } catch (error) {
+      console.error("Me error:", error);
+      return sendErrorResponse(res, error);
     }
   }
 

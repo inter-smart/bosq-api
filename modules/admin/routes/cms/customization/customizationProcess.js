@@ -2,10 +2,8 @@ const express = require("express");
 const router = express.Router();
 const Controller = require("../../../http/controllers/cms/customization/CustomizationProcessController");
 const { createUploadMiddleware } = require("../../../http/middleware/multerMiddleware");
-const authMiddleware = require("../../../http/middleware/authMiddleware");
-
-router.use(authMiddleware(["admin"]));
-
+const requirePermission = require("../../../http/middleware/requirePermission.js");
+router.use(requirePermission("cms"));
 router.get("/", Controller.index);
 
 router.get("/:id", Controller.show);

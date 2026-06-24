@@ -1,6 +1,9 @@
 const express = require("express");
 const router = express.Router();
 const Controller = require("../../http/controllers/master/EnquiryDropdownController.js");
+const requirePermission = require("../../http/middleware/requirePermission.js");
+
+router.use(requirePermission("cms"));
 
 router.get("/", Controller.index);
 router.get("/:id", Controller.show);

@@ -1,14 +1,13 @@
 const express = require("express");
 const router = express.Router();
 const Controller = require("../../http/controllers/resources/product/ProductSectorsController");
-const authMiddleware = require("../../http/middleware/authMiddleware");
+const requirePermission = require("../../http/middleware/requirePermission.js");
 const { createUploadMiddleware } = require("../../http/middleware/multerMiddleware");
 
 const fields = [{ name: "media_path", maxCount: 1 }];
 const upload = createUploadMiddleware("product-sectors", fields);
 
-router.use(authMiddleware(["admin"]));
-
+router.use(requirePermission("products"));
 router.get("/", Controller.index);
 router.get("/:id", Controller.show);
 router.post("/", upload, Controller.store);

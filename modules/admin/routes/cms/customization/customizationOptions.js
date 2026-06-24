@@ -2,16 +2,14 @@ const express = require("express");
 const router = express.Router();
 const Controller = require("../../../http/controllers/cms/customization/CustomizationOptionsController");
 const { createUploadMiddleware } = require("../../../http/middleware/multerMiddleware");
-const authMiddleware = require("../../../http/middleware/authMiddleware");
-
+const requirePermission = require("../../../http/middleware/requirePermission.js");
 // Define upload fields
 const fields = [{ name: "media_path", maxCount: 1 }];
 
 // Create upload middleware with fields
 const upload = createUploadMiddleware("customization-features", fields);
 
-router.use(authMiddleware(["admin"]));
-
+router.use(requirePermission("cms"));
 router.get("/", Controller.index);
 
 router.get("/:id", Controller.show);

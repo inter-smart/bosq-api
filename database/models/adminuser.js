@@ -23,19 +23,24 @@ module.exports = (sequelize) => {
         type: DataTypes.STRING,
         allowNull: false,
       },
-      role: {
-        type: DataTypes.ENUM('admin', 'user'),
-        defaultValue: 'user',
-      },
       status: {
         type: DataTypes.BOOLEAN,
         defaultValue: true,
       },
     },
     {
-      tableName: 'admin_users', 
+      tableName: 'admin_users',
     }
   );
+
+  AdminUser.associate = (models) => {
+    AdminUser.belongsToMany(models.Role, {
+      through: models.AdminUserRole,
+      foreignKey: "admin_user_id",
+      otherKey: "role_id",
+      as: "roles",
+    });
+  };
 
   return AdminUser;
 };

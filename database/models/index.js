@@ -3,6 +3,12 @@ const sequelize = require("../config/index");
 const defineAdminUser = require("./adminuser");
 const defineActivityLog = require("./activityLog/activityLog");
 
+// RBAC
+const defineRole = require("./rbac/role");
+const definePermission = require("./rbac/permission");
+const defineRolePermission = require("./rbac/rolePermission");
+const defineAdminUserRole = require("./rbac/adminUserRole");
+
 // HOME
 const defineHomeCms = require("./cms/home/homeCms");
 const defineHomeBanner = require("./cms/home/homeBanner");
@@ -150,6 +156,12 @@ const defineProductTypes = require("./landingPage/productTypes");
 const models = {
   AdminUser: defineAdminUser(sequelize),
   ActivityLog: defineActivityLog(sequelize),
+
+  // RBAC
+  Role: defineRole(sequelize),
+  Permission: definePermission(sequelize),
+  RolePermission: defineRolePermission(sequelize),
+  AdminUserRole: defineAdminUserRole(sequelize),
 
   // HOME
   HomeCms: defineHomeCms(sequelize),

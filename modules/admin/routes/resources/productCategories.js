@@ -3,6 +3,10 @@ const router = express.Router();
 const Controller = require("../../http/controllers/resources/product/ProductCategoryController");
 const { createUploadMiddleware } = require("../../http/middleware/multerMiddleware");
 const authMiddleware = require("../../http/middleware/authMiddleware");
+const requirePermission = require("../../http/middleware/requirePermission");
+
+router.use(requirePermission("products"));
+
 // Define upload fields
 const fields = [{ name: "media_path", maxCount: 1 }];
 

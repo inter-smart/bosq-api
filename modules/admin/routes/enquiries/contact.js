@@ -1,11 +1,8 @@
 const express = require("express");
 const router = express.Router();
 const Controller = require("../../http/controllers/enquiries/ContactController");
-const authMiddleware = require("../../http/middleware/authMiddleware");
-
-
-router.use(authMiddleware(["admin"]));
-
+const requirePermission = require("../../http/middleware/requirePermission.js");
+router.use(requirePermission("enquiries"));
 router.get("/", Controller.index);
 router.get("/:id", Controller.show);
 router.delete("/:id", Controller.destroy);

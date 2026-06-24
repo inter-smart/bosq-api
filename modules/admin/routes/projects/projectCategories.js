@@ -3,6 +3,7 @@ const router = express.Router();
 const Controller = require("../../http/controllers/projects/CategoriesController");
 const { createUploadMiddleware } = require("../../http/middleware/multerMiddleware");
 const authMiddleware = require("../../http/middleware/authMiddleware");
+const requirePermission = require("../../http/middleware/requirePermission");
 
 // router.use(authMiddleware(["admin"]));
 
@@ -11,6 +12,8 @@ router.get("/", Controller.index);
 router.get("/:id", Controller.show);
 
 // Protected routes (require admin auth)
+
+router.use(requirePermission("projects"));
 
 router.post("/", Controller.store);
 router.put("/:id", Controller.update);

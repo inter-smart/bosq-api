@@ -1,10 +1,8 @@
 const express = require("express");
 const router = express.Router();
 const Controller = require("../http/controllers/CommonActionsController");
-const authMiddleware = require("../http/middleware/authMiddleware");
-
-router.use(authMiddleware(["admin"]));
-
+const requireAuth = require("../http/middleware/requireAuth.js");
+router.use(requireAuth());
 router.get("/categories/child-categories", Controller.getChildCategories);
 router.get("/attributes/with-values", Controller.getAttributesWithValues);
 

@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const Controller = require("../../../http/controllers/cms/materials/MaterialsCmsController.js");
 const { createUploadMiddleware } = require("../../../http/middleware/multerMiddleware");
-const authMiddleware = require("../../../http/middleware/authMiddleware");
+const requirePermission = require("../../../http/middleware/requirePermission.js");
 // Define upload fields
 // Define fields
 const fields = [
@@ -13,8 +13,7 @@ const fields = [
 // Create upload middleware with fields
 const upload = createUploadMiddleware("material-cms", fields);
 
-router.use(authMiddleware(["admin"]));
-
+router.use(requirePermission("cms"));
 router.get("/", Controller.index);
 router.post("/", upload, Controller.update);
 

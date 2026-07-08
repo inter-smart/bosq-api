@@ -25,7 +25,7 @@ class NetworkService {
         Authorization: `Basic ${API_KEY}`,
         "Content-Type": "application/vnd.ni-identity.v1+json",
       },
-      body: JSON.stringify({ realmName: "AYN-MUSK" }),
+      // body: JSON.stringify({ realmName: "AYN-MUSK" }),
     });
 
     if (!response.ok) {

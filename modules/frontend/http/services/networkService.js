@@ -8,8 +8,6 @@ const API_KEY = process.env.NETWORK_API_KEY;
 const MERCHANT_ID = process.env.NETWORK_MERCHANT_ID;
 const WEBHOOK_SECRET = process.env.NETWORK_WEBHOOK_SECRET;
 
-Logger.debug(`[Network] Initialized with BASE_URL=${BASE_URL}, MERCHANT_ID=${MERCHANT_ID}, WEBHOOK_SECRET=${WEBHOOK_SECRET} API_KEY=${API_KEY}  `);
-
 class NetworkService {
   /**
    * Obtain a short-lived Bearer token from N-Genius.
@@ -19,7 +17,7 @@ class NetworkService {
   static async getAccessToken() {
     const url = `${BASE_URL}/identity/auth/access-token`;
 
-    Logger.debug(`[Network] Fetching access token from ${url}`);
+    console.log(`[Network] Fetching access token from ${url} with API_KEY=${API_KEY}`);
 
     const response = await fetch(url, {
       method: "POST",

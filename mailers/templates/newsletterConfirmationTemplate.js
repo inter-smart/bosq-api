@@ -40,7 +40,7 @@ const newsletterConfirmationTemplate = ({ iconsHtml = "" }) => {
                 <!-- Title -->
                 <tr>
                     <td style="padding:10px 40px 12px;">
-                        <h2 style="font-size:22px; color:#282828; font-weight:600; margin:0; text-align:center;">
+                        <h2 style="font-size:22px;text-align:center; color:#282828; font-weight:600; margin:0; text-align:center;">
                             Thank You for Staying Connected
                         </h2>
                     </td>
@@ -49,7 +49,7 @@ const newsletterConfirmationTemplate = ({ iconsHtml = "" }) => {
                 <!-- Main Copy -->
                 <tr>
                     <td style="padding:0 40px 30px;">
-                        <p style="font-size:16px; color:#282828; width:90%; margin:0 auto; line-height:25px; text-align:center;">
+                        <p style="font-size:16px;text-align:center; color:#282828; width:90%; margin:0 auto; line-height:25px; text-align:center;">
                             Thank you for your interest in Bosq.
                             Your email has been successfully registered with us.
                         </p>

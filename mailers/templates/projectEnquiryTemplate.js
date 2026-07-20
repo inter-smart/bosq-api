@@ -92,11 +92,11 @@ const projectEnquiryTemplate = (data, iconsHtml = "") => {
                             style="padding:20px; background:#282828; border:1px solid #8e8e8e; margin-bottom:32px;">
                             <tr>
                                 <td>
-                                    <h2 style="font-size:16px; color:#ffffff; font-weight:500; margin:0 0 12px;">
+                                    <h2 style="font-size:16px;text-align:center; color:#ffffff; font-weight:500; margin:0 0 12px;">
                                         What Happens Next?
                                     </h2>
 
-                                    <p style="font-size:14px; color:#cccccc; line-height:24px; margin:0 0 20px;">
+                                    <p style="font-size:14px;text-align:center; color:#cccccc; line-height:24px; margin:0 0 20px;">
                                         Our project specialist will carefully review your requirements
                                         and contact you within 24–48 hours to discuss project scope,
                                         design approach, pricing, and estimated timelines.

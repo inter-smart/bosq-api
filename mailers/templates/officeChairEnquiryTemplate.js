@@ -68,10 +68,10 @@ const officeChairEnquiryTemplate = ({ customerName = "Customer", enquiryMessage 
                                         style="padding:20px; background:#F2F2F2; border:1px solid #e5e5e5; margin-bottom:32px;">
                                         <tr>
                                             <td>
-                                                <h2 style="font-size:16px; color:#282828; font-weight:500; margin:0 0 12px;">
+                                                <h2 style="font-size:16px;text-align:center; color:#282828; font-weight:500; margin:0 0 12px;">
                                                     Your Office Chair Enquiry:
                                                 </h2>
-                                                <p style="font-size:16px; color:#282828; line-height:23px; margin:0;">
+                                                <p style="font-size:16px;text-align:center; color:#282828; line-height:23px; margin:0;">
                                                     ${enquiryMessage}
                                                 </p>
                                             </td>
@@ -85,10 +85,10 @@ const officeChairEnquiryTemplate = ({ customerName = "Customer", enquiryMessage 
                                         style="padding:20px; background:#282828; border:1px solid #8e8e8e; margin-bottom:32px;">
                                         <tr>
                                             <td>
-                                                <h2 style="font-size:16px; color:#fff; font-weight:500; margin:0 0 12px;">
+                                                <h2 style="font-size:16px;text-align:center; color:#fff; font-weight:500; margin:0 0 12px;">
                                                     What Happens Next?
                                                 </h2>
-                                                <p style="font-size:16px; color:#fff; line-height:23px; margin:0;">
+                                                <p style="font-size:16px;text-align:center; color:#fff; line-height:23px; margin:0;">
                                                     Our office seating expert will contact you within 24 hours with tailored
                                                     chair recommendations, pricing, and bulk order options for your workspace.
                                                 </p>

@@ -24,13 +24,13 @@ class MailService {
           return `
             <td width="5%" style="text-align:center;padding-left:0;">
               <a href="${href}" target="_blank"
-                style="text-decoration:none;border-radius:50%;width:18px;height:18px;margin:0 auto;display:inline-block;">
+                style="text-decoration:none;border-radius:50%;width:24px;height:24px;margin:0 auto;display:inline-block;">
                 <img
                   src="${iconSrc}"
                   alt="social"
-                  width="14"
-                  height="14"
-                  style="display:block;border:0;"
+                  width="25"
+                  height="25"
+                  style="display:block;border:0;object-fit:contain;"
                 />
               </a>
             </td>

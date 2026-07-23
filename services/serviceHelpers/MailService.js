@@ -74,15 +74,15 @@ class MailService {
           const { width, height } = getIconRenderSize(absPath);
 
           return `
-            <td width="5%" style="text-align:center;padding-inline:4px;">
+            <td align="center" valign="middle" style="text-align:center;padding-left:8px;padding-right:8px;">
               <a href="${href}" target="_blank"
-                style="text-decoration:none;width:${ICON_MAX_SIZE}px;height:${ICON_MAX_SIZE}px;margin:0 auto;display:inline-block;text-align:center;">
+                style="text-decoration:none;display:inline-block;">
                 <img
                   src="${iconSrc}"
                   alt="social"
                   width="${width}"
                   height="${height}"
-                  style="display:inline-block;border:0;vertical-align:middle;"
+                  style="display:block;border:0;"
                 />
               </a>
             </td>

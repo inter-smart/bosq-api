@@ -112,6 +112,7 @@ const defineProductVariantCategories = require("./resources/productVariantCatego
 const defineProductVariantBoughtTogether = require("./resources/productVariantBoughtTogether");
 const defineProductProjectImage = require("./resources/productProjectImage");
 const defineProductModels = require("./resources/productModels");
+const defineProductMeta = require("./resources/productMeta");
 
 // Cart
 const defineCart = require("./resources/cart/cart");
@@ -273,6 +274,7 @@ const models = {
   ProductVariantBoughtTogether: defineProductVariantBoughtTogether(sequelize),
   ProductProjectImage: defineProductProjectImage(sequelize),
   ProductModels: defineProductModels(sequelize),
+  ProductMeta: defineProductMeta(sequelize),
 
   // CART
   Cart: defineCart(sequelize),
@@ -307,8 +309,6 @@ const models = {
 
   // MASTER
   EnquiryDropdown: defineEnquiryDropdown(sequelize),
-
-
 };
 
 Object.keys(models).forEach((modelName) => {

@@ -11,9 +11,21 @@ class MetaTagController {
 
       const language = req.headers["accept-language"] || "en";
 
-      const {data, message} = await service.index(page, language);
+      const { data, message } = await service.index(page, language);
       return sendSuccessResponse(res, data, message, 200);
+    } catch (error) {
+      return sendErrorResponse(res, error, "Internal Server Error", 500);
+    }
+  }
 
+  static async getProductMetaBySlug(req, res) {
+    const params = req.query;
+    const language = req.headers["accept-language"] || "en";
+
+    try {
+      const { data, message } = await service.getMetaForProduct(params, language);
+
+      return sendSuccessResponse(res, data, message, 200);
     } catch (error) {
       return sendErrorResponse(res, error, "Internal Server Error", 500);
     }

@@ -253,6 +253,12 @@ module.exports = (sequelize) => {
       as: "faqs",
       onDelete: "CASCADE",
     });
+
+    ProductVariants.hasOne(models.ProductMeta, {
+      foreignKey: "product_variant_id",
+      as: "meta",
+      onDelete: "CASCADE",
+    });
   };
 
   return ProductVariants;

@@ -7,6 +7,11 @@ const ProductServiceHelpers = require("../../traits/products");
 
 const { singleMediaWithoutType } = require("../../traits/mediaButtonHelper");
 
+const defaultProductMeta = {
+  other_meta: "<meta name='author' content='BOSQ'>",
+  other_meta_ar: "<meta name='author' content='بوسك'>",
+};
+
 class ProductsService {
   static async getProductBySlug(params, type, userId) {
     const { slug, variantSku = null, model = null } = params;
@@ -280,6 +285,7 @@ class ProductsService {
       const currentModelId = initialVariant?.model_id;
 
       let data = null;
+      let otherMeta = null;
       if (currentModelId) {
         data = await ProductServiceHelpers.getSimiliarProducts(currentModelId, currentVariantId, userId, isLoggedInUser);
       }
@@ -293,12 +299,28 @@ class ProductsService {
         initialVariant.isWishlisted = true;
       }
 
+      if (initialVariant) {
+        const metaData = await models.ProductMeta.findOne({
+          where: {
+            product_variant_id: initialVariant.id,
+          },
+          attributes: ["id", "other_meta", "other_meta_ar"],
+        });
+
+        const data = metaData ? metaData.toJSON() : {};
+        otherMeta = {
+          other_meta_ar: data?.other_meta_ar || defaultProductMeta.other_meta_ar,
+          other_meta: data?.other_meta || defaultProductMeta.other_meta,
+        };
+      }
+
       return {
         data: {
           product: baseData,
           initialVariant,
           similarVariants,
           boughtTogetherVariants,
+          metaData: otherMeta ? otherMeta : defaultProductMeta,
         },
         fromCache: false,
         message: "Data fetched",
@@ -464,7 +486,6 @@ class ProductsService {
       // Variant status
       conditions.push(`pv."deletedAt" IS NULL`);
       conditions.push(`pv."status" = true`);
-
 
       // Price
       if (priceMin) {

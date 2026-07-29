@@ -30,4 +30,12 @@ const addFaqUploadJob = (token) => {
   return bulkUploadQueue.add("process_faq_upload", { token });
 };
 
-module.exports = { bulkUploadQueue, addBulkUploadJob, addFaqUploadJob };
+/**
+ * Adds a product meta upload job to the queue.
+ * @param {string} token - The Redis session token for the validated meta rows.
+ */
+const addMetaUploadJob = (token) => {
+  return bulkUploadQueue.add("process_meta_upload", { token });
+};
+
+module.exports = { bulkUploadQueue, addBulkUploadJob, addFaqUploadJob, addMetaUploadJob };

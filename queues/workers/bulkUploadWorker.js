@@ -3,10 +3,12 @@ const { workerConnection } = require("../../config/bullConnection");
 const { redisClient } = require("../../config/redis");
 const { processUpload } = require("../../services/bulkUpload/bulkUploadService");
 const { processFaqUpload } = require("../../services/bulkUpload/faqBulkUploadService");
+const { processProductMetaUpload } = require("../../services/bulkUpload/productMetaBulkUploadService");
 const Logger = require("../../config/logger");
 
 const SESSION_PREFIX = "bulk_upload_session:";
 const FAQ_SESSION_PREFIX = "bulk_faq_session:";
+const META_SESSION_PREFIX = "bulk_meta_session:";
 
 let worker = null;
 
@@ -58,8 +60,33 @@ const processFaqJob = async (job) => {
   return summary;
 };
 
+const processMetaJob = async (job) => {
+  const { token } = job.data;
+
+  if (!token) {
+    throw new Error("Product meta upload job is missing the session token");
+  }
+
+  const redisKey = `${META_SESSION_PREFIX}${token}`;
+  Logger.info(`[BulkUploadWorker] Processing meta job ${job.id}, token: ${token}`);
+
+  const raw = await redisClient.get(redisKey);
+  if (!raw) {
+    throw new Error(`Meta session token "${token}" not found or expired. Cannot process upload.`);
+  }
+
+  const hierarchy = JSON.parse(raw);
+  const summary = await processProductMetaUpload(hierarchy);
+
+  await redisClient.del(redisKey);
+
+  Logger.info(`[BulkUploadWorker] Meta job ${job.id} completed. Summary: ${JSON.stringify(summary)}`);
+  return summary;
+};
+
 const processJob = async (job) => {
   if (job.name === "process_faq_upload") return processFaqJob(job);
+  if (job.name === "process_meta_upload") return processMetaJob(job);
   return processMainJob(job);
 };
 

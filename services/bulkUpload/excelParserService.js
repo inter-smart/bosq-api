@@ -137,4 +137,38 @@ async function parseFaqExcelBuffer(buffer) {
   return { product_faqs: rows };
 }
 
-module.exports = { parseExcelBuffer, parseFaqExcelBuffer };
+/**
+ * Parses an Excel buffer containing only a product_meta sheet.
+ * Returns { product_meta: [{ _rowNumber, sku, meta_title, ... }] }
+ */
+async function parseProductMetaExcelBuffer(buffer) {
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.load(buffer);
+
+  const sheet = workbook.getWorksheet("product_meta");
+  if (!sheet) {
+    throw new Error('Missing required sheet: "product_meta"');
+  }
+
+  const headerRow = sheet.getRow(1);
+  const headers = [];
+  headerRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+    const val = cell.value ? String(cell.value).trim().toLowerCase().replace(/\s+/g, "_") : null;
+    headers[colNumber - 1] = val;
+  });
+
+  if (headers.length === 0 || headers.every((h) => !h)) {
+    throw new Error('Sheet "product_meta" has no header row');
+  }
+
+  const rows = [];
+  sheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
+    if (rowNumber === 1) return;
+    const obj = rowToObject(headers, row, rowNumber);
+    if (obj) rows.push(obj);
+  });
+
+  return { product_meta: rows };
+}
+
+module.exports = { parseExcelBuffer, parseFaqExcelBuffer, parseProductMetaExcelBuffer };

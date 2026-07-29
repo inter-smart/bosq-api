@@ -97,7 +97,6 @@ class ProductMetaController {
 
       const variant = await ProductVariants.findByPk(id, {
         attributes: ["id", "sku", "title"],
-        include: [{ model: models.ProductModels, as: "productModel", attributes: ["id", "slug"] }],
         transaction,
       });
 

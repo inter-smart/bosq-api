@@ -133,6 +133,44 @@ class CommonActionsController {
     }
   }
 
+  static async updateShowInFooter(req, res) {
+    try {
+      const { model_name, row_id } = req.params;
+      const { show_in_footer } = req.body;
+
+      const Model = models[model_name];
+      if (!Model) {
+        return res.status(400).json({ message: "Invalid model name" });
+      }
+
+      const content = await Model.findByPk(row_id);
+      if (!content) {
+        return res.status(404).json({ message: "Content not found" });
+      }
+
+      const updated = await Model.update({ show_in_footer }, { where: { id: row_id } });
+      // Fetch updated record
+      const updatedContent = await Model.findByPk(row_id);
+
+      // Invalidate cache (pass updatedContent for dynamic cache keys)
+      const cacheResult = await invalidateCacheByModel(redisClient, model_name, cacheDependencies, updatedContent);
+
+      console.log(`✅ Show in footer updated for ${model_name} ID:${row_id} - Cache invalidation: ${cacheResult.success} key(s)`);
+
+      return res.json({
+        success: true,
+        message: "Show in footer updated successfully",
+        data: updatedContent,
+        cache: {
+          invalidated: cacheResult.success,
+          keys: cacheResult.keys,
+        },
+      });
+    } catch (error) {
+      return res.status(500).json({ message: error.message });
+    }
+  }
+
   static async getChildCategories(req, res) {
     try {
       const { parent_id } = req.query;

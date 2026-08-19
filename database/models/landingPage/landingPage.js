@@ -25,7 +25,7 @@ module.exports = (sequelize) => {
         type: DataTypes.TEXT,
         allowNull: true,
       },
-      media_desktop_path:{
+      media_desktop_path: {
         type: DataTypes.TEXT,
         allowNull: true,
       },
@@ -49,7 +49,7 @@ module.exports = (sequelize) => {
         type: DataTypes.TEXT,
         allowNull: true,
       },
-      link:{
+      link: {
         type: DataTypes.TEXT,
         allowNull: true,
       },
@@ -70,8 +70,11 @@ module.exports = (sequelize) => {
         defaultValue: true,
       },
 
-
-
+      show_in_footer: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+      },
 
       meta_title: {
         type: DataTypes.TEXT,
@@ -110,17 +113,14 @@ module.exports = (sequelize) => {
       tableName: "landing_page",
       timestamps: true,
     },
-
-
- 
   );
 
-     LandingPage.associate = function (models) {
-      LandingPage.hasMany(models.ProductTypes, {
-        foreignKey: "landing_page_id",
-        as: "productTypes",
-      });
-    }
+  LandingPage.associate = function (models) {
+    LandingPage.hasMany(models.ProductTypes, {
+      foreignKey: "landing_page_id",
+      as: "productTypes",
+    });
+  };
 
   return LandingPage;
 };

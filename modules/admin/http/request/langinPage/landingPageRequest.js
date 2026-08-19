@@ -69,6 +69,11 @@ exports.validationRequestPost = [
     .isBoolean()
     .withMessage("Status must be true or false"),
 
+  body("show_in_footer")
+    .optional()
+    .isBoolean()
+    .withMessage("Show in footer must be true or false"),
+
   // SEO fields
   body("meta_title").optional().isString(),
   body("meta_description").optional().isString(),

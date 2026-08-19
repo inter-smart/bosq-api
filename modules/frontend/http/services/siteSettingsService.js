@@ -53,6 +53,7 @@ class SiteSettingsService {
         await models.LandingPage.findAll({
           where: {
             status: true,
+            show_in_footer: true,
           },
           attributes: ["title", "title_ar", "slug"],
           order: [["sort_order", "ASC"]],

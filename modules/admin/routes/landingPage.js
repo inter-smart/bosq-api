@@ -7,6 +7,7 @@ const requirePermission = require("../http/middleware/requirePermission.js");
 const fields = [
   { name: "media_desktop_path", maxCount: 1 },
   { name: "media_mobile_path", maxCount: 1 },
+  { name: "form_media_path", maxCount: 1 },
 ];
 
 // Create upload middleware with fields

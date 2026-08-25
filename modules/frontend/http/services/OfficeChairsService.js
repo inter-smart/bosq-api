@@ -2,7 +2,7 @@ const { Op } = require("sequelize");
 const { models, sequelize } = require("../../../../database/models");
 const { generateImageUrl } = require("../../traits/imageUrlHelper");
 const { generateQueryParams, isItemWishListed } = require("../traits/dataManipulations/product/product");
-const { buildOtherMetaData } = require("../traits/dataManipulations/common");
+const { buildOtherMetaData, buildCmsSection } = require("../traits/dataManipulations/common");
 
 const buildVariantIncludes = () => [
   {
@@ -221,6 +221,7 @@ class OfficeChairsService {
 
       const heroData = transformHeroData(lp);
       const metaData = buildOtherMetaData(lp);
+      const formSection = buildCmsSection(lp, "form");
       const productModelIds = [
         ...new Set(
           Object.values(variantsMap)
@@ -256,7 +257,7 @@ class OfficeChairsService {
       return {
         fromCache: false,
         message: "Data fetched successfully",
-        data: { heroData, listingData, metaData },
+        data: { heroData, listingData, metaData, formSection },
       };
     } catch (error) {
       console.error("OfficeChairsService error:", error);

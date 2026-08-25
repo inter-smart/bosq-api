@@ -76,6 +76,37 @@ module.exports = (sequelize) => {
         defaultValue: false,
       },
 
+      form_title: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      form_title_ar: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+
+      form_description: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      form_description_ar: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+
+      form_media_path: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      form_media_alt: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      form_media_alt_ar: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+
       meta_title: {
         type: DataTypes.TEXT,
         allowNull: true,

@@ -63,7 +63,7 @@ class LandingPageController {
       const slug = slugify(title.trim(), { lower: true, strict: true });
       req.body.slug = slug;
 
-      const fileFields = ["media_path"];
+      const fileFields = ["media_path", "form_media_path"];
       handleFileUploadStore(req, fileFields);
 
       // Create data with transaction
@@ -138,7 +138,7 @@ class LandingPageController {
         return sendNotFoundError(res, "Data");
       }
 
-      const fileFields = ["media_path"];
+      const fileFields = ["media_path", "form_media_path"];
       await handleFileUploadUpdate(req, data, fileFields);
 
       await data.update(req.body, { transaction });

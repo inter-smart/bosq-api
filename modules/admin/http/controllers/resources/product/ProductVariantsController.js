@@ -23,17 +23,38 @@ class ProductVariantsController {
         whereClause.product_model_id = product_model_id;
       }
 
+      // Both filters below use EXISTS subqueries rather than "$association.field$"
+      // where-clause notation. The latter forces paginate() to disable Sequelize's
+      // subQuery wrapping (needed so the COUNT query gets the same JOIN), but that
+      // wrapping is also what keeps LIMIT/OFFSET correct against the "categories"
+      // belongsToMany include below — without it, a variant with multiple
+      // categories fans out into duplicate raw rows that eat into the page's
+      // LIMIT before Sequelize collapses them back down, so a page can come back
+      // with fewer distinct variants than its own totalCount says it should.
+      const andConditions = [];
+
       if (product_id) {
-        // Filter by base product ID via the productModel association
-        whereClause["$productModel.product_id$"] = product_id;
+        andConditions.push(
+          sequelize.literal(`EXISTS (
+            SELECT 1 FROM "product_models" pm
+            WHERE pm."id" = "ProductVariants"."product_model_id"
+              AND pm."product_id" = ${parseInt(product_id, 10)}
+          )`),
+        );
       }
 
       if (category_id) {
-        whereClause[Op.and] = sequelize.literal(`EXISTS (
-          SELECT 1 FROM "product_variant_categories" pvc
-          WHERE pvc."product_variant_id" = "ProductVariants"."id"
-            AND pvc."category_id" = ${parseInt(category_id, 10)}
-        )`);
+        andConditions.push(
+          sequelize.literal(`EXISTS (
+            SELECT 1 FROM "product_variant_categories" pvc
+            WHERE pvc."product_variant_id" = "ProductVariants"."id"
+              AND pvc."category_id" = ${parseInt(category_id, 10)}
+          )`),
+        );
+      }
+
+      if (andConditions.length > 0) {
+        whereClause[Op.and] = andConditions;
       }
 
       const result = await paginate(DataModel, req, {

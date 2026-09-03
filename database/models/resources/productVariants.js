@@ -25,6 +25,15 @@ module.exports = (sequelize) => {
         defaultValue: false,
       },
 
+      // Marks the single variant of a product_model_id that should represent
+      // that model in listings. Enforced in app code only (see
+      // ProductVariantHelper.reassignPrimaryIfNeeded) — never write this
+      // column directly outside that helper.
+      is_primary: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+      },
+
       brochure: {
         type: DataTypes.STRING(255),
         allowNull: true,

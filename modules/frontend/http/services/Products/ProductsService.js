@@ -486,6 +486,9 @@ class ProductsService {
       // Variant status
       conditions.push(`pv."deletedAt" IS NULL`);
       conditions.push(`pv."status" = true`);
+      // Only the model's designated listing representative shows up here —
+      // one card per model, not one per variant. See ProductVariantHelper.reassignPrimaryIfNeeded.
+      conditions.push(`pv."is_primary" = true`);
 
       // Price
       if (priceMin) {
@@ -820,7 +823,8 @@ class ProductsService {
       }
 
       // Build WHERE clause for variants
-      const variantWhere = { status: true };
+      // is_primary: true — one card per model, matching getProductListing.
+      const variantWhere = { status: true, is_primary: true };
 
       // Apply variant-level category filter via EXISTS subquery
       if (categoryIds.length > 0) {

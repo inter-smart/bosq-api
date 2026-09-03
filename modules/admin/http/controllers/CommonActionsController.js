@@ -1,8 +1,9 @@
 const { redisClient } = require("../../../../config/redis");
-const { models } = require("../../../../database/models");
+const { models, sequelize } = require("../../../../database/models");
 const cacheDependencies = require("../../../redis/cacheDependency");
 const { invalidateCacheByModel } = require("../../../redis/redisService");
 const OrderService = require("../../../frontend/http/services/orderService");
+const { reassignPrimaryIfNeeded } = require("../traits/ProductVariantHelper");
 
 class CommonActionsController {
   static async updateStatus(req, res) {
@@ -21,10 +22,24 @@ class CommonActionsController {
         return res.status(404).json({ message: "Content not found" });
       }
 
-      const updated = await Model.update({ status }, { where: { id: row_id } });
-
-      if (!updated) {
-        return res.status(400).json({ message: "Failed to update status" });
+      // Deactivating a ProductVariant that's currently its model's primary
+      // must hand the primary flag off, or the model silently drops out of
+      // listings. Do this in the same transaction as the status update.
+      if (model_name === "ProductVariants" && status === false && content.is_primary) {
+        const t = await sequelize.transaction();
+        try {
+          await Model.update({ status }, { where: { id: row_id }, transaction: t });
+          await reassignPrimaryIfNeeded(content.product_model_id, { transaction: t, excludeId: content.id });
+          await t.commit();
+        } catch (err) {
+          await t.rollback();
+          throw err;
+        }
+      } else {
+        const updated = await Model.update({ status }, { where: { id: row_id } });
+        if (!updated) {
+          return res.status(400).json({ message: "Failed to update status" });
+        }
       }
 
       const updatedContent = await Model.findByPk(row_id);
@@ -110,7 +125,28 @@ class CommonActionsController {
         return res.status(404).json({ message: "Content not found" });
       }
 
-      const updated = await Model.update({ is_primary }, { where: { id: row_id } });
+      if (model_name === "ProductVariants") {
+        // No direct "unset" — a model must always keep exactly one primary
+        // (or zero, only via deletion/deactivation). Only "set THIS one as
+        // primary" is a valid admin action here.
+        if (is_primary !== true) {
+          return res.status(400).json({
+            message: "ProductVariants primary can only be set (not unset) — set a different variant as primary instead.",
+          });
+        }
+
+        const t = await sequelize.transaction();
+        try {
+          await reassignPrimaryIfNeeded(content.product_model_id, { transaction: t, forceId: content.id });
+          await t.commit();
+        } catch (err) {
+          await t.rollback();
+          throw err;
+        }
+      } else {
+        await Model.update({ is_primary }, { where: { id: row_id } });
+      }
+
       // Fetch updated record
       const updatedContent = await Model.findByPk(row_id);
 

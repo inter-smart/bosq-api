@@ -1,6 +1,75 @@
 const { Op } = require("sequelize");
 const { models, sequelize } = require("../../../../database/models");
 
+/**
+ * The ONLY place in the codebase allowed to write ProductVariants.is_primary.
+ * Guarantees at most one variant per product_model_id is primary, including
+ * across soft-deleted rows, by always clearing the old primary before setting
+ * the new one inside the caller's transaction.
+ *
+ * @param {number} productModelId
+ * @param {object} opts
+ * @param {import("sequelize").Transaction} opts.transaction - required
+ * @param {number} [opts.excludeId] - variant to exclude from being (re)picked (e.g. the one being deleted/deactivated)
+ * @param {number} [opts.forceId] - explicit "set this one primary" target (admin action); when omitted, the next eligible variant is auto-picked
+ */
+const reassignPrimaryIfNeeded = async (productModelId, { transaction, excludeId = null, forceId = null } = {}) => {
+  if (!transaction) {
+    throw new Error("Transaction is required for reassignPrimaryIfNeeded");
+  }
+  if (!productModelId) {
+    throw new Error("productModelId is required for reassignPrimaryIfNeeded");
+  }
+
+  // Serialize concurrent calls for the same model — without this, two
+  // simultaneous requests could both read "no primary yet" and both write true.
+  const siblings = await models.ProductVariants.findAll({
+    where: { product_model_id: productModelId },
+    attributes: ["id", "is_primary", "status", "sort_order", "deletedAt"],
+    paranoid: false, // a soft-deleted row can still be holding is_primary=true
+    transaction,
+    lock: transaction.LOCK.UPDATE,
+  });
+
+  let targetId = forceId ?? null;
+
+  if (!targetId) {
+    const eligible = siblings
+      .filter((v) => v.id !== excludeId && v.status === true && !v.deletedAt)
+      .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0) || a.id - b.id);
+    targetId = eligible.length > 0 ? eligible[0].id : null;
+  }
+
+  const currentPrimaries = siblings.filter((v) => v.is_primary && v.id !== targetId);
+
+  if (currentPrimaries.length > 0) {
+    await models.ProductVariants.update(
+      { is_primary: false },
+      {
+        where: { id: { [Op.in]: currentPrimaries.map((v) => v.id) } },
+        paranoid: false,
+        transaction,
+      },
+    );
+  }
+
+  if (targetId) {
+    await models.ProductVariants.update({ is_primary: true }, { where: { id: targetId }, paranoid: false, transaction });
+  }
+
+  // Safety net: never allow committing a state with more than one primary for this model.
+  const finalCount = await models.ProductVariants.count({
+    where: { product_model_id: productModelId, is_primary: true },
+    paranoid: false,
+    transaction,
+  });
+  if (finalCount > 1) {
+    throw new Error(`Invariant violated: model ${productModelId} would end up with ${finalCount} primary variants`);
+  }
+
+  return targetId;
+};
+
 const createOrUpdateVariantAttributes = async (transaction, attributes, product_model_id, operation, variantId = null, meta = {}) => {
   // Validate required parameters
   if (!transaction) {
@@ -52,6 +121,11 @@ const createOrUpdateVariantAttributes = async (transaction, attributes, product_
 
   switch (operation) {
     case "create": {
+      // If this model has no variants yet, the first one created below
+      // becomes the model's primary (listing representative) by default.
+      const hadExistingVariants =
+        (await models.ProductVariants.count({ where: { product_model_id }, paranoid: false, transaction })) > 0;
+
       for (const variantData of variantCombinations) {
         const createdVariant = await models.ProductVariants.create(
           {
@@ -78,6 +152,11 @@ const createOrUpdateVariantAttributes = async (transaction, attributes, product_
         }
 
         createdVariants.push(createdVariant);
+      }
+
+      if (!hadExistingVariants && createdVariants.length > 0) {
+        await reassignPrimaryIfNeeded(product_model_id, { transaction, forceId: createdVariants[0].id });
+        createdVariants[0].is_primary = true;
       }
       break;
     }
@@ -152,6 +231,14 @@ const createOrUpdateVariantAttributes = async (transaction, attributes, product_
         },
         { transaction },
       );
+
+      // If this update deactivates the model's primary variant, hand the
+      // primary flag off to another active variant of the same model so the
+      // model doesn't silently disappear from listings. `is_primary` itself
+      // is deliberately not accepted from this form — see reassignPrimaryIfNeeded.
+      if (status === false && currentVariant.is_primary) {
+        await reassignPrimaryIfNeeded(currentVariant.product_model_id, { transaction, excludeId: currentVariant.id });
+      }
 
       // Create new variant attributes
       for (const attr of variantData.attributes) {
@@ -279,4 +366,5 @@ module.exports = {
   createProductVariants,
   updateVariantsPrices,
   createOrUpdateVariantAttributes,
+  reassignPrimaryIfNeeded,
 };

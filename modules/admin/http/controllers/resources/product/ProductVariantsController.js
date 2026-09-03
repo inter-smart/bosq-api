@@ -5,7 +5,7 @@ const { sendSuccessResponse, sendErrorResponse, sendValidationError, sendNotFoun
 const { validationResult } = require("express-validator");
 const { Op } = require("sequelize");
 const { handleFileUploadStore, handleFileUploadUpdate } = require("../../../middleware/multerMiddleware");
-const { createOrUpdateVariantAttributes } = require("../../../traits/ProductVariantHelper");
+const { createOrUpdateVariantAttributes, reassignPrimaryIfNeeded } = require("../../../traits/ProductVariantHelper");
 
 const DataModel = models.ProductVariants;
 
@@ -246,22 +246,41 @@ class ProductVariantsController {
   }
 
   static async destroyAll(req, res) {
+    const transaction = await sequelize.transaction();
+
     try {
       const { ids } = req.body;
       const { delete_type } = req.query;
       const isForceDelete = delete_type === "force";
 
       if (!Array.isArray(ids) || ids.length === 0) {
+        await transaction.rollback();
         return sendValidationError(res, [{ msg: "IDs must be a non-empty array" }]);
       }
+
+      const toDelete = await DataModel.findAll({
+        where: { id: ids },
+        attributes: ["id", "product_model_id", "is_primary"],
+        transaction,
+      });
 
       await DataModel.destroy({
         where: { id: ids },
         force: isForceDelete,
+        transaction,
       });
+
+      // Hand off is_primary for any deleted variant that was its model's primary.
+      const affectedModelIds = [...new Set(toDelete.filter((v) => v.is_primary).map((v) => v.product_model_id))];
+      for (const modelId of affectedModelIds) {
+        await reassignPrimaryIfNeeded(modelId, { transaction, excludeId: null });
+      }
+
+      await transaction.commit();
 
       sendSuccessResponse(res, { deleted_ids: ids }, "Product Variants deleted successfully");
     } catch (error) {
+      await transaction.rollback();
       console.error("Product Variant bulk deletion error:", error);
       sendErrorResponse(res, error);
     }
@@ -272,17 +291,32 @@ class ProductVariantsController {
     const errors = validationResult(req);
     if (!errors.isEmpty()) return sendValidationError(res, errors.array());
 
+    const transaction = await sequelize.transaction();
+
     try {
       const { id } = req.params;
       const { delete_type } = req.query;
       const forceDelete = delete_type === "force";
 
-      const data = await DataModel.findByPk(id);
-      if (!data) return sendNotFoundError(res, "Product Variant");
+      const data = await DataModel.findByPk(id, { transaction });
+      if (!data) {
+        await transaction.rollback();
+        return sendNotFoundError(res, "Product Variant");
+      }
 
-      await data.destroy({ force: forceDelete });
+      const wasPrimary = data.is_primary;
+      const productModelId = data.product_model_id;
+
+      await data.destroy({ force: forceDelete, transaction });
+
+      if (wasPrimary) {
+        await reassignPrimaryIfNeeded(productModelId, { transaction, excludeId: id });
+      }
+
+      await transaction.commit();
       sendSuccessResponse(res, { id }, "Product Variant deleted successfully");
     } catch (error) {
+      await transaction.rollback();
       console.error("Product Variant deletion error:", error);
       sendErrorResponse(res, error);
     }

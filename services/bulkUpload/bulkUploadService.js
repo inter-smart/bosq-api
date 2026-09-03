@@ -2,6 +2,7 @@ const { default: slugify } = require("slugify");
 const { models, sequelize } = require("../../database/models");
 const { Op } = require("sequelize");
 const Logger = require("../../config/logger");
+const { reassignPrimaryIfNeeded } = require("../../modules/admin/http/traits/ProductVariantHelper");
 
 const { ProductBase, ProductModels, ProductVariants, ProductVariantCategories, ProductVariantAttributes, ProductVariantImages, ProductProjectImage } =
   models;
@@ -356,7 +357,13 @@ async function processUpload(hierarchy) {
     if (variantsToUpdate.length > 0) {
       Logger.info(`[BulkUpload] Updating ${variantsToUpdate.length} product_variant rows`);
       for (const { row, existingId } of variantsToUpdate) {
-        await ProductVariants.update(row, { where: { id: existingId }, transaction: t });
+        // is_primary is deliberately excluded here — it's not a bulk-sheet
+        // field (see reconciliation pass below) and an existing variant's
+        // current primary flag must never be silently overwritten by a
+        // re-upload/update. Only reassignPrimaryIfNeeded is allowed to
+        // write ProductVariants.is_primary.
+        const { is_primary, ...updateRow } = row;
+        await ProductVariants.update(updateRow, { where: { id: existingId }, transaction: t });
       }
     }
     Logger.info(`[BulkUpload] ProductVariants — created: ${variantsToCreate.length}, updated: ${variantsToUpdate.length}`);
@@ -364,6 +371,22 @@ async function processUpload(hierarchy) {
     // Build combined variant id → meta index for junction inserts
     // insertedVariants[i] corresponds to variantsToCreateMeta[i]
     // updatedVariantIds entries correspond to variantsToUpdate[i].existingId
+
+    // ── 3b. Reconcile is_primary for every model touched by this batch ───────
+    // Guarantees a brand-new model gets a primary (nothing else in this file
+    // assigns one — is_primary is stripped before create rows even get here,
+    // see line ~286), and repairs any pre-existing model that entered this
+    // batch with zero primaries. Never overwrites a model that already has one.
+    const touchedModelIds = [...new Set(allVariantRows.map((r) => r.product_model_id).filter(Boolean))];
+    for (const modelId of touchedModelIds) {
+      const hasPrimary = await ProductVariants.count({
+        where: { product_model_id: modelId, is_primary: true },
+        transaction: t,
+      });
+      if (hasPrimary === 0) {
+        await reassignPrimaryIfNeeded(modelId, { transaction: t });
+      }
+    }
 
     // ── 4. ProductVariantCategories ───────────────────────────────────────────
     // Replace all category rows for updated variants; insert for new variants.

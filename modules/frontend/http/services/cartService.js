@@ -336,8 +336,8 @@ class CartService {
         }
       }
 
-      // let overallDeliveryCharge = isChargeCalculationNeeded ? 0 : 100;
-      let overallDeliveryCharge = 0;
+      let overallDeliveryCharge = isChargeCalculationNeeded ? 0 : 100;
+      // let overallDeliveryCharge = 0;
       let requiresSalesContact = false;
       let itemsCharges = [];
 

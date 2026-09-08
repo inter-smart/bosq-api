@@ -166,8 +166,8 @@ class OrderService {
       const isChargeCalculationNeeded = cartSubTotal > MINIMUM_CART_SUBTOTAL;
 
       const shippingStateId = cartShippingAddress?.state_id ?? cartBillingAddress?.state_id ?? null;
-      // let shippingTotal = isChargeCalculationNeeded ? 0 : 100;
-      let shippingTotal = 0;
+      let shippingTotal = isChargeCalculationNeeded ? 0 : 100;
+      // let shippingTotal = 0;
       let itemsShippingCharges = [];
       if (isChargeCalculationNeeded && shippingStateId) {
         const shippingData = await CheckOutService.calculateCartShippingCharge(cart, shippingStateId);

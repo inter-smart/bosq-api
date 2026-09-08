@@ -1,3 +1,5 @@
+const { emailResponsiveHead, EMAIL_WRAPPER_OPEN, EMAIL_WRAPPER_CLOSE, emailFooter } = require("./emailLayout");
+
 const welcomeEmailTemplate = ({ customerName = "Customer", iconsHtml = "" }) => {
   const currentYear = new Date().getFullYear();
   const email = process.env.COMPANY_EMAIL || "sales@bosq.ae";
@@ -9,13 +11,11 @@ const welcomeEmailTemplate = ({ customerName = "Customer", iconsHtml = "" }) => 
 <head>
     <title>Welcome to Bosq</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    ${emailResponsiveHead()}
 </head>
 
 <body bgcolor="#FFFFFF" style="margin:0;padding:0;font-family:'Open Sans',sans-serif;">
-    <div style="margin:auto; width:700px; background:#ffffff;">
-        <table width="700" border="0" cellpadding="0" cellspacing="0" align="center" style="margin:auto;">
-            <tbody>
-
+    ${EMAIL_WRAPPER_OPEN}
                 <!-- Header -->
                 <tr>
                     <td>
@@ -59,7 +59,7 @@ const welcomeEmailTemplate = ({ customerName = "Customer", iconsHtml = "" }) => 
 
                 <!-- Body -->
                 <tr>
-                    <td style="padding:0 30px;">
+                    <td class="content-pad" style="padding:0 30px;">
 
                         <table width="100%" border="0" cellpadding="0" cellspacing="0"
                             style="padding:20px; background:#F2F2F2; border:1px solid #e5e5e5; margin-bottom:32px;">
@@ -115,46 +115,8 @@ const welcomeEmailTemplate = ({ customerName = "Customer", iconsHtml = "" }) => 
                 </tr>
 
             </tbody>
-
-            <!-- Footer -->
-            <tfoot>
-                <tr>
-                    <td style="padding:0;">
-                        <table width="100%" border="0" cellpadding="0" cellspacing="0"
-                            style="background:#282828;">
-                            <tbody>
-
-                                ${
-                                  iconsHtml
-                                    ? `
-                                <tr>
-                                    <td style="padding:20px 30px 10px; text-align:center;">
-                                        <table align="center" width="120" border="0" cellpadding="0" cellspacing="0">
-                                            <tr>
-                                                ${iconsHtml}
-                                            </tr>
-                                        </table>
-                                    </td>
-                                </tr>
-                                `
-                                    : ""
-                                }
-
-                                <tr>
-                                    <td style="padding:10px 30px 20px;">
-                                        <p style="margin:0; color:#ffffff; font-size:16px; text-align:center;">
-                                            © ${currentYear} Bosq. All rights reserved.
-                                        </p>
-                                    </td>
-                                </tr>
-
-                            </tbody>
-                        </table>
-                    </td>
-                </tr>
-            </tfoot>
-        </table>
-    </div>
+${emailFooter(iconsHtml, currentYear)}
+    ${EMAIL_WRAPPER_CLOSE}
 </body>
 </html>
 `;

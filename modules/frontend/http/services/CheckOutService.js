@@ -97,7 +97,8 @@ class CheckOutService {
     const cartSubTotal = parseFloat(cart?.subtotal || 0);
     const isChargeCalculationNeeded = cartSubTotal > MINIMUM_CART_SUBTOTAL;
 
-    let overallDeliveryCharge = isChargeCalculationNeeded ? 0 : 100;
+    // let overallDeliveryCharge = isChargeCalculationNeeded ? 0 : 100;
+    let overallDeliveryCharge = 0;
 
     if (isChargeCalculationNeeded && stateId) {
       const shippingChargeData = await this.calculateCartShippingCharge(cart, stateId);
@@ -274,7 +275,8 @@ class CheckOutService {
       }
     }
 
-    let overallDeliveryCharge = isChargeCalculationNeeded ? 0 : 100;
+    // let overallDeliveryCharge = isChargeCalculationNeeded ? 0 : 100;
+    let overallDeliveryCharge = 0;
     let requiresSalesContact = false;
     let itemsCharges = [];
 
@@ -446,7 +448,8 @@ class CheckOutService {
       }
     }
 
-    let overallDeliveryCharge = isChargeCalculationNeeded ? 0 : 100;
+    // let overallDeliveryCharge = isChargeCalculationNeeded ? 0 : 100;
+    let overallDeliveryCharge = 0;
     let requiresSalesContact = false;
     let itemsCharges = [];
 

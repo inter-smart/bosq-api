@@ -938,6 +938,9 @@ class EmailService {
       shippingAddress,
       estDelivery,
       cancel_reason,
+      partnerName,
+      orderUrl,
+      awbNumber,
     } = data;
 
     const paymentLabel = paymentType === "cod" ? "Cash on Delivery" : "Online Payment";
@@ -967,6 +970,51 @@ class EmailService {
 
     const deliveryText = estDelivery || "To be confirmed";
     const { from, cc } = await MailService.getMailerSettings("orders");
+
+    const hasTrackingInfo = status === "shipped" && (partnerName?.trim() || awbNumber?.trim() || orderUrl?.trim());
+    const trackingBlock = hasTrackingInfo
+      ? `
+                                                            <h2 style="font-size: 16px; font-family:  'Open Sans', sans-serif; color: #282828; font-weight: 500; margin: 0; margin-top: 20px; margin-bottom: 20px;">
+                                                            Shipping Information </h2>
+                                                            <ul style="padding: 0; margin: 0">
+                                                                ${
+                                                                  partnerName?.trim()
+                                                                    ? `<li style="display:flex; margin-bottom: 25px; list-style-type: none;">
+                                                                    <p style="font-size: 16px; width: 45%; color: #282828; font-weight: 400; font-family:  'Open Sans', sans-serif; margin: 0px; margin-top: 0px; margin-bottom: 0; line-height: 23px; text-align: left;">
+                                                                    Delivery Partner:
+                                                                    </p>
+                                                                    <span style="font-size: 16px; width: 55%; color: #282828; font-weight: 500; font-family:  'Open Sans', sans-serif; margin: 0; margin-left: auto; line-height: 23px; text-align: right;">
+                                                                        ${partnerName}
+                                                                    </span>
+                                                                </li>`
+                                                                    : ""
+                                                                }
+                                                                ${
+                                                                  awbNumber?.trim()
+                                                                    ? `<li style="display:flex; margin-bottom: 25px; list-style-type: none;">
+                                                                    <p style="font-size: 16px; width: 45%; color: #282828; font-weight: 400; font-family:  'Open Sans', sans-serif; margin: 0px; margin-top: 0px; margin-bottom: 0; line-height: 23px; text-align: left;">
+                                                                    AWB Number:
+                                                                    </p>
+                                                                    <span style="font-size: 16px; width: 55%; color: #282828; font-weight: 500; font-family:  'Open Sans', sans-serif; margin: 0; margin-left: auto; line-height: 23px; text-align: right;">
+                                                                        ${awbNumber}
+                                                                    </span>
+                                                                </li>`
+                                                                    : ""
+                                                                }
+                                                                ${
+                                                                  orderUrl?.trim()
+                                                                    ? `<li style="display:flex; margin-bottom: 25px; list-style-type: none;">
+                                                                    <p style="font-size: 16px; width: 45%; color: #282828; font-weight: 400; font-family:  'Open Sans', sans-serif; margin: 0px; margin-top: 0px; margin-bottom: 0; line-height: 23px; text-align: left;">
+                                                                    Track Order:
+                                                                    </p>
+                                                                    <span style="font-size: 16px; width: 55%; color: #282828; font-weight: 500; font-family:  'Open Sans', sans-serif; margin: 0; margin-left: auto; line-height: 23px; text-align: right;">
+                                                                        <a href="${orderUrl}" style="color: #282828;" target="_blank" rel="noopener noreferrer">View Tracking</a>
+                                                                    </span>
+                                                                </li>`
+                                                                    : ""
+                                                                }
+                                                            </ul>`
+      : "";
 
     let messageText = `This email is to notify you that the status of your recent Bosq order (#${orderCode}) has been updated to <strong>${statusFormatted}</strong>. We will keep you posted on any further updates regarding your shipment!`;
 
@@ -1087,7 +1135,8 @@ class EmailService {
                                                                     </span>
                                                                 </li>
                                                             </ul>
-                                                        </div>    
+                                                            ${trackingBlock}
+                                                        </div>
                                                     </td>
                                                     <td style="width: 50%; height: 100%; margin-top: 0px; padding-right: 10px; vertical-align: middle; border-radius: 4px;">
                                                         <div style="background:#F2F2F2; border:1px solid #e5e5e5; padding:20px; height: 100%; min-height: 245px;">

@@ -17,13 +17,15 @@ class NetworkService {
   static async getAccessToken() {
     const url = `${BASE_URL}/identity/auth/access-token`;
 
+    console.log(`[Network] Fetching access token from ${url} with API_KEY=${API_KEY}`);
+
     const response = await fetch(url, {
       method: "POST",
       headers: {
         Authorization: `Basic ${API_KEY}`,
         "Content-Type": "application/vnd.ni-identity.v1+json",
       },
-      body: JSON.stringify({ realmName: "ni" }),
+      // body: JSON.stringify({ realmName: "AYN-MUSK" }),
     });
 
     if (!response.ok) {

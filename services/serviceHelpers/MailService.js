@@ -1,5 +1,54 @@
 const nodemailer = require("nodemailer");
+const fs = require("fs");
+const path = require("path");
 const { models } = require("../../database/models");
+
+const ICON_MAX_SIZE = 24;
+
+// Reads intrinsic pixel dimensions so the <img> width/height attributes can preserve
+// aspect ratio instead of forcing a square box — email clients that ignore CSS
+// (object-fit) stretch mismatched-aspect icons to fit fixed HTML attributes, which is
+// what was producing the smeared/blurry footer icons.
+const getImageDimensions = (absPath) => {
+  const buffer = fs.readFileSync(absPath);
+  const ext = path.extname(absPath).toLowerCase();
+
+  if (ext === ".png" && buffer.length >= 24 && buffer.toString("ascii", 12, 16) === "IHDR") {
+    return { width: buffer.readUInt32BE(16), height: buffer.readUInt32BE(20) };
+  }
+
+  if (ext === ".svg") {
+    const svg = buffer.toString("utf8");
+    const widthMatch = svg.match(/width="([\d.]+)/);
+    const heightMatch = svg.match(/height="([\d.]+)/);
+    if (widthMatch && heightMatch) {
+      return { width: parseFloat(widthMatch[1]), height: parseFloat(heightMatch[1]) };
+    }
+    const viewBoxMatch = svg.match(/viewBox="[\d.\s-]*?\s+[\d.\s-]*?\s+([\d.]+)\s+([\d.]+)/);
+    if (viewBoxMatch) {
+      return { width: parseFloat(viewBoxMatch[1]), height: parseFloat(viewBoxMatch[2]) };
+    }
+  }
+
+  return null;
+};
+
+const getIconRenderSize = (absPath) => {
+  try {
+    const dimensions = getImageDimensions(absPath);
+    if (!dimensions?.width || !dimensions?.height) {
+      return { width: ICON_MAX_SIZE, height: ICON_MAX_SIZE };
+    }
+
+    const scale = ICON_MAX_SIZE / Math.max(dimensions.width, dimensions.height);
+    return {
+      width: Math.round(dimensions.width * scale),
+      height: Math.round(dimensions.height * scale),
+    };
+  } catch (_) {
+    return { width: ICON_MAX_SIZE, height: ICON_MAX_SIZE };
+  }
+};
 
 class MailService {
   static transporter = null;
@@ -21,15 +70,18 @@ class MailService {
 
           if (!iconSrc) return "";
 
+          const absPath = path.join(__dirname, "../..", item.footer_icon_media_path);
+          const { width, height } = getIconRenderSize(absPath);
+
           return `
-            <td width="5%" style="text-align:center;padding-left:0;">
+            <td align="center" valign="middle" style="text-align:center;padding-left:8px;padding-right:8px;">
               <a href="${href}" target="_blank"
-                style="text-decoration:none;border-radius:50%;width:18px;height:18px;margin:0 auto;display:inline-block;">
+                style="text-decoration:none;display:inline-block;">
                 <img
                   src="${iconSrc}"
                   alt="social"
-                  width="14"
-                  height="14"
+                  width="${width}"
+                  height="${height}"
                   style="display:block;border:0;"
                 />
               </a>

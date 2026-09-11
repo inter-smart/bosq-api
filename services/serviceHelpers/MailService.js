@@ -128,12 +128,12 @@ class MailService {
   };
 
   static async getMailerSettings(type) {
-    if (process.env.USETESTMAIL === "true" && process.env.TESTMAIL) {
-      return {
-        from: process.env.TESTMAIL,
-        cc: [],
-      };
-    }
+    // if (process.env.USETESTMAIL === "true" && process.env.TESTMAIL) {
+    //   return {
+    //     from: process.env.TESTMAIL,
+    //     cc: [],
+    //   };
+    // }
 
     try {
       const setting = await models.MailerSettings.findOne({

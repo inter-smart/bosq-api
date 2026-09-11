@@ -182,13 +182,17 @@ class EmailService {
           </tr>`;
   }
 
-  static async _sendAdminMail(subject, html) {
+  static async _sendAdminMail(subject, html, ccType = null) {
     const transporter = MailService.getTransporter();
     const settings = await MailService.getMailerSettings("admin");
-    console.log(`[EmailService] sending "${subject}" | from=${settings.from} to=${settings.from} cc=${JSON.stringify(settings.cc)}`);
+    // The originating flow's own cc_emails (e.g. "enquiries", "newsletter", "orders") are applied
+    // here, on the admin notification, instead of on the customer-facing email.
+    const cc = ccType ? (await MailService.getMailerSettings(ccType)).cc : [];
+    console.log(`[EmailService] sending "${subject}" | from=${settings.from} to=${settings.from} cc=${JSON.stringify(cc)}`);
     return transporter.sendMail({
       from: settings.from,
       to: settings.from,
+      cc: cc.length ? cc : undefined,
       subject,
       html,
     });
@@ -241,6 +245,7 @@ class EmailService {
         title: "New Product Enquiry",
         body,
       }),
+      "enquiries",
     );
   }
 
@@ -288,6 +293,7 @@ class EmailService {
         title: "New Contact Enquiry",
         body,
       }),
+      "enquiries",
     );
   }
 
@@ -378,6 +384,7 @@ class EmailService {
         title: "New General Enquiry",
         body,
       }),
+      "enquiries",
     );
   }
 
@@ -445,6 +452,7 @@ class EmailService {
         title: "New Project Enquiry",
         body,
       }),
+      "enquiries",
     );
   }
 
@@ -485,6 +493,7 @@ class EmailService {
         title: "New Newsletter Subscriber",
         body,
       }),
+      "newsletter",
     );
   }
 
@@ -497,6 +506,36 @@ class EmailService {
       html,
       type: "orders",
     });
+  }
+
+  // ─────────────────────────────────────────────
+  //  ORDERS — Admin Notification (Order Placed)
+  // ─────────────────────────────────────────────
+  static async sendOrderConfirmationAdmin(data) {
+    const { orderCode, name, email, paymentType, grand_total, items = [] } = data;
+
+    const body = `
+          <tr>
+            <td style="padding:28px 50px 36px;">
+              <p style="margin:0 0 16px;font-size:11px;font-weight:700;color:#c9a96e;text-transform:uppercase;letter-spacing:2px;font-family:Arial,sans-serif;">Order Details</p>
+              ${this._detailRow("Order ID", `<span style="font-size:14px;color:#c9a96e;font-family:Arial,sans-serif;font-weight:600;">${orderCode}</span>`, { highlight: true })}
+              ${this._detailRow("Customer", `<span style="font-size:14px;color:#1c1c1c;font-family:Arial,sans-serif;font-weight:600;">${name || "Customer"}</span>`)}
+              ${email ? this._detailRow("Email", `<a href="mailto:${email}" style="font-size:14px;color:#c9a96e;text-decoration:none;font-family:Arial,sans-serif;">${email}</a>`) : ""}
+              ${this._detailRow("Payment", `<span style="font-size:14px;color:#1c1c1c;font-family:Arial,sans-serif;">${paymentType === "cod" ? "Cash on Delivery" : "Online Payment"}</span>`)}
+              ${this._detailRow("Items", `<span style="font-size:14px;color:#1c1c1c;font-family:Arial,sans-serif;">${items.length}</span>`)}
+              ${this._detailRow("Grand Total", `<span style="font-size:14px;color:#1c1c1c;font-family:Arial,sans-serif;font-weight:600;">AED ${grand_total}</span>`)}
+            </td>
+          </tr>`;
+
+    return this._sendAdminMail(
+      `New Order – ${orderCode}`,
+      this._adminEmailHtml({
+        badge: "New Order Placed",
+        title: "New Order Placed",
+        body,
+      }),
+      "orders",
+    );
   }
 
   static getOrderConfirmationTemplate(data) {
@@ -1372,6 +1411,36 @@ class EmailService {
     });
   }
 
+  // ─────────────────────────────────────────────
+  //  ORDERS — Admin Notification (Status Update)
+  // ─────────────────────────────────────────────
+  static async sendOrderStatusAdmin(data) {
+    const { orderCode, name, email, status, cancel_reason } = data;
+    const statusFormatted = status.charAt(0).toUpperCase() + status.slice(1);
+
+    const body = `
+          <tr>
+            <td style="padding:28px 50px 36px;">
+              <p style="margin:0 0 16px;font-size:11px;font-weight:700;color:#c9a96e;text-transform:uppercase;letter-spacing:2px;font-family:Arial,sans-serif;">Order Details</p>
+              ${this._detailRow("Order ID", `<span style="font-size:14px;color:#c9a96e;font-family:Arial,sans-serif;font-weight:600;">${orderCode}</span>`, { highlight: true })}
+              ${this._detailRow("Customer", `<span style="font-size:14px;color:#1c1c1c;font-family:Arial,sans-serif;font-weight:600;">${name || "Customer"}</span>`)}
+              ${email ? this._detailRow("Email", `<a href="mailto:${email}" style="font-size:14px;color:#c9a96e;text-decoration:none;font-family:Arial,sans-serif;">${email}</a>`) : ""}
+              ${this._detailRow("New Status", `<span style="font-size:14px;color:#1c1c1c;font-family:Arial,sans-serif;font-weight:600;">${statusFormatted}</span>`, { highlight: true })}
+              ${cancel_reason ? this._detailRow("Reason", `<span style="font-size:14px;color:#1c1c1c;font-family:Arial,sans-serif;">${cancel_reason}</span>`) : ""}
+            </td>
+          </tr>`;
+
+    return this._sendAdminMail(
+      `Order Update – ${orderCode} is now ${statusFormatted}`,
+      this._adminEmailHtml({
+        badge: "Order Status Updated",
+        title: "Order Status Updated",
+        body,
+      }),
+      "orders",
+    );
+  }
+
   static async sendItemCancelUpdate(email, data) {
     const { name, orderCode, cancelledItem, cancel_reason, paymentType, billingAddress, shippingAddress } = data;
 
@@ -1683,6 +1752,35 @@ class EmailService {
       html,
       type: "orders",
     });
+  }
+
+  // ─────────────────────────────────────────────
+  //  ORDERS — Admin Notification (Item Cancelled)
+  // ─────────────────────────────────────────────
+  static async sendItemCancelAdmin(data) {
+    const { orderCode, name, email, cancelledItem, cancel_reason } = data;
+
+    const body = `
+          <tr>
+            <td style="padding:28px 50px 36px;">
+              <p style="margin:0 0 16px;font-size:11px;font-weight:700;color:#c9a96e;text-transform:uppercase;letter-spacing:2px;font-family:Arial,sans-serif;">Order Details</p>
+              ${this._detailRow("Order ID", `<span style="font-size:14px;color:#c9a96e;font-family:Arial,sans-serif;font-weight:600;">${orderCode}</span>`, { highlight: true })}
+              ${this._detailRow("Customer", `<span style="font-size:14px;color:#1c1c1c;font-family:Arial,sans-serif;font-weight:600;">${name || "Customer"}</span>`)}
+              ${email ? this._detailRow("Email", `<a href="mailto:${email}" style="font-size:14px;color:#c9a96e;text-decoration:none;font-family:Arial,sans-serif;">${email}</a>`) : ""}
+              ${cancelledItem ? this._detailRow("Item Cancelled", `<span style="font-size:14px;color:#1c1c1c;font-family:Arial,sans-serif;font-weight:600;">${cancelledItem.title}${cancelledItem.sku ? ` (${cancelledItem.sku})` : ""} × ${cancelledItem.quantity}</span>`, { highlight: true }) : ""}
+              ${cancel_reason ? this._detailRow("Reason", `<span style="font-size:14px;color:#1c1c1c;font-family:Arial,sans-serif;">${cancel_reason}</span>`) : ""}
+            </td>
+          </tr>`;
+
+    return this._sendAdminMail(
+      `Item Cancelled – Order #${orderCode}`,
+      this._adminEmailHtml({
+        badge: "Order Item Cancelled",
+        title: "Order Item Cancelled",
+        body,
+      }),
+      "orders",
+    );
   }
 }
 

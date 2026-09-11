@@ -876,6 +876,14 @@ class OrderService {
         shippingAddress,
       });
 
+      EmailService.sendOrderStatusAdmin({
+        name: customerName,
+        email: customerEmail,
+        orderCode: order.order_id,
+        status,
+        cancel_reason: cancelReason,
+      }).catch((err) => Logger.error(`Order status admin notification failed for order ${orderId}: ${err.message}`));
+
       Logger.info(`Order status email (${status}) sent for order ${order.order_id}`);
     } catch (err) {
       Logger.error(`Failed to send order status email (${status}) for order ${orderId}: ${err.message}`);
@@ -960,6 +968,14 @@ class OrderService {
         billingAddress,
         shippingAddress,
       });
+
+      EmailService.sendItemCancelAdmin({
+        name: customerName,
+        email: customerEmail,
+        orderCode: order.order_id,
+        cancelledItem,
+        cancel_reason: cancelReason,
+      }).catch((err) => Logger.error(`Item cancel admin notification failed for order ${orderId}: ${err.message}`));
 
       Logger.info(`Item cancellation email sent for order ${order.order_id}, item ${orderItemId}`);
     } catch (err) {

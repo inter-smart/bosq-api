@@ -255,6 +255,30 @@ function validateRelations(baseRows, modelRows, variantRows, errors) {
   }
 }
 
+// ─── Step 2b: Variant Attributes Presence ───────────────────────────────────
+
+/**
+ * Every variant row must carry at least one attribute pair (attr:value).
+ * Mirrors the invariant already enforced for manual variant creation in
+ * ProductVariantHelper.js:createOrUpdateVariantAttributes ("Attributes array
+ * is required and cannot be empty"). Must run before autoFillVariantSkus so
+ * a missing/empty attributes cell is rejected instead of silently producing
+ * a SKU equal to the bare product model code.
+ */
+function validateVariantAttributesPresent(variantRows, errors) {
+  for (const row of variantRows) {
+    if (parseAttributePairs(row.attributes).length === 0) {
+      addError(
+        errors,
+        "product_variants",
+        row._rowNumber,
+        "attributes",
+        "attributes is required — at least one attribute pair (attr:value) must be provided",
+      );
+    }
+  }
+}
+
 // ─── Step 3: Internal Duplicate Checks ──────────────────────────────────────
 
 function validateInternalDuplicates(baseRows, modelRows, variantRows, errors) {
@@ -721,6 +745,11 @@ async function validateBulkUpload(parsedSheets) {
 
   // Step 2: Internal relational integrity
   validateRelations(baseRows, modelRows, variantRows, errors);
+
+  // Step 2b: Every variant row must have at least one attribute — must run
+  // before SKU auto-generation, otherwise an empty attributes cell silently
+  // produces a SKU equal to the bare product model code.
+  validateVariantAttributesPresent(variantRows, errors);
 
   // Step 3: Auto-generate SKU for all variants — must run before duplicate check
   autoFillVariantSkus(modelRows, variantRows);

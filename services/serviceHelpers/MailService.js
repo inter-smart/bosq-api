@@ -203,7 +203,9 @@ class MailService {
     const mailOptions = {
       from: settings.from,
       to,
-      cc: settings.cc,
+      // Only auth emails (OTP/password-reset) carry a cc. For every other type, cc addresses
+      // are sent on the admin-notification email instead (see EmailService._sendAdminMail).
+      cc: type === "auth" ? settings.cc : undefined,
       subject,
       html,
       text: text || html.replace(/<[^>]*>/g, ""),

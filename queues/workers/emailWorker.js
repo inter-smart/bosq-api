@@ -17,6 +17,11 @@ const processJob = async (job) => {
 
     await EmailService.sendOrderConfirmationEmail(email, data);
     Logger.info(`Order confirmation email sent for order ${orderCode} → ${email}`);
+
+    EmailService.sendOrderConfirmationAdmin(data).catch((err) =>
+      Logger.error(`Order confirmation admin notification failed for order ${orderCode}: ${err.message}`),
+    );
+
     return { sent: true };
   }
 

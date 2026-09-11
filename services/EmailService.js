@@ -186,9 +186,12 @@ class EmailService {
   static async _sendAdminMail(subject, html, ccType = null) {
     const transporter = MailService.getTransporter();
     const settings = await MailService.getMailerSettings("admin");
-    // The originating flow's own cc_emails (e.g. "enquiries", "newsletter", "orders") are applied
-    // here, on the admin notification, instead of on the customer-facing email.
+
+    console.log(ccType);
+
     const cc = ccType ? (await MailService.getMailerSettings(ccType)).cc : [];
+
+    console.log(ccType, cc);
 
     const result = await transporter.sendMail({
       from: settings.from,
@@ -198,9 +201,7 @@ class EmailService {
       html,
     });
 
-    Logger.info(
-      `[EmailService] Admin mail sent | subject="${subject}" admin=${settings.from} ccType=${ccType || "none"} cc=${JSON.stringify(cc)}`,
-    );
+    Logger.info(`[EmailService] Admin mail sent | subject="${subject}" admin=${settings.from} ccType=${ccType || "none"} cc=${JSON.stringify(cc)}`);
 
     return result;
   }

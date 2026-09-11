@@ -2,6 +2,7 @@ const nodemailer = require("nodemailer");
 const fs = require("fs");
 const path = require("path");
 const { models } = require("../../database/models");
+const Logger = require("../../config/logger");
 
 const ICON_MAX_SIZE = 24;
 
@@ -212,15 +213,19 @@ class MailService {
       emailtype: type,
     };
 
-    console.log(`[EmailService] "${subject}" | type=${type}  | from=${mailOptions.from} to=${mailOptions.to} cc=${JSON.stringify(mailOptions.cc)}`);
-
     if (process.env.EMAIL_DRY_RUN === "true" && type !== "auth") {
-      console.log("[EmailService] DRY RUN — email not sent");
+      Logger.info(
+        `[MailService] DRY RUN — not sent | type="${type}" subject="${subject}" user=${mailOptions.to} cc=${JSON.stringify(mailOptions.cc || [])}`,
+      );
       return { dryRun: true };
     }
 
     const transporter = this.getTransporter();
-    return transporter.sendMail(mailOptions);
+    const result = await transporter.sendMail(mailOptions);
+    Logger.info(
+      `[MailService] User mail sent | type="${type}" subject="${subject}" user=${mailOptions.to} cc=${JSON.stringify(mailOptions.cc || [])}`,
+    );
+    return result;
   }
 }
 

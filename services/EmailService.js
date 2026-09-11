@@ -9,6 +9,7 @@ const customizationEnquiryTemplate = require("../mailers/templates/customization
 const projectEnquiryTemplate = require("../mailers/templates/projectEnquiryTemplate");
 const newsletterConfirmationTemplate = require("../mailers/templates/newsletterConfirmationTemplate");
 const MailService = require("./serviceHelpers/MailService");
+const Logger = require("../config/logger");
 
 class EmailService {
   static async sendPasswordResetEmail(email, data) {
@@ -188,14 +189,20 @@ class EmailService {
     // The originating flow's own cc_emails (e.g. "enquiries", "newsletter", "orders") are applied
     // here, on the admin notification, instead of on the customer-facing email.
     const cc = ccType ? (await MailService.getMailerSettings(ccType)).cc : [];
-    console.log(`[EmailService] sending "${subject}" | from=${settings.from} to=${settings.from} cc=${JSON.stringify(cc)}`);
-    return transporter.sendMail({
+
+    const result = await transporter.sendMail({
       from: settings.from,
       to: settings.from,
       cc: cc.length ? cc : undefined,
       subject,
       html,
     });
+
+    Logger.info(
+      `[EmailService] Admin mail sent | subject="${subject}" admin=${settings.from} ccType=${ccType || "none"} cc=${JSON.stringify(cc)}`,
+    );
+
+    return result;
   }
 
   // ─────────────────────────────────────────────
